@@ -111,8 +111,11 @@
         justify-content: space-between !important;
     }
     #universal-reception-navbar > div:nth-child(2) {
-        flex-wrap: wrap !important;
-        justify-content: center !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-start !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding-bottom: 0.5rem; /* Space for scrollbar */
     }
     #universal-reception-navbar .hide-mobile {
         display: inline-block !important; /* Keep text visible per user request */

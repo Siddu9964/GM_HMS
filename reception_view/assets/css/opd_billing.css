@@ -3292,6 +3292,7 @@ table.bills-table {
         grid-template-columns: 1fr !important;
     }
     .bento-workspace {
+        display: flex !important;
         flex-direction: column !important;
     }
     .bento-ledger, .bento-sidebar {
