@@ -452,16 +452,26 @@ class AppointmentManager {
         try {
             this.showLoading(true);
             response = await this.apiCall('POST', '', data);
-            if (response.success) {
-                this.showToast('Appointment scheduled successfully', 'success');
+            if (response && response.success) {
                 this.closeModal();
+                this.showSuccessPopup('Appointment Scheduled!', 'The appointment has been successfully booked and registered.');
                 this.loadAppointments();
             } else {
-                this.showToast(response.error || 'Failed to schedule', 'error');
+                const errorMsg = response?.error || 'Failed to schedule appointment';
+                if (errorMsg.includes('already has an appointment')) {
+                    this.showDuplicateAppointmentPopup(errorMsg);
+                } else {
+                    this.showErrorPopup('Scheduling Failed', errorMsg);
+                }
             }
         } catch (error) {
             console.error('Create error:', error);
-            this.showToast('Failed to schedule appointment', 'error');
+            const errorMsg = error.message || 'Failed to schedule appointment';
+            if (errorMsg.includes('already has an appointment')) {
+                this.showDuplicateAppointmentPopup(errorMsg);
+            } else {
+                this.showErrorPopup('Error', errorMsg);
+            }
         } finally {
             this.showLoading(false);
             return response;
@@ -473,16 +483,21 @@ class AppointmentManager {
         try {
             this.showLoading(true);
             response = await this.apiCall('PUT', `/${id}`, data);
-            if (response.success) {
-                this.showToast('Appointment updated successfully', 'success');
+            if (response && response.success) {
                 this.closeModal();
+                this.showSuccessPopup('Appointment Updated!', 'The appointment details have been updated successfully.');
                 this.loadAppointments();
             } else {
-                this.showToast(response.error || 'Failed to update', 'error');
+                const errorMsg = response?.error || 'Failed to update appointment';
+                if (errorMsg.includes('already has an appointment')) {
+                    this.showDuplicateAppointmentPopup(errorMsg);
+                } else {
+                    this.showErrorPopup('Update Failed', errorMsg);
+                }
             }
         } catch (error) {
             console.error('Update error:', error);
-            this.showToast('Failed to update appointment', 'error');
+            this.showErrorPopup('Error', error.message || 'Failed to update appointment');
         } finally {
             this.showLoading(false);
             return response;
@@ -989,6 +1004,104 @@ class AppointmentManager {
             console.error("Network or Logic Error:", error);
             // Re-throw so specific actions can handle it (or return a mock failure object if preferring not to throw)
             return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Display centered popup dialogs using SweetAlert2
+     */
+    showToast(message, type = 'info') {
+        if (message && message.includes('already has an appointment')) {
+            this.showDuplicateAppointmentPopup(message);
+            return;
+        }
+        this.showPopup(message, type);
+    }
+
+    showPopup(message, type = 'info', title = null) {
+        let defaultTitle = 'Notification';
+        if (type === 'success') defaultTitle = 'Success!';
+        if (type === 'error') defaultTitle = 'Error';
+        if (type === 'warning') defaultTitle = 'Warning';
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: title || defaultTitle,
+                text: message,
+                icon: type,
+                position: 'center',
+                confirmButtonColor: type === 'error' ? '#dc2626' : (type === 'warning' ? '#d97706' : '#1f6b4a'),
+                confirmButtonText: 'OK'
+            });
+        } else {
+            alert(`${title || defaultTitle}: ${message}`);
+        }
+    }
+
+    showSuccessPopup(title, message) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: title || 'Success!',
+                text: message || 'Operation completed successfully.',
+                icon: 'success',
+                position: 'center',
+                confirmButtonColor: '#1f6b4a',
+                confirmButtonText: '<i class="fas fa-check"></i> OK',
+                timer: 3500,
+                timerProgressBar: true
+            });
+        } else {
+            alert(`${title}: ${message}`);
+        }
+    }
+
+    showDuplicateAppointmentPopup(message) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Duplicate Appointment Alert',
+                html: `
+                    <div style="text-align: center; padding: 10px 5px;">
+                        <div style="background-color: #fef3c7; color: #d97706; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;">
+                            <i class="fas fa-calendar-times" style="font-size: 2rem;"></i>
+                        </div>
+                        <h4 style="font-weight: 700; font-size: 1.15rem; color: #1e293b; margin-bottom: 8px;">
+                            Patient Already Has an Appointment
+                        </h4>
+                        <p style="color: #475569; font-size: 0.95rem; line-height: 1.5; margin-bottom: 12px;">
+                            ${message || 'Patient already has an active appointment scheduled on this date.'}
+                        </p>
+                        <div style="background-color: #f8fafc; border-left: 4px solid #f59e0b; padding: 10px 12px; border-radius: 6px; text-align: left; margin-top: 10px;">
+                            <p style="color: #64748b; font-size: 0.85rem; margin: 0;">
+                                <i class="fas fa-info-circle" style="color: #f59e0b; margin-right: 5px;"></i>
+                                <strong>Action Required:</strong> Please choose a different appointment date or inspect existing appointments for this patient.
+                            </p>
+                        </div>
+                    </div>
+                `,
+                position: 'center',
+                showConfirmButton: true,
+                confirmButtonText: '<i class="fas fa-check"></i> Understood',
+                confirmButtonColor: '#1f6b4a',
+                allowOutsideClick: false,
+                focusConfirm: true
+            });
+        } else {
+            alert(`Duplicate Appointment Alert:\n${message}`);
+        }
+    }
+
+    showErrorPopup(title, message) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: title || 'Error',
+                text: message || 'An unexpected error occurred.',
+                icon: 'error',
+                position: 'center',
+                confirmButtonColor: '#dc2626',
+                confirmButtonText: 'Close'
+            });
+        } else {
+            alert(`${title}: ${message}`);
         }
     }
 }

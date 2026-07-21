@@ -199,7 +199,13 @@ class AppointmentController extends BaseController
             $this->respondSuccess($appointment, 'Appointment scheduled successfully');
 
         } catch (Exception $e) {
-            $this->handleException($e);
+            // Return Bad Request (400) for validation errors like duplicate appointment
+            $msg = $e->getMessage();
+            if (strpos($msg, 'already has an appointment') !== false || strpos($msg, 'Invalid') !== false || strpos($msg, 'required') !== false) {
+                $this->respondBadRequest($msg);
+            } else {
+                $this->handleException($e);
+            }
         }
     }
 
