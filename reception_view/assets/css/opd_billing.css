@@ -1691,6 +1691,8 @@ table.bills-table {
     border-radius: 12px !important; /* Smaller radius */
     padding: 0.8rem 1rem !important; /* Reduced padding */
     box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+    grid-template-columns: repeat(2, 1fr) !important; /* 2 columns on mobile */
+    gap: 1rem !important; /* Slightly smaller gap on mobile */
 }
 .info-item {
     gap: 0.15rem !important; /* Tighter gap */
@@ -1765,6 +1767,7 @@ table.bills-table {
 .items-table {
     border-collapse: collapse !important;
     width: 100% !important;
+    min-width: 650px !important; /* Force horizontal scroll */
     font-size: 0.8rem !important; /* Smaller table text */
 }
 .items-table thead th {
@@ -3325,6 +3328,9 @@ table.bills-table {
         grid-template-columns: 1fr !important;
     }
     div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+    }
+    .patient-info-header {
         grid-template-columns: 1fr !important;
     }
 }
