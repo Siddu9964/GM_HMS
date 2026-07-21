@@ -219,9 +219,9 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                             <i class="fas fa-search"></i>
                             <input type="text" id="patient-id-input" class="search-input" placeholder="Enter Patient ID, UHID, or Mobile Number (e.g. PID-1001)">
                         </div>
-                        <button onclick="searchPrescription()" class="btn btn-primary" id="search-btn" style="background:#144D34; border:none; padding:0.65rem 1.4rem; border-radius:8px; font-weight:700;">
-                            <i class="fas fa-search mr-2"></i>
-                            Search History
+                        <button onclick="searchPrescription()" class="btn btn-primary" id="search-btn" style="background:#144D34 !important; color:#FFFFFF !important; border:none; padding:0.65rem 1.4rem; border-radius:8px; font-weight:700;">
+                            <i class="fas fa-search mr-2" style="color:#FFFFFF !important;"></i>
+                            <span style="color:#FFFFFF !important;">Search History</span>
                         </button>
                     </div>
                 </div>
@@ -343,8 +343,8 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     <button onclick="zoomImage(0.2)" class="btn btn-xs btn-outline" title="Zoom In"><i class="fas fa-search-plus"></i></button>
                     <button onclick="zoomImage(-0.2)" class="btn btn-xs btn-outline" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
                     <button onclick="resetZoom()" class="btn btn-xs btn-outline" title="Reset Zoom"><i class="fas fa-sync-alt"></i></button>
-                    <a id="image-download-link" href="#" download class="btn btn-xs btn-primary" style="background:#144D34; border:none; color:#fff;">
-                        <i class="fas fa-download"></i> Download Image
+                    <a id="image-download-link" href="#" download class="btn btn-xs btn-primary" style="background:#144D34 !important; border:none; color:#FFFFFF !important;">
+                        <i class="fas fa-download" style="color:#FFFFFF !important;"></i> <span style="color:#FFFFFF !important;">Download Image</span>
                     </a>
                     <button onclick="closeImageModal()" class="btn btn-xs btn-outline" style="border:none; font-size:1.2rem; margin-left:8px; cursor:pointer;">✕</button>
                 </div>
@@ -361,8 +361,8 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             <div class="viewer-modal-header">
                 <h3><i class="fas fa-file-pdf text-red-600"></i> Laboratory Report PDF Viewer</h3>
                 <div style="display: flex; align-items: center; gap: 6px;">
-                    <a id="pdf-download-link" href="#" download class="btn btn-xs btn-primary" style="background:#144D34; border:none; color:#fff;">
-                        <i class="fas fa-download"></i> Download Report PDF
+                    <a id="pdf-download-link" href="#" download class="btn btn-xs btn-primary" style="background:#144D34 !important; border:none; color:#FFFFFF !important;">
+                        <i class="fas fa-download" style="color:#FFFFFF !important;"></i> <span style="color:#FFFFFF !important;">Download Report PDF</span>
                     </a>
                     <button onclick="closePdfModal()" class="btn btn-xs btn-outline" style="border:none; font-size:1.2rem; margin-left:8px; cursor:pointer;">✕</button>
                 </div>
@@ -379,11 +379,11 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             <div class="modal-header no-print">
                 <h3><i class="fas fa-print"></i> Professional A4 Print Preview</h3>
                 <div style="display: flex; gap: 0.5rem;">
-                    <button onclick="window.print()" class="btn btn-primary" style="background:#144D34; border:none;">
-                        <i class="fas fa-print"></i> Print
+                    <button onclick="window.print()" class="btn btn-primary" style="background:#144D34 !important; color:#FFFFFF !important; border:none; font-weight:700;">
+                        <i class="fas fa-print" style="color:#FFFFFF !important; margin-right:4px;"></i> Print
                     </button>
-                    <button onclick="closePrescriptionModal()" class="btn btn-outline" style="background: white;">
-                        <i class="fas fa-times"></i> Close
+                    <button onclick="closePrescriptionModal()" class="btn btn-outline" style="background:#FFFFFF !important; color:#144D34 !important; border:1.5px solid #144D34 !important; font-weight:700;">
+                        <i class="fas fa-times" style="color:#144D34 !important; margin-right:4px;"></i> Close
                     </button>
                 </div>
             </div>

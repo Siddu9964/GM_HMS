@@ -3034,3 +3034,5 @@
 [21-Jul-2026 15:23:52 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/patients/PID-20260715-001, Method: GET
 [21-Jul-2026 15:24:04 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/appointments, Method: POST
 [21-Jul-2026 15:24:04 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/appointments, Method: GET
+[21-Jul-2026 15:30:16 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/patients, Method: GET
+[21-Jul-2026 15:41:04 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
