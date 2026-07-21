@@ -3192,7 +3192,11 @@ table.bills-table {
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
-    overflow: visible !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+}
+.bento-table {
+    min-width: 700px !important;
 }
 .bento-workspace {
     align-items: flex-start !important;
