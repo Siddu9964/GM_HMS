@@ -3281,3 +3281,43 @@ table.bills-table {
     background: #1f6b4a !important;
     color: #f3efe6 !important;
 }
+
+@media (max-width: 900px) {
+    .billing-stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    .billing-workspace {
+        grid-template-columns: 1fr !important;
+    }
+    .bento-workspace {
+        flex-direction: column !important;
+    }
+    .bento-ledger, .bento-sidebar {
+        width: 100% !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .billing-stats {
+        grid-template-columns: 1fr !important;
+    }
+    .form-row {
+        grid-template-columns: 1fr !important;
+    }
+    .billing-modal-card {
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 0 !important;
+    }
+    .bento-header-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .responsive-grid-2,
+    .responsive-grid-3 {
+        grid-template-columns: 1fr !important;
+    }
+    div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+    }
+}

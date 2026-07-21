@@ -71,7 +71,7 @@ $basePath = str_repeat('../', $depth);
                         <a href="<?php echo $basePath; ?>opd_billing.php" class="opd-item" data-pd="opd_billing"
                             style="--n:1">
                             <i class="fas fa-flask"></i>
-                            <span>Lab Test</span>
+                            <span>Opd Billing</span>
                         </a>
                     </div>
                 </div>

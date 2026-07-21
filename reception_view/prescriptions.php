@@ -99,6 +99,12 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             gap: 1.15rem;
         }
 
+        @media (max-width: 600px) {
+            .global-grid-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .global-card {
             background: #FBF9F3;
             border: 1.5px solid #E2E0D6;
@@ -191,6 +197,21 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             background: #EBE7DC;
             min-height: 350px;
         }
+
+        @media (max-width: 600px) {
+            .kpi-summary-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .search-wrapper {
+                flex-direction: column;
+            }
+            .search-wrapper button {
+                width: 100%;
+            }
+            .search-container {
+                padding: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -245,7 +266,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 <!-- Global Recent Prescriptions (Advance UI/UX Layout) -->
                 <div id="all-prescriptions-section">
                     <!-- KPI Summary Stats Bar -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                    <div class="kpi-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
                         <div style="background: #FBF9F3; border: 1.5px solid #E2E0D6; border-radius: 12px; padding: 0.9rem 1.1rem; display: flex; align-items: center; gap: 0.85rem;">
                             <div style="width: 44px; height: 44px; border-radius: 10px; background: #E8F4EC; color: #144D34; border: 1px solid #C6E6D2; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
                                 <i class="fas fa-file-medical"></i>
