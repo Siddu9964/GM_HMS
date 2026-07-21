@@ -29,6 +29,78 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
+ * Helper to parse soap_plan / medicines / plan_text into structured data
+ */
+function parseSoapPlanJS(presc) {
+    let medicines = [];
+    let planText = presc.plan_text || '';
+
+    if (!presc) return { medicines: [], planText: '' };
+
+    // 1. Check presc.medicines first
+    if (presc.medicines) {
+        if (Array.isArray(presc.medicines)) {
+            medicines = presc.medicines;
+        } else if (typeof presc.medicines === 'string') {
+            try {
+                const parsed = JSON.parse(presc.medicines);
+                if (Array.isArray(parsed)) medicines = parsed;
+                else if (parsed && typeof parsed === 'object') {
+                    if (Array.isArray(parsed.medications)) medicines = parsed.medications;
+                    else if (parsed.name || parsed.medicine_name) medicines = [parsed];
+                    else if (parsed.plan) planText = parsed.plan;
+                }
+            } catch (e) {
+                if (!planText && presc.medicines.trim()) planText = presc.medicines.trim();
+            }
+        }
+    }
+
+    // 2. Check presc.soap_plan if medicines is still empty
+    if (medicines.length === 0 && presc.soap_plan) {
+        if (Array.isArray(presc.soap_plan)) {
+            medicines = presc.soap_plan;
+        } else if (typeof presc.soap_plan === 'object' && presc.soap_plan !== null) {
+            if (Array.isArray(presc.soap_plan.medications)) {
+                medicines = presc.soap_plan.medications;
+                if (!planText && presc.soap_plan.plan) planText = presc.soap_plan.plan;
+            } else if (Array.isArray(presc.soap_plan)) {
+                medicines = presc.soap_plan;
+            } else if (presc.soap_plan.plan) {
+                planText = presc.soap_plan.plan;
+            } else if (presc.soap_plan.name || presc.soap_plan.medicine_name) {
+                medicines = [presc.soap_plan];
+            }
+        } else if (typeof presc.soap_plan === 'string') {
+            const trimmed = presc.soap_plan.trim();
+            if (trimmed) {
+                try {
+                    const parsed = JSON.parse(trimmed);
+                    if (Array.isArray(parsed)) {
+                        medicines = parsed;
+                    } else if (parsed && typeof parsed === 'object') {
+                        if (Array.isArray(parsed.medications)) {
+                            medicines = parsed.medications;
+                            if (!planText && parsed.plan) planText = parsed.plan;
+                        } else if (parsed.name || parsed.medicine_name) {
+                            medicines = [parsed];
+                        } else if (parsed.plan) {
+                            planText = parsed.plan;
+                        } else if (parsed.instructions) {
+                            planText = parsed.instructions;
+                        }
+                    }
+                } catch (e) {
+                    if (!planText) planText = trimmed;
+                }
+            }
+        }
+    }
+
+    return { medicines, planText };
+}
+
+/**
  * STEP 1 & 12: Search consultations by patient_id or phone or UHID
  */
 async function searchPrescription() {
@@ -138,7 +210,10 @@ function renderGlobalList(prescriptions) {
     const totalCount = prescriptions.length;
     const todayCount = prescriptions.filter(p => p.prescription_date === todayStr).length;
     const imageCount = prescriptions.filter(p => p.has_prescription_image).length;
-    const medsCount = prescriptions.filter(p => p.medicines && p.medicines.length > 0).length;
+    const medsCount = prescriptions.filter(p => {
+        const { medicines, planText } = parseSoapPlanJS(p);
+        return medicines.length > 0 || Boolean(planText);
+    }).length;
 
     const elTotal = document.getElementById('kpi-total-count');
     const elToday = document.getElementById('kpi-today-count');
@@ -153,8 +228,11 @@ function renderGlobalList(prescriptions) {
     // Apply Filters
     const filterText = (document.getElementById('global-search-filter')?.value || '').toLowerCase().trim();
     let filtered = prescriptions.filter(p => {
+        const { medicines, planText } = parseSoapPlanJS(p);
+        const hasPlan = medicines.length > 0 || Boolean(planText);
+
         if (globalFilterType === 'image' && !p.has_prescription_image) return false;
-        if (globalFilterType === 'meds' && (!p.medicines || p.medicines.length === 0)) return false;
+        if (globalFilterType === 'meds' && !hasPlan) return false;
 
         if (filterText) {
             const searchHaystack = [
@@ -244,9 +322,15 @@ function renderGlobalGridView(prescriptions, listContainer) {
                 <!-- Badges & Action Bar -->
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; pt-2; border-top:1px solid #E8E6DC;">
                     <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
-                        ${medsCount > 0 ? `
-                            <span class="vital-pill" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important; font-weight:800;"><i class="fas fa-pills" style="color:#144D34 !important;"></i> ${medsCount} Medicines</span>
-                        ` : ''}
+                        ${(() => {
+                            const { medicines, planText } = parseSoapPlanJS(p);
+                            if (medicines.length > 0) {
+                                return `<span class="vital-pill" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important; font-weight:800;"><i class="fas fa-pills" style="color:#144D34 !important;"></i> ${medicines.length} Medicines</span>`;
+                            } else if (planText) {
+                                return `<span class="vital-pill" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important; font-weight:800;"><i class="fas fa-file-medical-alt" style="color:#144D34 !important;"></i> Plan Prescribed</span>`;
+                            }
+                            return '';
+                        })()}
                         ${p.has_prescription_image ? `
                             <span class="vital-pill" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important; font-weight:800;"><i class="fas fa-camera" style="color:#144D34 !important;"></i> Handwritten</span>
                         ` : `
@@ -438,34 +522,54 @@ function renderConsultationCard(c, idx, labResults) {
     const patientLabResults = labResults || [];
 
     // Prescribed Medicines HTML
-    const medicines = c.medicines || [];
-    const medicinesTableHtml = medicines.length > 0 ? `
-        <div style="margin-top:0.75rem;">
-            <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:#144D34 !important; letter-spacing:0.04em; margin-bottom:4px;">
-                <i class="fas fa-pills" style="color:#144D34 !important;"></i> Prescribed Medications
-            </div>
-            <table class="med-table-pro" style="width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; border:1px solid #DEDACF;">
-                <thead>
-                    <tr style="background:#144D34 !important; color:#FFFFFF !important; font-size:0.75rem; text-transform:uppercase;">
-                        <th style="padding:6px 10px; text-align:left; color:#FFFFFF !important;">Medicine</th>
-                        <th style="padding:6px 10px; text-align:left; color:#FFFFFF !important;">Dosage</th>
-                        <th style="padding:6px 10px; text-align:left; color:#FFFFFF !important;">Frequency</th>
-                        <th style="padding:6px 10px; text-align:left; color:#FFFFFF !important;">Duration</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${medicines.map(m => `
-                        <tr style="border-bottom:1px solid #E2DDD0; font-size:0.82rem; color:#144D34 !important;">
-                            <td style="padding:6px 10px; font-weight:800; color:#144D34 !important;">${m.name || m.medicine_name || 'Medicine'}</td>
-                            <td style="padding:6px 10px; font-weight:600; color:#144D34 !important;">${m.dosage || '-'}</td>
-                            <td style="padding:6px 10px; font-weight:800; color:#0D9488 !important;">${m.frequency || m.freq || '-'}</td>
-                            <td style="padding:6px 10px; color:#144D34 !important;">${m.duration || '-'}</td>
+    const { medicines, planText } = parseSoapPlanJS(c);
+    let medicinesTableHtml = '';
+
+    if (medicines.length > 0) {
+        medicinesTableHtml = `
+            <div style="margin-top:0.75rem;">
+                <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:#144D34 !important; letter-spacing:0.04em; margin-bottom:4px;">
+                    <i class="fas fa-pills" style="color:#144D34 !important;"></i> Prescribed Medications
+                </div>
+                <table class="med-table-pro" style="width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; border:1px solid #DEDACF;">
+                    <thead>
+                        <tr style="background:#144D34 !important; color:#FFFFFF !important; font-size:0.75rem; text-transform:uppercase;">
+                            <th style="padding:6px 10px; text-align:left; color:#FFFFFF !important;">Medicine</th>
+                            <th style="padding:6px 10px; text-align:left; color:#FFFFFF !important;">Dosage</th>
+                            <th style="padding:6px 10px; text-align:left; color:#FFFFFF !important;">Frequency</th>
+                            <th style="padding:6px 10px; text-align:left; color:#FFFFFF !important;">Duration</th>
                         </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        </div>
-    ` : '';
+                    </thead>
+                    <tbody>
+                        ${medicines.map(m => `
+                            <tr style="border-bottom:1px solid #E2DDD0; font-size:0.82rem; color:#144D34 !important;">
+                                <td style="padding:6px 10px; font-weight:800; color:#144D34 !important;">${m.name || m.medicine_name || m.title || 'Medicine'}</td>
+                                <td style="padding:6px 10px; font-weight:600; color:#144D34 !important;">${m.dosage || '-'}</td>
+                                <td style="padding:6px 10px; font-weight:800; color:#0D9488 !important;">${m.frequency || m.freq || '-'}</td>
+                                <td style="padding:6px 10px; color:#144D34 !important;">${m.duration || '-'}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                ${planText ? `
+                    <div style="margin-top:6px; background:#fff; border:1px solid #DEDACF; border-radius:8px; padding:8px 12px; font-size:0.82rem; color:#144D34 !important; font-weight:700; white-space:pre-line;">
+                        <strong style="color:#144D34 !important;">Treatment Instructions:</strong> ${planText}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    } else if (planText) {
+        medicinesTableHtml = `
+            <div style="margin-top:0.75rem; background:#fff; border:1.5px solid #DEDACF; border-radius:10px; padding:10px 14px;">
+                <div style="font-size:0.78rem; font-weight:800; text-transform:uppercase; color:#144D34 !important; margin-bottom:4px;">
+                    <i class="fas fa-file-medical-alt" style="color:#144D34 !important;"></i> Prescribed Treatment Plan & Instructions
+                </div>
+                <div style="font-size:0.85rem; color:#144D34 !important; font-weight:700; white-space:pre-line; line-height:1.5;">
+                    ${planText}
+                </div>
+            </div>
+        `;
+    }
 
     // STEP 5: Prescription Image HTML
     let imageHtml = '';
@@ -759,21 +863,43 @@ async function viewProfessionalPrescription(prescriptionId) {
     const modal = document.getElementById('prescription-modal');
     const container = document.getElementById('professional-prescription-a4');
 
-    let medicines = presc.medicines || [];
-    if (typeof medicines === 'string') {
-        try { medicines = JSON.parse(medicines); } catch (e) { medicines = []; }
-    }
+    const { medicines, planText } = parseSoapPlanJS(presc);
 
-    const medicinesHTML = medicines.length > 0 ? medicines.map(m => `
-        <tr>
-            <td><div class="med-pro-name">${m.name || m.medicine_name || 'N/A'}</div></td>
-            <td style="font-weight: 600;">${m.dosage || '-'}</td>
-            <td>${m.timing || 'After Food'}</td>
-            <td style="font-weight: 700; color: #0D9488;">${m.frequency || m.freq || '-'}</td>
-            <td>${m.duration || '-'}</td>
-            <td class="med-pro-qty">${m.qty || '0'}</td>
-        </tr>
-    `).join('') : '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 2rem;">No medications prescribed</td></tr>';
+    let medicinesHTML = '';
+    if (medicines.length > 0) {
+        medicinesHTML = medicines.map(m => `
+            <tr>
+                <td><div class="med-pro-name">${m.name || m.medicine_name || m.title || 'N/A'}</div>${(m.instructions || m.notes || m.purpose) ? `<div class="med-pro-sub">${m.instructions || m.notes || m.purpose}</div>` : ''}</td>
+                <td style="font-weight: 600;">${m.dosage || '-'}</td>
+                <td>${m.timing || 'After Food'}</td>
+                <td style="font-weight: 700; color: #0D9488;">${m.frequency || m.freq || '-'}</td>
+                <td>${m.duration || '-'}</td>
+                <td class="med-pro-qty">${m.qty || '0'}</td>
+            </tr>
+        `).join('');
+
+        if (planText) {
+            medicinesHTML += `
+                <tr>
+                    <td colspan="6" style="padding: 10px 12px; background: #F8FAFC; border-top: 1px solid #CBD5E1;">
+                        <div style="font-weight: 800; color: #0D9488; font-size: 10px; text-transform: uppercase; margin-bottom: 2px;">Additional Plan / Instructions:</div>
+                        <div style="font-size: 11px; color: #1E293B; white-space: pre-line; line-height: 1.4;">${planText}</div>
+                    </td>
+                </tr>
+            `;
+        }
+    } else if (planText) {
+        medicinesHTML = `
+            <tr>
+                <td colspan="6" style="padding: 16px 14px; background: #FFFFFF; font-size: 11px; color: #1E293B; line-height: 1.5; white-space: pre-line;">
+                    <div style="font-weight: 800; color: #0D9488; font-size: 10px; text-transform: uppercase; margin-bottom: 4px;">Prescribed Treatment Plan & Instructions:</div>
+                    ${planText}
+                </td>
+            </tr>
+        `;
+    } else {
+        medicinesHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 2rem;">No medications prescribed</td></tr>';
+    }
 
     container.innerHTML = `
         <div class="presc-inner-frame">

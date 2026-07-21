@@ -120,22 +120,10 @@ class PrescriptionModel
                 }
             }
 
-            // Decode medicines array from soap_plan
-            $row['medicines'] = [];
-            if (!empty($row['soap_plan'])) {
-                if (is_array($row['soap_plan'])) {
-                    $row['medicines'] = $row['soap_plan'];
-                } else {
-                    $planData = json_decode($row['soap_plan'], true);
-                    if (is_array($planData)) {
-                        if (isset($planData['medications']) && is_array($planData['medications'])) {
-                            $row['medicines'] = $planData['medications'];
-                        } else {
-                            $row['medicines'] = $planData;
-                        }
-                    }
-                }
-            }
+            // Decode medicines array and plan_text from soap_plan
+            $parsedPlan = $this->parseSoapPlanData($row['soap_plan'] ?? null);
+            $row['medicines'] = $parsedPlan['medicines'];
+            $row['plan_text'] = $parsedPlan['plan_text'];
 
             // Inject system settings
             $row['hospital_name'] = $settings['system_name'] ?? 'GM HMS Multispeciality';
@@ -285,14 +273,10 @@ class PrescriptionModel
             $p['prescription_image_url'] = $this->normalizeWebUrl($p['prescription_image'] ?? null);
             $p['has_prescription_image'] = !empty($p['prescription_image_url']);
             
-            // Extract medicines array
-            $p['medicines'] = [];
-            if (!empty($p['soap_plan'])) {
-                $plan = json_decode($p['soap_plan'], true);
-                if (is_array($plan)) {
-                    $p['medicines'] = isset($plan['medications']) ? $plan['medications'] : $plan;
-                }
-            }
+            // Extract medicines array and plan_text
+            $parsedPlan = $this->parseSoapPlanData($p['soap_plan'] ?? null);
+            $p['medicines'] = $parsedPlan['medicines'];
+            $p['plan_text'] = $parsedPlan['plan_text'];
 
             // Extract vitals array
             $p['parsed_vitals'] = [];
@@ -332,6 +316,9 @@ class PrescriptionModel
 
         $p = $this->db->fetchOne($sql, [$prescriptionId, $prescriptionId]);
         if ($p) {
+            $parsedPlan = $this->parseSoapPlanData($p['soap_plan'] ?? null);
+            $p['medicines'] = $parsedPlan['medicines'];
+            $p['plan_text'] = $parsedPlan['plan_text'];
             $p['prescription_image_url'] = $this->normalizeWebUrl($p['prescription_image']);
             $settings = $this->getSystemSettings();
             $p['hospital_name'] = $settings['system_name'] ?? 'GM HMS Multispeciality';
@@ -383,5 +370,62 @@ class PrescriptionModel
         $today = new \DateTime();
         $age = $today->diff($birthDate);
         return $age->y;
+    }
+
+    public function parseSoapPlanData($soapPlan)
+    {
+        $medicines = [];
+        $planText = '';
+
+        if (empty($soapPlan)) {
+            return ['medicines' => [], 'plan_text' => ''];
+        }
+
+        if (is_array($soapPlan)) {
+            $data = $soapPlan;
+        } else if (is_string($soapPlan)) {
+            $trimmed = trim($soapPlan);
+            $decoded = json_decode($trimmed, true);
+            if (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) {
+                $data = (array)$decoded;
+            } else {
+                return ['medicines' => [], 'plan_text' => $trimmed];
+            }
+        } else {
+            return ['medicines' => [], 'plan_text' => ''];
+        }
+
+        if (isset($data['medications']) && is_array($data['medications'])) {
+            $medicines = $data['medications'];
+            if (isset($data['plan']) && is_string($data['plan'])) {
+                $planText = $data['plan'];
+            } else if (isset($data['instructions']) && is_string($data['instructions'])) {
+                $planText = $data['instructions'];
+            } else if (isset($data['notes']) && is_string($data['notes'])) {
+                $planText = $data['notes'];
+            }
+        } else if (isset($data[0]) && (is_array($data[0]) || is_object($data[0]))) {
+            $medicines = $data;
+        } else if (isset($data['name']) || isset($data['medicine_name'])) {
+            $medicines = [$data];
+        } else {
+            if (isset($data['plan']) && is_string($data['plan'])) {
+                $planText = $data['plan'];
+            } else if (isset($data['instructions']) && is_string($data['instructions'])) {
+                $planText = $data['instructions'];
+            } else if (isset($data['notes']) && is_string($data['notes'])) {
+                $planText = $data['notes'];
+            } else {
+                $parts = [];
+                foreach ($data as $k => $v) {
+                    if (is_string($v) && !empty($v)) {
+                        $parts[] = ucfirst($k) . ": " . $v;
+                    }
+                }
+                $planText = implode("\n", $parts);
+            }
+        }
+
+        return ['medicines' => $medicines, 'plan_text' => $planText];
     }
 }
