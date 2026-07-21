@@ -799,10 +799,23 @@ function openImageModal(url) {
     const downloadBtn = document.getElementById('image-download-link');
     if (!modal || !img) return;
 
+    if (!url || typeof url !== 'string') return;
+
+    // Clean JSON quotes, brackets, or backslashes if present in url
+    let cleanUrl = url.trim().replace(/^["'\[]+|["'\]]+$/g, '');
+    if (cleanUrl.startsWith('C:') || cleanUrl.includes('\\')) {
+        cleanUrl = cleanUrl.replace(/\\/g, '/');
+        const match = cleanUrl.match(/(assets\/.*|uploads\/.*)/i);
+        if (match) {
+            const hasGmHms = window.location.pathname.includes('/GM_HMS/');
+            cleanUrl = (hasGmHms ? '/GM_HMS/' : '/') + match[1].replace(/^\//, '');
+        }
+    }
+
     zoomLevel = 1;
     img.style.transform = `scale(${zoomLevel})`;
-    img.src = url;
-    if (downloadBtn) downloadBtn.href = url;
+    img.src = cleanUrl;
+    if (downloadBtn) downloadBtn.href = cleanUrl;
 
     modal.style.display = 'flex';
 }

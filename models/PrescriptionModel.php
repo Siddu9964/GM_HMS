@@ -221,18 +221,30 @@ class PrescriptionModel
     {
         if (empty($path)) return null;
 
-        // Decode JSON array strings like ["C:\/xampp\/htdocs\\GM_HMS\\assets\\precision_data\\file.png"]
-        if (is_string($path) && (strpos($path, '[') === 0 || strpos($path, '{') === 0)) {
+        if (is_array($path)) {
+            $path = reset($path);
+        }
+
+        if (!is_string($path)) return null;
+
+        $path = trim($path);
+        if ($path === '' || $path === 'null' || $path === '[]') return null;
+
+        // Decode JSON array or string if encoded
+        if (strpos($path, '[') === 0 || strpos($path, '{') === 0 || strpos($path, '"') === 0) {
             $decoded = json_decode($path, true);
             if (is_array($decoded) && !empty($decoded)) {
                 $path = reset($decoded);
+            } else if (is_string($decoded) && !empty($decoded)) {
+                $path = $decoded;
             }
         }
 
-        if (!is_string($path) || trim($path) === '') return null;
+        // Clean trailing/leading quotes, brackets, spaces, and backslashes
+        $cleanPath = trim((string)$path, " \t\n\r\0\x0B\"'[]");
+        $cleanPath = str_replace('\\', '/', $cleanPath);
 
-        // Normalize backslashes to forward slashes
-        $cleanPath = str_replace('\\', '/', trim($path));
+        if (empty($cleanPath)) return null;
 
         // Determine base URL path prefix (/GM_HMS/ or /) dynamically
         $uri = $_SERVER['REQUEST_URI'] ?? '';
