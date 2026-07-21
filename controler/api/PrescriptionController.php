@@ -87,16 +87,10 @@ class PrescriptionController extends BaseController {
             $prescriptions = $this->model->getAllPrescriptions($limit);
             
             foreach ($prescriptions as &$p) {
-                // Extract medicines from soap_plan (from consultation)
-                $p['medicines'] = [];
-                if (!empty($p['soap_plan'])) {
-                    $plan = json_decode($p['soap_plan'], true);
-                    if (isset($plan['medications'])) {
-                        $p['medicines'] = $plan['medications'];
-                    }
-                }
-                
-                $p['age'] = $this->model->calculateAge($p['birth_date']);
+                $parsed = $this->model->parseSoapPlanData($p['soap_plan'] ?? null);
+                $p['medicines'] = $parsed['medicines'];
+                $p['plan_text'] = $parsed['plan_text'];
+                $p['age'] = $this->model->calculateAge($p['birth_date'] ?? null);
             }
 
             $this->respondSuccess($prescriptions);
@@ -186,14 +180,9 @@ class PrescriptionController extends BaseController {
             $prescriptions = $this->db->fetchAll($sql, [$doctorId]);
             
             foreach ($prescriptions as &$p) {
-                // Extract medicines from soap_plan
-                $p['medicines'] = [];
-                if (!empty($p['soap_plan'])) {
-                    $plan = json_decode($p['soap_plan'], true);
-                    if (isset($plan['medications'])) {
-                        $p['medicines'] = $plan['medications'];
-                    }
-                }
+                $parsed = $this->model->parseSoapPlanData($p['soap_plan'] ?? null);
+                $p['medicines'] = $parsed['medicines'];
+                $p['plan_text'] = $parsed['plan_text'];
             }
 
             $this->respondSuccess(['prescriptions' => $prescriptions]);
@@ -316,13 +305,9 @@ class PrescriptionController extends BaseController {
                 }
             } else {
                 // Process consultation data
-                $prescription['medicines'] = [];
-                if (!empty($prescription['soap_plan'])) {
-                    $plan = json_decode($prescription['soap_plan'], true);
-                    if (isset($plan['medications'])) {
-                        $prescription['medicines'] = $plan['medications'];
-                    }
-                }
+                $parsed = $this->model->parseSoapPlanData($prescription['soap_plan'] ?? null);
+                $prescription['medicines'] = $parsed['medicines'];
+                $prescription['plan_text'] = $parsed['plan_text'];
                 
                 // Construct general_instructions from valid columns
                 $notes = [];
@@ -371,14 +356,9 @@ class PrescriptionController extends BaseController {
             $history = $this->db->fetchAll($sql, [$patientId]);
             
             foreach ($history as &$h) {
-                // Extract medicines
-                $h['medicines'] = [];
-                if (!empty($h['soap_plan'])) {
-                    $plan = json_decode($h['soap_plan'], true);
-                    if (is_array($plan)) {
-                        $h['medicines'] = isset($plan['medications']) ? $plan['medications'] : $plan;
-                    }
-                }
+                $parsed = $this->model->parseSoapPlanData($h['soap_plan'] ?? null);
+                $h['medicines'] = $parsed['medicines'];
+                $h['plan_text'] = $parsed['plan_text'];
                 
                 // Construct general_instructions from valid columns
                 $notes = [];
@@ -425,13 +405,9 @@ class PrescriptionController extends BaseController {
             $latest = $this->db->fetchOne($sql, [$patientId]);
 
             if ($latest) {
-                $latest['medicines'] = [];
-                if (!empty($latest['soap_plan'])) {
-                    $plan = json_decode($latest['soap_plan'], true);
-                    if (is_array($plan)) {
-                        $latest['medicines'] = isset($plan['medications']) ? $plan['medications'] : $plan;
-                    }
-                }
+                $parsed = $this->model->parseSoapPlanData($latest['soap_plan'] ?? null);
+                $latest['medicines'] = $parsed['medicines'];
+                $latest['plan_text'] = $parsed['plan_text'];
                 $this->respondSuccess($latest);
             } else {
                 $this->respondSuccess([]); 
