@@ -267,6 +267,8 @@ $router->add('POST', '#^/api/reception/profile/update/?$#', 'GM_HMS\Controllers\
 $router->add('GET', '#^/api/reception/dashboard/summary/?$#', 'GM_HMS\Controllers\api\ReceptionController', 'getDashboardSummary');
 $router->add('GET', '#^/api/reception/dashboard/today-appointments/?$#', 'GM_HMS\Controllers\api\ReceptionController', 'getTodayAppointments');
 $router->add('GET', '#^/api/reception/dashboard/recent-patients/?$#', 'GM_HMS\Controllers\api\ReceptionController', 'getRecentPatients');
+$router->add('GET', '#^/api/referred-doctors/?$#', 'GM_HMS\Controllers\api\ReceptionController', 'getReferredDoctors');
+$router->add('POST', '#^/api/referred-doctors/?$#', 'GM_HMS\Controllers\api\ReceptionController', 'createReferredDoctor');
 
 // OPD Billing Routes
 $router->add('GET', '#^/api/billing/opd/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'getAllBills');

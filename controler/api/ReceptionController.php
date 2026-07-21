@@ -167,4 +167,52 @@ class ReceptionController extends BaseController {
             $this->handleException($e);
         }
     }
+
+    /**
+     * Get all referred doctors
+     */
+    public function getReferredDoctors() {
+        try {
+            // $this->requireAuth();
+            $doctors = $this->db->fetchAll(
+                "SELECT sl_no, doctor_name, email, phone, creatd_by
+                 FROM referred_doctor
+                 ORDER BY doctor_name ASC"
+            );
+            $this->respondSuccess($doctors);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    /**
+     * Create a new referred doctor
+     */
+    public function createReferredDoctor() {
+        try {
+            $this->restrictMethod('POST');
+            // $this->requireAuth();
+            
+            $data = $this->getJsonInput();
+            if (empty($data['doctor_name'])) {
+                $this->respondBadRequest('Doctor name is required');
+            }
+            
+            $result = $this->db->execute(
+                "INSERT INTO referred_doctor (doctor_name, email, phone) VALUES (?, ?, ?)",
+                [$data['doctor_name'], $data['email'] ?? null, $data['phone'] ?? null]
+            );
+            
+            $insertId = $result['insert_id'] ?? null;
+            
+            $this->respondSuccess([
+                'sl_no' => $insertId,
+                'doctor_name' => $data['doctor_name'],
+                'email' => $data['email'] ?? null,
+                'phone' => $data['phone'] ?? null
+            ], 'Referred doctor added successfully');
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
 }

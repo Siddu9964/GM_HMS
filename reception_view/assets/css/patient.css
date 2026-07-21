@@ -192,6 +192,9 @@
     .ref-form-grid, .form-grid {
         grid-template-columns: repeat(2, 1fr) !important;
     }
+    .ref-col-3, .ref-col-4 {
+        grid-column: span 2 !important;
+    }
 }
 
 @media (max-width: 600px) {
@@ -240,6 +243,7 @@
 
 .ref-field input[type="text"],
 .ref-field input[type="tel"],
+.ref-field input[type="email"],
 .ref-field input[type="date"],
 .ref-field input[type="number"],
 .ref-field select,
@@ -445,6 +449,7 @@ input[disabled] {
 
 .input-group input[type="text"],
 .input-group input[type="tel"],
+.input-group input[type="email"],
 .input-group input[type="date"],
 .input-group input[type="number"],
 .input-group select,

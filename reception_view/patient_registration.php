@@ -228,6 +228,11 @@ include 'includes/reception_navbar.php';
                         </div>
 
                         <div class="ref-field ref-col-1">
+                            <label>Email Address</label>
+                            <input type="email" name="email" placeholder="Email Address">
+                        </div>
+
+                        <div class="ref-field ref-col-1">
                             <label>Aadhar Number</label>
                             <input type="text" id="patientAadhar" name="aadhar" placeholder="XXXX XXXX XXXX" maxlength="14">
                         </div>
@@ -280,21 +285,7 @@ include 'includes/reception_navbar.php';
                             </select>
                         </div>
 
-                        <div class="ref-field ref-col-1">
-                            <label>Vaccine Status</label>
-                            <select name="vaccine_status">
-                                <option value="">Select Status</option>
-                                <option value="Not Vaccinated">Not Vaccinated</option>
-                                <option value="Partially Vaccinated">Partially Vaccinated</option>
-                                <option value="Fully Vaccinated">Fully Vaccinated</option>
-                                <option value="Booster Taken">Booster Taken</option>
-                            </select>
-                        </div>
 
-                        <div class="ref-field ref-col-4">
-                            <label>Occupation</label>
-                            <input type="text" name="occupation" placeholder="Patient Occupation">
-                        </div>
 
                         <!-- Section 3: Location & Address -->
                         <div class="ref-section-title">
@@ -355,6 +346,56 @@ include 'includes/reception_navbar.php';
                         <div class="ref-field ref-col-4">
                             <label>Full Address</label>
                             <textarea name="address" rows="2" placeholder="Full residential address..."></textarea>
+                        </div>
+
+                        <!-- Section 4: Referral Information -->
+                        <div class="ref-section-title">
+                            <i class="fas fa-handshake"></i> Referral Information
+                        </div>
+
+                        <div class="ref-field ref-col-2">
+                            <label>Referred By</label>
+                            <select name="referred_by" id="referredBySelect" onchange="toggleDoctorReferral()">
+                                <option value="">Select</option>
+                                <option value="Online">Online</option>
+                                <option value="Friends">Friends</option>
+                                <option value="Relatives">Relatives</option>
+                                <option value="Doctor">Doctor</option>
+                                <option value="Walk-in">Walk-in</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+
+                        <div class="ref-field ref-col-2" id="standardReferralNameDiv">
+                            <label>Referral Name</label>
+                            <input type="text" name="referral_name" id="referral_name_input" placeholder="Referral Name">
+                        </div>
+
+                        <div class="ref-field ref-col-2" id="doctorSearchDiv" style="display: none;">
+                            <label>Doctor Name <span class="req">*</span></label>
+                            <select id="existingDoctorSelect" style="width: 100%;">
+                                <option value="">Search or add new doctor...</option>
+                            </select>
+                            <input type="hidden" name="is_new_doctor" id="is_new_doctor" value="0">
+                        </div>
+
+                        <!-- Doctor Extra Details -->
+                        <div id="doctorExtraDetailsDiv" class="ref-col-4" style="display: none; padding-top: 12px; margin-bottom: 8px;">
+                            <h4 style="margin-top: 0; margin-bottom: 16px; color: #1e293b; font-size: 14px;"><i class="fas fa-user-md" style="color: #1f6b4a;"></i> New Doctor Details</h4>
+                            <div class="ref-form-grid">
+                                <div class="ref-field ref-col-2" style="margin: 0;">
+                                    <label>Phone Number</label>
+                                    <input type="tel" name="ref_doctor_phone" id="ref_doctor_phone" placeholder="Phone Number">
+                                </div>
+                                <div class="ref-field ref-col-2" style="margin: 0;">
+                                    <label>Email Address</label>
+                                    <input type="email" name="ref_doctor_email" id="ref_doctor_email" placeholder="Email Address">
+                                </div>
+                                <div class="ref-field ref-col-4" style="margin: 0;">
+                                    <label>Address</label>
+                                    <input type="text" name="ref_doctor_address" id="ref_doctor_address" placeholder="Clinic/Hospital Address">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -557,6 +598,100 @@ include 'includes/reception_navbar.php';
                 sessionStorage.setItem('currentPatientId', selectedPatientId);
                 window.location.href = `patient_profile.php`;
             }
+        }
+
+        function toggleDoctorReferral() {
+            const select = document.getElementById('referredBySelect');
+            const standardDiv = document.getElementById('standardReferralNameDiv');
+            const doctorSearchDiv = document.getElementById('doctorSearchDiv');
+            const extraDetailsDiv = document.getElementById('doctorExtraDetailsDiv');
+            
+            if (select.value === 'Doctor') {
+                standardDiv.style.display = 'none';
+                doctorSearchDiv.style.display = 'block';
+                
+                // Initialize select2 if not already initialized
+                if (!$('#existingDoctorSelect').hasClass('select2-hidden-accessible')) {
+                    fetchReferredDoctors();
+                }
+            } else {
+                standardDiv.style.display = 'block';
+                doctorSearchDiv.style.display = 'none';
+                extraDetailsDiv.style.display = 'none';
+                document.getElementById('is_new_doctor').value = '0';
+            }
+        }
+        
+        function fetchReferredDoctors() {
+            $('#existingDoctorSelect').select2({
+                placeholder: "Search or add new doctor...",
+                allowClear: true,
+                tags: true,
+                createTag: function (params) {
+                    var term = $.trim(params.term);
+                    if (term === '') {
+                        return null;
+                    }
+                    return {
+                        id: 'new:' + term,
+                        text: term + ' (Add New)',
+                        newTag: true
+                    }
+                }
+            });
+            
+            // Fetch doctors list from API
+            fetch('/GM_HMS/api/referred-doctors')
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success && result.data) {
+                        const select = $('#existingDoctorSelect');
+                        select.empty().append(new Option('Search existing doctor...', '', true, true));
+                        
+                        result.data.forEach(doc => {
+                            const option = new Option(doc.doctor_name, doc.sl_no, false, false);
+                            // Store extra data for later
+                            $(option).data('email', doc.email);
+                            $(option).data('phone', doc.phone);
+                            select.append(option);
+                        });
+                        
+                        // Handle change event to update the details automatically
+                        select.on('change', function() {
+                            const val = $(this).val();
+                            const selectedOption = $(this).find(':selected');
+                            const referralNameInput = document.getElementById('referral_name_input');
+                            const phoneInput = document.getElementById('ref_doctor_phone');
+                            const emailInput = document.getElementById('ref_doctor_email');
+                            const extraDetailsDiv = document.getElementById('doctorExtraDetailsDiv');
+                            const isNewDocInput = document.getElementById('is_new_doctor');
+                            
+                            if (val && val.startsWith('new:')) {
+                                // It's a new doctor
+                                const newName = val.substring(4);
+                                referralNameInput.value = newName;
+                                extraDetailsDiv.style.display = 'grid'; // Show the extra fields
+                                phoneInput.readOnly = false;
+                                emailInput.readOnly = false;
+                                phoneInput.value = '';
+                                emailInput.value = '';
+                                phoneInput.focus();
+                                isNewDocInput.value = '1';
+                            } else if (val) {
+                                // Existing doctor
+                                referralNameInput.value = selectedOption.text();
+                                extraDetailsDiv.style.display = 'none'; // Hide extra fields for existing doctors
+                                isNewDocInput.value = '0';
+                            } else {
+                                // Cleared
+                                referralNameInput.value = '';
+                                extraDetailsDiv.style.display = 'none'; // Hide extra fields if cleared
+                                isNewDocInput.value = '0';
+                            }
+                        });
+                    }
+                })
+                .catch(err => console.error("Error fetching referred doctors:", err));
         }
     </script>
 </body>
