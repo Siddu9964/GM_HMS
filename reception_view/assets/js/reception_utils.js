@@ -225,52 +225,7 @@ const Modal = {
 // SIDEBAR & RESPONSIVENESS HANDLERS
 // ============================================================================
 
-function toggleSidebar() {
-    let sidebar = document.getElementById('receptionSidebar');
-    if (!sidebar) return;
-
-    // Toggle a class on body to control layout
-    document.body.classList.toggle('sidebar-collapsed');
-}
-
-function createSidebarOverlay() {
-    if (document.getElementById('sidebarOverlay')) return;
-
-    const overlay = document.createElement('div');
-    overlay.id = 'sidebarOverlay';
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100vw';
-    overlay.style.height = '100vh';
-    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
-    overlay.style.zIndex = '40';
-    overlay.style.transition = 'opacity 0.3s ease';
-    overlay.onclick = toggleSidebar;
-    document.body.appendChild(overlay);
-}
-
-function removeSidebarOverlay() {
-    const overlay = document.getElementById('sidebarOverlay');
-    if (overlay) {
-        overlay.style.opacity = '0';
-        setTimeout(() => overlay.remove(), 300);
-    }
-}
-
-// Window resize handler
-window.addEventListener('resize', () => {
-    if (window.innerWidth >= 1024) {
-        let sidebar = document.getElementById('receptionSidebar');
-        if (sidebar) {
-            sidebar.classList.remove('translate-x-0');
-            sidebar.classList.remove('open');
-            sidebar.classList.remove('-translate-x-full');
-            document.body.style.overflow = '';
-            removeSidebarOverlay();
-        }
-    }
-});
+// Sidebar functions have been moved to reception_navbar.php for better mobile support
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -279,6 +234,3 @@ document.addEventListener('DOMContentLoaded', () => {
         createToastContainer();
     }
 });
-
-// Global Exports
-window.toggleSidebar = toggleSidebar;
