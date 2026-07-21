@@ -221,32 +221,38 @@ class PrescriptionModel
     {
         if (empty($path)) return null;
 
+        // Decode JSON array strings like ["C:\/xampp\/htdocs\\GM_HMS\\assets\\precision_data\\file.png"]
         if (is_string($path) && (strpos($path, '[') === 0 || strpos($path, '{') === 0)) {
             $decoded = json_decode($path, true);
             if (is_array($decoded) && !empty($decoded)) {
-                $path = $decoded[0];
+                $path = reset($decoded);
             }
         }
 
         if (!is_string($path) || trim($path) === '') return null;
 
+        // Normalize backslashes to forward slashes
         $cleanPath = str_replace('\\', '/', trim($path));
 
-        if (preg_match('/htdocs\/GM_HMS\/(.*)$/i', $cleanPath, $matches)) {
-            return '/GM_HMS/' . ltrim($matches[1], '/');
+        // Determine base URL path prefix (/GM_HMS/ or /) dynamically
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        $script = $_SERVER['SCRIPT_NAME'] ?? '';
+        $basePrefix = (strpos($uri, '/GM_HMS/') !== false || strpos($script, '/GM_HMS/') !== false) ? '/GM_HMS/' : '/';
+
+        // Extract relative assets or uploads path
+        if (preg_match('/(assets\/.*|uploads\/.*)/i', $cleanPath, $matches)) {
+            return rtrim($basePrefix, '/') . '/' . ltrim($matches[1], '/');
         }
 
-        if (strpos($cleanPath, 'assets/') !== false || strpos($cleanPath, 'uploads/') !== false) {
-            if (preg_match('/(assets\/.*|uploads\/.*)/i', $cleanPath, $matches)) {
-                return '/GM_HMS/' . ltrim($matches[1], '/');
-            }
+        if (preg_match('/htdocs\/[^\/]+\/(.*)$/i', $cleanPath, $matches)) {
+            return rtrim($basePrefix, '/') . '/' . ltrim($matches[1], '/');
         }
 
-        if (strpos($cleanPath, '/') === 0 || strpos($cleanPath, 'http') === 0) {
+        if (strpos($cleanPath, 'http://') === 0 || strpos($cleanPath, 'https://') === 0) {
             return $cleanPath;
         }
 
-        return '/GM_HMS/' . ltrim($cleanPath, '/');
+        return rtrim($basePrefix, '/') . '/' . ltrim($cleanPath, '/');
     }
 
     public function getAllPrescriptions($limit = 50)
