@@ -3036,3 +3036,45 @@
 [21-Jul-2026 15:24:04 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/appointments, Method: GET
 [21-Jul-2026 15:30:16 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/patients, Method: GET
 [21-Jul-2026 15:41:04 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[21-Jul-2026 15:51:13 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[21-Jul-2026 15:54:44 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[21-Jul-2026 15:54:51 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[21-Jul-2026 15:55:04 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions/receptionist/view/PID-20260715-001, Method: GET
+[21-Jul-2026 15:55:05 Europe/Berlin] Controller exception: Query preparation failed: Unknown column 'uhid' in 'field list'. Query: SELECT patient_id, uhid, first_name, last_name, birth_date, age, 
+                       sex as gender, blood_group, phone, address, city, pincode, 
+                       state, country, district, region, division, area
+                FROM patient 
+                WHERE patient_id = ? OR phone = ? OR uhid = ?
+                LIMIT 1
+[21-Jul-2026 15:55:05 Europe/Berlin] Audit [error]: Query preparation failed: Unknown column 'uhid' in 'field list'. Query: SELECT patient_id, uhid, first_name, last_name, birth_date, age, 
+                       sex as gender, blood_group, phone, address, city, pincode, 
+                       state, country, district, region, division, area
+                FROM patient 
+                WHERE patient_id = ? OR phone = ? OR uhid = ?
+                LIMIT 1 {"trace":"#0 D:\\xampp\\htdocs\\GM_HMS\\Database\\SecureDatabase.php(157): GM_HMS\\Database\\SecureDatabase->execute('SELECT patient_...', Array, NULL)\n#1 D:\\xampp\\htdocs\\GM_HMS\\models\\PrescriptionModel.php(31): GM_HMS\\Database\\SecureDatabase->fetchOne('SELECT patient_...', Array)\n#2 D:\\xampp\\htdocs\\GM_HMS\\controler\\api\\PrescriptionController.php(120): GM_HMS\\Models\\PrescriptionModel->fetchPatient('PID-20260715-00...')\n#3 D:\\xampp\\htdocs\\GM_HMS\\api\\index.php(399): GM_HMS\\Controllers\\api\\PrescriptionController->getReceptionistView('PID-20260715-00...')\n#4 {main}"}
+[21-Jul-2026 15:55:09 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/patients, Method: GET
+[21-Jul-2026 15:55:11 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[21-Jul-2026 15:57:30 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[21-Jul-2026 16:00:17 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[21-Jul-2026 16:00:19 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[21-Jul-2026 16:00:26 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions/receptionist/view/PID-20260715-001, Method: GET
+[21-Jul-2026 16:00:26 Europe/Berlin] Controller exception: Query preparation failed: Unknown column 'uhid' in 'field list'. Query: SELECT patient_id, uhid, first_name, last_name, birth_date, age, 
+                       sex as gender, blood_group, phone, address, city, pincode, 
+                       state, country, district, region, division, area
+                FROM patient 
+                WHERE patient_id = ? OR phone = ? OR uhid = ?
+                LIMIT 1
+[21-Jul-2026 16:00:26 Europe/Berlin] Audit [error]: Query preparation failed: Unknown column 'uhid' in 'field list'. Query: SELECT patient_id, uhid, first_name, last_name, birth_date, age, 
+                       sex as gender, blood_group, phone, address, city, pincode, 
+                       state, country, district, region, division, area
+                FROM patient 
+                WHERE patient_id = ? OR phone = ? OR uhid = ?
+                LIMIT 1 {"trace":"#0 D:\\xampp\\htdocs\\GM_HMS\\Database\\SecureDatabase.php(157): GM_HMS\\Database\\SecureDatabase->execute('SELECT patient_...', Array, NULL)\n#1 D:\\xampp\\htdocs\\GM_HMS\\models\\PrescriptionModel.php(31): GM_HMS\\Database\\SecureDatabase->fetchOne('SELECT patient_...', Array)\n#2 D:\\xampp\\htdocs\\GM_HMS\\controler\\api\\PrescriptionController.php(114): GM_HMS\\Models\\PrescriptionModel->fetchPatient('PID-20260715-00...')\n#3 D:\\xampp\\htdocs\\GM_HMS\\api\\index.php(399): GM_HMS\\Controllers\\api\\PrescriptionController->getReceptionistView('PID-20260715-00...')\n#4 {main}"}
+[21-Jul-2026 16:00:28 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[21-Jul-2026 16:00:32 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[21-Jul-2026 16:00:54 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[21-Jul-2026 16:00:54 Europe/Berlin] [DEBUG] AuthController::login hit
+[21-Jul-2026 16:00:55 Europe/Berlin] Audit [info]: User shalini logged in as Receptionist []
+[21-Jul-2026 16:00:58 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[21-Jul-2026 16:01:38 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[21-Jul-2026 16:03:09 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
