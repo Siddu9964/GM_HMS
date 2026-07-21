@@ -305,6 +305,10 @@ class PatientManager {
         form.reset();
         
         // Hide dynamic fields on reset
+        $('#existingDoctorSelect').val(null).trigger('change');
+        const extraDetailsDiv = document.getElementById('doctorExtraDetailsDiv');
+        if (extraDetailsDiv) extraDetailsDiv.style.display = 'none';
+        
         if (typeof toggleDoctorReferral === 'function') {
             toggleDoctorReferral();
         }

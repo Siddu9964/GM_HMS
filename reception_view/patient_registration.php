@@ -353,29 +353,16 @@ include 'includes/reception_navbar.php';
                             <i class="fas fa-handshake"></i> Referral Information
                         </div>
 
-                        <div class="ref-field ref-col-2">
-                            <label>Referred By</label>
-                            <select name="referred_by" id="referredBySelect" onchange="toggleDoctorReferral()">
-                                <option value="">Select</option>
-                                <option value="Online">Online</option>
-                                <option value="Friends">Friends</option>
-                                <option value="Relatives">Relatives</option>
-                                <option value="Doctor">Doctor</option>
-                                <option value="Walk-in">Walk-in</option>
-                                <option value="Others">Others</option>
-                            </select>
-                        </div>
+                        <!-- Hidden Referred By so backend doesn't fail if it requires it -->
+                        <input type="hidden" name="referred_by" value="Doctor">
 
-                        <div class="ref-field ref-col-2" id="standardReferralNameDiv">
-                            <label>Referral Name</label>
-                            <input type="text" name="referral_name" id="referral_name_input" placeholder="Referral Name">
-                        </div>
-
-                        <div class="ref-field ref-col-2" id="doctorSearchDiv" style="display: none;">
-                            <label>Doctor Name <span class="req">*</span></label>
+                        <!-- Always show Search Div, but call it Referral Name -->
+                        <div class="ref-field ref-col-4" id="doctorSearchDiv">
+                            <label>Referral Name <span class="req">*</span></label>
                             <select id="existingDoctorSelect" style="width: 100%;">
-                                <option value="">Search or add new doctor...</option>
+                                <option value="">Search existing or enter new referral name...</option>
                             </select>
+                            <input type="hidden" name="referral_name" id="referral_name_input" value="">
                             <input type="hidden" name="is_new_doctor" id="is_new_doctor" value="0">
                         </div>
 
@@ -600,27 +587,9 @@ include 'includes/reception_navbar.php';
             }
         }
 
-        function toggleDoctorReferral() {
-            const select = document.getElementById('referredBySelect');
-            const standardDiv = document.getElementById('standardReferralNameDiv');
-            const doctorSearchDiv = document.getElementById('doctorSearchDiv');
-            const extraDetailsDiv = document.getElementById('doctorExtraDetailsDiv');
-            
-            if (select.value === 'Doctor') {
-                standardDiv.style.display = 'none';
-                doctorSearchDiv.style.display = 'block';
-                
-                // Initialize select2 if not already initialized
-                if (!$('#existingDoctorSelect').hasClass('select2-hidden-accessible')) {
-                    fetchReferredDoctors();
-                }
-            } else {
-                standardDiv.style.display = 'block';
-                doctorSearchDiv.style.display = 'none';
-                extraDetailsDiv.style.display = 'none';
-                document.getElementById('is_new_doctor').value = '0';
-            }
-        }
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchReferredDoctors();
+        });
         
         function fetchReferredDoctors() {
             $('#existingDoctorSelect').select2({
