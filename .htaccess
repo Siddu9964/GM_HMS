@@ -1,0 +1,5 @@
+RewriteEngine On
+RewriteBase /GM_HMS/
+
+# Route all /api requests to api/index.php
+RewriteRule ^api/(.*)$ api/index.php [L,QSA]

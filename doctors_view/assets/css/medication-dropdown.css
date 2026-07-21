@@ -1,0 +1,278 @@
+/**
+ * Medication Dropdown Styling
+ * Professional medical UI for medication selection
+ */
+
+.medication-dropdown-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.medication-search-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    background: #FDFBF7;
+}
+
+.medication-search-input:focus {
+    outline: none;
+    border-color: #1f6b4a;
+    box-shadow: 0 0 0 3px rgba(31, 107, 74, 0.1);
+}
+
+.medication-dropdown-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #FDFBF7;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 10000;
+    backdrop-filter: blur(8px);
+    animation: dropdownSlideIn 0.2s ease-out;
+}
+
+@keyframes dropdownSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.medication-dropdown-group {
+    padding: 0.75rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.medication-dropdown-group:last-child {
+    border-bottom: none;
+}
+
+.generic-name-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: linear-gradient(135deg, #1f6b4a 0%, #144d34 100%);
+    color: white;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.generic-name-header i {
+    font-size: 1rem;
+}
+
+.generic-name-header strong {
+    flex: 1;
+    font-weight: 700;
+}
+
+.category-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.brand-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-left: 0.5rem;
+}
+
+.brand-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.brand-item:hover {
+    background: #eff6ff;
+    border-color: #1f6b4a;
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(31, 107, 74, 0.15);
+}
+
+.brand-item i {
+    color: #1f6b4a;
+    font-size: 0.875rem;
+}
+
+.brand-name {
+    flex: 1;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.875rem;
+}
+
+.dosage-hint {
+    font-size: 0.75rem;
+    color: #6b7280;
+    background: #FDFBF7;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #e5e7eb;
+}
+
+.dropdown-no-results {
+    padding: 1.5rem;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
+/* Scrollbar styling for dropdown */
+.medication-dropdown-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.medication-dropdown-list::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 10px;
+}
+
+.medication-dropdown-list::-webkit-scrollbar-thumb {
+    background: #1f6b4a;
+    border-radius: 10px;
+}
+
+.medication-dropdown-list::-webkit-scrollbar-thumb:hover {
+    background: #144d34;
+}
+
+/* Loading state */
+.medication-dropdown-loading {
+    padding: 1.5rem;
+    text-align: center;
+    color: #6b7280;
+}
+
+.medication-dropdown-loading i {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Duration and Quantity Redesign */
+.duration-group,
+.qty-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 2px 4px;
+    transition: all 0.2s ease;
+}
+
+.duration-group:focus-within,
+.qty-group:focus-within {
+    border-color: #1f6b4a;
+    background: #FDFBF7;
+    box-shadow: 0 0 0 2px rgba(31, 107, 74, 0.1);
+}
+
+.med-duration-num,
+.med-qty {
+    width: 55px !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 6px 4px !important;
+    text-align: center;
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 0.9rem;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.med-duration-num::-webkit-outer-spin-button,
+.med-duration-num::-webkit-inner-spin-button,
+.med-qty::-webkit-outer-spin-button,
+.med-qty::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.med-duration-unit {
+    border: none !important;
+    background: transparent !important;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    padding: 4px 2px !important;
+    cursor: pointer;
+    outline: none !important;
+}
+
+.qty-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    padding-right: 4px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .medication-dropdown-list {
+        max-height: 300px;
+    }
+
+    .brand-item {
+        padding: 0.5rem;
+    }
+
+    .generic-name-header {
+        font-size: 0.8rem;
+    }
+
+    .duration-group,
+    .qty-group {
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .med-duration-num,
+    .med-qty {
+        width: 100% !important;
+    }
+
+    .med-duration-unit {
+        font-size: 0.7rem;
+    }
+}

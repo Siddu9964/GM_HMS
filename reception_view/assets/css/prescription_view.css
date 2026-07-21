@@ -1,0 +1,340 @@
+/* 
+   Elite Prescription Professional Style
+   Optimized for Medical Grade A4 Printing
+*/
+
+/* :root removed and centralized to gm-theme.css */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 3rem;
+    overflow-y: auto;
+}
+
+.modal-container {
+    background: #FDFBF7;
+    width: 210mm;
+    /* A4 Width */
+    border-radius: 12px;
+    box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.3);
+    animation: modalPulse 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPulse {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 1.5rem 2.5rem;
+    background: #F8FAFC;
+    border-bottom: 1px solid var(--border-light);
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* --- THE A4 CANVAS --- */
+.prescription-a4 {
+    width: 100%;
+    min-height: 148.5mm;
+    padding: 6mm;
+    background: #FDFBF7;
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    position: relative;
+    line-height: 1.3;
+    border: 3px solid #0D9488;
+    box-sizing: border-box;
+    font-size: 11px;
+}
+
+.presc-inner-frame {
+    border: 1px solid #0D9488;
+    height: 100%;
+    padding: 5mm;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.presc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #0D9488;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+
+.hospital-brand h1 {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--medical-dark);
+    margin: 0;
+}
+
+.hospital-brand p {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin: 1px 0 0 0;
+}
+
+.doc-info-block {
+    text-align: right;
+}
+
+.doc-info-block h2 {
+    font-size: 0.9rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-main);
+}
+
+.doc-info-block .spec {
+    color: var(--medical-primary);
+    font-weight: 600;
+    font-size: 0.75rem;
+    margin-bottom: 0px;
+}
+
+.doc-info-block .reg {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+/* Patient Clinical Banner */
+.patient-cli-banner {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    border: 1px solid #475569;
+    /* Darker professional border */
+    background: #F8FAFC;
+    margin-bottom: 12px;
+}
+
+.cli-item {
+    padding: 4px 8px;
+    border-right: 1px solid #475569;
+}
+
+.cli-item:last-child {
+    border-right: none;
+}
+
+.cli-item label {
+    display: block;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #64748B;
+    margin-bottom: 1px;
+}
+
+.cli-item span {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #1E293B;
+    display: block;
+}
+
+/* Rx Stylized Icon */
+.rx-symbol {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--medical-primary);
+    margin-bottom: 0.75rem;
+    display: inline-block;
+}
+
+.presc-section-header {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--medical-dark);
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+}
+
+.presc-section-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-light);
+}
+
+.clinical-notes-area {
+    margin-bottom: 2rem;
+    padding-left: 1.25rem;
+    border-left: 4px solid var(--medical-primary);
+}
+
+/* Professional Medicine Table */
+.med-table-pro {
+    width: 100%;
+    border-collapse: collapse;
+    /* Changed to collapse for visible borders */
+    margin: 1rem 0;
+}
+
+.med-table-pro th {
+    background: #0D9488;
+    padding: 6px 10px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: white;
+    border: 1px solid #0D9488;
+}
+
+.med-table-pro td {
+    padding: 6px 10px;
+    border: 1px solid #475569;
+    vertical-align: middle;
+    font-size: 10px;
+    color: #1E293B;
+}
+
+.med-pro-name {
+    font-weight: 800;
+    font-size: 10px;
+    color: #1E293B;
+    margin-bottom: 2px;
+}
+
+.med-pro-sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+}
+
+.med-pro-qty {
+    text-align: center;
+    font-weight: 900;
+    font-size: 10px;
+    color: var(--medical-primary);
+}
+
+/* Unified Footer */
+.presc-footer-pro {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.signature-box {
+    text-align: center;
+    min-width: 180px;
+}
+
+.sig-line {
+    border-top: 1px solid var(--text-main);
+    padding-top: 0.25rem;
+    margin-top: 2rem;
+    /* Reduced height for signature space */
+}
+
+.sig-name {
+    font-weight: 800;
+    font-size: 1.1rem;
+}
+
+.sig-title {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.watermark-pro {
+    position: absolute;
+    top: 65%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 5rem;
+    font-weight: 900;
+    color: rgba(13, 148, 136, 0.06);
+    text-align: center;
+    line-height: 1;
+    width: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 0;
+    }
+
+    body {
+        background: #FDFBF7;
+    }
+
+    body * {
+        visibility: hidden;
+    }
+
+    .prescription-a4,
+    .prescription-a4 * {
+        visibility: visible;
+    }
+
+    .prescription-a4 {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 210mm;
+        min-height: 148.5mm;
+        border: 4px solid #0D9488 !important;
+        /* Thick print border */
+        box-sizing: border-box;
+        margin: 0;
+        padding: 5mm;
+    }
+
+    .presc-inner-frame {
+        border: 1px solid #0D9488 !important;
+        height: auto;
+        min-height: calc(148.5mm - 20mm);
+    }
+
+    .no-print {
+        display: none !important;
+    }
+
+    .modal-overlay {
+        background: #FDFBF7;
+        padding: 0;
+        overflow: visible;
+        display: block;
+    }
+}

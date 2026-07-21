@@ -1,0 +1,306 @@
+/**
+ * Doctor Dashboard - Premium Bento Layout
+ */
+
+/* ============================================================================
+   LAYOUT STRUCTURE
+   ============================================================================ */
+.doctor-layout {
+    display: flex;
+    height: 100vh;
+    background: #f3efe6;
+    overflow: hidden;
+}
+
+.doctor-sidebar {
+    width: var(--gm-sidebar-w);
+    background: #1e293b;
+    color: var(--gm-white);
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    min-height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 1000;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    animation: slideInSidebar 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    flex-direction: column;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.doctor-sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+.doctor-sidebar>div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.doctor-main-content {
+    flex: 1;
+    margin-left: var(--gm-sidebar-w);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.doctor-content {
+    flex: 1;
+    padding: 0.8rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* ============================================================================
+   BENTO GRID SYSTEM
+   ============================================================================ */
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+}
+
+/* Base Bento Card */
+.bento-card {
+    background: rgba(253, 251, 247, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(31, 107, 74, 0.08);
+    border-radius: 0.6rem;
+    padding: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.bento-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(31, 107, 74, 0.08);
+    border-color: rgba(31, 107, 74, 0.2);
+}
+
+/* KPI Cards specifically */
+.gm-kpi-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.gm-kpi-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #1f6b4a, #2E7D32);
+    border-radius: 0 0 1.25rem 1.25rem;
+    opacity: 0;
+    transform: scaleX(0);
+    transition: transform 0.4s ease, opacity 0.4s ease;
+    transform-origin: center;
+}
+
+.gm-kpi-card:hover::after {
+    opacity: 1;
+    transform: scaleX(1);
+}
+
+.gm-kpi-icon-wrap {
+    width: 28px;
+    height: 28px;
+    border-radius: 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    margin-bottom: 0.35rem;
+    transition: transform 0.3s ease;
+}
+
+.gm-kpi-card:hover .gm-kpi-icon-wrap {
+    transform: scale(1.1) rotate(-5deg);
+}
+
+/* Icon Variations */
+.icon-teal { background: rgba(31, 107, 74, 0.1); color: #1f6b4a; }
+.icon-blue { background: rgba(26, 35, 126, 0.1); color: #1A237E; }
+.icon-orange { background: rgba(217, 119, 6, 0.1); color: #D97706; }
+.icon-red { background: rgba(220, 38, 38, 0.1); color: #DC2626; }
+
+.gm-kpi-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #111827;
+    letter-spacing: 0px;
+    line-height: 1;
+    margin-bottom: 0.15rem;
+}
+
+.gm-kpi-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Background floating icon */
+.gm-kpi-card .bg-icon {
+    position: absolute;
+    right: -5px;
+    bottom: -10px;
+    font-size: 4rem;
+    opacity: 0.03;
+    transform: rotate(-15deg);
+    transition: all 0.5s ease;
+    pointer-events: none;
+}
+
+.gm-kpi-card:hover .bg-icon {
+    opacity: 0.06;
+    transform: rotate(0deg) scale(1.1);
+}
+
+/* Specific Grid Placements */
+.col-span-3 { grid-column: span 3; }
+.col-span-4 { grid-column: span 4; }
+.col-span-6 { grid-column: span 6; }
+.col-span-8 { grid-column: span 8; }
+.col-span-12 { grid-column: span 12; }
+
+/* ============================================================================
+   WELCOME BANNER (Premium Glass Gradient)
+   ============================================================================ */
+.welcome-banner {
+    background: linear-gradient(135deg, #1f6b4a 0%, #12402c 100%);
+    color: white;
+    margin-bottom: 0.75rem;
+    border: none;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    position: relative;
+    padding: 0.85rem 1rem;
+    box-shadow: 0 3px 10px rgba(31, 107, 74, 0.1);
+}
+
+/* Glass overlay circles for aesthetic */
+.welcome-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+}
+.welcome-banner::after {
+    content: '';
+    position: absolute;
+    bottom: -50%;
+    right: 10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.welcome-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin-bottom: 0.15rem;
+    letter-spacing: -0.25px;
+    position: relative;
+    z-index: 2;
+}
+
+.welcome-subtitle {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    font-weight: 400;
+    position: relative;
+    z-index: 2;
+}
+
+.welcome-icon-bg {
+    font-size: 5rem;
+    opacity: 0.15;
+    position: absolute;
+    right: 1rem;
+    bottom: -1rem;
+    transform: rotate(-10deg);
+    transition: transform 0.8s ease;
+    z-index: 1;
+}
+
+.welcome-banner:hover .welcome-icon-bg {
+    transform: rotate(5deg) scale(1.1);
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+.fade-in-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+@media (max-width: 1200px) {
+    .col-span-3 { grid-column: span 6; }
+    .col-span-4 { grid-column: span 6; }
+    .col-span-8 { grid-column: span 12; }
+}
+
+@media (max-width: 768px) {
+    .bento-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    .col-span-3, .col-span-4, .col-span-6, .col-span-8, .col-span-12 {
+        grid-column: span 1;
+    }
+    .doctor-main-content { margin-left: 0; width: 100%; min-height: 100vh; }
+    .doctor-content { padding: 1.5rem; }
+    .welcome-banner { padding: 1.5rem; }
+    .welcome-title { font-size: 1.75rem; }
+}
+
+/* ============================================================================
+   PRINT STYLES
+   ============================================================================ */
+@media print {
+    .doctor-sidebar,
+    .doctor-navbar,
+    .btn,
+    .no-print { display: none !important; }
+    .doctor-main-content { margin-left: 0; }
+    .bento-card { box-shadow: none; border: 1px solid var(--gm-border); page-break-inside: avoid; }
+}

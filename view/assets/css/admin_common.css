@@ -1,0 +1,82 @@
+/* Common Admin Sidebar Styles - Hide Scrollbar Globally */
+/* Hide scrollbars for sidebar across all admin pages - MAXIMUM PRIORITY */
+aside#adminSidebar.sidebar,
+.sidebar,
+body > div > aside.sidebar,
+div.sidebar,
+aside.sidebar {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    overflow-y: auto !important;
+}
+
+aside#adminSidebar.sidebar::-webkit-scrollbar,
+.sidebar::-webkit-scrollbar,
+body > div > aside.sidebar::-webkit-scrollbar,
+div.sidebar::-webkit-scrollbar,
+aside.sidebar::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+aside#adminSidebar.sidebar::-moz-scrollbar,
+.sidebar::-moz-scrollbar,
+body > div > aside.sidebar::-moz-scrollbar,
+div.sidebar::-moz-scrollbar,
+aside.sidebar::-moz-scrollbar {
+    display: none !important;
+}
+
+aside#adminSidebar.sidebar::-ms-scrollbar,
+.sidebar::-ms-scrollbar,
+body > div > aside.sidebar::-ms-scrollbar,
+div.sidebar::-ms-scrollbar,
+aside.sidebar::-ms-scrollbar {
+    display: none !important;
+}
+
+/* Hide scrollbars globally for all elements */
+* {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+*::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+*::-moz-scrollbar {
+    display: none !important;
+}
+
+*::-ms-scrollbar {
+    display: none !important;
+}
+
+/* Force hide any visible scrollbars */
+::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+::-moz-scrollbar {
+    display: none !important;
+}
+
+::-ms-scrollbar {
+    display: none !important;
+}
+
+html {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+body {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}

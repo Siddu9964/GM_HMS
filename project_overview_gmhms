@@ -1,0 +1,81 @@
+# GM_HMS - Hospital Management System Overview
+
+Welcome to the comprehensive overview of **GM_HMS**, a robust, multi-role Hospital Management System built with PHP, MySQL (using both PDO and mysqli), and custom front-end interfaces.
+
+---
+
+## 📂 Codebase Directory Structure
+
+Here is a summary of the core directories and their roles:
+
+- [api/](file:///d:/xampp/htdocs/GM_HMS/api): Central endpoint router. Handles routing all `/api/*` endpoints to the respective controllers.
+- [config/](file:///d:/xampp/htdocs/GM_HMS/config): Environment and security settings.
+  - [.env](file:///d:/xampp/htdocs/GM_HMS/config/.env): Key-value environment parameters (e.g. database credentials, mail settings, JWT settings).
+  - [SecurityConfig.php](file:///d:/xampp/htdocs/GM_HMS/config/SecurityConfig.php): Config singleton parsing the `.env` settings.
+- [controler/](file:///d:/xampp/htdocs/GM_HMS/controler): Business logic.
+  - [BaseController.php](file:///d:/xampp/htdocs/GM_HMS/controler/BaseController.php): Base class implementing request validation, authorization checks, rate limiting, and HTTP response helpers.
+  - [api/](file:///d:/xampp/htdocs/GM_HMS/controler/api): 35+ specialized API controllers handling auth, admin actions, doctors, patients, billing, laboratory, pharmacy, and vendor portals.
+- [core/](file:///d:/xampp/htdocs/GM_HMS/core): System-level classes:
+  - [Autoloader.php](file:///d:/xampp/htdocs/GM_HMS/core/Autoloader.php): PSR-4 compatible custom class loader mapping namespaces (like `Controllers\`, `Models\`, `Database\`, etc.) to directories.
+  - [Router.php](file:///d:/xampp/htdocs/GM_HMS/core/Router.php): Dispatcher parsing request paths against regex routes.
+- [Database/](file:///d:/xampp/htdocs/GM_HMS/Database): Secure database layers:
+  - [SecureDatabase.php](file:///d:/xampp/htdocs/GM_HMS/Database/SecureDatabase.php): Core `mysqli` singleton query wrapper with automated parameter binding and type detection.
+  - [AuditLogger.php](file:///d:/xampp/htdocs/GM_HMS/Database/AuditLogger.php): Logger recording system activities and security events.
+- [models/](file:///d:/xampp/htdocs/GM_HMS/models): DB schema entities (19 files total) managing appointments, billing, prescriptions, laboratory service rates, inventory, staff, and vitals.
+- **Views (Role-Based)**:
+  - [view/](file:///d:/xampp/htdocs/GM_HMS/view): Admin dashboard, management screens (departments, doctors, staff, laboratory).
+  - [doctors_view/](file:///d:/xampp/htdocs/GM_HMS/doctors_view): Consultations, prescriptions (with generic-brand mapping), IPD/OPD patient lists, and symptom analysis.
+  - [reception_view/](file:///d:/xampp/htdocs/GM_HMS/reception_view): Registration, booking, billing, and doctor availability.
+  - [nurse_view/](file:///d:/xampp/htdocs/GM_HMS/nurse_view), [pharmacy_view/](file:///d:/xampp/htdocs/GM_HMS/pharmacy_view): Role-specific views. (For deep details of the pharmacy workflow, see [pharmacy_system_details.md](file:///C:/Users/sidde/.gemini/antigravity-ide/brain/30129437-3250-4774-9cd0-c50a8291f3d2/pharmacy_system_details.md)).
+
+---
+
+## 🔐 Authentication & Session Flow
+
+The app employs a unified table strategy under the `user` table to authorize logins:
+1. **Request Submission**: Logins are POSTed to `/api/auth/login`.
+2. **Identification Lookup**: [AuthenticationManager](file:///d:/xampp/htdocs/GM_HMS/security/AuthenticationManager.php) queries the `user` table by `id` or `username`.
+3. **Password Verification**: Validates the encrypted password hash.
+4. **Role Routing**: Retrieves role details (`Doctor` from the `doctors` table, other staff/admins from the `staff` table) and returns the corresponding redirect URLs:
+   - **Doctor**: `/GM_HMS/doctors_view/dashboard.php`
+   - **Receptionist**: `/GM_HMS/reception_view/index.php`
+   - **Nurse**: `/GM_HMS/nurse_view/dashboard.php`
+   - **Pharmacist**: `/GM_HMS/pharmacy_view/dashboard.php`
+   - **Admin**: `/GM_HMS/view/admin_dashboard.php`
+
+---
+
+## 🛠 Core Models & Database Design
+
+### 1. Appointment Management
+Managed by [AppointmentModel.php](file:///d:/xampp/htdocs/GM_HMS/models/AppointmentModel.php):
+- Employs unique `APT-YYYYMMDD-XXXX` formats.
+- Integrates a queue system using day-based token numbers (`generateTokenNumber`).
+- Automatically triggers invoicing through [OpdBillingModel](file:///d:/xampp/htdocs/GM_HMS/models/OpdBillingModel.php) for paid appointments.
+
+### 2. SOAP Consultation Workflow
+As detailed in `DATABASE_ARCHITECTURE.md`:
+- **Initial Capture**: Patient describes their issue (symptoms/severity) in `patient_issue_description`.
+- **Encounter SOAP Notes**: Doctor documents findings (`soap_subjective`, `soap_objective`, `soap_assessment`, `soap_plan`) in `consultations`.
+- **Prescription issuance**: Logged in `prescriptions` referencing `consultation_id`.
+- **Medications Dropdown Mapping**: Mapped from generic names to brand names (such as *Paracetamol* ➡️ *Dolo 650*, *Calpol*, *Crocin*) in [MEDICATION_DROPDOWN_DOCS.md](file:///d:/xampp/htdocs/GM_HMS/doctors_view/MEDICATION_DROPDOWN_DOCS.md).
+
+---
+
+## 🌐 API Endpoint Routing Summary
+
+The system is highly structured, routing clean API links to their respective controller classes. Examples from [api/index.php](file:///d:/xampp/htdocs/GM_HMS/api/index.php):
+
+| Method | Endpoint Pattern | Controller | Method |
+| :--- | :--- | :--- | :--- |
+| **POST** | `/api/auth/login` | `AuthController` | `login` |
+| **GET** | `/api/patients` | `PatientController` | `index` |
+| **GET** | `/api/appointments` | `AppointmentController` | `index` |
+| **POST** | `/api/opd/vitals` | `OpdController` | `saveVitals` |
+| **GET** | `/api/reception/dashboard/summary` | `ReceptionController` | `getDashboardSummary` |
+
+---
+
+## 📚 Deep-Dive Documentation Links
+- [Pharmacy Subsystem Details](file:///C:/Users/sidde/.gemini/antigravity-ide/brain/30129437-3250-4774-9cd0-c50a8291f3d2/pharmacy_system_details.md): In-depth POS flow, calculations, and FIFO stock details.
+- [Stock Receive & GRN Workflow](file:///C:/Users/sidde/.gemini/antigravity-ide/brain/30129437-3250-4774-9cd0-c50a8291f3d2/stock_receive_workflow.md): Comprehensive steps and batch isolation sequences for incoming pharmacy stock.

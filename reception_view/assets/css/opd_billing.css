@@ -1,0 +1,3283 @@
+/* ============================================================
+   OPD BILLING MODULE — FUTURISTIC STYLES
+   GM Hospital Management System
+   ============================================================ */
+/* :root removed and centralized to gm-theme.css */
+
+/* ── Page Layout ── */
+.billing-page {
+    padding: 1.5rem;
+    min-height: 100vh;
+    background: var(--gray-50);
+    font-family: 'Inter', sans-serif;
+}
+
+/* ── Stats Bar ── */
+.billing-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+}
+
+.stat-card {
+    background: #FDFBF7;
+    border-radius: 8px;
+    padding: .5rem .75rem;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+    border: 1px solid var(--gray-200);
+    transition: transform .2s, box-shadow .2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .95rem;
+    flex-shrink: 0;
+}
+
+.stat-card.teal .stat-icon {
+    background: var(--teal-light);
+    color: var(--teal);
+}
+
+.stat-card.green .stat-icon {
+    background: rgba(22, 163, 74, .1);
+    color: var(--green);
+}
+
+.stat-card.orange .stat-icon {
+    background: rgba(234, 88, 12, .1);
+    color: var(--orange);
+}
+
+.stat-card.red .stat-icon {
+    background: rgba(220, 38, 38, .1);
+    color: var(--red);
+}
+
+.stat-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1.1;
+}
+
+.stat-label {
+    font-size: .65rem;
+    color: var(--gray-500);
+    margin-top: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+}
+
+/* ── Two-Column Layout ── */
+.billing-workspace {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+
+/* ── Search Panel ── */
+.search-panel {
+    background: #FDFBF7;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-200);
+    overflow: hidden;
+    position: sticky;
+    top: 80px;
+}
+
+.panel-head {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+
+.panel-head h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.panel-body {
+    padding: 1.25rem;
+}
+
+.search-input-wrap {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.search-input-wrap input {
+    width: 100%;
+    padding: .7rem 1rem .7rem 2.5rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: .875rem;
+    color: var(--gray-700);
+    font-family: 'Inter', sans-serif;
+    transition: border-color .2s, box-shadow .2s;
+    outline: none;
+}
+
+.search-input-wrap input:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(31, 107, 74, .15);
+}
+
+.search-input-wrap .search-icon {
+    position: absolute;
+    left: .8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-400);
+    font-size: .85rem;
+}
+
+/* Patient Result Cards */
+.patient-results {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    max-height: 480px;
+    overflow-y: auto;
+}
+
+.patient-card {
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    padding: .9rem 1rem;
+    cursor: pointer;
+    transition: all .2s;
+    position: relative;
+}
+
+.patient-card:hover {
+    border-color: var(--teal);
+    background: var(--teal-light);
+    transform: translateX(2px);
+}
+
+.patient-card.selected {
+    border-color: var(--teal);
+    background: var(--teal-light);
+}
+
+.patient-card .pt-name {
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--gray-900);
+}
+
+.patient-card .pt-meta {
+    font-size: .75rem;
+    color: var(--gray-500);
+    margin-top: .2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
+.pt-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .2rem;
+    background: var(--gray-100);
+    border-radius: 4px;
+    padding: .15rem .45rem;
+    font-size: .7rem;
+    color: var(--gray-700);
+}
+
+.no-result {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--gray-400);
+}
+
+.no-result i {
+    font-size: 2rem;
+    margin-bottom: .5rem;
+    display: block;
+}
+
+/* ── Right Panel ── */
+.billing-right {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+}
+
+.billing-card {
+    background: #FDFBF7;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-200);
+    overflow: visible;
+}
+
+.billing-card-head {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+.billing-card-head h3 {
+    margin: 0;
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--gray-700);
+}
+
+.billing-card-head i {
+    color: var(--teal);
+}
+
+.billing-card-body {
+    padding: 1.25rem;
+}
+
+/* Form Rows */
+.form-row {
+    display: grid;
+    gap: .75rem;
+    margin-bottom: .75rem;
+}
+
+.billing-right .billing-card-body .table-wrap {
+    max-height: 480px;
+    overflow-y: auto;
+    position: relative;
+}
+
+.billing-right .billing-card-body .table-wrap thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--gray-50);
+}
+
+.form-row.cols-2 {
+    grid-template-columns: 1fr 1fr;
+}
+
+.form-row.cols-3 {
+    grid-template-columns: 2fr 1fr 1fr;
+}
+
+.form-row.cols-4 {
+    grid-template-columns: 3fr 1fr 1fr 1fr;
+}
+
+.form-group label {
+    font-size: .78rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    display: block;
+    margin-bottom: .3rem;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: .6rem .8rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: .875rem;
+    color: var(--gray-700);
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    background: #FDFBF7;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(31, 107, 74, .12);
+}
+
+.form-group input[readonly] {
+    background: var(--gray-50);
+    color: var(--gray-500);
+    cursor: default;
+}
+
+/* Items Table */
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .85rem;
+}
+
+.items-table thead th {
+    text-align: left;
+    padding: .5rem .75rem;
+    background: var(--gray-50);
+    color: var(--gray-500);
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.items-table tbody tr td {
+    padding: .5rem .5rem;
+    border-bottom: 1px solid var(--gray-100);
+    vertical-align: middle;
+}
+
+.items-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.items-table input,
+.items-table select {
+    width: 100%;
+    padding: .4rem .55rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 6px;
+    font-size: .82rem;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    background: #FDFBF7;
+    color: var(--gray-700);
+    transition: border-color .15s;
+}
+
+.items-table input:focus,
+.items-table select:focus {
+    border-color: var(--teal);
+}
+
+.btn-remove-row {
+    background: rgba(220, 38, 38, .08);
+    color: var(--red);
+    border: none;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    font-size: .85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+}
+
+.btn-remove-row:hover {
+    background: rgba(220, 38, 38, .18);
+}
+
+/* Add Item Row */
+.add-item-row {
+    padding: .75rem 1.25rem;
+    border-top: 1px dashed var(--gray-200);
+}
+
+.btn-add-item {
+    background: none;
+    border: 1.5px dashed var(--teal);
+    color: var(--teal);
+    padding: .45rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: .82rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-family: 'Inter', sans-serif;
+    transition: background .15s;
+}
+
+.btn-add-item:hover {
+    background: var(--teal-light);
+}
+
+/* Bill Summary */
+.bill-summary {
+    background: var(--gray-50);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.25rem;
+    margin-top: 1rem;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .35rem 0;
+    font-size: .875rem;
+    color: var(--gray-700);
+}
+
+.summary-row.total-row {
+    border-top: 2px solid var(--gray-200);
+    margin-top: .5rem;
+    padding-top: .75rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+/* Payment Section */
+.payment-modes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .6rem;
+}
+
+.mode-btn {
+    border: 1.5px solid var(--gray-200);
+    background: #FDFBF7;
+    border-radius: var(--radius-sm);
+    padding: .65rem .4rem;
+    cursor: pointer;
+    text-align: center;
+    font-size: .78rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    transition: all .15s;
+    font-family: 'Inter', sans-serif;
+}
+
+.mode-btn i {
+    display: block;
+    font-size: 1.2rem;
+    margin-bottom: .25rem;
+    color: var(--gray-400);
+}
+
+.mode-btn.active,
+.mode-btn:hover {
+    border-color: var(--teal);
+    background: var(--teal-light);
+    color: var(--teal);
+}
+
+.mode-btn.active i,
+.mode-btn:hover i {
+    color: var(--teal);
+}
+
+/* Action Buttons */
+.action-row {
+    display: flex;
+    gap: .75rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .6rem 1.25rem;
+    border-radius: var(--radius-sm);
+    font-size: .875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all .2s;
+    font-family: 'Inter', sans-serif;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: 0 4px 14px rgba(31, 107, 74, .3);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 6px 20px rgba(31, 107, 74, .45);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border: 1px solid var(--gray-200);
+}
+
+.btn-secondary:hover {
+    background: var(--gray-200);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: white;
+    box-shadow: 0 4px 14px rgba(22, 163, 74, .3);
+}
+
+.btn-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(22, 163, 74, .4);
+}
+
+.btn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* ── Recent Bills Table ── */
+.bills-toolbar {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+.filter-select {
+    padding: .5rem .8rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: .82rem;
+    color: var(--gray-700);
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    background: #FDFBF7;
+    cursor: pointer;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table.bills-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .75rem;
+}
+
+.bills-table thead th {
+    text-align: left;
+    padding: .4rem .4rem;
+    background: var(--gray-50);
+    color: #1f6b4a;
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: .2px;
+    border-bottom: 1.5px solid var(--gray-200);
+    white-space: nowrap;
+}
+
+.bills-table tbody td {
+    padding: .4rem .4rem;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-700);
+    white-space: nowrap;
+}
+
+.bills-table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+/* Pagination Styles */
+.pagination-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--gray-200);
+    background: #FDFBF7;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: .4rem;
+    align-items: center;
+}
+
+.page-btn {
+    padding: .4rem .75rem;
+    border: 1px solid var(--gray-200);
+    background: #FDFBF7;
+    border-radius: 6px;
+    font-size: .8rem;
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all .2s;
+    min-width: 32px;
+    text-align: center;
+}
+
+.page-btn:hover {
+    border-color: var(--teal);
+    color: var(--teal);
+    background: var(--teal-light);
+}
+
+.page-btn.active {
+    background: var(--teal);
+    color: white;
+    border-color: var(--teal);
+    font-weight: 600;
+}
+
+.page-btn:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+    background: var(--gray-50);
+}
+
+.page-info {
+    font-size: .8rem;
+    color: var(--gray-500);
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: .2rem .65rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.badge-paid {
+    background: rgba(22, 163, 74, .1);
+    color: var(--green);
+}
+
+.badge-pending {
+    background: rgba(234, 88, 12, .1);
+    color: var(--orange);
+}
+
+.badge-partial {
+    background: rgba(37, 99, 235, .1);
+    color: var(--blue);
+}
+
+.badge-cancelled {
+    background: rgba(220, 38, 38, .1);
+    color: var(--red);
+}
+
+/* ── Toast ── */
+.toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    background: var(--gray-900);
+    color: white;
+    padding: .85rem 1.25rem;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    font-size: .875rem;
+    animation: slideInRight .3s ease-out;
+    min-width: 260px;
+    max-width: 380px;
+}
+
+.toast.success {
+    border-left: 4px solid var(--green);
+}
+
+.toast.error {
+    border-left: 4px solid var(--red);
+}
+
+.toast.info {
+    border-left: 4px solid var(--teal);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(110%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Loading spinner */
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, .3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--gray-400);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.empty-state p {
+    font-size: .9rem;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+    .billing-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .billing-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .search-panel {
+        position: static;
+    }
+}
+
+@media (max-width: 640px) {
+    .billing-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .patient-info-header {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .payment-modes {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .form-row.cols-3,
+    .form-row.cols-4 {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* ── Unified Billing Modal ── */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.billing-modal-card {
+    background: #FDFBF7;
+    width: 100%;
+    max-width: 1100px;
+    height: 95vh;
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.billing-modal-head {
+    background: var(--primary-gradient);
+    padding: 1.25rem 1.75rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.billing-modal-head h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.modal-body-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    background: var(--gray-50);
+}
+
+.btn-close-modal {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.btn-close-modal:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Modal Inner Sections */
+.modal-section-card {
+    background: #FDFBF7;
+    border-radius: 16px;
+    border: 1px solid var(--gray-200);
+    box-shadow: var(--shadow-sm);
+    overflow: visible;
+}
+
+.modal-section-head {
+    padding: 1rem 1.5rem;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--gray-700);
+}
+
+.modal-section-head i {
+    color: var(--teal);
+}
+
+.modal-section-body {
+    padding: 1.5rem;
+}
+
+/* Patient Info Grid Refinement */
+.patient-info-header {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    background: #f1f5f9;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--gray-200);
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.info-item label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--gray-400);
+    display: block;
+    margin: 0;
+}
+
+.info-item span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    min-height: 1.2rem;
+    display: block;
+}
+
+.info-item input {
+    margin-top: 0.1rem;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px) scale(0.98); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* ── Input with Icon Inside ── */
+.input-with-icon-inside {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon-inside input {
+    padding-right: 48px !important;
+    transition: all 0.3s ease;
+}
+
+.input-with-icon-inside input:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 4px var(--teal-light);
+}
+
+.btn-inside-action {
+    position: absolute;
+    right: 8px;
+    background: transparent;
+    border: none;
+    color: var(--teal);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 5;
+}
+
+.btn-inside-action:hover {
+    background: var(--teal-light);
+    color: var(--teal);
+    transform: scale(1.15) rotate(90deg);
+}
+
+.btn-inside-action:active {
+    transform: scale(0.95);
+}
+
+.btn-inside-action i {
+    font-size: 1.2rem;
+}
+
+/* ── Generic Modal Card ── */
+.modal-card {
+    background: #FDFBF7;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-head {
+    background: var(--primary-gradient);
+    padding: 1rem 1.5rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-head h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* ── Referral Modal Specifics ── */
+.referral-modal .modal-card.small {
+    width: 100%;
+    max-width: 450px !important;
+    height: auto !important;
+    max-height: 90vh;
+}
+
+.referral-modal .modal-body {
+    padding: 2rem;
+}
+
+.mb-4 {
+    margin-bottom: 1.25rem;
+}
+
+/* ── Success Message Overlay ── */
+.success-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.success-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.success-card {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 3rem 4rem;
+    border-radius: 24px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+    transform: translateY(30px) scale(0.9);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-width: 400px;
+    width: 90%;
+}
+
+.success-overlay.active .success-card {
+    transform: translateY(0) scale(1);
+}
+
+.success-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    background: var(--teal-light);
+    color: var(--teal);
+    font-size: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    animation: scaleIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.success-card h3 {
+    color: #2d3436;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.success-card p {
+    color: #636e72;
+    font-size: 1.1rem;
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* ── Suggestion Dropdown ── */
+.suggestion-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.suggestion-list {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    width: 100%;
+    background: #FDFBF7;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 250px;
+    overflow-y: auto;
+    display: none;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    animation: fadeInSlide 0.3s ease;
+}
+
+.suggestion-list.active {
+    display: block;
+}
+
+.suggestion-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+    color: #2d3436;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.suggestion-item:hover {
+    background: var(--teal-light);
+    color: var(--teal);
+}
+
+.suggestion-item i {
+    font-size: 0.85rem;
+    opacity: 0.6;
+}
+
+.suggestion-empty {
+    padding: 20px;
+    text-align: center;
+    color: #636e72;
+}
+
+.suggestion-empty i {
+    display: block;
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+    color: var(--teal);
+}
+
+.suggestion-empty p {
+    font-weight: 700;
+    color: var(--teal);
+}
+
+/* --- Bill Detail Modal Overhaul --- */
+.bill-detail-modal .modal-card {
+    max-width: 950px;
+    width: 95%;
+    background: #f8fafc; /* Lighter background for the main card */
+    overflow: hidden;
+}
+
+.bill-detail-modal .modal-head {
+    background: linear-gradient(135deg, #0f766e 0%, #1f6b4a 100%);
+    padding: 1.25rem 2rem;
+    color: white;
+}
+
+.bill-detail-modal .modal-body {
+    padding: 2rem;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.detail-header-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.info-card {
+    background: #FDFBF7;
+    padding: 1.25rem;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.info-card i {
+    font-size: 1.25rem;
+    color: var(--teal);
+    background: rgba(31, 107, 74, 0.1);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    margin-bottom: 0.25rem;
+}
+
+.info-card label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.info-card .value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.4;
+}
+
+.info-card .sub-value {
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+/* Enhanced Detail Table */
+.detail-table-container {
+    background: #FDFBF7;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.detail-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.detail-table th {
+    background: #f1f5f9;
+    padding: 1rem 1.25rem;
+    text-align: left;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #475569;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.detail-table td {
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.detail-table tr:last-child td {
+    border-bottom: none;
+}
+
+.detail-table tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+/* Premium Summary Section */
+.detail-footer {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 2rem;
+}
+
+.notes-section {
+    background: #FDFBF7;
+    padding: 1.5rem;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+}
+
+.notes-section label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 0.75rem;
+}
+
+.summary-card {
+    background: #1e293b;
+    color: white;
+    padding: 1.75rem;
+    border-radius: 20px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-card::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 150px;
+    height: 150px;
+    background: rgba(31, 107, 74, 0.1);
+    border-radius: 50%;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    color: #cbd5e1;
+}
+
+.summary-row.grand-total {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #5eead4;
+}
+
+.summary-row.payment-info {
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    opacity: 0.8;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
+    margin-top: 1.5rem;
+    width: 100%;
+}
+
+.status-pill.paid { background: #ecfdf5; color: #059669; border: 1px solid #10b981; }
+.status-pill.pending { background: #fff7ed; color: #d97706; border: 1px solid #f97316; }
+
+@keyframes slideInUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.bill-detail-modal.active .modal-card {
+    animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.badge { padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+#settlementModalOverlay .modal-card { border: 1px solid #e2e8f0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+#settleAmount { border: 2px solid #cbd5e1; border-radius: 8px; padding: 0.75rem; transition: all 0.2s; font-size: 1.1rem; }
+#settleAmount:focus { border-color: var(--teal); box-shadow: 0 0 0 4px rgba(31, 107, 74, 0.15); }
+#settlementModalOverlay.active .modal-card { animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* ── PAYMENT RECEIPT MODAL REDESIGN ── */
+.receipt-container {
+    background: #FDFBF7;
+    padding: 1.5rem;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    color: #334155;
+    position: relative;
+    max-width: 850px;
+    margin: 0 auto;
+}
+
+.receipt-container.is-paid .watermark-paid {
+    position: absolute;
+    top: 50px;
+    right: 50px;
+    font-size: 8rem;
+    font-weight: 800;
+    color: rgba(34, 197, 94, 0.05);
+    transform: rotate(-15deg);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.receipt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #1f6b4a;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.receipt-header .header-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+}
+
+.receipt-header .header-left h2 {
+    color: #1f6b4a;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+
+.receipt-header .header-left p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.receipt-header .header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    gap: 0;
+}
+
+.receipt-header .header-right h3 {
+    margin: 0 0 0.4rem 0;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #1e293b;
+    letter-spacing: 0.5px;
+}
+
+.receipt-header .header-right .bill-id {
+    color: #1f6b4a;
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 0.2rem;
+}
+
+.receipt-header .header-right .bill-date {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.receipt-info-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.receipt-info-box .info-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 120px 1fr;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.receipt-info-box .info-row:last-child {
+    margin-bottom: 0;
+}
+
+.receipt-info-box .info-label {
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
+
+.receipt-info-box .info-value {
+    color: #475569;
+}
+
+.receipt-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.receipt-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.receipt-table thead th {
+    background: #1f6b4a;
+    color: #fff;
+    padding: 0.6rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.receipt-table tbody td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.85rem;
+    color: #475569;
+}
+
+.receipt-summary-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.summary-table {
+    width: 300px;
+}
+
+.summary-table .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.summary-table .summary-row.grand-total {
+    border-top: 1px solid #1f6b4a;
+    border-bottom: 1px solid #1f6b4a;
+    padding: 0.6rem 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    color: #1f6b4a;
+    font-size: 0.95rem;
+}
+
+.summary-table .summary-row.payment-mode {
+    font-weight: 600;
+}
+
+.amount-in-words {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.receipt-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 3rem;
+    position: relative;
+    z-index: 1;
+}
+
+.receipt-footer .footer-left {
+    line-height: 1.4;
+}
+
+.receipt-footer .footer-right {
+    text-align: center;
+    width: 200px;
+}
+
+.receipt-footer .footer-right .sign-line {
+    border-bottom: 1px solid #1e293b;
+    margin-bottom: 0.5rem;
+    height: 30px;
+}
+
+/* --- PREMIUM B2B OVERRIDES FOR OPD BILLING MODAL --- */
+
+.modal-overlay {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(8px);
+}
+
+.billing-modal-card {
+    background: #f3efe6 !important;
+    border-radius: 16px !important; /* Smaller radius */
+    max-width: 1050px !important; /* Smaller width */
+    height: 92vh !important; /* Slightly smaller height */
+    border: none !important;
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.4) !important;
+}
+
+.billing-modal-head {
+    background: transparent !important;
+    color: #1f6b4a !important;
+    padding: 1rem 1.5rem 0.2rem 1.5rem !important; /* Reduced padding */
+}
+
+.billing-modal-head h3 {
+    color: #1f6b4a !important;
+    font-size: 1.15rem !important; /* Smaller font */
+    font-weight: 700 !important;
+}
+
+.billing-modal-head .btn-close-modal {
+    color: #1f6b4a !important;
+    background: transparent !important;
+}
+.billing-modal-head .btn-close-modal:hover {
+    background: rgba(31, 107, 74, 0.1) !important;
+}
+
+.modal-body-scroll {
+    background: #f3efe6 !important;
+    padding: 0.5rem 1.5rem 1.5rem 1.5rem !important; /* Reduced padding */
+    gap: 0.8rem !important; /* Reduced gap */
+}
+
+.modal-section-card {
+    background: #f3efe6 !important;
+    border: 1px solid rgba(31, 107, 74, 0.2) !important;
+    border-radius: 12px !important; /* Smaller radius */
+    box-shadow: none !important;
+}
+
+.modal-section-head {
+    background: transparent !important;
+    border-bottom: none !important;
+    padding: 0.6rem 1.2rem 0.1rem 1.2rem !important; /* Reduced padding */
+    color: #1f6b4a !important;
+    font-weight: 700 !important;
+    font-size: 0.9rem !important; /* Smaller font */
+}
+
+.modal-section-head i {
+    color: #1f6b4a !important;
+}
+
+.modal-section-body {
+    padding: 0 1.2rem 1rem 1.2rem !important; /* Reduced padding */
+}
+
+/* Patient Registration Details */
+.patient-info-header {
+    background: #ffffff !important;
+    border: 1px solid rgba(31, 107, 74, 0.15) !important;
+    border-radius: 12px !important; /* Smaller radius */
+    padding: 0.8rem 1rem !important; /* Reduced padding */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+}
+.info-item {
+    gap: 0.15rem !important; /* Tighter gap */
+}
+.info-item label {
+    color: #1f6b4a !important;
+    font-weight: 700 !important;
+    font-size: 0.65rem !important; /* Smaller label */
+}
+.info-item span {
+    color: #2d3748 !important;
+    font-size: 0.85rem !important; /* Smaller text */
+    min-height: 1rem !important;
+}
+.info-item input {
+    background: #f0fafa !important;
+    border: 1px solid rgba(31, 107, 74, 0.3) !important;
+    padding: 0.2rem 0.4rem !important; /* Smaller input */
+    font-size: 0.8rem !important;
+}
+
+/* Form Inputs */
+.form-group {
+    margin-bottom: 0.25rem !important; /* Tighter margins */
+}
+.form-group label {
+    color: #1f6b4a !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important; /* Smaller label */
+    margin-bottom: 0.2rem !important;
+}
+.form-group input, .form-group select {
+    background: #ffffff !important;
+    border: 1px solid rgba(31, 107, 74, 0.25) !important;
+    border-radius: 8px !important; /* Smaller radius */
+    padding: 0.45rem 0.7rem !important; /* Reduced padding */
+    color: #2d3748 !important;
+    font-size: 0.8rem !important; /* Smaller text */
+}
+.form-group input:focus, .form-group select:focus {
+    border-color: #1f6b4a !important;
+    box-shadow: 0 0 0 2px rgba(31, 107, 74, 0.15) !important;
+}
+
+/* Search Service input */
+#serviceSearchInput {
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(31, 107, 74, 0.25) !important;
+    padding-top: 0.45rem !important;
+    padding-bottom: 0.45rem !important;
+    font-size: 0.8rem !important;
+}
+.form-group i.fa-search {
+    color: #1f6b4a !important;
+    top: 1.7rem !important; /* Adjust icon position */
+}
+
+/* Add Item Button */
+.billing-right .btn-secondary {
+    background: #e2e8f0 !important;
+    border: none !important;
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important; /* Smaller radius */
+    height: 33px !important; /* Smaller height */
+    padding: 0 1rem !important;
+    font-size: 0.8rem !important; /* Smaller font */
+}
+
+/* Items Table */
+.items-table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    font-size: 0.8rem !important; /* Smaller table text */
+}
+.items-table thead th {
+    background: transparent !important;
+    color: #1f6b4a !important;
+    border-bottom: 1.5px solid rgba(31, 107, 74, 0.1) !important;
+    font-weight: 700 !important;
+    padding: 0.3rem 0.4rem !important; /* Reduced padding */
+    font-size: 0.7rem !important; /* Smaller header */
+}
+.items-table tbody tr td {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(31, 107, 74, 0.1) !important;
+    padding: 0.3rem 0.4rem !important; /* Reduced padding */
+}
+.items-table input, .items-table select {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    font-weight: 500 !important;
+    font-size: 0.8rem !important; /* Smaller input in table */
+}
+.items-table input:focus, .items-table select:focus {
+    box-shadow: none !important;
+    border-bottom: 1px solid #1f6b4a !important;
+    border-radius: 0 !important;
+}
+.btn-remove-row {
+    background: rgba(220, 38, 38, 0.1) !important;
+    color: #dc2626 !important;
+    border-radius: 6px !important; /* Smaller radius */
+    width: 24px !important; /* Smaller button */
+    height: 24px !important;
+    font-size: 0.75rem !important;
+}
+
+/* Add Manual Item */
+.btn-add-item {
+    border: none !important;
+    background: transparent !important;
+    color: #1f6b4a !important;
+    font-weight: 700 !important;
+    padding: 0.3rem 0 !important; /* Reduced padding */
+    font-size: 0.8rem !important; /* Smaller font */
+}
+.btn-add-item:hover {
+    background: transparent !important;
+    text-decoration: underline !important;
+}
+
+/* Payment & Summary */
+.payment-modes {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.4rem !important; /* Tighter gap */
+}
+.mode-btn {
+    flex: 1 1 70px !important; /* Slightly smaller flex basis */
+    background: #ffffff !important;
+    border: 1px solid rgba(31, 107, 74, 0.25) !important;
+    border-radius: 8px !important; /* Smaller radius */
+    color: #2d3748 !important;
+    padding: 0.3rem !important; /* Reduced padding */
+    font-size: 0.7rem !important; /* Smaller font */
+}
+.mode-btn.active {
+    background: #e6f0eb !important;
+    border-color: #1f6b4a !important;
+    color: #1f6b4a !important;
+    font-weight: 700 !important;
+}
+.mode-btn i {
+    color: #1f6b4a !important;
+    font-size: 0.9rem !important; /* Smaller icon */
+    margin-bottom: 0.1rem !important;
+}
+
+.bill-summary {
+    background: transparent !important;
+    padding: 0 !important;
+    margin-top: 0 !important;
+}
+.summary-row {
+    color: #1e293b !important;
+    padding: 0.1rem 0 !important; /* Tighter padding */
+    font-size: 0.8rem !important; /* Smaller font */
+}
+.summary-row span:first-child {
+    font-weight: 600 !important;
+    color: #475569 !important;
+}
+.summary-row span:last-child {
+    font-weight: 700 !important;
+    color: #1f6b4a !important;
+}
+.summary-row.total-row {
+    border-top: none !important;
+    margin-top: 0.4rem !important;
+    padding-top: 0.4rem !important;
+}
+.summary-row.total-row span:first-child {
+    color: #0f172a !important;
+    font-size: 0.9rem !important; /* Smaller font */
+}
+.summary-row.total-row span:last-child {
+    font-size: 1.1rem !important; /* Smaller font */
+}
+
+/* Generate Bill Button */
+#btnGenerateBill {
+    background: #1f6b4a !important;
+    border-radius: 8px !important; /* Smaller radius */
+    padding: 0.6rem !important; /* Reduced padding */
+    font-size: 0.85rem !important; /* Smaller font */
+    font-weight: 700 !important;
+    box-shadow: 0 3px 10px rgba(31, 107, 74, 0.3) !important;
+}
+
+/* Override for Close Button Visibility */
+.billing-modal-head .btn-close-modal {
+    color: #ef4444 !important; /* Prominent red */
+    background: rgba(239, 68, 68, 0.1) !important;
+    opacity: 1 !important;
+}
+.billing-modal-head .btn-close-modal:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+}
+
+/* --- FIX FOR SUB-MODALS (REFERRAL MODAL) --- */
+.modal-card {
+    background: #f3efe6 !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(31, 107, 74, 0.2) !important;
+}
+.modal-head {
+    background: transparent !important;
+    color: #1f6b4a !important;
+    border-bottom: none !important;
+    padding: 1.2rem 1.5rem 0.5rem 1.5rem !important;
+}
+.modal-head h3 {
+    color: #1f6b4a !important;
+    font-weight: 700 !important;
+}
+.modal-head .btn-close-modal {
+    color: #ef4444 !important; /* Prominent red */
+    background: rgba(239, 68, 68, 0.1) !important;
+    opacity: 1 !important;
+}
+.modal-head .btn-close-modal:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+}
+.btn-primary {
+    background: #1f6b4a !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 1.2rem !important;
+}
+.btn-primary:hover {
+    background: #144b34 !important;
+}
+.modal-body {
+    padding: 0.5rem 1.5rem 1.5rem 1.5rem !important;
+}
+
+/* --- FIX FOR SEARCH PANEL (LEFT SIDEBAR) --- */
+.search-panel {
+    background: #f3efe6 !important; /* Warm Linen */
+    border: 1px solid rgba(31, 107, 74, 0.15) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03) !important;
+}
+
+.search-panel .panel-head {
+    background: transparent !important;
+    color: #1f6b4a !important; /* Deep Emerald Green */
+    border-bottom: 2px solid rgba(31, 107, 74, 0.1) !important;
+    padding: 1.25rem 1.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+.search-panel .panel-head i {
+    color: #1f6b4a !important;
+    font-size: 1.3rem !important;
+}
+
+.search-panel .panel-head h3 {
+    color: #1f6b4a !important;
+    font-weight: 700 !important;
+    font-size: 1.2rem !important;
+    margin: 0 !important;
+}
+
+/* Highlight the Search Bar */
+.search-input-wrap {
+    position: relative !important;
+    margin-top: 1rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.search-input-wrap input {
+    background: #ffffff !important;
+    border: 2px solid rgba(31, 107, 74, 0.25) !important; /* Stronger border */
+    border-radius: 12px !important;
+    padding: 0.85rem 1rem 0.85rem 2.8rem !important;
+    font-size: 0.95rem !important;
+    color: #2d3748 !important;
+    box-shadow: 0 4px 15px rgba(31, 107, 74, 0.08) !important; /* Glowing shadow */
+    transition: all 0.3s ease !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.search-input-wrap input:focus {
+    border-color: #1f6b4a !important;
+    box-shadow: 0 6px 20px rgba(31, 107, 74, 0.15) !important;
+    outline: none !important;
+}
+
+.search-input-wrap .search-icon {
+    position: absolute !important;
+    left: 1rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: #1f6b4a !important;
+    font-size: 1.1rem !important;
+    z-index: 2 !important;
+}
+
+.search-input-wrap input::placeholder {
+    color: #64748b !important;
+    opacity: 0.8 !important;
+}
+
+/* Fix for the Empty State text */
+.patient-results .empty-state {
+    color: #1f6b4a !important;
+    font-weight: 500 !important;
+    opacity: 0.8 !important;
+    text-align: center !important;
+    padding: 2rem !important;
+}
+
+/* Make Placeholder More Visible */
+.search-input-wrap input::placeholder {
+    color: #475569 !important; /* Darker slate gray for better contrast */
+    opacity: 1 !important;
+    font-weight: 500 !important;
+}
+
+/* Make placeholder highly visible */
+.search-input-wrap input::placeholder {
+    color: #334155 !important; /* Darker gray-blue */
+    opacity: 1 !important;     /* Full opacity */
+    font-weight: 500 !important;
+}
+
+/* Ensure full placeholder text fits by adjusting font size and width */
+.billing-workspace {
+    grid-template-columns: 360px 1fr !important; /* Widen left panel slightly */
+}
+.search-input-wrap input {
+    font-size: 0.82rem !important; /* Slightly smaller text so long placeholders fit */
+    padding-right: 0.5rem !important;
+}
+.search-input-wrap input::placeholder {
+    font-size: 0.8rem !important; 
+    letter-spacing: -0.3px !important;
+}
+
+/* Revert width to give space back to Recent Bills */
+.billing-workspace {
+    grid-template-columns: 320px 1fr !important; /* Back to original narrower width */
+}
+
+/* Reduce search panel width further */
+.billing-workspace {
+    grid-template-columns: 280px 1fr !important;
+}
+
+/* --- FIX RECENT BILLS TOOLBAR SEARCH --- */
+/* Revert the global overrides for the Recent Bills search bar so it fits nicely in the toolbar */
+.billing-card-head .search-input-wrap {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    width: 220px !important;
+}
+
+.billing-card-head .search-input-wrap input {
+    padding: 0.4rem 0.5rem 0.4rem 2rem !important; /* Restore normal small padding */
+    font-size: 0.8rem !important;
+    background: #ffffff !important;
+    border: 1px solid var(--gray-300) !important;
+    box-shadow: none !important;
+    height: 32px !important; /* Fixed small height */
+}
+
+.billing-card-head .search-input-wrap input:focus {
+    border-color: var(--teal) !important;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1) !important;
+}
+
+.billing-card-head .search-input-wrap .search-icon {
+    font-size: 0.8rem !important;
+    left: 0.6rem !important;
+    color: var(--gray-400) !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+}
+
+/* =========================================================================
+   PREMIUM B2B OVERRIDES FOR RECENT BILLS SECTION
+   ========================================================================= */
+
+.billing-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(31, 107, 74, 0.15) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03) !important;
+    overflow: hidden !important;
+    margin-top: 1rem !important;
+}
+
+.billing-card-head {
+    background: #f3efe6 !important; /* Warm Linen */
+    border-bottom: 2px solid rgba(31, 107, 74, 0.1) !important;
+    padding: 1rem 1.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+.billing-card-head i.fa-history {
+    color: #1f6b4a !important; /* Deep Emerald Green */
+    font-size: 1.2rem !important;
+}
+
+.billing-card-head h3 {
+    color: #1f6b4a !important;
+    font-weight: 700 !important;
+    font-size: 1.15rem !important;
+    margin: 0 !important;
+}
+
+/* Toolbar adjustments */
+.bills-toolbar {
+    display: flex !important;
+    gap: 0.75rem !important;
+    align-items: center !important;
+}
+
+.bills-toolbar .filter-select {
+    padding: 0.4rem 2rem 0.4rem 0.75rem !important;
+    font-size: 0.8rem !important;
+    border: 1px solid rgba(31, 107, 74, 0.25) !important;
+    border-radius: 6px !important;
+    background-color: #ffffff !important;
+    color: #1f6b4a !important;
+    font-weight: 600 !important;
+    height: 32px !important;
+    cursor: pointer !important;
+}
+
+.bills-toolbar .filter-select:focus {
+    border-color: #1f6b4a !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(31, 107, 74, 0.1) !important;
+}
+
+.bills-toolbar .btn-secondary {
+    background: #ffffff !important;
+    color: #1f6b4a !important;
+    border: 1px solid rgba(31, 107, 74, 0.25) !important;
+    border-radius: 6px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+}
+
+.bills-toolbar .btn-secondary:hover {
+    background: #1f6b4a !important;
+    color: #ffffff !important;
+    border-color: #1f6b4a !important;
+}
+
+/* Table Styling */
+.table-wrap {
+    padding: 0 !important;
+    overflow-x: auto !important;
+}
+
+.bills-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 0.85rem !important;
+}
+
+.bills-table thead {
+    background: #fdfcf9 !important; /* Very faint linen */
+}
+
+.bills-table th {
+    padding: 1rem 1.25rem !important;
+    text-align: left !important;
+    font-weight: 700 !important;
+    color: #64748b !important;
+    text-transform: uppercase !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.8px !important;
+    border-bottom: 2px solid rgba(31, 107, 74, 0.1) !important;
+    white-space: nowrap !important;
+}
+
+.bills-table td {
+    padding: 0.9rem 1.25rem !important;
+    vertical-align: middle !important;
+    border-bottom: 1px solid rgba(31, 107, 74, 0.05) !important;
+    color: #334155 !important;
+}
+
+.bills-table tbody tr {
+    transition: background-color 0.2s ease !important;
+}
+
+.bills-table tbody tr:hover {
+    background-color: rgba(31, 107, 74, 0.03) !important; /* Crisp subtle hover */
+}
+
+/* Specific inline style overrides */
+.bills-table td a[style*="color:var(--teal)"], 
+.bills-table td span[style*="color:var(--teal)"] {
+    color: #1f6b4a !important;
+}
+
+.bills-table td a[style*="border-bottom:1px dashed var(--teal)"] {
+    border-bottom-color: rgba(31, 107, 74, 0.4) !important;
+}
+
+.bills-table td a:hover {
+    color: #144b34 !important;
+    border-bottom-color: #1f6b4a !important;
+}
+
+/* Paid/Pending Badges */
+.status-badge {
+    padding: 0.3rem 0.75rem !important;
+    border-radius: 20px !important;
+    font-size: 0.68rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.badge-paid {
+    background: rgba(31, 107, 74, 0.12) !important;
+    color: #1f6b4a !important;
+    border: 1px solid rgba(31, 107, 74, 0.25) !important;
+}
+
+.badge-pending {
+    background: #fff1f2 !important;
+    color: #e11d48 !important;
+    border: 1px solid #fecdd3 !important;
+}
+
+/* Print Button in Table */
+.bills-table td button {
+    background: #ffffff !important;
+    color: #1f6b4a !important;
+    border: 1px solid rgba(31, 107, 74, 0.2) !important;
+    border-radius: 8px !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02) !important;
+}
+
+.bills-table td button:hover {
+    background: #1f6b4a !important;
+    color: #ffffff !important;
+    border-color: #1f6b4a !important;
+    box-shadow: 0 4px 10px rgba(31, 107, 74, 0.15) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Pagination Wrap */
+.pagination-wrap {
+    padding: 1rem 1.5rem !important;
+    background: #ffffff !important;
+    border-top: 1px solid rgba(31, 107, 74, 0.08) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+}
+
+.pagination-wrap .page-info {
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    color: #64748b !important;
+}
+
+.pagination-wrap .page-controls button {
+    background: #ffffff !important;
+    border: 1px solid rgba(31, 107, 74, 0.25) !important;
+    color: #1f6b4a !important;
+    border-radius: 6px !important;
+    padding: 0.35rem 0.85rem !important;
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    margin-left: 0.5rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.pagination-wrap .page-controls button:hover:not(:disabled) {
+    background: #1f6b4a !important;
+    color: #ffffff !important;
+    border-color: #1f6b4a !important;
+}
+
+.pagination-wrap .page-controls button:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #94a3b8 !important;
+}
+
+/* Make the entire workspace stacked vertically instead of side-by-side */
+.billing-workspace {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+}
+
+.search-panel {
+    width: 100% !important;
+}
+
+/* Revert back to side-by-side layout! */
+.billing-workspace {
+    display: grid !important;
+    grid-template-columns: 280px 1fr !important;
+    gap: 1.5rem !important;
+}
+
+.search-panel {
+    width: auto !important;
+}
+
+/* Revert back to horizontal side-by-side layout! */
+.billing-workspace {
+    display: grid !important;
+    grid-template-columns: 280px 1fr !important;
+}
+
+/* =========================================================================
+   PREMIUM B2B OVERRIDES FOR PATIENT SEARCH RESULTS GRID
+   ========================================================================= */
+
+.patient-results {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.8rem !important;
+    margin-top: 1rem !important;
+    max-height: 480px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 0.5rem !important;
+}
+
+.patient-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(31, 107, 74, 0.15) !important;
+    border-radius: 12px !important;
+    padding: 1.25rem !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0 !important; /* Remove original vertical margins */
+}
+
+.patient-card:hover {
+    border-color: rgba(31, 107, 74, 0.4) !important;
+    box-shadow: 0 8px 25px rgba(31, 107, 74, 0.1) !important;
+    transform: translateY(-2px) !important;
+    background: #fdfbf7 !important; /* Extremely faint warm linen on hover */
+}
+
+.patient-card.selected {
+    background: rgba(31, 107, 74, 0.04) !important;
+    border: 2px solid #1f6b4a !important; /* Deep Emerald Green */
+    box-shadow: 0 6px 20px rgba(31, 107, 74, 0.12) !important;
+}
+
+.patient-card .pt-name {
+    font-size: 1.1rem !important;
+    font-weight: 800 !important;
+    color: #1f6b4a !important;
+    margin-bottom: 0.4rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.patient-card .pt-meta {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    margin-top: 0 !important;
+}
+
+.patient-card .pt-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    background: #f8fafc !important; /* Light Slate */
+    border: 1px solid #e2e8f0 !important;
+    color: #334155 !important;
+    padding: 0.35rem 0.6rem !important;
+    border-radius: 6px !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+}
+
+.patient-card .pt-badge i {
+    color: #1f6b4a !important;
+    opacity: 0.85 !important;
+}
+
+/* Ensure the empty state looks nice */
+.patient-results .no-result {
+    grid-column: 1 / -1 !important;
+    background: #ffffff !important;
+    border: 2px dashed rgba(31, 107, 74, 0.2) !important;
+    border-radius: 12px !important;
+    padding: 3.5rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #1f6b4a !important;
+}
+
+.patient-results .no-result i {
+    font-size: 2.5rem !important;
+    margin-bottom: 1rem !important;
+    opacity: 0.5 !important;
+}
+
+/* --- VERTICAL LAYOUT FIXES --- */
+.billing-workspace {
+    grid-template-columns: 360px 1fr !important; /* Widen sidebar to hold cards */
+    gap: 1.5rem !important;
+}
+
+.billing-left-sidebar {
+    height: 100% !important;
+}
+
+.recent-bills-vertical-card {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03) !important;
+    border-radius: 16px !important;
+    background: #f3efe6 !important;
+    border: 1px solid rgba(31, 107, 74, 0.15) !important;
+}
+
+.bills-list-vertical .empty-state {
+    padding: 2rem !important;
+    text-align: center !important;
+    color: #1f6b4a !important;
+    font-weight: 500 !important;
+}
+
+/* Increase sidebar width to 420px for a clearer view of the cards */
+.billing-workspace {
+    grid-template-columns: 420px 1fr !important;
+}
+
+/* Ensure the bills toolbar search input stretches nicely */
+.billing-card-head .bills-toolbar {
+    width: 100% !important;
+}
+.billing-card-head .search-input-wrap {
+    width: 100% !important; 
+    flex: 1 !important;
+}
+
+/* --- EMBED BILLING FORM INTO RIGHT COLUMN (NO MORE POPUP) --- */
+.billing-right {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 100px); /* Match sidebar height */
+}
+
+/* Strip popup overlay behavior */
+.billing-right .modal-overlay {
+    position: relative !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    display: flex !important; /* Always display the form container */
+    padding: 0 !important;
+    height: 100% !important;
+    z-index: 1 !important;
+    animation: none !important;
+}
+
+/* Make the card fill the entire right column */
+.billing-right .billing-modal-card {
+    height: 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.04) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border: 1px solid rgba(31, 107, 74, 0.15) !important;
+    margin: 0 !important;
+}
+
+/* Ensure the body scrolls perfectly within the fixed right side */
+.billing-right .modal-body-scroll {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding-bottom: 2rem !important;
+}
+
+/* Hide the close button on the header because it's no longer a popup modal */
+.billing-right .btn-close-modal {
+    display: none !important;
+}
+
+/* =========================================================================
+   REVERT TO POPUP MODAL & FULL WIDTH DASHBOARD
+   ========================================================================= */
+
+/* 1. Make the main workspace a single column, full width */
+.billing-workspace {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+}
+
+.billing-left-sidebar {
+    width: 100% !important;
+    max-height: none !important; /* Allow natural scrolling */
+    overflow: visible !important;
+}
+
+.search-panel {
+    width: 100% !important;
+}
+
+/* 2. Re-arrange Recent Bills Cards into a Dashboard Grid so they look great full-width */
+.bills-list-vertical {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+    gap: 1.25rem !important;
+    flex-direction: row !important; /* Override the inline style */
+}
+
+/* 3. Restore the Billing Form to a Popup Modal */
+.billing-right {
+    height: auto !important;
+}
+
+/* Undo the embed overrides to restore the popup behavior */
+.billing-right .modal-overlay {
+    position: fixed !important;
+    background: rgba(15, 23, 42, 0.6) !important;
+    backdrop-filter: blur(10px) !important;
+    display: none !important; /* Hide by default */
+    padding: 1.5rem !important;
+    z-index: 2000 !important;
+}
+
+.billing-right .modal-overlay.active {
+    display: flex !important; /* Show when active */
+}
+
+.billing-right .billing-modal-card {
+    height: 95vh !important;
+    max-width: 1100px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    border-radius: 24px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Restore the close button */
+.billing-right .btn-close-modal {
+    display: flex !important;
+}
+
+/* =========================================================================
+   SCROLLING DATA VIEWS (FIXED HEIGHTS)
+   ========================================================================= */
+
+/* Make Find Patient search results a scrolling container */
+.patient-results {
+    max-height: 350px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 0.5rem !important; /* Prevent scrollbar overlap */
+}
+
+/* Custom slim scrollbar for patient results */
+.patient-results::-webkit-scrollbar {
+    width: 6px;
+}
+.patient-results::-webkit-scrollbar-track {
+    background: rgba(31, 107, 74, 0.05);
+    border-radius: 4px;
+}
+.patient-results::-webkit-scrollbar-thumb {
+    background: rgba(31, 107, 74, 0.3);
+    border-radius: 4px;
+}
+
+/* Make Recent Bills a fixed height scrolling container */
+.billing-card-body {
+    max-height: 600px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 0.5rem !important;
+}
+
+/* Custom slim scrollbar for recent bills */
+.billing-card-body::-webkit-scrollbar {
+    width: 6px;
+}
+.billing-card-body::-webkit-scrollbar-track {
+    background: rgba(31, 107, 74, 0.05);
+    border-radius: 4px;
+}
+.billing-card-body::-webkit-scrollbar-thumb {
+    background: rgba(31, 107, 74, 0.3);
+    border-radius: 4px;
+}
+
+/* =========================================================================
+   USER FEEDBACK UPDATES
+   ========================================================================= */
+
+/* 1. Make the Find Patient panel a small centered card view */
+.search-panel {
+    max-width: 650px !important;
+    margin: 0 auto !important; /* Centers the search panel on the page */
+    width: 100% !important;
+}
+
+/* 2. Remove the internal scrolling from Recent Bills so it expands down naturally */
+.billing-card-body {
+    max-height: none !important;
+    overflow-y: visible !important;
+    padding-right: 0 !important;
+}
+
+/* =========================================================================
+   FIX STICKY OVERLAP & REDUCE CARD HEIGHT
+   ========================================================================= */
+
+/* Prevent Find Patient from sticking and overlapping Recent Bills */
+.search-panel {
+    position: relative !important;
+    top: auto !important;
+}
+
+/* Reduce the height of Find Patient result cards */
+.patient-card {
+    padding: 0.75rem 1rem !important; /* Reduced padding */
+    min-height: auto !important;
+    gap: 0.35rem !important; /* Tighter gap between name and badges */
+}
+
+.patient-card .pt-name {
+    font-size: 1rem !important; 
+    margin-bottom: 0.2rem !important;
+}
+
+.patient-card .pt-badge {
+    padding: 0.25rem 0.5rem !important; /* Smaller badges to save vertical space */
+    font-size: 0.65rem !important;
+}
+
+
+/* =========================================================================
+   FIND PATIENT: FULL-WIDTH LIST & THIN CARDS
+   ========================================================================= */
+
+/* 1. Make the container a single vertical list so cards stretch full width */
+.patient-results {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+    gap: 0.5rem !important; /* Tighter gap */
+}
+
+/* 2. Transform the card into a thin, horizontal strip */
+/* 2. Transform the card to stack nicely in the narrow sidebar */
+.patient-card {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    padding: 0.8rem 1rem !important;
+    min-height: auto !important;
+    height: auto !important;
+    gap: 0.6rem !important;
+}
+
+/* Name and meta on the same line if possible, or tightly stacked */
+.patient-card .pt-info-wrapper {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1.5rem !important;
+}
+
+.patient-card .pt-name {
+    margin: 0 !important;
+    font-size: 1.05rem !important;
+}
+
+.patient-card .pt-meta {
+    margin: 0 !important;
+    gap: 0.5rem !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+}
+
+.patient-card .pt-badge {
+    padding: 0.2rem 0.5rem !important;
+    font-size: 0.65rem !important;
+}
+
+/* =========================================================================
+   FIX FULL WIDTH & REDUCE EMPTY STATE HEIGHT
+   ========================================================================= */
+
+/* Force the workspace items to stretch to full width instead of shrink-wrapping */
+.billing-workspace {
+    align-items: stretch !important;
+}
+
+/* Reduce the massive vertical padding on the empty search box */
+.patient-results .no-result {
+    padding: 1.5rem !important; /* Reduced from 3.5rem */
+    min-height: auto !important;
+}
+
+/* =========================================================================
+   ALLOW FIND PATIENT TO SPAN FULL PAGE WIDTH
+   ========================================================================= */
+
+.search-panel {
+    max-width: none !important;
+    margin: 0 !important;
+}
+
+/* =========================================================================
+   2-COLOR THEME FOR RECENT BILLS SECTION (#f3efe6 & #1f6b4a)
+   ========================================================================= */
+
+/* Ensure entire card body matches background */
+.recent-bills-vertical-card .billing-card-body {
+    background: #f3efe6 !important;
+}
+.recent-bills-vertical-card .billing-card-head {
+    background: #f3efe6 !important;
+    border-bottom: 2px solid #1f6b4a !important;
+}
+.recent-bills-vertical-card {
+    border: 2px solid #1f6b4a !important;
+}
+
+/* Pagination container */
+.recent-bills-vertical-card .pagination-wrap {
+    background: #f3efe6 !important;
+    border-top: 1px solid #1f6b4a !important;
+}
+.recent-bills-vertical-card .pagination-wrap .page-info {
+    color: #1f6b4a !important;
+}
+.recent-bills-vertical-card .pagination-wrap .page-controls button {
+    background: #f3efe6 !important;
+    color: #1f6b4a !important;
+    border: 1px solid #1f6b4a !important;
+}
+.recent-bills-vertical-card .pagination-wrap .page-controls button:hover:not(:disabled) {
+    background: #1f6b4a !important;
+    color: #f3efe6 !important;
+}
+.recent-bills-vertical-card .pagination-wrap .page-controls button:disabled {
+    opacity: 0.5 !important;
+    background: #f3efe6 !important;
+    color: #1f6b4a !important;
+    border: 1px solid #1f6b4a !important;
+}
+
+/* Search Input & Select in Toolbar */
+.recent-bills-vertical-card .search-input-wrap input,
+.recent-bills-vertical-card .filter-select,
+.recent-bills-vertical-card .btn-secondary {
+    background: #f3efe6 !important;
+    color: #1f6b4a !important;
+    border: 1px solid #1f6b4a !important;
+}
+.recent-bills-vertical-card .search-input-wrap input::placeholder {
+    color: #1f6b4a !important;
+    opacity: 0.7 !important;
+}
+.recent-bills-vertical-card .search-input-wrap .search-icon {
+    color: #1f6b4a !important;
+}
+.recent-bills-vertical-card .btn-secondary:hover {
+    background: #1f6b4a !important;
+    color: #f3efe6 !important;
+}
+
+/* =========================================================================
+   FIX BOTTOM BORDER VISIBILITY
+   ========================================================================= */
+
+/* Ensure the workspace has enough bottom margin so the container isn't clipped by the window edge */
+.billing-workspace {
+    margin-bottom: 3rem !important;
+}
+
+/* Ensure the card has overflow hidden so the border radius wraps the pagination nicely */
+.recent-bills-vertical-card {
+    overflow: hidden !important;
+    border-radius: 12px !important; /* Make sure corners look good */
+    margin-bottom: 1rem !important;
+}
+
+/* =========================================================================
+   BENTO-BOX MASTER UI OVERHAUL (Strictly #f3efe6 and #1f6b4a)
+   ========================================================================= */
+
+/* Hide old elements just in case any were left over */
+.billing-workspace > .billing-left-sidebar,
+.billing-stats {
+    display: none !important;
+}
+
+/* 1. Asymmetric Bento Grid (65% / 35%) */
+.bento-workspace {
+    display: grid !important;
+    grid-template-columns: 65% calc(35% - 1.5rem) !important;
+    gap: 1.5rem !important;
+    align-items: start !important;
+    margin-bottom: 3rem !important;
+}
+
+/* 2. Main Ledger Module */
+.bento-ledger {
+    background: #f3efe6;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(31, 107, 74, 0.05);
+    border: 1px solid rgba(31, 107, 74, 0.15);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Premium Header Block */
+.bento-header-block {
+    background: #1f6b4a;
+    color: #f3efe6;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.bento-header-block h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.bento-header-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+/* Crisp pill inputs */
+.bento-search-wrap, .bento-filter {
+    background: rgba(243, 239, 230, 0.15);
+    border: 1px solid rgba(243, 239, 230, 0.3);
+    border-radius: 20px;
+    color: #f3efe6;
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 1rem;
+    transition: all 0.2s;
+}
+.bento-search-wrap i {
+    color: #f3efe6;
+    opacity: 0.7;
+    margin-right: 0.5rem;
+}
+.bento-search-wrap input {
+    background: transparent;
+    border: none;
+    color: #f3efe6;
+    outline: none;
+    font-size: 0.85rem;
+    width: 140px;
+}
+.bento-search-wrap input::placeholder {
+    color: rgba(243, 239, 230, 0.6);
+}
+.bento-filter {
+    outline: none;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.bento-filter option {
+    background: #f3efe6;
+    color: #1f6b4a;
+}
+.bento-icon-btn {
+    background: rgba(243, 239, 230, 0.15);
+    color: #f3efe6;
+    border: 1px solid rgba(243, 239, 230, 0.3);
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.bento-icon-btn:hover {
+    background: rgba(243, 239, 230, 0.3);
+}
+
+/* Data Table Aesthetics */
+.bento-table-wrap {
+    overflow-x: auto;
+}
+.bento-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #f3efe6;
+}
+.bento-table thead th {
+    background: rgba(31, 107, 74, 0.04);
+    color: #1f6b4a;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0.75rem 1.25rem;
+    text-align: left;
+    border-bottom: 1px solid rgba(31, 107, 74, 0.15);
+}
+.bento-table tbody tr {
+    border-bottom: 1px solid rgba(31, 107, 74, 0.08); /* Ultra-thin row separators */
+    transition: background 0.2s ease;
+    cursor: pointer;
+}
+.bento-table tbody tr:hover {
+    background: rgba(31, 107, 74, 0.08); /* Hover highlight */
+}
+.bento-table tbody td {
+    padding: 1rem 1.25rem;
+    vertical-align: middle;
+    color: #1f6b4a;
+}
+
+/* High-Fidelity Cell Stacking */
+.pt-stack-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+.pt-stack-meta {
+    font-size: 0.72rem;
+    opacity: 0.8;
+}
+.fin-stack-amount {
+    font-weight: 700;
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Pill Badges (Strictly #1f6b4a with opacity) */
+.bento-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.bento-badge-paid {
+    background: rgba(31, 107, 74, 0.15);
+    color: #1f6b4a;
+    border: 1px solid rgba(31, 107, 74, 0.3);
+}
+.bento-badge-pending {
+    background: transparent;
+    color: #1f6b4a;
+    border: 1px solid #1f6b4a;
+}
+
+/* Print Button in Table */
+.bento-print-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(31, 107, 74, 0.1);
+    color: #1f6b4a;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+.bento-print-btn:hover {
+    background: #1f6b4a;
+    color: #f3efe6;
+    box-shadow: 0 4px 12px rgba(31, 107, 74, 0.2);
+}
+
+/* 3. Contextual Insights Sidebar (35%) */
+.bento-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Micro-widgets */
+.bento-widget {
+    background: #f3efe6;
+    border-radius: 16px;
+    border: 1px solid rgba(31, 107, 74, 0.15);
+    box-shadow: 0 8px 30px rgba(31, 107, 74, 0.05);
+    overflow: hidden;
+}
+.bento-widget-head {
+    background: rgba(31, 107, 74, 0.04);
+    border-bottom: 1px solid rgba(31, 107, 74, 0.15);
+    padding: 1rem 1.25rem;
+    font-weight: 700;
+    color: #1f6b4a;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.bento-widget-body {
+    padding: 1.25rem;
+}
+.bento-widget .bento-search-wrap {
+    background: white;
+    border: 1px solid rgba(31, 107, 74, 0.2);
+    color: #1f6b4a;
+    width: 100%;
+}
+.bento-widget .bento-search-wrap i {
+    color: #1f6b4a;
+}
+.bento-widget .bento-search-wrap input {
+    color: #1f6b4a;
+    width: 100%;
+}
+.bento-widget .bento-search-wrap input::placeholder {
+    color: rgba(31, 107, 74, 0.5);
+}
+
+/* Stats Cards (No Reds, Oranges, Teals) */
+.bento-stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.bento-stat-card {
+    background: #f3efe6;
+    border-radius: 16px;
+    border: 1px solid rgba(31, 107, 74, 0.15);
+    box-shadow: 0 4px 15px rgba(31, 107, 74, 0.03);
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    transition: transform 0.2s;
+}
+.bento-stat-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(31, 107, 74, 0.3);
+}
+.bento-stat-card .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(31, 107, 74, 0.1);
+    color: #1f6b4a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+.bento-stat-card.alert-stat {
+    background: rgba(31, 107, 74, 0.08); /* Special alert footer */
+    border: 1px solid rgba(31, 107, 74, 0.25);
+}
+.bento-stat-card.alert-stat .stat-icon {
+    background: rgba(31, 107, 74, 0.2);
+}
+.bento-stat-card .stat-value {
+    color: #1f6b4a;
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+.bento-stat-card .stat-label {
+    color: rgba(31, 107, 74, 0.8);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+/* Pagination container */
+.bento-pagination {
+    background: #f3efe6;
+    border-top: 1px solid rgba(31, 107, 74, 0.15);
+    padding: 1rem 1.5rem;
+}
+
+
+/* =========================================================================
+   MOCKUP - INSIGHTS & ACTIONS WIDGETS
+   ========================================================================= */
+
+.bento-quick-action {
+    background: transparent;
+    border: 1px solid rgba(31, 107, 74, 0.3);
+    border-radius: 8px;
+    padding: 0.5rem;
+    color: #1f6b4a;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+.bento-quick-action:hover {
+    background: #1f6b4a;
+    color: #f3efe6;
+    border-color: #1f6b4a;
+    box-shadow: 0 4px 12px rgba(31, 107, 74, 0.2);
+}
+
+.bento-alert-box {
+    background: rgba(239, 68, 68, 0.05); /* Tint of red based on image */
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    padding: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* =========================================================================
+   MOCKUP - HOVER DETAIL CARD
+   ========================================================================= */
+
+.pt-cell-hover .bento-hover-modal {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: all 0.2s ease-out;
+    position: absolute;
+    z-index: 1000;
+    left: 10px;
+    top: 80%;
+    width: 260px;
+    background: #f3efe6;
+    border-radius: 16px;
+    border: 1px solid rgba(31, 107, 74, 0.2);
+    box-shadow: 0 20px 60px rgba(31, 107, 74, 0.15);
+    padding: 1.25rem;
+    color: #1f6b4a;
+    cursor: default;
+}
+
+.pt-cell-hover:hover .bento-hover-modal {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+/* FIX EMPTY SPACE */
+.bento-ledger {
+    height: auto !important;
+    min-height: 0 !important;
+    flex: 0 1 auto !important;
+}
+.bento-table-wrap {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+.bento-workspace {
+    align-items: flex-start !important;
+}
+/* ENSURE THE CONTAINER NEVER STRETCHES TO FILL EMPTY SPACE */
+.bento-workspace {
+    align-items: start !important; /* Stop stretching */
+}
+.bento-ledger, .bento-table-container {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    flex: 0 1 auto !important;
+}
+.bento-table-wrap {
+    height: auto !important;
+    min-height: auto !important;
+    flex: 0 1 auto !important;
+}
+/* FIX: MAKE BOTH CARDS SAME HEIGHT */
+.bento-workspace {
+    align-items: stretch !important; /* Re-enable stretch so they match heights */
+}
+.bento-ledger, .bento-sidebar {
+    height: auto !important;
+    min-height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+/* Push pagination to the very bottom naturally */
+.bento-table-wrap {
+    flex: 1 1 auto !important; /* Table wrap fills empty space */
+}
+.bento-pagination {
+    margin-top: auto !important; /* Snaps to bottom */
+}
+/* CENTER HOVER MODAL */
+.pt-cell-hover .bento-hover-modal {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -40%) !important; /* Slightly offset when hidden */
+    margin: 0 !important;
+    z-index: 9999 !important;
+    box-shadow: 0 0 0 100vw rgba(0,0,0,0.1), 0 20px 60px rgba(31, 107, 74, 0.25) !important; /* Add dim overlay effect */
+}
+.pt-cell-hover:hover .bento-hover-modal {
+    transform: translate(-50%, -50%) !important; /* Center perfectly on hover */
+}
+/* FIX: Text visibility inside Recent Bills */
+.bento-header-block h3 {
+    color: #1f6b4a !important;
+}
+.bento-search-wrap, .bento-filter {
+    background: rgba(31, 107, 74, 0.05) !important;
+    border: 1px solid rgba(31, 107, 74, 0.2) !important;
+    color: #1f6b4a !important;
+}
+.bento-search-wrap i {
+    color: #1f6b4a !important;
+}
+.bento-search-wrap input {
+    color: #1f6b4a !important;
+}
+.bento-search-wrap input::placeholder {
+    color: rgba(31, 107, 74, 0.5) !important;
+}
+/* OVERRIDE TEXT VISIBILITY FOR HEADER BLOCK - LIGHT THEME */
+.bento-header-block h3 {
+    color: #f3efe6 !important;
+}
+.bento-header-block .bento-search-wrap, 
+.bento-header-block .bento-filter {
+    background: rgba(243, 239, 230, 0.2) !important;
+    border: 1px solid rgba(243, 239, 230, 0.4) !important;
+    color: #f3efe6 !important;
+}
+.bento-header-block .bento-search-wrap i {
+    color: #f3efe6 !important;
+}
+.bento-header-block .bento-search-wrap input {
+    color: #f3efe6 !important;
+}
+.bento-header-block .bento-search-wrap input::placeholder {
+    color: rgba(243, 239, 230, 0.7) !important;
+}
+.bento-header-block .bento-filter option {
+    background: #1f6b4a !important;
+    color: #f3efe6 !important;
+}
