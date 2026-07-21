@@ -325,16 +325,16 @@ function renderGlobalGridView(prescriptions, listContainer) {
                         ${(() => {
                             const { medicines, planText } = parseSoapPlanJS(p);
                             if (medicines.length > 0) {
-                                return `<span class="vital-pill" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important; font-weight:800;"><i class="fas fa-pills" style="color:#144D34 !important;"></i> ${medicines.length} Medicines</span>`;
+                                return `<button type="button" onclick="viewProfessionalPrescription('${p.prescription_id}')" class="vital-pill" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px;" title="Click to view prescription details"><i class="fas fa-pills" style="color:#144D34 !important;"></i> ${medicines.length} Medicines</button>`;
                             } else if (planText) {
-                                return `<span class="vital-pill" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important; font-weight:800;"><i class="fas fa-file-medical-alt" style="color:#144D34 !important;"></i> Plan Prescribed</span>`;
+                                return `<button type="button" onclick="viewProfessionalPrescription('${p.prescription_id}')" class="vital-pill" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px;" title="Click to view prescription details"><i class="fas fa-file-medical-alt" style="color:#144D34 !important;"></i> Plan Prescribed</button>`;
                             }
                             return '';
                         })()}
                         ${p.has_prescription_image ? `
-                            <span class="vital-pill" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important; font-weight:800;"><i class="fas fa-camera" style="color:#144D34 !important;"></i> Handwritten</span>
+                            <button type="button" onclick="openImageModal('${p.prescription_image_url}')" class="vital-pill" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px;" title="Click to view handwritten image"><i class="fas fa-camera" style="color:#144D34 !important;"></i> Handwritten</button>
                         ` : `
-                            <span class="vital-pill" style="background:#F4F1EA !important; color:#144D34 !important; border:1px solid #D5D0C3 !important; font-weight:800;"><i class="fas fa-file-alt" style="color:#144D34 !important;"></i> Digital</span>
+                            <button type="button" onclick="viewProfessionalPrescription('${p.prescription_id}')" class="vital-pill" style="background:#F4F1EA !important; color:#144D34 !important; border:1px solid #D5D0C3 !important; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px;" title="Click to view digital prescription"><i class="fas fa-file-alt" style="color:#144D34 !important;"></i> Digital</button>
                         `}
                     </div>
 
@@ -385,8 +385,16 @@ function renderGlobalTableView(prescriptions, listContainer) {
                     ${p.diagnosis || p.soap_subjective || 'General Consultation'}
                 </td>
                 <td style="padding:10px 12px;">
-                    ${medsCount > 0 ? `<span class="vital-pill mr-1" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important;"><i class="fas fa-pills" style="color:#144D34 !important;"></i> ${medsCount}</span>` : ''}
-                    ${p.has_prescription_image ? `<span class="vital-pill" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important;"><i class="fas fa-camera" style="color:#144D34 !important;"></i> Image</span>` : ''}
+                    ${(() => {
+                        const { medicines, planText } = parseSoapPlanJS(p);
+                        if (medicines.length > 0) {
+                            return `<button type="button" onclick="viewProfessionalPrescription('${p.prescription_id}')" class="vital-pill mr-1" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important; font-weight:800; cursor:pointer;" title="Click to view prescription details"><i class="fas fa-pills" style="color:#144D34 !important;"></i> ${medicines.length} Medicines</button>`;
+                        } else if (planText) {
+                            return `<button type="button" onclick="viewProfessionalPrescription('${p.prescription_id}')" class="vital-pill mr-1" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important; font-weight:800; cursor:pointer;" title="Click to view prescription details"><i class="fas fa-file-medical-alt" style="color:#144D34 !important;"></i> Plan</button>`;
+                        }
+                        return '';
+                    })()}
+                    ${p.has_prescription_image ? `<button type="button" onclick="openImageModal('${p.prescription_image_url}')" class="vital-pill" style="background:#E8F4EC !important; color:#144D34 !important; border:1px solid #C6E6D2 !important; font-weight:800; cursor:pointer;" title="Click to view handwritten image"><i class="fas fa-camera" style="color:#144D34 !important;"></i> Handwritten</button>` : ''}
                 </td>
                 <td style="padding:10px 12px; text-align:right;">
                     <div style="display:flex; gap:4px; justify-content:flex-end;">
