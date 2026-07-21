@@ -160,6 +160,7 @@ $basePath = str_repeat('../', $depth);
         .reception-sidebar.mobile-open {
             transform: translateX(0) !important;
             left: 0 !important;
+            z-index: 9999 !important;
         }
         
         /* Higher specificity to ensure it works */
@@ -171,6 +172,7 @@ $basePath = str_repeat('../', $depth);
         #receptionSidebar.mobile-open {
             transform: translateX(0) !important;
             left: 0 !important;
+            z-index: 9999 !important;
         }
         
         /* MOBILE OPD SUBMENU FIX - Position inside sidebar */

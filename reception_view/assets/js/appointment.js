@@ -519,16 +519,17 @@ class AppointmentManager {
 
         // 3. Set Department 
         const deptSelect = document.getElementById('departmentSelect');
-        if (deptSelect) {
+        if (deptSelect && apt.department_id) {
             deptSelect.value = apt.department_id;
-            // Manually trigger change to load doctors
-            await this.loadDoctorsByDept(apt.department_id);
+            if (typeof $(deptSelect).select2 === 'function') $(deptSelect).trigger('change.select2');
+        }
 
-            // 4. Set Doctor
-            const docSelect = document.getElementById('doctorSelect');
-            if (docSelect) {
-                docSelect.value = apt.doctor_id;
-            }
+        // 4. Set Doctor
+        const docSelect = document.getElementById('doctorSelect');
+        if (docSelect && apt.doctor_id) {
+            docSelect.value = apt.doctor_id;
+            if (typeof $(docSelect).select2 === 'function') $(docSelect).trigger('change.select2');
+            $(docSelect).trigger('change');
         }
 
         // 5. Set Date (Suggestion: Today + 7 days)
@@ -606,16 +607,15 @@ class AppointmentManager {
 
                     if (apt.department_id) {
                         deptSelect.value = apt.department_id;
-                        await this.loadDoctorsByDept(apt.department_id);
+                        if (typeof $(deptSelect).select2 === 'function') $(deptSelect).trigger('change.select2');
+                    }
 
-                        const docSelect = document.getElementById('doctorSelect');
-                        if (docSelect) {
-                            if (apt.doctor_id) {
-                                docSelect.value = apt.doctor_id;
-                            }
-                            // Trigger availability check after setting doctor
-                            this.checkAvailability();
-                        }
+                    const docSelect = document.getElementById('doctorSelect');
+                    if (docSelect && apt.doctor_id) {
+                        docSelect.value = apt.doctor_id;
+                        if (typeof $(docSelect).select2 === 'function') $(docSelect).trigger('change.select2');
+                        $(docSelect).trigger('change');
+                        this.checkAvailability();
                     }
                 }
 

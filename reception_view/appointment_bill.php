@@ -541,7 +541,9 @@ $pageTitle = 'Registration / Appointment Billing';
         .recent-table-container {
             margin-top: 1rem;
             border-radius: var(--radius-lg);
-            overflow: hidden;
+            overflow: auto;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
             border: 1px solid var(--glass-border);
         }
 

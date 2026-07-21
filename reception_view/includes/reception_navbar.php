@@ -100,11 +100,26 @@
 
 /* Mobile Responsive Utility */
 @media (max-width: 768px) {
-    #universal-reception-navbar .hide-mobile {
-        display: none !important;
-    }
     #universal-reception-navbar {
+        height: auto !important;
+        flex-direction: column !important;
+        gap: 1rem !important;
         padding: 1rem !important;
+    }
+    #universal-reception-navbar > div {
+        width: 100% !important;
+        justify-content: space-between !important;
+    }
+    #universal-reception-navbar > div:nth-child(2) {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+    }
+    #universal-reception-navbar .hide-mobile {
+        display: inline-block !important; /* Keep text visible per user request */
+        font-size: 0.75rem !important;
+    }
+    #universal-reception-navbar .btn {
+        padding: 0.5rem 0.75rem !important;
     }
 }
 

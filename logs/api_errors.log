@@ -3362,3 +3362,72 @@ Stack trace:
                     FROM doctors d WHERE (d.status = 'Active' OR d.status IS NULL OR d.status = '') ORDER BY availability DESC, d.full_name ASC LIMIT ? PARAMS: [200]
 [21-Jul-2026 20:29:58 Europe/Berlin] DOCTOR API RESULT COUNT: 33
 [21-Jul-2026 20:30:01 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[21-Jul-2026 20:46:25 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/appointments, Method: GET
+[21-Jul-2026 20:46:26 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/appointments/departments, Method: GET
+[21-Jul-2026 20:46:26 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/doctors, Method: GET
+[21-Jul-2026 20:46:26 Europe/Berlin] DOCTOR API SQL: SELECT 
+                        d.doctor_id, 
+                        d.full_name, 
+                        d.gender,
+                        d.age,
+                        d.mobile_number,
+                        d.specialization,
+                        d.department_id,
+                        d.specialization as department,
+                        d.room_number,
+                        d.in_time,
+                        d.out_time,
+                        d.consultation_fee,
+                        d.available_days,
+                        d.photo,
+                        d.status,
+                        CASE 
+                            WHEN d.status != 'Active' THEN 'Off-Duty'
+                            WHEN d.available_days IS NOT NULL AND d.available_days != '' 
+                                 AND REPLACE(REPLACE(REPLACE(d.available_days, ' ', ''), '', ''), '
+', '') NOT LIKE CONCAT('%', DATE_FORMAT(NOW(), '%a'), '%') THEN 'Off-Duty'
+                            WHEN d.in_time IS NOT NULL AND (
+                                (d.out_time IS NOT NULL AND CURTIME() BETWEEN d.in_time AND d.out_time)
+                                OR (d.out_time IS NULL AND CURTIME() >= d.in_time)
+                                OR (d.out_time < d.in_time AND (CURTIME() >= d.in_time OR CURTIME() <= d.out_time))
+                            ) THEN 'Available'
+                            ELSE 'Off-Duty'
+                        END AS availability
+                    FROM doctors d WHERE (d.status = 'Active' OR d.status IS NULL OR d.status = '') ORDER BY availability DESC, d.full_name ASC LIMIT ? PARAMS: [100]
+[21-Jul-2026 20:46:26 Europe/Berlin] DOCTOR API RESULT COUNT: 33
+[21-Jul-2026 20:46:26 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/doctors, Method: GET
+[21-Jul-2026 20:46:26 Europe/Berlin] DOCTOR API SQL: SELECT 
+                        d.doctor_id, 
+                        d.full_name, 
+                        d.gender,
+                        d.age,
+                        d.mobile_number,
+                        d.specialization,
+                        d.department_id,
+                        d.specialization as department,
+                        d.room_number,
+                        d.in_time,
+                        d.out_time,
+                        d.consultation_fee,
+                        d.available_days,
+                        d.photo,
+                        d.status,
+                        CASE 
+                            WHEN d.status != 'Active' THEN 'Off-Duty'
+                            WHEN d.available_days IS NOT NULL AND d.available_days != '' 
+                                 AND REPLACE(REPLACE(REPLACE(d.available_days, ' ', ''), '', ''), '
+', '') NOT LIKE CONCAT('%', DATE_FORMAT(NOW(), '%a'), '%') THEN 'Off-Duty'
+                            WHEN d.in_time IS NOT NULL AND (
+                                (d.out_time IS NOT NULL AND CURTIME() BETWEEN d.in_time AND d.out_time)
+                                OR (d.out_time IS NULL AND CURTIME() >= d.in_time)
+                                OR (d.out_time < d.in_time AND (CURTIME() >= d.in_time OR CURTIME() <= d.out_time))
+                            ) THEN 'Available'
+                            ELSE 'Off-Duty'
+                        END AS availability
+                    FROM doctors d WHERE (d.status = 'Active' OR d.status IS NULL OR d.status = '') ORDER BY availability DESC, d.full_name ASC LIMIT ? PARAMS: [100]
+[21-Jul-2026 20:46:26 Europe/Berlin] DOCTOR API RESULT COUNT: 33
+[21-Jul-2026 20:46:28 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/appointments/APT-20260721-0001, Method: GET
+[21-Jul-2026 20:46:51 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/appointments/APT-20260721-0001, Method: PUT
+[21-Jul-2026 20:46:51 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/appointments, Method: GET
+[21-Jul-2026 20:46:56 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/appointments/APT-20260721-0001, Method: GET
+[21-Jul-2026 20:47:41 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/appointments/APT-20260721-0001, Method: GET

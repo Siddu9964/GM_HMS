@@ -535,7 +535,7 @@ $patientId = $_GET['id'] ?? '';
                 <div id="overview-content" class="gp-panel active">
                     <div style="padding: 24px;">
                         <div class="gp-ms-title"><i class="fas fa-history"></i> Recent Visits</div>
-                        <div style="border:1.5px solid #ede8dd; border-radius:16px; overflow:hidden;">
+                        <div style="border:1.5px solid #ede8dd; border-radius:16px; overflow:auto; overflow-x:auto; -webkit-overflow-scrolling:touch;">
                             <table id="appointmentsTable">
                                 <thead><tr>
                                     <th>Date &amp; Time</th>

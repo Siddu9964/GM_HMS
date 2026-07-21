@@ -2925,6 +2925,8 @@ table.bills-table {
 /* Data Table Aesthetics */
 .bento-table-wrap {
     overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
 }
 .bento-table {
     width: 100%;
