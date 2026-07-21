@@ -298,9 +298,10 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
 
                         <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                             <div class="filter-pills" style="display: flex; gap: 4px; background: #EBE7DC; padding: 3px; border-radius: 6px;">
-                                <button type="button" class="btn btn-xs global-pill active" onclick="setGlobalFilter('all', this)" style="padding: 3px 10px; font-weight: 700; font-size: 0.75rem; border-radius: 4px;">All</button>
-                                <button type="button" class="btn btn-xs global-pill" onclick="setGlobalFilter('image', this)" style="padding: 3px 10px; font-weight: 700; font-size: 0.75rem; border-radius: 4px;">With Image</button>
-                                <button type="button" class="btn btn-xs global-pill" onclick="setGlobalFilter('meds', this)" style="padding: 3px 10px; font-weight: 700; font-size: 0.75rem; border-radius: 4px;">With Medicines</button>
+                                <button type="button" class="btn btn-xs global-pill active" onclick="setGlobalFilter('all', this)" style="padding: 3px 10px; font-weight: 700; font-size: 0.75rem; border-radius: 4px; cursor: pointer;">All</button>
+                                <button type="button" class="btn btn-xs global-pill" onclick="setGlobalFilter('image', this)" style="padding: 3px 10px; font-weight: 700; font-size: 0.75rem; border-radius: 4px; cursor: pointer;">With Image</button>
+                                <button type="button" class="btn btn-xs global-pill" onclick="setGlobalFilter('digital', this)" style="padding: 3px 10px; font-weight: 700; font-size: 0.75rem; border-radius: 4px; cursor: pointer;">Digital</button>
+                                <button type="button" class="btn btn-xs global-pill" onclick="setGlobalFilter('meds', this)" style="padding: 3px 10px; font-weight: 700; font-size: 0.75rem; border-radius: 4px; cursor: pointer;">With Medicines</button>
                             </div>
 
                             <div style="display: flex; gap: 2px; background: #EBE7DC; padding: 3px; border-radius: 6px; margin-left: 6px;">
@@ -378,12 +379,14 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
         <div class="modal-container">
             <div class="modal-header no-print">
                 <h3><i class="fas fa-print"></i> Professional A4 Print Preview</h3>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button onclick="window.print()" class="btn btn-primary" style="background:#144D34 !important; color:#FFFFFF !important; border:none; font-weight:700;">
-                        <i class="fas fa-print" style="color:#FFFFFF !important; margin-right:4px;"></i> Print
+                <div style="display: flex; gap: 0.6rem; align-items: center;">
+                    <button onclick="window.print()" style="background: #144D34 !important; color: #FFFFFF !important; border: none; padding: 7px 16px; border-radius: 8px; font-size: 0.88rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(20, 77, 52, 0.25);">
+                        <i class="fas fa-print" style="color: #FFFFFF !important; font-size: 0.95rem;"></i>
+                        <span style="color: #FFFFFF !important;">Print</span>
                     </button>
-                    <button onclick="closePrescriptionModal()" class="btn btn-outline" style="background:#FFFFFF !important; color:#144D34 !important; border:1.5px solid #144D34 !important; font-weight:700;">
-                        <i class="fas fa-times" style="color:#144D34 !important; margin-right:4px;"></i> Close
+                    <button onclick="closePrescriptionModal()" style="background: #FFFFFF !important; color: #144D34 !important; border: 1.5px solid #144D34 !important; padding: 6px 16px; border-radius: 8px; font-size: 0.88rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                        <i class="fas fa-times" style="color: #144D34 !important; font-size: 0.95rem;"></i>
+                        <span style="color: #144D34 !important;">Close</span>
                     </button>
                 </div>
             </div>
