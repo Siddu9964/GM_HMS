@@ -397,7 +397,7 @@ class PatientManager {
         delete data.patient_id;
         
         // Handle saving new referred doctor
-        if (data.referred_by === 'Doctor' && data.is_new_doctor === '1' && data.referral_name) {
+        if (data.referral_type === 'Doctor' && data.is_new_doctor === '1' && data.referral_name) {
             try {
                 this.showLoading(true);
                 const docResponse = await fetch('/GM_HMS/api/referred-doctors', {

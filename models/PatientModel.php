@@ -257,8 +257,8 @@ class PatientModel
                     `patient_id`, `title`, `first_name`, `last_name`, `sex`, `aadhar`, `phone`, `email`, `password`,
                     `birth_date`, `age`, `blood_group`, `occupation`, `vaccine_status`,
                     `address`, `country`, `state`, `district`, `city`, `area`, `pincode`,
-                    `date`, `time`, `account_opening_timestamp`
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    `date`, `time`, `account_opening_timestamp`, `referral_type`, `referral_name`
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $params = [
             $patientId,
@@ -284,7 +284,9 @@ class PatientModel
             $data['pincode'] ?? null,
             date('Y-m-d'),
             date('H:i:s') . '.000000',
-            time()
+            time(),
+            $data['referral_type'] ?? null,
+            $data['referral_name'] ?? null
         ];
 
         $this->db->execute($sql, $params);

@@ -43,7 +43,7 @@ class Admission extends BaseModel {
         FROM ipd_admissions a
         LEFT JOIN patient p ON a.patient_id = p.patient_id
         LEFT JOIN doctors d ON a.admitting_doctor_id = d.doctor_id
-        LEFT JOIN hospital_beds b ON a.bed_id = b.bed_id
+        LEFT JOIN hospital_beds b ON a.bed_no = b.sl_no
         WHERE 1=1";
         
         $params = [];
@@ -114,7 +114,7 @@ class Admission extends BaseModel {
         FROM ipd_admissions a
         LEFT JOIN patient p ON a.patient_id = p.patient_id
         LEFT JOIN doctors d ON a.admitting_doctor_id = d.doctor_id
-        LEFT JOIN hospital_beds b ON a.bed_id = b.bed_id
+        LEFT JOIN hospital_beds b ON a.bed_no = b.sl_no
         WHERE {$whereClause}";
         
         return $this->fetchOne($query, [$id]);
@@ -138,7 +138,7 @@ class Admission extends BaseModel {
                   FROM ipd_admissions a
                   LEFT JOIN patient p ON a.patient_id = p.patient_id
                   LEFT JOIN doctors d ON a.admitting_doctor_id = d.doctor_id
-                  LEFT JOIN hospital_beds b ON a.bed_id = b.bed_id
+                  LEFT JOIN hospital_beds b ON a.bed_no = b.sl_no
                   WHERE 1=1";
         
         $params = [];
@@ -261,11 +261,11 @@ class Admission extends BaseModel {
             }
             
             // 8. Release bed if assigned
-            if ($admission['bed_id']) {
+            if ($admission['bed_no']) {
                 try {
                     $this->query(
-                        "UPDATE hospital_beds SET bed_status = 'Available', patient_id = NULL, released_at = NOW() WHERE bed_id = ?",
-                        [$admission['bed_id']]
+                        "UPDATE hospital_beds SET bed_status = 'Available', patient_id = NULL, released_at = NOW() WHERE sl_no = ?",
+                        [$admission['bed_no']]
                     );
                 } catch (Exception $e) {
                     error_log("Could not release bed: " . $e->getMessage());
@@ -324,11 +324,16 @@ class Admission extends BaseModel {
             'chief_complaint',
             'diagnosis',
             'discharge_date',
-            'bed_id',
+            'bed_no',
             'status',
             'emergency_contact_name',
             'emergency_contact_phone'
         ];
+        
+        // Map frontend bed_id to db bed_no if provided
+        if (isset($data['bed_id']) && !empty($data['bed_id'])) {
+            $data['bed_no'] = $data['bed_id'];
+        }
         
         $filteredData = [];
         foreach ($allowedFields as $field) {
@@ -338,7 +343,7 @@ class Admission extends BaseModel {
         }
         
         // Validate required fields
-        $required = ['patient_id', 'admitting_doctor_id', 'bed_id', 'admission_date'];
+        $required = ['patient_id', 'admitting_doctor_id', 'bed_no', 'admission_date'];
         $errors = $this->validateRequired($filteredData, $required);
         
         if (!empty($errors)) {
@@ -347,8 +352,8 @@ class Admission extends BaseModel {
         
         // Fetch full bed details to populate admission record
         $bedDetails = $this->fetchOne(
-            "SELECT * FROM hospital_beds WHERE bed_id = ?",
-            [$filteredData['bed_id']]
+            "SELECT * FROM hospital_beds WHERE sl_no = ?",
+            [$filteredData['bed_no']]
         );
         
         if (!$bedDetails) {
@@ -379,8 +384,8 @@ class Admission extends BaseModel {
             
             // Update bed status (trigger will handle this, but we can do it explicitly)
             $this->query(
-                "UPDATE hospital_beds SET bed_status = 'Occupied', patient_id = ?, allocated_at = NOW() WHERE bed_id = ?",
-                [$filteredData['patient_id'], $filteredData['bed_id']]
+                "UPDATE hospital_beds SET bed_status = 'Occupied', patient_id = ?, allocated_at = NOW() WHERE sl_no = ?",
+                [$filteredData['patient_id'], $filteredData['bed_no']]
             );
             
             $this->commit();
@@ -431,13 +436,13 @@ class Admission extends BaseModel {
             }
             
             // Check if bed is being changed
-            $newBedId = $data['bed_id'] ?? null;
-            $oldBedId = $currentAdmission['bed_id'];
+            $newBedId = $data['bed_id'] ?? ($data['bed_no'] ?? null);
+            $oldBedId = $currentAdmission['bed_no'];
             
             if ($newBedId && $newBedId != $oldBedId) {
                 // Fetch new bed details to update admission record
                 $bedDetails = $this->fetchOne(
-                    "SELECT * FROM hospital_beds WHERE bed_id = ?",
+                    "SELECT * FROM hospital_beds WHERE sl_no = ?",
                     [$newBedId]
                 );
 
@@ -456,7 +461,7 @@ class Admission extends BaseModel {
                 if ($oldBedId) {
                     try {
                         $this->query(
-                            "UPDATE hospital_beds SET bed_status = 'Available', patient_id = NULL, released_at = NOW() WHERE bed_id = ?",
+                            "UPDATE hospital_beds SET bed_status = 'Available', patient_id = NULL, released_at = NOW() WHERE sl_no = ?",
                             [$oldBedId]
                         );
                     } catch (Exception $e) {
@@ -476,7 +481,7 @@ class Admission extends BaseModel {
                 // Allocate new bed
                 try {
                     $this->query(
-                        "UPDATE hospital_beds SET bed_status = 'Occupied', patient_id = ?, allocated_at = NOW() WHERE bed_id = ?",
+                        "UPDATE hospital_beds SET bed_status = 'Occupied', patient_id = ?, allocated_at = NOW() WHERE sl_no = ?",
                         [$currentAdmission['patient_id'], $newBedId]
                     );
                 } catch (Exception $e) {
@@ -496,6 +501,7 @@ class Admission extends BaseModel {
             } else {
                 // No bed change, just update
                 unset($data['bed_id']); // Don't update bed_id if not changing
+                unset($data['bed_no']); // Also unset bed_no
                 $result = $this->update($id, $data);
                 
                 if ($result === 0) {
@@ -557,11 +563,11 @@ class Admission extends BaseModel {
             }
             
             // Release bed if assigned
-            if ($admission['bed_id']) {
+            if ($admission['bed_no']) {
                 try {
                     $this->query(
-                        "UPDATE hospital_beds SET bed_status = 'Available', patient_id = NULL, released_at = NOW() WHERE bed_id = ?",
-                        [$admission['bed_id']]
+                        "UPDATE hospital_beds SET bed_status = 'Available', patient_id = NULL, released_at = NOW() WHERE sl_no = ?",
+                        [$admission['bed_no']]
                     );
                 } catch (Exception $e) {
                     // Log but don't fail if bed table doesn't exist

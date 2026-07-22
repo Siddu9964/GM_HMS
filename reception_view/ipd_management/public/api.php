@@ -43,12 +43,12 @@ try {
     
     // Remove base path and api.php
     $basePath = '/GM_HMS/reception_view/ipd_management/public/';
-    if (strpos($requestUri, $basePath) === 0) {
+    if (stripos($requestUri, $basePath) === 0) {
         $requestUri = substr($requestUri, strlen($basePath));
     }
     
     // Remove api.php if present
-    if (strpos($requestUri, 'api.php/') === 0) {
+    if (stripos($requestUri, 'api.php/') === 0) {
         $requestUri = substr($requestUri, 8); // Remove 'api.php/'
     }
     

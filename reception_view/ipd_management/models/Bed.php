@@ -12,7 +12,7 @@ require_once __DIR__ . '/../core/BaseModel.php';
 
 class Bed extends BaseModel {
     protected $table = 'hospital_beds';
-    protected $primaryKey = 'bed_id';
+    protected $primaryKey = 'sl_no';
     
     private $roomCatCol = null;
     
@@ -30,6 +30,7 @@ class Bed extends BaseModel {
     public function getAllWithDetails($filters = []) {
         $query = "SELECT 
             b.*,
+            b.sl_no as bed_id,
             CONCAT(p.first_name, ' ', COALESCE(p.last_name, '')) as patient_name,
             a.admission_date,
             a.admission_id
@@ -62,7 +63,8 @@ class Bed extends BaseModel {
             $params[] = $filters['bed_type'];
         }
         
-        $query .= " ORDER BY b.ward_name, b.bed_number";
+        $col = $this->getRoomCatCol();
+        $query .= " ORDER BY b.floor_number ASC, b.ward_name ASC, b.{$col} ASC, b.room_number ASC, b.bed_number ASC";
         
         return $this->fetchAll($query, $params);
     }
@@ -71,16 +73,22 @@ class Bed extends BaseModel {
      * Get available (vacant) beds
      */
     public function getAvailableBeds($bedType = null) {
+        $col = $this->getRoomCatCol();
         $query = "SELECT 
-            bed_id,
+            sl_no as bed_id,
             bed_number,
             floor_number,
             floor_name,
             ward_name,
-            ward_type,
+            {$col} as room_type,
             room_number,
             room_name,
-            bed_status
+            bed_status,
+            amount_per_day,
+            nursig_charge,
+            doctor_charge,
+            service_charge,
+            total_bed_amount
         FROM hospital_beds
         WHERE LOWER(bed_status) = 'available'
         ORDER BY floor_number, ward_name, room_number, bed_number";

@@ -1037,7 +1037,10 @@ textarea.form-control {
 .adv-action-btn span {
     font-weight: 600 !important;
     font-size: 0.85rem !important;
-    color: inherit !important;
+}
+
+.adv-action-btn:hover span {
+    color: #ffffff !important;
 }
 
 /* Modules Grid */

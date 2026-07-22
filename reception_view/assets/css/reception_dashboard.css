@@ -248,7 +248,8 @@ body {
     border: 1px solid var(--gm-border);
     position: relative;
     overflow: hidden;
-    padding: 0.85rem 1.25rem !important; /* Forces smaller padding */
+    padding: 0.85rem 1.25rem !important;
+    /* Forces smaller padding */
 }
 
 .kpi-card::before {
@@ -263,7 +264,8 @@ body {
 }
 
 .kpi-card-icon {
-    font-size: 2rem; /* Reduced from 2.5rem */
+    font-size: 2rem;
+    /* Reduced from 2.5rem */
     opacity: 0.3;
     position: absolute;
     right: 1rem;
@@ -272,13 +274,15 @@ body {
 }
 
 .kpi-card-value {
-    font-size: 1.75rem; /* Reduced from 2.5rem */
+    font-size: 1.75rem;
+    /* Reduced from 2.5rem */
     font-weight: 700;
     margin-bottom: 0.25rem;
 }
 
 .kpi-card-label {
-    font-size: 0.75rem; /* Reduced from 0.875rem */
+    font-size: 0.75rem;
+    /* Reduced from 0.875rem */
     opacity: 0.9;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -1004,12 +1008,8 @@ textarea.form-control {
 
 .modal-close:hover {
     background: #EDEAE0 !important;
-}
-    transition: color var(--transition-fast);
-}
-
-.modal-close:hover {
     color: var(--status-danger);
+    transition: color var(--transition-fast);
 }
 
 /* Helper for JS toggling */
@@ -1112,8 +1112,8 @@ textarea.form-control {
     background: #ffffff !important;
     border-radius: 10px !important;
     padding: 0.75rem !important;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.02) !important;
-    border: 1px solid rgba(0,0,0,0.04) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02) !important;
+    border: 1px solid rgba(0, 0, 0, 0.04) !important;
     position: relative !important;
     overflow: hidden !important;
     display: flex !important;
@@ -1133,7 +1133,7 @@ textarea.form-control {
 
 .kpi-card:hover {
     transform: translateY(-2px) !important;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.06) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06) !important;
 }
 
 .kpi-card::after {
@@ -1648,6 +1648,7 @@ textarea.form-control {
         transform: translateX(-100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -1657,10 +1658,13 @@ textarea.form-control {
 body.sidebar-collapsed .reception-sidebar {
     transform: translateX(-100%) !important;
 }
+
 body.sidebar-collapsed .reception-main-content {
     margin-left: 0 !important;
 }
-.reception-sidebar, .reception-main-content {
+
+.reception-sidebar,
+.reception-main-content {
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
@@ -1671,8 +1675,8 @@ body.sidebar-collapsed .reception-main-content {
     padding: 1.25rem !important;
     background: #ffffff !important;
     border-radius: 16px !important;
-    border: 1px solid rgba(0,0,0,0.05) !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
     transition: all 0.3s ease !important;
     min-width: 220px !important;
     flex: 1 !important;
@@ -1686,8 +1690,9 @@ body.sidebar-collapsed .reception-main-content {
     border-color: rgba(31, 107, 74, 0.2) !important;
 }
 
-.kpi-card::before, .kpi-card::after {
-    display: none !important; 
+.kpi-card::before,
+.kpi-card::after {
+    display: none !important;
 }
 
 .kpi-icon-wrapper {
@@ -1740,8 +1745,8 @@ body.sidebar-collapsed .reception-main-content {
 /* Quick Actions Premium Pill Styling */
 .quick-actions-card {
     border-radius: 16px;
-    border: 1px solid rgba(0,0,0,0.04);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
     background: white;
     overflow: hidden;
     height: 100%;
@@ -1754,12 +1759,14 @@ body.sidebar-collapsed .reception-main-content {
 }
 
 .quick-action-btn {
-    border-radius: 50px !important; /* Pill shape */
+    border-radius: 50px !important;
+    /* Pill shape */
     padding: 0.5rem 1.25rem 0.5rem 0.5rem !important;
     font-weight: 600 !important;
     font-size: 0.85rem !important;
     display: flex !important;
-    flex-direction: row !important; /* Horizontal layout */
+    flex-direction: row !important;
+    /* Horizontal layout */
     align-items: center !important;
     justify-content: flex-start !important;
     gap: 0.75rem !important;
@@ -1768,7 +1775,7 @@ body.sidebar-collapsed .reception-main-content {
     border: 1px solid #e2e8f0 !important;
     color: var(--gm-text) !important;
     white-space: nowrap !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
     width: auto !important;
     flex: 0 0 auto !important;
 }
@@ -1819,11 +1826,11 @@ body.sidebar-collapsed .reception-main-content {
 .reception-content .text-gray-700,
 .reception-content .text-gray-800,
 .reception-content .text-gray-900,
-.reception-content h1, 
-.reception-content h2, 
-.reception-content h3, 
-.reception-content h4, 
-.reception-content h5, 
+.reception-content h1,
+.reception-content h2,
+.reception-content h3,
+.reception-content h4,
+.reception-content h5,
 .reception-content h6,
 .reception-content p,
 .reception-content span:not(.badge):not(.status-badge),
@@ -1832,15 +1839,16 @@ body.sidebar-collapsed .reception-main-content {
 }
 
 /* Explicitly fix Sidebar text color requested by user */
-.reception-sidebar, 
-.reception-sidebar span, 
-.reception-sidebar a, 
+.reception-sidebar,
+.reception-sidebar span,
+.reception-sidebar a,
 .reception-sidebar h1,
 .reception-sidebar i {
     color: #f3efe6 !important;
 }
 
 /* Ensure buttons and their icons/spans keep their correct colors everywhere */
-.btn *, .btn {
+.btn *,
+.btn {
     color: inherit;
 }

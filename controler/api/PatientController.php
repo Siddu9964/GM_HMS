@@ -192,7 +192,9 @@ class PatientController extends BaseController {
                 'area' => ['type' => 'string'],
                 'pincode' => ['type' => 'string'],
                 'email' => ['type' => 'string'],
-                'password' => ['type' => 'string']
+                'password' => ['type' => 'string'],
+                'referral_type' => ['type' => 'string'],
+                'referral_name' => ['type' => 'string']
             ]
         ];
         
@@ -243,7 +245,7 @@ class PatientController extends BaseController {
                 'aadhar', 'birth_date', 'age', 'blood_group',
                 'occupation', 'vaccine_status',
                 'address', 'country', 'state', 'district', 'city', 'area', 'pincode',
-                'status'
+                'status', 'referral_type', 'referral_name'
             ];
 
             if (!empty($data['password'])) {

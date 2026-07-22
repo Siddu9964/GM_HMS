@@ -353,22 +353,41 @@ include 'includes/reception_navbar.php';
                             <i class="fas fa-handshake"></i> Referral Information
                         </div>
 
-                        <!-- Hidden Referred By so backend doesn't fail if it requires it -->
-                        <input type="hidden" name="referred_by" value="Doctor">
-
-                        <!-- Always show Search Div, but call it Referral Name -->
-                        <div class="ref-field ref-col-4" id="doctorSearchDiv">
-                            <label>Referral Name <span class="req">*</span></label>
-                            <select id="existingDoctorSelect" style="width: 100%;">
-                                <option value="">Search existing or enter new referral name...</option>
+                        <!-- Referred By Dropdown -->
+                        <div class="ref-field ref-col-2">
+                            <label>Referred By <span class="req">*</span></label>
+                            <select name="referral_type" id="referred_by_select" onchange="toggleReferralSource()" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; background-color: #f9fafb;" required>
+                                <option value="Doctor" selected>Doctor</option>
+                                <option value="Self">Self</option>
+                                <option value="Staff">Staff</option>
+                                <option value="Online">Online</option>
+                                <option value="Others">Others</option>
                             </select>
+                        </div>
+
+                        <!-- Referral Name -->
+                        <div class="ref-field ref-col-2" id="doctorSearchDiv">
+                            <label>Referral Name</label>
+                            
+                            <!-- For Doctor (Advanced Search) -->
+                            <div id="doctorSelectWrapper">
+                                <select id="existingDoctorSelect" style="width: 100%;">
+                                    <option value="">Search existing or enter new...</option>
+                                </select>
+                            </div>
+                            
+                            <!-- For Staff/Online/Others (Plain Text) -->
+                            <div id="plainReferralWrapper" style="display: none;">
+                                <input type="text" id="plainReferralName" placeholder="Enter referral name" oninput="document.getElementById('referral_name_input').value = this.value">
+                            </div>
+
                             <input type="hidden" name="referral_name" id="referral_name_input" value="">
                             <input type="hidden" name="is_new_doctor" id="is_new_doctor" value="0">
                         </div>
 
                         <!-- Doctor Extra Details -->
                         <div id="doctorExtraDetailsDiv" class="ref-col-4" style="display: none; padding-top: 12px; margin-bottom: 8px;">
-                            <h4 style="margin-top: 0; margin-bottom: 16px; color: #1e293b; font-size: 14px;"><i class="fas fa-user-md" style="color: #1f6b4a;"></i> New Doctor Details</h4>
+                            <h4 style="margin-top: 0; margin-bottom: 16px; color: #1e293b; font-size: 14px;"><i class="fas fa-user-md" style="color: #1f6b4a;"></i> Doctor Details</h4>
                             <div class="ref-form-grid">
                                 <div class="ref-field ref-col-2" style="margin: 0;">
                                     <label>Phone Number</label>
@@ -483,6 +502,38 @@ include 'includes/reception_navbar.php';
     </style>
 
     <!-- Select2 & jQuery -->
+    <!-- JS Handlers for Patient Registration Modal -->
+    <script>
+        function toggleReferralSource() {
+            const referredBy = document.getElementById('referred_by_select').value;
+            const searchDiv = document.getElementById('doctorSearchDiv');
+            const doctorExtraDetails = document.getElementById('doctorExtraDetailsDiv');
+            const docWrapper = document.getElementById('doctorSelectWrapper');
+            const plainWrapper = document.getElementById('plainReferralWrapper');
+            
+            if (referredBy === 'Self') {
+                searchDiv.style.display = 'none';
+                doctorExtraDetails.style.display = 'none';
+                document.getElementById('referral_name_input').value = '';
+                document.getElementById('is_new_doctor').value = '0';
+            } else if (referredBy === 'Doctor') {
+                searchDiv.style.display = 'block';
+                docWrapper.style.display = 'block';
+                plainWrapper.style.display = 'none';
+                doctorExtraDetails.style.display = 'block';
+                // Value is handled by Select2 change event
+            } else {
+                // Staff, Online, Others
+                searchDiv.style.display = 'block';
+                docWrapper.style.display = 'none';
+                plainWrapper.style.display = 'block';
+                doctorExtraDetails.style.display = 'none';
+                document.getElementById('is_new_doctor').value = '0';
+                document.getElementById('referral_name_input').value = document.getElementById('plainReferralName').value;
+            }
+        }
+    </script>
+    
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
@@ -639,7 +690,7 @@ include 'includes/reception_navbar.php';
                                 // It's a new doctor
                                 const newName = val.substring(4);
                                 referralNameInput.value = newName;
-                                extraDetailsDiv.style.display = 'grid'; // Show the extra fields
+                                extraDetailsDiv.style.display = 'block'; // Show the extra fields
                                 phoneInput.readOnly = false;
                                 emailInput.readOnly = false;
                                 phoneInput.value = '';
@@ -649,12 +700,17 @@ include 'includes/reception_navbar.php';
                             } else if (val) {
                                 // Existing doctor
                                 referralNameInput.value = selectedOption.text();
-                                extraDetailsDiv.style.display = 'none'; // Hide extra fields for existing doctors
+                                extraDetailsDiv.style.display = 'block'; // ALWAYS show extra fields
                                 isNewDocInput.value = '0';
+                                
+                                // Auto-fill existing doctor details
+                                phoneInput.value = selectedOption.data('phone') || '';
+                                emailInput.value = selectedOption.data('email') || '';
+                                
                             } else {
                                 // Cleared
                                 referralNameInput.value = '';
-                                extraDetailsDiv.style.display = 'none'; // Hide extra fields if cleared
+                                extraDetailsDiv.style.display = 'block'; // Keep visible if "Doctor" is still the selected type
                                 isNewDocInput.value = '0';
                             }
                         });

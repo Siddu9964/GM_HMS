@@ -36,6 +36,12 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
     <!-- Reception Dashboard CSS -->
     <link rel="stylesheet" href="../../../assets/css/reception_dashboard.css">
 
+    <!-- Patient Module CSS (for ref-modal styles) -->
+    <link rel="stylesheet" href="../../../assets/css/patient.css">
+
+    <!-- Flatpickr for Date/Time UI -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
     <!-- Custom IPD CSS -->
     <link rel="stylesheet" href="../../public/assets/css/ipd_main.css">
 
@@ -393,22 +399,27 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 <!-- Page Header -->
                 <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">
-                            <i class="fas fa-hospital-user"></i> IPD Admissions
+                        <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: #1e293b;">
+                            <i class="fas fa-hospital-user text-primary me-2"></i> IPD Admissions
                         </h1>
-                        <p style="color: var(--gray-600);">Manage patient admissions and discharges</p>
+                        <p style="color: #64748b; font-size: 1.05rem;">Manage patient admissions and discharges</p>
                     </div>
-                    <a href="/GM_HMS/reception_view/ipd_management/public/index.php" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Back to Dashboard
-                    </a>
+                    <div class="d-flex gap-3">
+                        <a href="/GM_HMS/reception_view/ipd_management/public/index.php" class="btn btn-light border shadow-sm px-4 py-2" style="font-weight: 600; border-radius: 10px; color: #475569;">
+                            <i class="fas fa-chart-pie me-2"></i> IPD Dashboard
+                        </a>
+                        <a href="/GM_HMS/reception_view/index.php" class="btn btn-primary shadow-sm px-4 py-2" style="font-weight: 600; border-radius: 10px; background: linear-gradient(135deg, #1f6b4a 0%, #144d34 100%); border: none;">
+                            <i class="fas fa-home me-2"></i> Main Dashboard
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Admissions Table -->
                 <div class="table-container">
                     <div class="table-header">
                         <h2>All Admissions</h2>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAdmissionModal">
-                            <i class="fas fa-plus"></i> New Admission
+                        <button class="btn btn-primary" onclick="showAddAdmissionModal()">
+                            <i class="fas fa-plus-circle"></i> New Admission
                         </button>
                     </div>
 
@@ -453,233 +464,225 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
     </div>
     <!-- End Reception Layout -->
 
-    <!-- Add Admission Modal -->
-    <div class="modal fade" id="addAdmissionModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">New Admission</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Progress Stepper -->
-                    <div class="wizard-stepper">
-                        <div class="step-item active" data-step="1">1 <span class="step-label">Patient</span></div>
-                        <div class="step-item" data-step="2">2 <span class="step-label">Stay & Bed</span></div>
-                        <div class="step-item" data-step="3">3 <span class="step-label">Medical</span></div>
+    <!-- Add Admission Modal (Redesigned) -->
+    <div id="addAdmissionModal" class="ref-modal-overlay hidden" onclick="closeAddAdmissionModalOnBackdrop(event)">
+        <div class="ref-modal-card" onclick="event.stopPropagation()" style="max-width: 900px;">
+            <div class="ref-modal-header">
+                <h2>New Admission</h2>
+                <button onclick="closeAddAdmissionModal()" class="ref-modal-close" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="ref-modal-body">
+                <form id="addAdmissionForm">
+                    <div class="ref-form-grid">
+                        
+                        <!-- SECTION: Patient Selection -->
+                        <div class="ref-section-title">
+                            <i class="fas fa-user-injured"></i> Patient Selection
+                        </div>
+                        
+                        <div class="ref-field ref-col-2 position-relative">
+                            <label>Search Patient (Name or Mobile) <span class="req">*</span></label>
+                            <input type="text" class="form-control" id="patientSearchInput" placeholder="Start typing name or mobile...">
+                            <input type="hidden" id="patientSelect" name="patient_id" required>
+                            
+                            <!-- Search Results Dropdown -->
+                            <div id="patientSearchResults" class="position-absolute w-100 bg-white border rounded shadow-sm mt-1" style="display:none; max-height:200px; overflow-y:auto; z-index:1050;">
+                            </div>
+                        </div>
+
+                        <div class="ref-field ref-col-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-secondary w-100" style="height: 42px; border-radius: 8px;" onclick="openAdvancedPatientSearch()">
+                                <i class="fas fa-search-plus me-1"></i> Advanced Search
+                            </button>
+                        </div>
+
+                        <!-- Selected Patient Summary (Spans 4 cols to go below the search) -->
+                        <div class="ref-col-4">
+                            <div id="patientSelectedSummary" class="alert alert-info border-0 p-2 mb-0 mt-2" style="display:none;">
+                                <div class="patient-selection-summary shadow-sm">
+                                    <div class="p-avatar"><i class="fas fa-user"></i></div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <h6 class="mb-0 fw-bold text-dark" id="selPatientName">-</h6>
+                                            <button type="button" class="btn btn-sm btn-outline-danger border-0 py-0" onclick="clearPatientSelection()">
+                                                <i class="fas fa-times"></i> Change
+                                            </button>
+                                        </div>
+                                        <span class="text-muted small" id="selPatientID">-</span>
+                                        <div class="mt-1">
+                                            <span class="badge bg-soft-primary text-primary me-2"><i class="fas fa-phone-alt me-1"></i> <span id="selPatientPhone">-</span></span>
+                                            <span class="badge bg-soft-info text-info"><i class="fas fa-venus-mars me-1"></i> <span id="selPatientGender">-</span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ref-field ref-col-4">
+                            <label>Consulting Doctor <span class="req">*</span></label>
+                            <select class="form-select" id="doctorSelect" name="admitting_doctor_id" required>
+                                <option value="">-- Select a patient first --</option>
+                            </select>
+                            <span style="font-size:11px; color:#64748b; margin-top:4px; display:block;"><i class="fas fa-magic text-primary"></i> Doctor is auto-filled when you select a patient</span>
+                        </div>
+
+                        <!-- SECTION: Bed Allocation -->
+                        <div class="ref-section-title mt-2">
+                            <i class="fas fa-bed"></i> Stay & Bed Allocation
+                        </div>
+
+                        <div class="ref-field ref-col-1">
+                            <label>Floor No.</label>
+                            <select class="form-select" id="selFloorNumber" onchange="onFloorNumberChange()">
+                                <option value="">-- No. --</option>
+                            </select>
+                        </div>
+                        <div class="ref-field ref-col-1">
+                            <label>Floor Name</label>
+                            <select class="form-select" id="selFloorName" disabled onchange="onFloorNameChange()">
+                                <option value="">-- Name --</option>
+                            </select>
+                        </div>
+                        <div class="ref-field ref-col-1">
+                            <label>Ward</label>
+                            <select class="form-select" id="selWardName" disabled onchange="onWardNameChange()">
+                                <option value="">-- Ward --</option>
+                            </select>
+                        </div>
+                        <div class="ref-field ref-col-1">
+                            <label>Type</label>
+                            <select class="form-select" id="selWardType" disabled onchange="onWardTypeChange()">
+                                <option value="">-- Type --</option>
+                            </select>
+                        </div>
+                        <div class="ref-field ref-col-2">
+                            <label>Room Allocation</label>
+                            <select class="form-select" id="selRoomNumber" disabled onchange="onRoomNumberChange()">
+                                <option value="">-- Select Room --</option>
+                            </select>
+                        </div>
+                        <div class="ref-field ref-col-2">
+                            <label>Bed Assignment <span class="req">*</span></label>
+                            <select class="form-select" id="bedSelect" name="bed_id" required disabled onchange="showBedDetails(this.value)">
+                                <option value="">-- Select Bed --</option>
+                            </select>
+                        </div>
+
+                        <!-- Bed Summary -->
+                        <div id="bedDetailCard" class="ref-col-4" style="display:none; margin-top: 5px;">
+                            <div class="alert alert-success border-0 small py-3 px-4 shadow-sm mb-0 rounded-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-check-circle text-success me-2 fs-5"></i>
+                                    <h6 class="mb-0 text-success">Bed Selection Verified</h6>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <span class="text-muted d-block small">Location</span>
+                                        <strong>Floor <span id="bdFloorNo"></span> (<span id="bdFloorName"></span>)</strong>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <span class="text-muted d-block small">Ward Details</span>
+                                        <strong><span id="bdWardName"></span> (<span id="bdWardType"></span>)</strong>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <span class="text-muted d-block small">Room & Bed</span>
+                                        <strong>Room <span id="bdRoomNo"></span> (<span id="bdRoomName"></span>)</strong>
+                                    </div>
+                                </div>
+                                <hr class="my-2 border-success border-opacity-25">
+                                <div class="row g-2 mt-2">
+                                    <div class="col-md-2">
+                                        <label class="form-label text-muted mb-1" style="font-size: 0.75rem;">Bed Rate (₹)</label>
+                                        <input type="number" class="form-control form-control-sm" id="bdAmountPerDay" name="amount_per_day" value="0" oninput="calculateTotalRent()">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label text-muted mb-1" style="font-size: 0.75rem;">Nursing (₹)</label>
+                                        <input type="number" class="form-control form-control-sm" id="bdNursingCharge" name="nursig_charge" value="0" oninput="calculateTotalRent()">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label text-muted mb-1" style="font-size: 0.75rem;">Doctor (₹)</label>
+                                        <input type="number" class="form-control form-control-sm" id="bdDoctorCharge" name="doctor_charge" value="0" oninput="calculateTotalRent()">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label text-muted mb-1" style="font-size: 0.75rem;">Service (₹)</label>
+                                        <input type="number" class="form-control form-control-sm" id="bdServiceCharge" name="service_charge" value="0" oninput="calculateTotalRent()">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label text-success fw-bold mb-1" style="font-size: 0.75rem;">Total Amount (₹)</label>
+                                        <input type="number" class="form-control form-control-sm bg-light border-success text-success fw-bold" id="bdTotalAmount" name="total_bed_amount" readonly value="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="ref-field ref-col-2 mt-2">
+                            <label>Admission Type</label>
+                            <select class="form-select" name="admission_type">
+                                <option value="Planned">Planned</option>
+                                <option value="Emergency" selected>Emergency</option>
+                                <option value="Transfer">Transfer</option>
+                            </select>
+                        </div>
+                        <div class="ref-field ref-col-1 mt-2">
+                            <label>Date</label>
+                            <input type="text" class="form-control bg-white" id="admissionDate" name="admission_date" required placeholder="Select Date">
+                        </div>
+                        <div class="ref-field ref-col-1 mt-2">
+                            <label>Time <span class="req">*</span></label>
+                            <div class="d-flex align-items-center gap-1">
+                                <select class="form-select bg-white" id="timeHour" style="padding-right: 24px;">
+                                    <option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option>
+                                    <option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option>
+                                    <option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                                </select>
+                                <span>:</span>
+                                <select class="form-select bg-white" id="timeMinute" style="padding-right: 24px;">
+                                    <option value="00">00</option><option value="05">05</option><option value="10">10</option><option value="15">15</option>
+                                    <option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option>
+                                    <option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
+                                </select>
+                                <select class="form-select bg-white" id="timeAmPm" style="padding-right: 24px;">
+                                    <option value="AM">AM</option>
+                                    <option value="PM">PM</option>
+                                </select>
+                            </div>
+                            <input type="hidden" id="admissionTime" name="admission_time" required>
+                        </div>
+
+                        <!-- SECTION: Medical Notes -->
+                        <div class="ref-section-title mt-2">
+                            <i class="fas fa-notes-medical"></i> Medical & Contact Details
+                        </div>
+                        
+                        <div class="ref-field ref-col-4">
+                            <label>Chief Complaint</label>
+                            <textarea class="form-control" name="chief_complaint" rows="2" placeholder="Primary symptoms..."></textarea>
+                        </div>
+                        <div class="ref-field ref-col-4">
+                            <label>Preliminary Diagnosis</label>
+                            <textarea class="form-control" name="diagnosis" rows="2" placeholder="Initial findings..."></textarea>
+                        </div>
+                        <div class="ref-field ref-col-2">
+                            <label>Emergency Contact Person</label>
+                            <input type="text" class="form-control" name="emergency_contact_name" placeholder="Full Name">
+                        </div>
+                        <div class="ref-field ref-col-2">
+                            <label>Mobile Number</label>
+                            <input type="tel" class="form-control" name="emergency_contact_phone" placeholder="10 Digits" pattern="[0-9]{10}">
+                        </div>
+
                     </div>
-
-                    <form id="addAdmissionForm">
-                        <!-- STEP 1: Patient & Doctor -->
-                        <div class="wiz-step active" id="wizStep1">
-                            <div class="wiz-card">
-                                <h6 class="text-primary mb-4 border-0 pb-0"><i class="fas fa-id-card me-2"></i>Patient
-                                    Selection</h6>
-                                <div class="row">
-                                    <div class="col-md-12 mb-4 position-relative">
-                                        <label class="form-label">Search Patient (Name or Mobile) *</label>
-                                        <div class="input-group shadow-sm rounded-3 overflow-hidden">
-                                            <span class="input-group-text bg-white border-end-0"><i
-                                                    class="fas fa-search text-muted"></i></span>
-                                            <input type="text" class="form-control border-start-0 py-2"
-                                                id="patientSearchInput" placeholder="Type name, ID or phone number..."
-                                                autocomplete="off">
-                                        </div>
-                                        <input type="hidden" id="patientSelect" name="patient_id" required>
-
-                                        <!-- Custom Dropdown Results -->
-                                        <div id="patientSearchResults" class="search-results-floating"
-                                            style="display:none;"></div>
-
-                                        <!-- Selected Patient Info -->
-                                        <div id="patientSelectedSummary" style="display:none;">
-                                            <div class="patient-selection-summary shadow-sm">
-                                                <div class="p-avatar">
-                                                    <i class="fas fa-user"></i>
-                                                </div>
-                                                <div class="flex-grow-1">
-                                                    <div class="d-flex justify-content-between align-items-start">
-                                                        <h6 class="mb-0 fw-bold text-dark" id="selPatientName">-</h6>
-                                                        <button type="button"
-                                                            class="btn btn-sm btn-outline-danger border-0 py-0"
-                                                            onclick="clearPatientSelection()">
-                                                            <i class="fas fa-times"></i> Change
-                                                        </button>
-                                                    </div>
-                                                    <span class="text-muted small" id="selPatientID">-</span>
-                                                    <div class="mt-1">
-                                                        <span class="badge bg-soft-primary text-primary me-2"><i
-                                                                class="fas fa-phone-alt me-1"></i> <span
-                                                                id="selPatientPhone">-</span></span>
-                                                        <span class="badge bg-soft-info text-info"><i
-                                                                class="fas fa-venus-mars me-1"></i> <span
-                                                                id="selPatientGender">-</span></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <label class="form-label">Consulting Doctor *</label>
-                                        <select class="form-select" id="doctorSelect" name="admitting_doctor_id" required>
-                                            <option value="">-- Select a patient first --</option>
-                                        </select>
-                                        <small class="text-muted"><i class="fas fa-magic me-1 text-primary"></i>Doctor is auto-filled when you select a patient above</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- STEP 2: Stay & Bed Details -->
-                        <div class="wiz-step" id="wizStep2">
-                            <div class="wiz-card mb-3">
-                                <h6 class="text-primary mb-4 border-0 pb-0"><i class="fas fa-bed me-2"></i>Bed
-                                    Allocation</h6>
-                                <div class="row g-3">
-                                    <div class="col-md-3">
-                                        <label class="form-label small">Floor No.</label>
-                                        <select class="form-select form-select-sm" id="selFloorNumber"
-                                            onchange="onFloorNumberChange()">
-                                            <option value="">-- No. --</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label small">Floor Name</label>
-                                        <select class="form-select form-select-sm" id="selFloorName" disabled
-                                            onchange="onFloorNameChange()">
-                                            <option value="">-- Name --</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label small">Ward</label>
-                                        <select class="form-select form-select-sm" id="selWardName" disabled
-                                            onchange="onWardNameChange()">
-                                            <option value="">-- Ward --</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label small">Type</label>
-                                        <select class="form-select form-select-sm" id="selWardType" disabled
-                                            onchange="onWardTypeChange()">
-                                            <option value="">-- Type --</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Room Allocation</label>
-                                        <select class="form-select" id="selRoomNumber" disabled
-                                            onchange="onRoomNumberChange()">
-                                            <option value="">-- Select Room --</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Bed Assignment *</label>
-                                        <select class="form-select" id="bedSelect" name="bed_id" required disabled
-                                            onchange="showBedDetails(this.value)">
-                                            <option value="">-- Select Bed --</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Bed Summary -->
-                            <div id="bedDetailCard" style="display:none;" class="mb-3">
-                                <div class="alert alert-success border-0 small py-3 px-4 shadow-sm mb-0 rounded-4">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="fas fa-check-circle text-success me-2 fs-5"></i>
-                                        <h6 class="mb-0 text-success">Bed Selection Verified</h6>
-                                    </div>
-                                    <div class="row g-3">
-                                        <div class="col-md-4">
-                                            <span class="text-muted d-block small">Location</span>
-                                            <strong>Floor <span id="bdFloorNo"></span> (<span
-                                                    id="bdFloorName"></span>)</strong>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <span class="text-muted d-block small">Ward Details</span>
-                                            <strong><span id="bdWardName"></span> (<span
-                                                    id="bdWardType"></span>)</strong>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <span class="text-muted d-block small">Room & Bed</span>
-                                            <strong>Room <span id="bdRoomNo"></span> (<span
-                                                    id="bdRoomName"></span>)</strong>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="wiz-card">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Admission Type</label>
-                                        <select class="form-select" name="admission_type">
-                                            <option value="Planned">Planned</option>
-                                            <option value="Emergency" selected>Emergency</option>
-                                            <option value="Transfer">Transfer</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Date</label>
-                                        <input type="date" class="form-control" id="admissionDate" name="admission_date"
-                                            required>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Time</label>
-                                        <input type="time" class="form-control" id="admissionTime" name="admission_time"
-                                            required>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- STEP 3: Medical & Contact -->
-                        <div class="wiz-step" id="wizStep3">
-                            <div class="wiz-card mb-3">
-                                <h6 class="text-primary mb-4 border-0 pb-0"><i
-                                        class="fas fa-notes-medical me-2"></i>Medical Notes</h6>
-                                <div class="mb-3">
-                                    <label class="form-label">Chief Complaint</label>
-                                    <textarea class="form-control" name="chief_complaint" rows="2"
-                                        placeholder="Primary symptoms..."></textarea>
-                                </div>
-                                <div>
-                                    <label class="form-label">Preliminary Diagnosis</label>
-                                    <textarea class="form-control" name="diagnosis" rows="2"
-                                        placeholder="Initial findings..."></textarea>
-                                </div>
-                            </div>
-                            <div class="wiz-card">
-                                <h6 class="text-primary mb-4 border-0 pb-0"><i
-                                        class="fas fa-hospital-user me-2"></i>Emergency Contact</h6>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Contact Person</label>
-                                        <input type="text" class="form-control" name="emergency_contact_name"
-                                            placeholder="Full Name">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Mobile Number</label>
-                                        <input type="tel" class="form-control" name="emergency_contact_phone"
-                                            placeholder="10 Digits" pattern="[0-9]{10}">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-light" id="wizBtnPrev" style="display:none;"
-                        onclick="handleWizard('prev')">
-                        <i class="fas fa-chevron-left"></i> Previous
-                    </button>
-                    <button type="button" class="btn btn-primary" id="wizBtnNext" onclick="handleWizard('next')">
-                        Next <i class="fas fa-chevron-right"></i>
-                    </button>
-                    <button type="button" class="btn btn-success" id="wizBtnSave" style="display:none;"
-                        onclick="saveAdmission()">
-                        Complete Admission <i class="fas fa-check-double"></i>
-                    </button>
-                </div>
+                    
+                    <div class="ref-modal-footer" style="margin-top: 24px;">
+                        <button type="button" onclick="closeAddAdmissionModal()" class="ref-btn-cancel">Cancel</button>
+                        <button type="button" class="ref-btn-submit" onclick="saveAdmission()">
+                            <i class="fas fa-check-double"></i> Complete Admission
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -795,12 +798,63 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-    <script src="../../public/assets/js/ipd_main.js"></script>
+    <!-- App Scripts -->
+    <script src="../../public/assets/js/ipd_main.js?v=<?= time() ?>"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <script>
-        let admissionsTable;
-
         $(document).ready(function () {
+            
+            // Initialize Flatpickr for Date
+            flatpickr("#admissionDate", {
+                dateFormat: "Y-m-d",
+                defaultDate: "today"
+            });
+
+            // Initialize Custom Time Dropdowns with current time
+            function initTimeDropdowns() {
+                const now = new Date();
+                let h = now.getHours();
+                const m = now.getMinutes();
+                const ampm = h >= 12 ? 'PM' : 'AM';
+                
+                h = h % 12;
+                h = h ? h : 12; // the hour '0' should be '12'
+                
+                const hourStr = h.toString().padStart(2, '0');
+                // Round minutes to nearest 5
+                const minStr = (Math.round(m / 5) * 5).toString().padStart(2, '0').replace('60', '00');
+
+                $('#timeHour').val(hourStr);
+                // If minStr is not in the list (e.g. 60 became 00), fallback to 00
+                $('#timeMinute').val(minStr).length ? null : $('#timeMinute').val('00');
+                $('#timeAmPm').val(ampm);
+                
+                updateHiddenTime();
+            }
+
+            function updateHiddenTime() {
+                let h = parseInt($('#timeHour').val(), 10);
+                const m = $('#timeMinute').val();
+                const ampm = $('#timeAmPm').val();
+
+                if (ampm === 'PM' && h < 12) h += 12;
+                if (ampm === 'AM' && h === 12) h = 0;
+
+                const dbTime = h.toString().padStart(2, '0') + ':' + m + ':00';
+                $('#admissionTime').val(dbTime);
+            }
+
+            $('#timeHour, #timeMinute, #timeAmPm').on('change', updateHiddenTime);
+            initTimeDropdowns();
+
+            window.openAdvancedPatientSearch = function() {
+                IPD.toast('Advanced Patient Search modal will be implemented here.', 'info');
+            };
+
+            // Global Variables for Beds
+            let admissionsTable;
+
             // Initialize DataTable
             admissionsTable = $('#admissionsTable').DataTable({
                 ajax: {
@@ -854,162 +908,10 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 order: [[0, 'desc']]
             });
 
-            // ── Admission Wizard Logic ──────────────────────────────────────
-            let currentStep = 1;
-
-            window.handleWizard = function (direction) {
-                if (direction === 'next') {
-                    if (!validateStep(currentStep)) return;
-                    currentStep++;
-                } else {
-                    currentStep--;
-                }
-                updateWizardUI();
-            };
-
-            function validateStep(step) {
-                if (step === 1) {
-                    const patient = $('#patientSelect').val();
-                    const doctor = $('#doctorSelect').val();
-                    if (!patient || !doctor) {
-                        IPD.toast('Please select both Patient and Doctor', 'warning');
-                        return false;
-                    }
-                }
-                if (step === 2) {
-                    const bed = $('#bedSelect').val();
-                    const date = $('#admissionDate').val();
-                    const time = $('#admissionTime').val();
-                    if (!bed || !date || !time) {
-                        IPD.toast('Please complete Bed and Admission details', 'warning');
-                        return false;
-                    }
-                }
-                return true;
-            }
-
-            function updateWizardUI() {
-                // Toggle steps
-                $('.wiz-step').removeClass('active');
-                $(`#wizStep${currentStep}`).addClass('active');
-
-                // Update stepper items
-                $('.step-item').each(function () {
-                    const stepNum = parseInt($(this).data('step'));
-                    $(this).removeClass('active completed');
-                    if (stepNum === currentStep) {
-                        $(this).addClass('active');
-                    } else if (stepNum < currentStep) {
-                        $(this).addClass('completed');
-                    }
-                });
-
-                // Update footer buttons
-                $('#wizBtnPrev').toggle(currentStep > 1);
-                $('#wizBtnNext').toggle(currentStep < 3);
-                $('#wizBtnSave').toggle(currentStep === 3);
-            }
-
-            // ── Custom Appointment-based Selection Logic ──────────────────────
-            let patientSearchTimeout;
-
-            $('#patientSearchInput').on('input', function () {
-                const query = $(this).val().trim();
-                clearTimeout(patientSearchTimeout);
-
-                if (query.length < 2) {
-                    $('#patientSearchResults').hide().empty();
-                    return;
-                }
-
-                patientSearchTimeout = setTimeout(() => {
-                    IPD.ajax(`dashboard/appointments?search=${encodeURIComponent(query)}&limit=10`, 'GET')
-                        .then(response => {
-                            renderPatientResults(response.data.appointments);
-                        })
-                        .catch(() => {
-                            $('#patientSearchResults').hide();
-                        });
-                }, 400);
-            });
-
-            function renderPatientResults(appointments) {
-                const $results = $('#patientSearchResults');
-                if (!appointments || appointments.length === 0) {
-                    $results.html('<div class="p-3 text-muted small text-center">No recent appointments found</div>').show();
-                    return;
-                }
-
-                let html = '';
-                appointments.forEach(apt => {
-                    const displayPhone = apt.phone || 'N/A';
-                    const doctorDisplay = apt.doctor_name || 'N/A';
-                    html += `
-                        <div class="search-result-item" onclick="selectPatientAppointment(${JSON.stringify(apt).replace(/"/g, '&quot;')})">
-                            <span class="p-name">${apt.patient_name}</span>
-                            <div class="p-meta">
-                                <span class="me-2"><i class="fas fa-phone-alt me-1"></i>${displayPhone}</span>
-                                <span class="d-block mt-1 text-primary fw-semibold"><i class="fas fa-user-md me-1"></i>Dr. ${doctorDisplay}</span>
-                            </div>
-                        </div>
-                    `;
-                });
-                $results.html(html).show();
-            }
-
-            window.selectPatientAppointment = function (apt) {
-                // Set hidden patient_id field
-                $('#patientSelect').val(apt.patient_id || '');
-                // Hide search input, show selected name
-                $('#patientSearchInput').val(apt.patient_name).parent().hide();
-                $('#patientSearchResults').hide();
-
-                // Show selection summary card
-                $('#selPatientName').text(apt.patient_name || '-');
-                $('#selPatientID').text(apt.patient_id || '-');
-                $('#selPatientPhone').text(apt.phone || 'N/A');
-                $('#selPatientGender').text('-');
-                $('#patientSelectedSummary').show();
-
-                // Auto-populate Consulting Doctor from appointment record
-                const doctorName = apt.doctor_name || '';
-                const doctorId   = apt.doctor_id   || '';
-
-                if (doctorName) {
-                    // Populate the plain <select> directly (no Select2 in Add modal)
-                    const $doc = $('#doctorSelect');
-                    $doc.empty();
-                    $doc.append(
-                        $('<option>', { value: doctorId, text: doctorName, selected: true })
-                    );
-                    IPD.toast('Doctor "' + doctorName + '" auto-selected from appointment', 'success');
-                } else {
-                    $('#doctorSelect').empty().append('<option value="">-- No doctor found --</option>');
-                    IPD.toast('No doctor linked to this appointment', 'warning');
-                }
-            };
-
-            window.clearPatientSelection = function () {
-                $('#patientSelect').val('');
-                $('#patientSearchInput').val('').parent().show();
-                $('#patientSelectedSummary').hide();
-                // Reset doctor dropdown back to placeholder
-                $('#doctorSelect').empty().append('<option value="">-- Select a patient first --</option>');
-            };
-
-            // Hide results on click outside
-            $(document).on('click', function (e) {
-                if (!$(e.target).closest('#wizStep1').length) {
-                    $('#patientSearchResults').hide();
-                }
-            });
-
-            // Initialize shown.bs.modal
-            $('#addAdmissionModal').on('shown.bs.modal', function () {
-                // Reset Wizard
-                currentStep = 1;
-                updateWizardUI();
-
+            // ── Admission Custom Modal Logic ──────────────────────────────────
+            window.showAddAdmissionModal = function () {
+                $('#addAdmissionModal').removeClass('hidden');
+                
                 // Reset Search
                 clearPatientSelection();
 
@@ -1026,9 +928,102 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 const minutes = String(now.getMinutes()).padStart(2, '0');
                 document.getElementById('admissionTime').value = `${hours}:${minutes}`;
 
-                // Reset doctor dropdown — doctor is auto-filled from patient appointment selection
+                // Reset doctor dropdown
                 $('#doctorSelect').empty().append('<option value="">-- Select a patient first --</option>');
+            };
+
+            window.closeAddAdmissionModal = function () {
+                $('#addAdmissionModal').addClass('hidden');
+            };
+
+            window.closeAddAdmissionModalOnBackdrop = function (e) {
+                if (e.target === e.currentTarget) {
+                    closeAddAdmissionModal();
+                }
+            };
+
+            // ── Custom Appointment-based Selection Logic ──────────────────────
+            let patientSearchTimeout;
+
+            $('#patientSearchInput').on('input', function () {
+                const query = $(this).val().trim();
+                clearTimeout(patientSearchTimeout);
+
+                if (query.length < 2) {
+                    $('#patientSearchResults').hide().empty();
+                    return;
+                }
+
+                patientSearchTimeout = setTimeout(() => {
+                    IPD.ajax(`dashboard/patients?search=${encodeURIComponent(query)}&limit=10`, 'GET')
+                        .then(response => {
+                            renderPatientResults(response.data.patients);
+                        })
+                        .catch(() => {
+                            $('#patientSearchResults').hide();
+                        });
+                }, 400);
             });
+
+            function renderPatientResults(patients) {
+                const $results = $('#patientSearchResults');
+                if (!patients || patients.length === 0) {
+                    $results.html('<div class="p-3 text-muted small text-center">No patients found</div>').show();
+                    return;
+                }
+
+                let html = '';
+                patients.forEach(pat => {
+                    const displayPhone = pat.contact || 'N/A';
+                    const displayGender = pat.gender || 'Unknown';
+                    const displayAge = pat.age ? `${pat.age} yrs` : 'Unknown age';
+                    html += `
+                        <div class="patient-result-item p-2 border-bottom" style="cursor:pointer;" onclick='selectPatient(${JSON.stringify(pat).replace(/'/g, "&#39;")})'>
+                            <div class="fw-bold">${pat.name} <span class="badge bg-soft-info text-info ms-2">${pat.patient_id}</span></div>
+                            <div class="small text-muted"><i class="fas fa-phone-alt"></i> ${displayPhone} | <i class="fas fa-venus-mars"></i> ${displayGender}, ${displayAge}</div>
+                        </div>
+                    `;
+                });
+                $results.html(html).show();
+            }
+
+            window.selectPatient = function (pat) {
+                // Set hidden patient_id field
+                $('#patientSelect').val(pat.patient_id || '');
+                // Hide search input, show selected name
+                $('#patientSearchInput').val(pat.name).parent().hide();
+                $('#patientSearchResults').hide();
+
+                // Show selection summary card
+                $('#selPatientName').text(pat.name || '-');
+                $('#selPatientID').text(pat.patient_id || '-');
+                $('#selPatientPhone').text(pat.contact || 'N/A');
+                $('#selPatientGender').text(pat.gender || '-');
+                $('#patientSelectedSummary').show();
+
+                // Clear out doctor select until we fetch the latest one
+                $('#doctorSelect').empty().append('<option value="">-- Fetching doctor... --</option>');
+                
+                // Fetch the latest doctor for this patient
+                fetchLatestDoctor(pat.patient_id);
+            };
+
+            window.clearPatientSelection = function () {
+                $('#patientSelect').val('');
+                $('#patientSearchInput').val('').parent().show();
+                $('#patientSelectedSummary').hide();
+                // Reset doctor dropdown back to placeholder
+                $('#doctorSelect').empty().append('<option value="">-- Select a patient first --</option>');
+            };
+
+            // Hide results on click outside
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('#addAdmissionModal').length) {
+                    $('#patientSearchResults').hide();
+                }
+            });
+
+            // Removed Bootstrap shown.bs.modal logic since we use a custom ref-modal.
 
             function fetchLatestDoctor(patientId) {
                 IPD.ajax('admissions?action=get_latest_doctor&patient_id=' + patientId, 'GET')
@@ -1147,13 +1142,16 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             resetFrom('selFloorName');
             if (!val) return;
             // Floor Name: unique floor names for this floor number
-            const names = [...new Map(getFiltered('floor_number', val).map(b => [b.floor_name, b])).values()];
+            const names = [...new Map(getFiltered('floor_number', val).map(b => [b.floor_name || 'N/A', b])).values()];
             const sel = document.getElementById('selFloorName');
             sel.innerHTML = '<option value="">-- Select Floor Name --</option>';
-            names.forEach(b => sel.innerHTML += `<option value="${b.floor_name}">${b.floor_name}</option>`);
+            names.forEach(b => {
+                const displayName = b.floor_name || 'N/A';
+                sel.innerHTML += `<option value="${displayName}">${displayName}</option>`;
+            });
             sel.disabled = false;
             // If only one option, auto-select it
-            if (names.length === 1) { sel.value = names[0].floor_name; onFloorNameChange(); }
+            if (names.length === 1) { sel.value = names[0].floor_name || 'N/A'; onFloorNameChange(); }
         }
 
         function onFloorNameChange() {
@@ -1162,8 +1160,8 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             resetFrom('selWardName');
             if (!floorName) return;
             const filtered = allAvailableBeds.filter(b =>
-                String(b.floor_number) === floorNo && b.floor_name === floorName);
-            const wards = [...new Set(filtered.map(b => b.ward_name))].sort();
+                String(b.floor_number) === floorNo && (b.floor_name || 'N/A') === floorName);
+            const wards = [...new Set(filtered.map(b => b.ward_name || 'N/A'))].sort();
             const sel = document.getElementById('selWardName');
             sel.innerHTML = '<option value="">-- Select Ward Name --</option>';
             wards.forEach(w => sel.innerHTML += `<option value="${w}">${w}</option>`);
@@ -1178,8 +1176,8 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             resetFrom('selWardType');
             if (!wardName) return;
             const filtered = allAvailableBeds.filter(b =>
-                String(b.floor_number) === floorNo && b.floor_name === floorName && b.ward_name === wardName);
-            const types = [...new Set(filtered.map(b => b.ward_type))].sort();
+                String(b.floor_number) === floorNo && (b.floor_name || 'N/A') === floorName && (b.ward_name || 'N/A') === wardName);
+            const types = [...new Set(filtered.map(b => b.room_type || 'N/A'))].sort();
             const sel = document.getElementById('selWardType');
             sel.innerHTML = '<option value="">-- Select Ward Type --</option>';
             types.forEach(t => sel.innerHTML += `<option value="${t}">${t}</option>`);
@@ -1195,15 +1193,18 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             resetFrom('selRoomNumber');
             if (!wardType) return;
             const filtered = allAvailableBeds.filter(b =>
-                String(b.floor_number) === floorNo && b.floor_name === floorName &&
-                b.ward_name === wardName && b.ward_type === wardType);
-            const rooms = [...new Map(filtered.map(b => [b.room_number, b])).values()]
-                .sort((a, b) => a.room_number.localeCompare(b.room_number));
+                String(b.floor_number) === floorNo && (b.floor_name || 'N/A') === floorName &&
+                (b.ward_name || 'N/A') === wardName && (b.room_type || 'N/A') === wardType);
+            const rooms = [...new Map(filtered.map(b => [b.room_number || 'N/A', b])).values()]
+                .sort((a, b) => String(a.room_number || '').localeCompare(String(b.room_number || '')));
             const sel = document.getElementById('selRoomNumber');
             sel.innerHTML = '<option value="">-- Select Room Number --</option>';
-            rooms.forEach(r => sel.innerHTML += `<option value="${r.room_number}">${r.room_number}</option>`);
+            rooms.forEach(r => {
+                const rNum = r.room_number || 'N/A';
+                sel.innerHTML += `<option value="${rNum}">${rNum}</option>`;
+            });
             sel.disabled = false;
-            if (rooms.length === 1) { sel.value = rooms[0].room_number; onRoomNumberChange(); }
+            if (rooms.length === 1) { sel.value = rooms[0].room_number || 'N/A'; onRoomNumberChange(); }
         }
 
         function onRoomNumberChange() {
@@ -1224,10 +1225,10 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             // Filter beds matching all selected criteria
             const filtered = allAvailableBeds.filter(b =>
                 String(b.floor_number) === floorNo &&
-                b.floor_name  === floorName &&
-                b.ward_name   === wardName &&
-                b.ward_type   === wardType &&
-                b.room_number === roomNumber
+                (b.floor_name || 'N/A') === floorName &&
+                (b.ward_name || 'N/A') === wardName &&
+                (b.room_type || 'N/A') === wardType &&
+                (b.room_number || 'N/A') === roomNumber
             );
 
             filtered.forEach(bed => {
@@ -1255,14 +1256,35 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             document.getElementById('bdFloorNo').textContent = bed.floor_number || '-';
             document.getElementById('bdFloorName').textContent = bed.floor_name || '-';
             document.getElementById('bdWardName').textContent = bed.ward_name || '-';
-            document.getElementById('bdWardType').textContent = bed.ward_type || '-';
+            document.getElementById('bdWardType').textContent = bed.room_type || '-';
             document.getElementById('bdRoomNo').textContent = bed.room_number || '-';
             document.getElementById('bdRoomName').textContent = bed.room_name || '-';
+            
+            // Financial details
+            document.getElementById('bdAmountPerDay').value = bed.amount_per_day || '0';
+            document.getElementById('bdNursingCharge').value = bed.nursig_charge || '0';
+            document.getElementById('bdDoctorCharge').value = bed.doctor_charge || '0';
+            document.getElementById('bdServiceCharge').value = bed.service_charge || '0';
+            document.getElementById('bdTotalAmount').value = bed.total_bed_amount || '0';
+            
             document.getElementById('bedDetailCard').style.display = 'block';
+        }
+
+        function calculateTotalRent() {
+            const bed = parseFloat(document.getElementById('bdAmountPerDay').value) || 0;
+            const nursing = parseFloat(document.getElementById('bdNursingCharge').value) || 0;
+            const doctor = parseFloat(document.getElementById('bdDoctorCharge').value) || 0;
+            const service = parseFloat(document.getElementById('bdServiceCharge').value) || 0;
+            document.getElementById('bdTotalAmount').value = (bed + nursing + doctor + service).toString();
         }
 
 
         function saveAdmission() {
+            const form = document.getElementById('addAdmissionForm');
+            if (!form.reportValidity()) {
+                return;
+            }
+
             const formData = {};
             $('#addAdmissionForm').serializeArray().forEach(field => {
                 formData[field.name] = field.value;
@@ -1271,8 +1293,9 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             IPD.ajax('admissions', 'POST', formData)
                 .then(response => {
                     IPD.toast('Admission created successfully!', 'success');
-                    $('#addAdmissionModal').modal('hide');
-                    $('#addAdmissionForm')[0].reset();
+                    closeAddAdmissionModal();
+                    form.reset();
+                    clearPatientSelection();
                     admissionsTable.ajax.reload();
                 })
                 .catch(error => {
