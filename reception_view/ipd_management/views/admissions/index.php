@@ -526,7 +526,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                             <select class="form-select" id="doctorSelect" name="admitting_doctor_id" required>
                                 <option value="">-- Select a patient first --</option>
                             </select>
-                            <span style="font-size:11px; color:#64748b; margin-top:4px; display:block;"><i class="fas fa-magic text-primary"></i> Doctor is auto-filled when you select a patient</span>
+                            <span style="font-size:11px; color:#64748b; margin-top:4px; display:block;"><i class="fas fa-magic text-primary"></i> Doctor is auto-filled, but you can search to change it</span>
                         </div>
 
                         <!-- SECTION: Bed Allocation -->
@@ -803,6 +803,8 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <script>
+        let admissionsTable; // Global scope so functions outside $(document).ready can access it
+
         $(document).ready(function () {
             
             // Initialize Flatpickr for Date
@@ -847,13 +849,16 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
 
             $('#timeHour, #timeMinute, #timeAmPm').on('change', updateHiddenTime);
             initTimeDropdowns();
+            
+            // Initialize Select2 for Doctor Search in Add Admission Modal
+            IPD.initDoctorSearch('#doctorSelect', '#addAdmissionModal');
 
             window.openAdvancedPatientSearch = function() {
                 IPD.toast('Advanced Patient Search modal will be implemented here.', 'info');
             };
 
             // Global Variables for Beds
-            let admissionsTable;
+            // admissionsTable is declared globally above
 
             // Initialize DataTable
             admissionsTable = $('#admissionsTable').DataTable({
