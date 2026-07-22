@@ -1,0 +1,37 @@
+# ============================================================
+# GM_HMS – .gitignore
+# ============================================================
+
+# ── Logs & Debug files ─────────────────────────────────────
+logs/
+*.log
+**/debug_log.txt
+**/debug_*.txt
+
+# ── Environment & secrets ──────────────────────────────────
+config/.env
+config/.env.*
+*.env
+
+# ── OS & editor junk ───────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── PHP temp & cache ───────────────────────────────────────
+/tmp/
+/temp/
+*.tmp
+*.bak
+*.old
+*.orig
+
+# ── Uploaded files (runtime data, not source) ──────────────
+# assets/precision_data/
+# assets/profile_photos/
+# Uncomment above lines if you don't want uploaded images in git
