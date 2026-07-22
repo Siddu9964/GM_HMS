@@ -322,6 +322,25 @@ $router->add('POST', '#^/api/ipd-clinical/investigations/?$#', 'GM_HMS\Controlle
 // IPD Bridge (Future improvement: move IPD into this router)
 // $router->add('ANY', '#^/api/ipd/(.*)#', 'GM_HMS\Controllers\api\IpdBridgeController', 'handle');
 
+// Hospital Beds Endpoint (Direct)
+$router->add('GET', '#^/api/hospital-beds/?$#', function() {
+    require_once __DIR__ . '/../Database/SecureDatabase.php';
+    $db = \GM_HMS\Database\SecureDatabase::getInstance();
+    $beds = $db->fetchAll("
+        SELECT hb.*, 
+               p.first_name as patient_first_name, 
+               p.last_name as patient_last_name, 
+               p.sex as patient_sex, 
+               p.age as patient_age, 
+               p.phone as patient_phone, 
+               p.blood_group as patient_blood_group, 
+               p.address as patient_address
+        FROM hospital_beds hb 
+        LEFT JOIN patient p ON hb.patient_id COLLATE utf8mb4_unicode_ci = p.patient_id COLLATE utf8mb4_unicode_ci
+        ORDER BY hb.ward_name, hb.room_name, CAST(hb.bed_number AS UNSIGNED), hb.bed_number
+    ");
+    echo json_encode(['success' => true, 'data' => $beds]);
+}, null);
 
 // --- DISPATCH REQUEST ---
 

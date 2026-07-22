@@ -247,13 +247,17 @@ class NurseShiftController extends BaseController
             $floorName = $_GET['floor'] ?? null;
             $floorNumber = $_GET['floor_number'] ?? null;
 
-            $sql = "SELECT DISTINCT ward_name, ward_type, floor_name, floor_number
+            $sql = "SELECT 
+                        ward_name, 
+                        MAX(room_type) as ward_type, 
+                        MAX(floor_name) as floor_name, 
+                        MAX(floor_number) as floor_number
                     FROM hospital_beds
                     WHERE ward_name IS NOT NULL AND ward_name != ''";
             $params = [];
 
             if ($wardType) {
-                $sql .= " AND ward_type = ?";
+                $sql .= " AND room_type = ?";
                 $params[] = $wardType;
             }
             if ($floorName) {
@@ -265,7 +269,7 @@ class NurseShiftController extends BaseController
                 $params[] = $floorNumber;
             }
 
-            $sql .= " ORDER BY floor_name ASC, ward_type ASC, ward_name ASC";
+            $sql .= " GROUP BY ward_name ORDER BY MAX(floor_name) ASC, MAX(room_type) ASC, ward_name ASC";
 
             $wards = $this->db->fetchAll($sql, $params);
             $this->respondSuccess($wards);
@@ -305,10 +309,10 @@ class NurseShiftController extends BaseController
         $this->requireAuth();
 
         try {
-            $sql = "SELECT DISTINCT ward_type
+            $sql = "SELECT DISTINCT room_type as ward_type
                     FROM hospital_beds
-                    WHERE ward_type IS NOT NULL AND ward_type != ''
-                    ORDER BY ward_type ASC";
+                    WHERE room_type IS NOT NULL AND room_type != ''
+                    ORDER BY room_type ASC";
             $wardTypes = $this->db->fetchAll($sql);
             $this->respondSuccess($wardTypes);
         } catch (Exception $e) {
@@ -328,12 +332,13 @@ class NurseShiftController extends BaseController
         try {
             $ward = $_GET['ward'] ?? null;
             $floorNumber = $_GET['floor_number'] ?? null;
+            $wardType = $_GET['ward_type'] ?? null;
 
             $sql = "SELECT DISTINCT
                         floor_number,
                         floor_name,
                         ward_name,
-                        ward_type,
+                        room_type as ward_type,
                         room_number,
                         room_name
                     FROM hospital_beds
@@ -348,6 +353,10 @@ class NurseShiftController extends BaseController
             if ($floorNumber) {
                 $sql .= " AND floor_number = ?";
                 $params[] = $floorNumber;
+            }
+            if ($wardType) {
+                $sql .= " AND room_type = ?";
+                $params[] = $wardType;
             }
 
             $sql .= " ORDER BY floor_number ASC, ward_name ASC, room_number ASC";

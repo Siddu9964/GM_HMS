@@ -96,12 +96,13 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            right: 0;
+            bottom: 0;
             background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
             align-items: center;
             justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
         }
         
         .modal.active {
@@ -109,47 +110,205 @@
         }
         
         .modal-content {
-            background: white;
-            border-radius: 24px;
-            width: 90%;
-            max-width: 800px;
+            background: #f3efe6;
+            border-radius: 12px;
+            max-width: 1100px;
+            width: 95%;
             max-height: 90vh;
             overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+            color: #1f6b4a;
         }
         
-        /* Form */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Form Styles */
+        .form-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(31, 107, 74, 0.08);
+            transition: all 0.2s ease;
+        }
+        
+        .form-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+        }
+
+        .form-section-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1f6b4a;
+            margin-bottom: 20px;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(31, 107, 74, 0.1);
+            padding-bottom: 12px;
+        }
+
         .form-grid {
             display: grid;
-            gap: 24px;
+            gap: 16px 24px;
+        }
+        
+        .form-grid.cols-2 {
             grid-template-columns: repeat(2, 1fr);
         }
         
+        .form-grid.cols-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .form-grid.cols-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        
         .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            margin-bottom: 0;
         }
         
         .input-group label {
-            font-weight: 500;
-            font-size: 14px;
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #1f6b4a;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        
+        .input-group label .required,
+        .required {
+            color: #1f6b4a;
+            margin-left: 2px;
         }
         
         .input-group input,
         .input-group select,
         .input-group textarea {
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid rgba(31, 107, 74, 0.3);
+            border-radius: 6px;
             font-size: 14px;
+            background: #ffffff;
+            color: #1f6b4a;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        
+        .input-group input::placeholder,
+        .input-group textarea::placeholder {
+            color: rgba(31, 107, 74, 0.5);
+        }
+
+        .input-group textarea {
+            min-height: 80px;
+            resize: vertical;
         }
         
         .input-group input:focus,
         .input-group select:focus,
         .input-group textarea:focus {
-            outline: none;
-            border-color: #10b981;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+            border-color: #1f6b4a;
+            box-shadow: 0 0 0 2px rgba(31, 107, 74, 0.1);
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background: #1f6b4a;
+            color: #ffffff;
+            border: 1px solid #1f6b4a;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            background: #144d34;
+            border-color: #144d34;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #1f6b4a;
+            border: 1px solid rgba(31, 107, 74, 0.5);
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-secondary:hover {
+            border-color: #1f6b4a;
+            background: rgba(31, 107, 74, 0.05);
+        }
+        
+        /* Modal Header */
+        .modal-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(31, 107, 74, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f6b4a;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: #1f6b4a;
+            font-size: 20px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            opacity: 1;
+        }
+
+        /* Modal Body */
+        .modal-body {
+            padding: 0 24px 24px 24px;
         }
         
         /* Status Badge */
@@ -392,72 +551,96 @@
     
     <!-- Department Modal -->
     <div id="departmentModal" class="modal">
-        <div class="modal-content">
-            <div class="p-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800" id="modalTitle">Add New Department</h2>
-                    <button onclick="closeDepartmentModal()" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times text-2xl"></i>
-                    </button>
-                </div>
-                
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Department</h2>
+                <button type="button" onclick="closeDepartmentModal()" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body" style="padding-top: 24px;">
                 <form id="departmentForm" onsubmit="handleFormSubmit(event)">
                     <input type="hidden" id="editDepartmentId" name="department_id">
                     
-                    <div class="form-grid">
-                        <div class="input-group">
-                            <label>Department Name <span style="color: #ef4444;">*</span></label>
-                            <input type="text" name="department_name" required>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Left Column -->
+                        <div class="flex flex-col gap-6">
+                            <!-- General Info Card -->
+                            <div class="form-card mb-0">
+                                <h3 class="form-section-title"><i class="fas fa-info-circle"></i> General Information</h3>
+                                <div class="form-grid cols-2">
+                                    <div class="input-group">
+                                        <label>Department Name <span class="required">*</span></label>
+                                        <input type="text" name="department_name" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Department Type <span class="required">*</span></label>
+                                        <select name="department_type" required>
+                                            <option value="">Select</option>
+                                            <option value="Clinical">Clinical</option>
+                                            <option value="Non-Clinical">Non-Clinical</option>
+                                            <option value="Support">Support</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Status</label>
+                                        <select name="status">
+                                            <option value="Active">Active</option>
+                                            <option value="Inactive">Inactive</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Head Doctor ID</label>
+                                        <input type="number" name="head_doctor_id">
+                                    </div>
+                                    <div class="input-group" style="grid-column: span 2;">
+                                        <label>Description</label>
+                                        <textarea name="description" rows="3"></textarea>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="input-group">
-                            <label>Department Type <span style="color: #ef4444;">*</span></label>
-                            <select name="department_type" required>
-                                <option value="">Select</option>
-                                <option value="Clinical">Clinical</option>
-                                <option value="Non-Clinical">Non-Clinical</option>
-                                <option value="Support">Support</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <label>Floor Number</label>
-                            <input type="number" name="floor_number">
-                        </div>
-                        <div class="input-group">
-                            <label>Building Name</label>
-                            <input type="text" name="building_name">
-                        </div>
-                        <div class="input-group">
-                            <label>Contact Number</label>
-                            <input type="tel" name="contact_number">
-                        </div>
-                        <div class="input-group">
-                            <label>Email</label>
-                            <input type="email" name="email">
-                        </div>
-                        <div class="input-group">
-                            <label>Status</label>
-                            <select name="status">
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <label>Head Doctor ID</label>
-                            <input type="number" name="head_doctor_id">
+
+                        <!-- Right Column -->
+                        <div class="flex flex-col gap-6">
+                            <!-- Location Details Card -->
+                            <div class="form-card mb-0">
+                                <h3 class="form-section-title"><i class="fas fa-map-marker-alt"></i> Location Details</h3>
+                                <div class="form-grid cols-2">
+                                    <div class="input-group">
+                                        <label>Building Name</label>
+                                        <input type="text" name="building_name">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Floor Number</label>
+                                        <input type="number" name="floor_number">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Contact & Leadership Card -->
+                            <div class="form-card mb-0">
+                                <h3 class="form-section-title"><i class="fas fa-address-book"></i> Contact Info</h3>
+                                <div class="form-grid cols-2">
+                                    <div class="input-group">
+                                        <label>Contact Number</label>
+                                        <input type="tel" name="contact_number">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Email</label>
+                                        <input type="email" name="email">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="input-group mt-6">
-                        <label>Description</label>
-                        <textarea name="description" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="flex justify-end gap-4 mt-6">
-                        <button type="button" onclick="closeDepartmentModal()" class="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-50">
+                    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; border-top: 1px solid rgba(31, 107, 74, 0.1); padding-top: 20px;">
+                        <button type="button" onclick="closeDepartmentModal()" class="btn-secondary">
                             Cancel
                         </button>
-                        <button type="submit" id="submitBtn" class="btn btn-primary">
-                            <span id="submitBtnText">Save Department</span>
+                        <button type="submit" id="submitBtn" class="btn-primary">
+                            <i class="fas fa-save"></i> <span id="submitBtnText">Commit Changes</span>
                             <i id="submitLoader" class="fas fa-spinner fa-spin hidden"></i>
                         </button>
                     </div>

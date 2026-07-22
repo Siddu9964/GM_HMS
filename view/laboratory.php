@@ -223,40 +223,40 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
     <!-- Create Modal -->
     <div id="create-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-fade-in border border-white/20">
-            <div class="p-4 md:p-6 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center text-slate-900">
+        <div class="bg-[#f3efe6] w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-fade-in border border-[#1f6b4a]/10">
+            <div class="p-4 md:p-6 border-b border-[#1f6b4a]/10 flex justify-between items-center text-[#1f6b4a]">
                 <div class="flex items-center gap-4">
-                    <div class="h-12 w-12 rounded-2xl flex items-center justify-center text-white text-xl shadow-lg" style="background: var(--gm-accent);">
+                    <div class="h-12 w-12 rounded-2xl flex items-center justify-center text-[#f3efe6] text-xl shadow-lg bg-[#1f6b4a]">
                         <i class="fas fa-plus"></i>
                     </div>
                     <div>
                         <h3 class="text-xl font-black">Add New Service</h3>
-                        <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Register new diagnostic item</p>
+                        <p class="text-[10px] text-[#1f6b4a]/60 font-black uppercase tracking-widest mt-1">Register new diagnostic item</p>
                     </div>
                 </div>
-                <button onclick="closeCreateModal()" class="h-10 w-10 rounded-full hover:bg-slate-200 transition-all flex items-center justify-center text-slate-400 hover:text-slate-600">
+                <button onclick="closeCreateModal()" class="h-10 w-10 rounded-full hover:bg-black/5 transition-all flex items-center justify-center text-[#1f6b4a]/60 hover:text-[#1f6b4a]">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
             <form id="create-service-form" class="p-4 md:p-6 space-y-6">
-                <div class="space-y-2">
-                    <label class="text-xs font-black text-slate-400 uppercase tracking-widest">Select Category</label>
-                    <select id="create-service-category" name="category" onchange="renderCreateFields()" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all">
+                <div class="space-y-2 p-5 bg-white rounded-2xl border border-[#1f6b4a]/10 shadow-sm">
+                    <label class="text-xs font-black text-[#1f6b4a] uppercase tracking-widest"><i class="fas fa-tags mr-2 opacity-50"></i>Select Category</label>
+                    <select id="create-service-category" name="category" onchange="renderCreateFields()" class="w-full px-4 py-3 bg-[#f3efe6] border border-[#1f6b4a]/20 rounded-xl font-bold focus:ring-4 focus:ring-[#1f6b4a]/10 focus:border-[#1f6b4a] outline-none transition-all text-[#1f6b4a]">
                         <option value="lab">Lab Test</option>
                         <option value="radiology">Radiology</option>
                         <option value="other">Other Service</option>
                     </select>
                 </div>
                 
-                <div id="create-dynamic-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div id="create-dynamic-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-white rounded-2xl border border-[#1f6b4a]/10 shadow-sm">
                     <!-- Fields injected here -->
                 </div>
 
-                <div class="flex justify-end gap-4 pt-4">
-                    <button type="button" onclick="closeCreateModal()" class="px-8 py-3 text-slate-500 font-bold hover:text-slate-900 transition-all">
+                <div class="flex justify-end gap-4 pt-2">
+                    <button type="button" onclick="closeCreateModal()" class="px-8 py-3 text-[#1f6b4a]/70 font-bold hover:text-[#1f6b4a] transition-all bg-black/5 rounded-xl hover:bg-black/10">
                         Cancel
                     </button>
-                    <button type="submit" class="px-10 py-3 text-white font-black rounded-xl shadow-lg shadow-slate-200 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center gap-2" style="background: var(--gm-accent);">
+                    <button type="submit" class="px-10 py-3 text-[#f3efe6] font-black rounded-xl shadow-lg transition-all transform hover:-translate-y-1 active:scale-95 flex items-center gap-2 bg-[#1f6b4a] hover:bg-[#144d34] shadow-[#1f6b4a]/30">
                         <i class="fas fa-save"></i>
                         Add Service
                     </button>
@@ -267,30 +267,32 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
     <!-- Edit Modal -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-fade-in border border-white/20">
-            <div class="p-4 md:p-6 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center text-slate-900">
+        <div class="bg-[#f3efe6] w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-fade-in border border-[#1f6b4a]/10">
+            <div class="p-4 md:p-6 border-b border-[#1f6b4a]/10 flex justify-between items-center text-[#1f6b4a]">
                 <div class="flex items-center gap-4">
-                    <div class="h-12 w-12 rounded-2xl flex items-center justify-center text-white text-xl shadow-lg" style="background: var(--gm-accent);">
+                    <div class="h-12 w-12 rounded-2xl flex items-center justify-center text-[#f3efe6] text-xl shadow-lg bg-[#1f6b4a]">
                         <i class="fas fa-edit"></i>
                     </div>
                     <div>
                         <h3 class="text-xl font-black">Edit Service</h3>
-                        <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">Update service parameters</p>
+                        <p class="text-[10px] text-[#1f6b4a]/60 font-black uppercase tracking-widest mt-1">Update service parameters</p>
                     </div>
                 </div>
-                <button onclick="closeEditModal()" class="h-10 w-10 rounded-full hover:bg-slate-200 transition-all flex items-center justify-center text-slate-400 hover:text-slate-600">
+                <button onclick="closeEditModal()" class="h-10 w-10 rounded-full hover:bg-black/5 transition-all flex items-center justify-center text-[#1f6b4a]/60 hover:text-[#1f6b4a]">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
             <form id="edit-service-form" class="p-4 md:p-6 space-y-6">
                 <input type="hidden" name="service_type" id="edit-service-type">
                 <input type="hidden" name="service_id" id="edit-service-id">
-                <div id="edit-dynamic-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-                <div class="flex justify-end gap-4 pt-4">
-                    <button type="button" onclick="closeEditModal()" class="px-8 py-3 text-slate-500 font-bold hover:text-slate-900 transition-all">
+                
+                <div id="edit-dynamic-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 p-5 bg-white rounded-2xl border border-[#1f6b4a]/10 shadow-sm"></div>
+                
+                <div class="flex justify-end gap-4 pt-2">
+                    <button type="button" onclick="closeEditModal()" class="px-8 py-3 text-[#1f6b4a]/70 font-bold hover:text-[#1f6b4a] transition-all bg-black/5 rounded-xl hover:bg-black/10">
                         Cancel
                     </button>
-                    <button type="submit" class="px-10 py-3 text-white font-black rounded-xl shadow-lg shadow-slate-200 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center gap-2" style="background: var(--gm-accent);">
+                    <button type="submit" class="px-10 py-3 text-[#f3efe6] font-black rounded-xl shadow-lg transition-all transform hover:-translate-y-1 active:scale-95 flex items-center gap-2 bg-[#1f6b4a] hover:bg-[#144d34] shadow-[#1f6b4a]/30">
                         <i class="fas fa-save"></i>
                         Save Changes
                     </button>
@@ -472,9 +474,9 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
         function renderFormField(label, name, value, type='text', className='') {
             return `
                 <div class="${className} space-y-2">
-                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${label}</label>
+                    <label class="text-[10px] font-black text-[#1f6b4a] uppercase tracking-widest ml-1">${label}</label>
                     <input type="${type}" name="${name}" value="${value}" 
-                           class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-slate-900 shadow-sm">
+                           class="w-full px-4 py-3 bg-[#f3efe6] border border-[#1f6b4a]/20 rounded-xl focus:ring-4 focus:ring-[#1f6b4a]/10 focus:border-[#1f6b4a] outline-none transition-all font-bold text-[#1f6b4a] shadow-inner placeholder-[#1f6b4a]/30">
                 </div>
             `;
         }

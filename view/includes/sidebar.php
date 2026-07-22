@@ -124,13 +124,13 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
 
             </a>
 
-            <a href="nurse_assignment.php"
+            <a href="nurse_duty_scheduler.php"
 
-                class="sidebar-item <?php echo isActive('nurse_assignment.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
+                class="sidebar-item <?php echo isActive('nurse_duty_scheduler.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
 
                 <i class="fas fa-calendar-alt"></i>
 
-                <span>Nurse Assignments</span>
+                <span>Nurse Duty Scheduler</span>
 
             </a>
 
@@ -166,6 +166,12 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
                 class="sidebar-item <?php echo isActive('laboratory.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
                 <i class="fas fa-flask"></i>
                 <span>Laboratory</span>
+            </a>
+
+            <a href="opd_beds.php"
+                class="sidebar-item <?php echo isActive('opd_beds.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
+                <i class="fas fa-bed"></i>
+                <span>OPD Beds Details</span>
             </a>
 
             <a href="#blood-bank" class="sidebar-item">

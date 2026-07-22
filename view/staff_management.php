@@ -97,12 +97,13 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            right: 0;
+            bottom: 0;
             background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
             align-items: center;
             justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
         }
         
         .modal.active {
@@ -110,84 +111,190 @@
         }
         
         .modal-content {
-            background: white;
-            border-radius: 24px;
-            width: 90%;
-            max-width: 1200px;
+            background: #f3efe6;
+            border-radius: 12px;
+            max-width: 1100px;
+            width: 95%;
             max-height: 90vh;
             overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+            color: #1f6b4a;
         }
         
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Form Styles */
+        .form-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1f6b4a;
+            margin-bottom: 16px;
+            margin-top: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .form-grid {
             display: grid;
-            gap: 24px;
+            gap: 16px 24px;
+        }
+        
+        .form-grid.cols-2 {
             grid-template-columns: repeat(2, 1fr);
         }
         
+        .form-grid.cols-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .form-grid.cols-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        
         .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            margin-bottom: 0;
         }
         
         .input-group label {
-            font-weight: 500;
-            font-size: 14px;
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #1f6b4a;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        
+        .input-group label .required,
+        .required {
+            color: #1f6b4a;
+            margin-left: 2px;
         }
         
         .input-group input,
         .input-group select,
         .input-group textarea {
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid rgba(31, 107, 74, 0.3);
+            border-radius: 6px;
             font-size: 14px;
+            background: #ffffff;
+            color: #1f6b4a;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        
+        .input-group input::placeholder,
+        .input-group textarea::placeholder {
+            color: rgba(31, 107, 74, 0.5);
+        }
+
+        .input-group textarea {
+            min-height: 80px;
+            resize: vertical;
         }
         
         .input-group input:focus,
         .input-group select:focus,
         .input-group textarea:focus {
-            outline: none;
-            border-color: #f59e0b;
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+            border-color: #1f6b4a;
+            box-shadow: 0 0 0 2px rgba(31, 107, 74, 0.1);
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background: #1f6b4a;
+            color: #ffffff;
+            border: 1px solid #1f6b4a;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        /* Card Section Styling */
-        .section-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            transition: all 0.3s ease;
+        .btn-primary:hover {
+            background: #144d34;
+            border-color: #144d34;
         }
 
-        .section-card:hover {
-            background: #ffffff;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
-            border-color: #f59e0b;
+        .btn-secondary {
+            background: transparent;
+            color: #1f6b4a;
+            border: 1px solid rgba(31, 107, 74, 0.5);
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
-
-        .section-title {
+        
+        .btn-secondary:hover {
+            border-color: #1f6b4a;
+            background: rgba(31, 107, 74, 0.05);
+        }
+        
+        /* Modal Header */
+        .modal-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(31, 107, 74, 0.1);
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #e2e8f0;
+            justify-content: space-between;
         }
 
-        .section-title i {
-            color: #d97706;
-            font-size: 1.2rem;
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f6b4a;
+            margin: 0;
         }
 
-        .section-title h3 {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: #1e293b;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: #1f6b4a;
+            font-size: 20px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            opacity: 1;
+        }
+
+        /* Modal Body */
+        .modal-body {
+            padding: 0 24px 24px 24px;
         }
         
         .tab-btn.active { color: #1f6b4a; border-color: #1f6b4a; background: #E6FAFA; }
@@ -468,250 +575,219 @@
     <!-- Staff Modal -->
     <div id="staffModal" class="modal">
         <div class="modal-content">
-            <div class="p-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800" id="modalTitle">Add New Staff</h2>
-                    <button onclick="closeStaffModal()" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times text-2xl"></i>
-                    </button>
-                </div>
-                
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Staff</h2>
+                <button type="button" onclick="closeStaffModal()" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
                 <form id="staffForm" onsubmit="handleFormSubmit(event)">
                     <input type="hidden" id="editStaffId" name="sl_no">
                     
-                    <!-- Personal Information -->
-                    <div class="section-card">
-                        <div class="section-title">
-                            <i class="fas fa-user-circle"></i>
-                            <h3>Personal Information</h3>
+                    <h3 class="form-section-title"><i class="fas fa-user-circle"></i> Personal Information</h3>
+                    <div class="form-grid cols-4">
+                        <div class="input-group">
+                            <label>First Name <span class="required">*</span></label>
+                            <input type="text" name="first_name" required placeholder="Staff first name">
                         </div>
-                        <div class="form-grid">
-                            <div class="input-group">
-                                <label>First Name <span style="color: #ef4444;">*</span></label>
-                                <input type="text" name="first_name" required placeholder="Staff first name">
-                            </div>
-                            <div class="input-group">
-                                <label>Last Name <span style="color: #ef4444;">*</span></label>
-                                <input type="text" name="last_name" required placeholder="Staff last name">
-                            </div>
-                            <div class="input-group">
-                                <label>Gender <span style="color: #ef4444;">*</span></label>
-                                <select name="gender" required>
-                                    <option value="">Select</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label>Date of Birth</label>
-                                <input type="date" name="date_of_birth" onchange="calculateAge()">
-                            </div>
-                            <div class="input-group">
-                                <label>Age</label>
-                                <input type="number" name="age" readonly placeholder="Auto-calculated">
-                            </div>
-                            <div class="input-group">
-                                <label>Blood Group</label>
-                                <select name="blood_group">
-                                    <option value="">Select</option>
-                                    <option value="A+">A+</option>
-                                    <option value="A-">A-</option>
-                                    <option value="B+">B+</option>
-                                    <option value="B-">B-</option>
-                                    <option value="AB+">AB+</option>
-                                    <option value="AB-">AB-</option>
-                                    <option value="O+">O+</option>
-                                    <option value="O-">O-</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label>Marital Status</label>
-                                <select name="marital_status">
-                                    <option value="">Select</option>
-                                    <option value="Single">Single</option>
-                                    <option value="Married">Married</option>
-                                    <option value="Divorced">Divorced</option>
-                                    <option value="Widowed">Widowed</option>
-                                </select>
-                            </div>
+                        <div class="input-group">
+                            <label>Last Name <span class="required">*</span></label>
+                            <input type="text" name="last_name" required placeholder="Staff last name">
+                        </div>
+                        <div class="input-group">
+                            <label>Gender <span class="required">*</span></label>
+                            <select name="gender" required>
+                                <option value="">Select</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Date of Birth</label>
+                            <input type="date" name="date_of_birth" onchange="calculateAge()">
+                        </div>
+                        <div class="input-group">
+                            <label>Age</label>
+                            <input type="number" name="age" readonly placeholder="Calculated">
+                        </div>
+                        <div class="input-group">
+                            <label>Blood Group</label>
+                            <select name="blood_group">
+                                <option value="">Select</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Marital Status</label>
+                            <select name="marital_status">
+                                <option value="">Select</option>
+                                <option value="Single">Single</option>
+                                <option value="Married">Married</option>
+                                <option value="Divorced">Divorced</option>
+                                <option value="Widowed">Widowed</option>
+                            </select>
                         </div>
                     </div>
-                    
-                    <!-- Contact Information -->
-                    <div class="section-card">
-                        <div class="section-title">
-                            <i class="fas fa-address-book"></i>
-                            <h3>Contact Information</h3>
+
+                    <h3 class="form-section-title"><i class="fas fa-address-book"></i> Contact Information</h3>
+                    <div class="form-grid cols-4">
+                        <div class="input-group">
+                            <label>Mobile Number <span class="required">*</span></label>
+                            <input type="tel" name="mobile_number" required placeholder="+91 00000 00000">
                         </div>
-                        <div class="form-grid">
-                            <div class="input-group">
-                                <label>Mobile Number <span style="color: #ef4444;">*</span></label>
-                                <input type="tel" name="mobile_number" required placeholder="+91 00000 00000">
-                            </div>
-                            <div class="input-group">
-                                <label>Alternate Mobile</label>
-                                <input type="tel" name="alternate_mobile">
-                            </div>
-                            <div class="input-group">
-                                <label>Email <span style="color: #ef4444;">*</span></label>
-                                <input type="email" name="email" required placeholder="staff@gmhospital.com">
-                            </div>
-                            <div class="input-group">
-                                <label>City</label>
-                                <input type="text" name="city">
-                            </div>
-                            <div class="input-group">
-                                <label>State</label>
-                                <input type="text" name="state">
-                            </div>
-                            <div class="input-group">
-                                <label>Country</label>
-                                <input type="text" name="country">
-                            </div>
-                            <div class="input-group">
-                                <label>Pincode</label>
-                                <input type="text" name="pincode">
-                            </div>
+                        <div class="input-group">
+                            <label>Alternate Mobile</label>
+                            <input type="tel" name="alternate_mobile">
                         </div>
-                        <div class="input-group mt-4">
+                        <div class="input-group">
+                            <label>Email <span class="required">*</span></label>
+                            <input type="email" name="email" required placeholder="staff@gmhospital.com">
+                        </div>
+                        <div class="input-group">
+                            <label>City</label>
+                            <input type="text" name="city">
+                        </div>
+                        <div class="input-group">
+                            <label>State</label>
+                            <input type="text" name="state">
+                        </div>
+                        <div class="input-group">
+                            <label>Country</label>
+                            <input type="text" name="country">
+                        </div>
+                        <div class="input-group">
+                            <label>Pincode</label>
+                            <input type="text" name="pincode">
+                        </div>
+                        <div class="input-group" style="grid-column: span 4;">
                             <label>Address</label>
                             <textarea name="address" rows="2" placeholder="Full residential address"></textarea>
                         </div>
                     </div>
-                    
-                    <!-- Professional & Employment -->
-                    <div class="section-card">
-                        <div class="section-title">
-                            <i class="fas fa-briefcase-medical"></i>
-                            <h3>Professional & Employment</h3>
+
+                    <h3 class="form-section-title"><i class="fas fa-briefcase-medical"></i> Professional & Employment</h3>
+                    <div class="form-grid cols-4">
+                        <div class="input-group">
+                            <label>Designation <span class="required">*</span></label>
+                            <input type="text" name="designation" required placeholder="e.g. Senior Nurse">
                         </div>
-                        <div class="form-grid">
-                            <div class="input-group">
-                                <label>Designation <span style="color: #ef4444;">*</span></label>
-                                <input type="text" name="designation" required placeholder="e.g. Senior Nurse">
-                            </div>
-                            <div class="input-group">
-                                <label>Qualification</label>
-                                <input type="text" name="qualification">
-                            </div>
-                            <div class="input-group">
-                                <label>Experience (Years)</label>
-                                <input type="number" name="experience_years">
-                            </div>
-                            <div class="input-group">
-                                <label>Previous Organization</label>
-                                <input type="text" name="previous_organization">
-                            </div>
-                            <div class="input-group">
-                                <label>Employment Type</label>
-                                <select name="employment_type">
-                                    <option value="">Select</option>
-                                    <option value="Full-time">Full-time</option>
-                                    <option value="Part-time">Part-time</option>
-                                    <option value="Contract">Contract</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label>Joining Date</label>
-                                <input type="date" name="joining_date">
-                            </div>
-                            <div class="input-group">
-                                <label>Shift Type</label>
-                                <select name="shift_type">
-                                    <option value="">Select</option>
-                                    <option value="Morning">Morning</option>
-                                    <option value="Evening">Evening</option>
-                                    <option value="Night">Night</option>
-                                    <option value="Rotational">Rotational</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label>Working Hours</label>
-                                <input type="text" name="working_hours" placeholder="e.g., 9 AM - 5 PM">
-                            </div>
-                            <div class="input-group">
-                                <label>Salary</label>
-                                <input type="number" name="salary" step="0.01">
-                            </div>
-                            <div class="input-group">
-                                <label>Status</label>
-                                <select name="status">
-                                    <option value="Active">Active</option>
-                                    <option value="Inactive">Inactive</option>
-                                </select>
-                            </div>
+                        <div class="input-group">
+                            <label>Qualification</label>
+                            <input type="text" name="qualification">
+                        </div>
+                        <div class="input-group">
+                            <label>Experience (Years)</label>
+                            <input type="number" name="experience_years">
+                        </div>
+                        <div class="input-group">
+                            <label>Previous Organization</label>
+                            <input type="text" name="previous_organization">
+                        </div>
+                        <div class="input-group">
+                            <label>Employment Type</label>
+                            <select name="employment_type">
+                                <option value="">Select</option>
+                                <option value="Full-time">Full-time</option>
+                                <option value="Part-time">Part-time</option>
+                                <option value="Contract">Contract</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Joining Date</label>
+                            <input type="date" name="joining_date">
+                        </div>
+                        <div class="input-group">
+                            <label>Shift Type</label>
+                            <select name="shift_type">
+                                <option value="">Select</option>
+                                <option value="Morning">Morning</option>
+                                <option value="Evening">Evening</option>
+                                <option value="Night">Night</option>
+                                <option value="Rotational">Rotational</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Working Hours</label>
+                            <input type="text" name="working_hours" placeholder="e.g., 9 AM - 5 PM">
+                        </div>
+                        <div class="input-group">
+                            <label>Salary</label>
+                            <input type="number" name="salary" step="0.01">
+                        </div>
+                        <div class="input-group">
+                            <label>Status</label>
+                            <select name="status">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
                         </div>
                     </div>
-                    
-                    <!-- Bank & Identity -->
-                    <div class="section-card">
-                        <div class="section-title">
-                            <i class="fas fa-id-card-clip"></i>
-                            <h3>Bank & Identity</h3>
+
+                    <h3 class="form-section-title"><i class="fas fa-id-card-clip"></i> Bank & Identity</h3>
+                    <div class="form-grid cols-4">
+                        <div class="input-group">
+                            <label>Bank Name</label>
+                            <input type="text" name="bank_name">
                         </div>
-                        <div class="form-grid">
-                            <div class="input-group">
-                                <label>Bank Name</label>
-                                <input type="text" name="bank_name">
-                            </div>
-                            <div class="input-group">
-                                <label>Account Number</label>
-                                <input type="text" name="bank_account_number">
-                            </div>
-                            <div class="input-group">
-                                <label>IFSC Code</label>
-                                <input type="text" name="ifsc_code">
-                            </div>
-                            <div class="input-group">
-                                <label>ID Proof Type</label>
-                                <select name="id_proof_type">
-                                    <option value="">Select</option>
-                                    <option value="Aadhar Card">Aadhar Card</option>
-                                    <option value="PAN Card">PAN Card</option>
-                                    <option value="Driving License">Driving License</option>
-                                    <option value="Passport">Passport</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label>ID Number</label>
-                                <input type="text" name="id_proof_number">
-                            </div>
+                        <div class="input-group">
+                            <label>Account Number</label>
+                            <input type="text" name="bank_account_number">
+                        </div>
+                        <div class="input-group">
+                            <label>IFSC Code</label>
+                            <input type="text" name="ifsc_code">
+                        </div>
+                        <div class="input-group">
+                            <label>ID Proof Type</label>
+                            <select name="id_proof_type">
+                                <option value="">Select</option>
+                                <option value="Aadhar Card">Aadhar Card</option>
+                                <option value="PAN Card">PAN Card</option>
+                                <option value="Driving License">Driving License</option>
+                                <option value="Passport">Passport</option>
+                            </select>
+                        </div>
+                        <div class="input-group" style="grid-column: span 2;">
+                            <label>ID Number</label>
+                            <input type="text" name="id_proof_number">
                         </div>
                     </div>
-                    
-                    <!-- System Credentials -->
-                    <div class="section-card" style="background: #fffbeb; border-color: #fde68a;">
-                        <div class="section-title">
-                            <i class="fas fa-shield-halved"></i>
-                            <h3>System Credentials</h3>
+
+                    <h3 class="form-section-title"><i class="fas fa-shield-halved"></i> System Credentials</h3>
+                    <div class="form-grid cols-4">
+                        <div class="input-group" style="grid-column: span 2;">
+                            <label>Access Role</label>
+                            <select name="role" id="accessRoleSelect">
+                                <option value="">Select Access Role</option>
+                            </select>
                         </div>
-                        <div class="form-grid">
-                            <div class="input-group">
-                                <label>Access Role</label>
-                                <select name="role" id="accessRoleSelect">
-                                    <option value="">Select Access Role</option>
-                                    <!-- Options will be populated dynamically from designations -->
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label>Username <span style="color: #ef4444;">*</span></label>
-                                <input type="text" name="username" required placeholder="Login username">
-                            </div>
-                            <div class="input-group">
-                                <label>Password <span style="color: #ef4444;" id="password-required-star">*</span></label>
-                                <input type="text" name="password" id="staffPassword" placeholder="Login password">
-                                <small id="password-hint" class="text-slate-400 hidden">Leave blank to keep current password</small>
-                            </div>
+                        <div class="input-group">
+                            <label>Username <span class="required">*</span></label>
+                            <input type="text" name="username" required placeholder="Login username">
+                        </div>
+                        <div class="input-group">
+                            <label>Password <span class="required" id="password-required-star">*</span></label>
+                            <input type="text" name="password" id="staffPassword" placeholder="Login password">
+                            <small id="password-hint" class="text-slate-400 hidden mt-1" style="font-size: 10px;">Leave blank to keep current password</small>
                         </div>
                     </div>
-                    
-                    <div class="flex justify-end gap-4">
-                        <button type="button" onclick="closeStaffModal()" class="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-50">
+
+                    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; border-top: 1px solid rgba(31, 107, 74, 0.1); padding-top: 16px;">
+                        <button type="button" onclick="closeStaffModal()" class="btn-secondary">
                             Cancel
                         </button>
-                        <button type="submit" id="submitBtn" class="btn btn-primary">
-                            <span id="submitBtnText">Save Staff</span>
+                        <button type="submit" id="submitBtn" class="btn-primary">
+                            <i class="fas fa-save"></i> <span id="submitBtnText">Commit Changes</span>
                             <i id="submitLoader" class="fas fa-spinner fa-spin hidden"></i>
                         </button>
                     </div>
