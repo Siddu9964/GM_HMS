@@ -2,8 +2,8 @@
 session_start();
 
 // Check authentication
-if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['Nurse', 'admin', 'Admin'])) {
-    header('Location: ../login.php');
+if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['Superintendent_Nurse', 'Superintendent Nurse', 'admin', 'Admin', 'Head Nurse'])) {
+    header('Location: dashboard.php');
     exit();
 }
 

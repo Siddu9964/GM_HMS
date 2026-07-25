@@ -4564,3 +4564,110 @@ Stack trace:
 [22-Jul-2026 20:22:44 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/index.php/api/billing/opd/stats, Method: GET
 [22-Jul-2026 20:22:44 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/index.php/api/billing/opd, Method: GET
 [22-Jul-2026 20:23:06 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/index.php/api/billing/opd/stats, Method: GET
+[22-Jul-2026 20:40:24 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/staff/designations, Method: GET
+[22-Jul-2026 20:40:24 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/staff, Method: GET
+[22-Jul-2026 20:43:24 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/staff/designations, Method: GET
+[22-Jul-2026 20:43:25 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/staff, Method: GET
+[22-Jul-2026 20:43:27 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/index.php/api/billing/opd, Method: GET
+[22-Jul-2026 20:43:27 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/index.php/api/billing/opd/stats, Method: GET
+[23-Jul-2026 07:12:49 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[23-Jul-2026 07:12:49 Europe/Berlin] [DEBUG] AuthController::login hit
+[23-Jul-2026 07:12:50 Europe/Berlin] Audit [info]: User shalini logged in as Receptionist []
+[23-Jul-2026 07:12:56 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[23-Jul-2026 13:37:09 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[23-Jul-2026 15:08:31 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/prescriptions, Method: GET
+[23-Jul-2026 15:09:11 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[23-Jul-2026 15:09:11 Europe/Berlin] [DEBUG] AuthController::login hit
+[23-Jul-2026 15:09:11 Europe/Berlin] Audit [warning]: Failed login attempt for shella []
+[23-Jul-2026 15:09:23 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[23-Jul-2026 15:09:23 Europe/Berlin] [DEBUG] AuthController::login hit
+[23-Jul-2026 15:09:23 Europe/Berlin] Audit [info]: User Sheela logged in as Nurse []
+[23-Jul-2026 17:21:54 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[23-Jul-2026 17:21:54 Europe/Berlin] [DEBUG] AuthController::login hit
+[23-Jul-2026 17:21:54 Europe/Berlin] Audit [warning]: Failed login attempt for Sheela []
+[23-Jul-2026 17:22:01 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[23-Jul-2026 17:22:01 Europe/Berlin] [DEBUG] AuthController::login hit
+[23-Jul-2026 17:22:02 Europe/Berlin] Audit [info]: User Sheela logged in as Nurse []
+[23-Jul-2026 19:17:12 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[23-Jul-2026 19:17:12 Europe/Berlin] [DEBUG] AuthController::login hit
+[23-Jul-2026 19:17:12 Europe/Berlin] Audit [info]: User Sheela logged in as Nurse []
+[24-Jul-2026 08:18:03 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[24-Jul-2026 08:18:03 Europe/Berlin] [DEBUG] AuthController::login hit
+[24-Jul-2026 08:18:03 Europe/Berlin] Audit [info]: User Akshatha logged in as LabTechnician []
+[24-Jul-2026 08:18:05 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/dashboard, Method: GET
+[24-Jul-2026 08:18:05 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/dashboard, Method: GET
+[24-Jul-2026 08:18:07 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/dashboard, Method: GET
+[24-Jul-2026 08:18:07 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:18:09 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/services, Method: GET
+[24-Jul-2026 08:18:11 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/patients, Method: GET
+[24-Jul-2026 08:18:27 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/services, Method: GET
+[24-Jul-2026 08:18:31 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/patients, Method: GET
+[24-Jul-2026 08:18:40 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: POST
+[24-Jul-2026 08:18:40 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:18:53 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:19:08 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:19:23 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:19:38 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:20:13 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:20:18 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/services, Method: GET
+[24-Jul-2026 08:20:21 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/services, Method: GET
+[24-Jul-2026 08:20:22 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/services, Method: GET
+[24-Jul-2026 08:20:38 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders/CONS-20260724-562/result, Method: POST
+[24-Jul-2026 08:20:39 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:20:53 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:21:07 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:21:23 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:21:38 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:22:37 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:23:37 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:24:38 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:25:37 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:26:37 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:27:37 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:28:31 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:28:37 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:28:37 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/dashboard, Method: GET
+[24-Jul-2026 08:28:38 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/laboratory/orders, Method: GET
+[24-Jul-2026 08:33:43 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[24-Jul-2026 08:33:43 Europe/Berlin] [DEBUG] AuthController::login hit
+[24-Jul-2026 08:33:43 Europe/Berlin] Audit [warning]: Failed login attempt for Sheela []
+[24-Jul-2026 08:33:50 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[24-Jul-2026 08:33:50 Europe/Berlin] [DEBUG] AuthController::login hit
+[24-Jul-2026 08:33:50 Europe/Berlin] Audit [info]: User Sheela logged in as Nurse []
+[24-Jul-2026 16:26:33 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[24-Jul-2026 16:26:33 Europe/Berlin] [DEBUG] AuthController::login hit
+[24-Jul-2026 16:26:33 Europe/Berlin] Audit [info]: User Sheela logged in as Nurse []
+[24-Jul-2026 18:28:01 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[24-Jul-2026 18:28:01 Europe/Berlin] [DEBUG] AuthController::login hit
+[24-Jul-2026 18:28:01 Europe/Berlin] Audit [info]: User Sheela logged in as Superintendent_Nurse []
+[24-Jul-2026 18:30:10 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[24-Jul-2026 18:30:10 Europe/Berlin] [DEBUG] AuthController::login hit
+[24-Jul-2026 18:30:10 Europe/Berlin] Audit [info]: User Sheela logged in as Superintendent_Nurse []
+[24-Jul-2026 18:38:28 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[24-Jul-2026 18:38:28 Europe/Berlin] [DEBUG] AuthController::login hit
+[24-Jul-2026 18:38:28 Europe/Berlin] Audit [info]: User Sheela logged in as Superintendent_Nurse []
+[24-Jul-2026 18:54:51 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[24-Jul-2026 18:54:51 Europe/Berlin] [DEBUG] AuthController::login hit
+[24-Jul-2026 18:54:51 Europe/Berlin] Audit [info]: User sheela logged in as Superintendent_Nurse []
+[24-Jul-2026 20:22:39 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[24-Jul-2026 20:23:11 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[24-Jul-2026 20:23:11 Europe/Berlin] [DEBUG] AuthController::login hit
+[24-Jul-2026 20:23:11 Europe/Berlin] Audit [info]: User sheela logged in as Superintendent_Nurse []
+[24-Jul-2026 20:32:38 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[24-Jul-2026 20:32:38 Europe/Berlin] [DEBUG] AuthController::login hit
+[24-Jul-2026 20:32:38 Europe/Berlin] Audit [info]: User sheela logged in as Superintendent_Nurse []
+[25-Jul-2026 06:58:25 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[25-Jul-2026 06:58:26 Europe/Berlin] [DEBUG] AuthController::login hit
+[25-Jul-2026 06:58:26 Europe/Berlin] Audit [warning]: Failed login attempt for shallini []
+[25-Jul-2026 07:11:56 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[25-Jul-2026 07:11:56 Europe/Berlin] [DEBUG] AuthController::login hit
+[25-Jul-2026 07:11:56 Europe/Berlin] Audit [info]: User sheela logged in as Superintendent_Nurse []
+[25-Jul-2026 07:53:09 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[25-Jul-2026 07:53:09 Europe/Berlin] [DEBUG] AuthController::login hit
+[25-Jul-2026 07:53:09 Europe/Berlin] Audit [info]: User sheela logged in as Superintendent_Nurse []
+[25-Jul-2026 08:36:55 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[25-Jul-2026 08:36:55 Europe/Berlin] [DEBUG] AuthController::login hit
+[25-Jul-2026 08:36:55 Europe/Berlin] Audit [info]: User ASHA logged in as Nurse []
+[25-Jul-2026 08:37:31 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[25-Jul-2026 08:37:31 Europe/Berlin] [DEBUG] AuthController::login hit
+[25-Jul-2026 08:37:31 Europe/Berlin] Audit [info]: User sheela logged in as Superintendent_Nurse []

@@ -694,16 +694,218 @@ function loadOPDBills() {
  */
 function loadIPDBills() {
     const tbody = document.getElementById('bills-tbody');
-    tbody.innerHTML = `
-        <tr><td colspan="9" class="text-center py-8">
-            <div class="text-gray-500">
-                <i class="fas fa-bed text-4xl mb-3"></i>
-                <p class="font-semibold">IPD Billing</p>
-                <p class="text-sm mt-2">In-Patient Department billing management</p>
-                <p class="text-xs mt-4 text-orange-600">IPD billing module will be available soon</p>
-            </div>
-        </td></tr>
-    `;
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-gray-500 py-4">Loading IPD bills...</td></tr>';
+    
+    const status = document.getElementById('filter-status').value;
+    let url = '../api/index.php/api/billing/ipd';
+    if (status) {
+        url += `?payment_status=${status}`;
+    }
+
+    $.ajax({
+        url: url,
+        method: 'GET',
+        success: function (response) {
+            if (response.status === 'success') {
+                renderIPDBillsTable(response.data);
+            }
+        },
+        error: function (xhr) {
+            console.error('Error loading IPD bills:', xhr);
+            document.getElementById('bills-tbody').innerHTML =
+                '<tr><td colspan="9" class="text-center text-red-500 py-4">Error loading IPD bills</td></tr>';
+        }
+    });
+}
+
+function renderIPDBillsTable(bills) {
+    const tbody = document.getElementById('bills-tbody');
+
+    if (bills.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-gray-500 py-4">No IPD bills found</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = bills.map(bill => {
+        const statusColors = {
+            'Paid': 'bg-green-100 text-green-800',
+            'Partial': 'bg-yellow-100 text-yellow-800',
+            'Pending': 'bg-red-100 text-red-800',
+            'Cancelled': 'bg-gray-100 text-gray-800'
+        };
+
+        return `
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <a href="javascript:void(0)" onclick="showIPDBillDetails('${bill.bill_id}')" class="text-blue-600 hover:text-blue-800 font-black decoration-2 underline-offset-4 hover:underline">
+                        ${bill.bill_id}
+                    </a>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${bill.patient_name || '-'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${bill.doctor_name || '-'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${bill.admission_date}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">₹${parseFloat(bill.grand_total).toFixed(2)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">₹${parseFloat(bill.amount_paid).toFixed(2)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">₹${parseFloat(bill.balance_due).toFixed(2)}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${statusColors[bill.payment_status] || 'bg-gray-100 text-gray-800'}">
+                        ${bill.payment_status}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-right relative">
+                    <button onclick="showIPDBillDetails('${bill.bill_id}')" class="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50 transition-colors">
+                        <i class="fas fa-eye w-4 text-center"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function showIPDBillDetails(billId) {
+    toggleIPDBillModal();
+    document.getElementById('ipd-modal-bill-id').textContent = 'Loading...';
+
+    $.ajax({
+        url: \`../api/index.php/api/billing/ipd/\${billId}\`,
+        method: 'GET',
+        success: function (response) {
+            if (response.status === 'success') {
+                const bill = response.data;
+                const fmt = (val) => \`₹\${parseFloat(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}\`;
+
+                document.getElementById('ipd-modal-bill-id').textContent = bill.bill_id;
+                document.getElementById('ipd-detail-patient-name').textContent = bill.patient_name || 'N/A';
+                document.getElementById('ipd-detail-patient-id').textContent = bill.patient_id || 'N/A';
+                document.getElementById('ipd-detail-patient-phone').textContent = bill.phone || 'N/A';
+                document.getElementById('ipd-detail-doctor-name').textContent = bill.doctor_name ? \`Dr. \${bill.doctor_name}\` : 'N/A';
+                document.getElementById('ipd-detail-admission-id').textContent = bill.admission_id || 'N/A';
+                
+                document.getElementById('ipd-detail-bill-date').textContent = bill.admission_date;
+                document.getElementById('ipd-detail-balance-due').textContent = fmt(bill.balance_due);
+                document.getElementById('ipd-detail-total-days').textContent = bill.total_days || '1';
+
+                const statusEl = document.getElementById('ipd-detail-payment-status');
+                statusEl.textContent = bill.payment_status;
+                statusEl.className = \`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest \${bill.payment_status === 'Paid' ? 'bg-green-100 text-green-700' :
+                        bill.payment_status === 'Partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                    }\`;
+
+                // Footer Stats
+                document.getElementById('ipd-foot-subtotal').textContent = fmt(bill.subtotal);
+                document.getElementById('ipd-foot-tax').textContent = fmt(bill.tax_amount);
+                document.getElementById('ipd-foot-grand-total').textContent = fmt(bill.grand_total);
+                document.getElementById('ipd-foot-amount-paid').textContent = fmt(bill.amount_paid);
+
+                // Group items by category
+                const itemsTbody = document.getElementById('ipd-detail-items-tbody');
+                if (bill.items && bill.items.length > 0) {
+                    let currentCategory = '';
+                    let itemsHtml = '';
+                    
+                    bill.items.forEach(item => {
+                        if (item.charge_type !== currentCategory) {
+                            currentCategory = item.charge_type;
+                            itemsHtml += \`
+                                <tr class="bg-slate-100">
+                                    <td colspan="5" class="px-6 py-2 font-black text-slate-700 text-xs uppercase tracking-widest">
+                                        <i class="fas fa-layer-group mr-2 text-blue-500"></i> \${currentCategory} Charges
+                                    </td>
+                                </tr>
+                            \`;
+                        }
+                        itemsHtml += \`
+                            <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                                <td class="px-6 py-3 text-xs font-medium text-slate-500">\${item.charge_date}</td>
+                                <td class="px-6 py-3 font-medium text-slate-700">\${item.item_name}</td>
+                                <td class="px-6 py-3 text-center text-slate-500 font-bold">\${parseFloat(item.quantity)}</td>
+                                <td class="px-6 py-3 text-right text-slate-500">\${fmt(item.unit_price)}</td>
+                                <td class="px-6 py-3 text-right font-black text-slate-900">\${fmt(item.total_price)}</td>
+                            </tr>
+                        \`;
+                    });
+                    itemsTbody.innerHTML = itemsHtml;
+                } else {
+                    itemsTbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-400">No itemized charges found for this admission.</td></tr>';
+                }
+
+                // Add Manual Charge Button Setup
+                document.getElementById('btn-add-ipd-charge').setAttribute('onclick', \`openAddIpdChargeModal('\${bill.bill_id}')\`);
+
+                // Payment Button Setup
+                const payBtn = document.getElementById('ipd-btn-pay-modal');
+                if (parseFloat(bill.balance_due) > 0) {
+                    payBtn.classList.remove('hidden');
+                    payBtn.setAttribute('onclick', \`recordIpdQuickPayment('\${bill.bill_id}', \${bill.balance_due})\`);
+                } else {
+                    payBtn.classList.add('hidden');
+                }
+            }
+        }
+    });
+}
+
+function toggleIPDBillModal() {
+    document.getElementById('ipd-bill-details-modal').classList.toggle('hidden');
+}
+
+function openAddIpdChargeModal(billId) {
+    const chargeType = prompt("Enter Charge Category (e.g. Room, Nursing, Lab, Pharmacy, Procedure):", "Procedure");
+    if(!chargeType) return;
+    
+    const itemName = prompt("Enter specific service/item name:", "General Service");
+    if(!itemName) return;
+    
+    const qty = prompt("Enter Quantity:", "1");
+    if(!qty) return;
+    
+    const price = prompt("Enter Unit Price (₹):", "0.00");
+    if(!price) return;
+
+    $.ajax({
+        url: \`../api/index.php/api/billing/ipd/\${billId}/add-item\`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            charge_type: chargeType,
+            item_name: itemName,
+            quantity: parseFloat(qty),
+            unit_price: parseFloat(price)
+        }),
+        success: function (response) {
+            if (response.status === 'success') {
+                showSuccess('Charge added successfully!');
+                showIPDBillDetails(billId); // Refresh modal
+                loadIPDBills(); // Refresh table
+            } else {
+                showError('Error adding charge');
+            }
+        }
+    });
+}
+
+function recordIpdQuickPayment(billId, amount) {
+    const confirmPay = confirm(\`Record full payment of ₹\${amount} for IPD Bill \${billId}?\`);
+    if (confirmPay) {
+        $.ajax({
+            url: '../api/index.php/api/billing/ipd/payment',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                bill_id: billId,
+                amount: amount,
+                payment_method: 'Cash',
+                notes: 'Quick payment from IPD details card'
+            }),
+            success: function (response) {
+                if (response.status === 'success') {
+                    showSuccess('Payment recorded successfully!');
+                    showIPDBillDetails(billId); // Refresh modal
+                    loadIPDBills();
+                }
+            }
+        });
+    }
 }
 
 /**

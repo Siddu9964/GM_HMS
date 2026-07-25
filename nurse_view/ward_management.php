@@ -1,14 +1,44 @@
 <?php
 session_start();
+require_once __DIR__ . '/../core/Autoloader.php';
+require_once __DIR__ . '/includes/nurse_auth_helper.php';
+use GM_HMS\Database\SecureDatabase;
 
 // Check authentication
-if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['Nurse', 'admin', 'Admin'])) {
+if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['Nurse', 'Superintendent_Nurse', 'Nursing_Superintendent', 'admin', 'Admin'])) {
     header('Location: ../login.php');
     exit();
 }
 
 $nurseId = $_SESSION['user_id'] ?? null;
 $nurseName = $_SESSION['username'] ?? 'Nurse';
+
+$db = SecureDatabase::getInstance();
+$conn = $db->getConnection();
+$currentWard = getCurrentNurseWard($conn, $nurseId);
+
+$rooms = [];
+if ($currentWard) {
+    // Fetch rooms in this ward
+    $stmt = $conn->prepare("
+        SELECT b.room_no as room_number, b.bed_number, b.sl_no,
+               ia.patient_id, p.first_name, p.last_name
+        FROM hospital_beds b
+        LEFT JOIN ipd_admissions ia ON b.sl_no = ia.bed_id AND ia.status IN ('Active', 'Admitted')
+        LEFT JOIN patient p ON ia.patient_id = p.patient_id
+        WHERE b.floor_name = ? AND b.ward_name = ? AND b.room_type = ?
+        ORDER BY b.room_no, b.bed_number
+    ");
+    if ($stmt) {
+        $stmt->bind_param("sss", $currentWard['floor_name'], $currentWard['ward_name'], $currentWard['room_type']);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while($r = $res->fetch_assoc()) {
+            $rNum = $r['room_number'] ?: 'Unknown Room';
+            $rooms[$rNum][] = $r;
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -56,31 +86,54 @@ $nurseName = $_SESSION['username'] ?? 'Nurse';
                 <div class="container">
                     <div class="page-header">
                         <h1>Ward Overview & Management</h1>
+                        <?php if($currentWard): ?>
+                            <span style="background: var(--primary); color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600;">
+                                <?php echo htmlspecialchars($currentWard['ward_name'] . ' - ' . $currentWard['room_type']); ?>
+                            </span>
+                        <?php else: ?>
+                            <span style="background: var(--danger); color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600;">No Ward Assigned Today</span>
+                        <?php endif; ?>
                     </div>
                     <div class="ward-grid">
-                        <!-- Simplified Placeholder Ward Overview -->
-                        <?php for($i=1; $i<=6; $i++): ?>
-                        <div class="room-card">
-                            <div class="room-header">
-                                <span class="room-title">Room <?php echo 100 + $i; ?></span>
-                                <span class="badge" style="background: #E3F2FD; color: #1976D2; font-size: 11px;">ICU / General</span>
+                        <?php if(!$currentWard): ?>
+                            <div style="grid-column: 1 / -1; text-align: center; padding: 50px; background: white; border-radius: 12px; color: #6c757d;">
+                                <i class="fas fa-bed fa-3x mb-3" style="color: #dee2e6;"></i>
+                                <h2>No Ward Access</h2>
+                                <p>You are not currently assigned to a ward today. Check your shift schedule.</p>
                             </div>
-                            <ul class="bed-list">
-                                <li class="bed-item">
-                                    <span>Bed A</span>
-                                    <span style="color: var(--danger); font-weight: 600;"><span class="bed-status status-occupied"></span>Occupied</span>
-                                </li>
-                                <li class="bed-item">
-                                    <span>Bed B</span>
-                                    <span style="color: var(--success); font-weight: 600;"><span class="bed-status status-vacant"></span>Vacant</span>
-                                </li>
-                                <li class="bed-item">
-                                    <span>Bed C</span>
-                                    <span style="color: var(--warning); font-weight: 600;"><span class="bed-status status-cleaning"></span>Cleaning</span>
-                                </li>
-                            </ul>
-                        </div>
-                        <?php endfor; ?>
+                        <?php elseif(empty($rooms)): ?>
+                            <div style="grid-column: 1 / -1; text-align: center; padding: 50px; background: white; border-radius: 12px; color: #6c757d;">
+                                <p>No rooms found in this ward.</p>
+                            </div>
+                        <?php else: ?>
+                            <?php foreach($rooms as $roomNumber => $beds): ?>
+                            <div class="room-card">
+                                <div class="room-header">
+                                    <span class="room-title">Room <?php echo htmlspecialchars($roomNumber); ?></span>
+                                    <span class="badge" style="background: #E3F2FD; color: #1976D2; font-size: 11px; padding: 3px 8px; border-radius: 10px;">
+                                        <?php echo htmlspecialchars($currentWard['room_type']); ?>
+                                    </span>
+                                </div>
+                                <ul class="bed-list">
+                                    <?php foreach($beds as $bed): ?>
+                                    <li class="bed-item">
+                                        <span>Bed <?php echo htmlspecialchars($bed['bed_number']); ?></span>
+                                        <?php if($bed['patient_id']): ?>
+                                            <span style="color: var(--danger); font-weight: 600; font-size: 12px;">
+                                                <span class="bed-status status-occupied"></span>
+                                                <?php echo htmlspecialchars($bed['first_name'] . ' ' . $bed['last_name']); ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span style="color: var(--success); font-weight: 600; font-size: 12px;">
+                                                <span class="bed-status status-vacant"></span>Vacant
+                                            </span>
+                                        <?php endif; ?>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

@@ -156,6 +156,7 @@ class IpdSummaryController extends BaseController {
             // Format response
             $formatted = array_map(function($admission) {
                 $phoneDisplay = !empty($admission['patient_phone']) ? ' [' . $admission['patient_phone'] . ']' : '';
+                $patientIdDisplay = !empty($admission['patient_id']) ? $admission['patient_id'] . ' | ' : '';
                 return [
                     'admission_id' => $admission['admission_id'],
                     'patient_id' => $admission['patient_id'],
@@ -172,7 +173,7 @@ class IpdSummaryController extends BaseController {
                     'discharge_date' => $admission['discharge_date'],
                     'diagnosis' => $admission['diagnosis'],
                     'status' => $admission['status'],
-                    'display_text' => $admission['admission_id'] . ' - ' . ($admission['patient_name'] ?? 'Unknown') . $phoneDisplay . ' (' . $admission['ward_name'] . ' - ' . $admission['room_no'] . ')'
+                    'display_text' => $patientIdDisplay . $admission['admission_id'] . ' - ' . ($admission['patient_name'] ?? 'Unknown') . $phoneDisplay . ' (' . ($admission['ward_name'] ?? 'Ward') . ' - R-' . ($admission['room_no'] ?? '---') . ')'
                 ];
             }, $admissions);
             
@@ -190,24 +191,7 @@ class IpdSummaryController extends BaseController {
     /**
      * GET /api/ipd-summary/daily-reports
      * 
-     * Retrieve all daily reports for a specific IPD admission
-     * 
-     * Query Parameters:
-     * - ipd_no (required): IPD admission number
-     * - date (optional): Filter by specific date (YYYY-MM-DD)
-     * 
-     * Response:
-     * {
-     *   "success": true,
-     *   "status": "success",
-     *   "data": {
-     *     "ipd_no": "IPD001",
-     *     "patient_id": "P001",
-     *     "admission_date": "2026-02-01 10:30:00",
-     *     "daily_reports": [...],
-     *     "total_days": 10
-     *   }
-     * }
+     * Retrieve all daily reports for a specific IPD admission or patient ID
      */
     public function getDailyReports() {
         $this->restrictMethod('GET');
@@ -216,85 +200,190 @@ class IpdSummaryController extends BaseController {
         try {
             $ipdNo = $_GET['ipd_no'] ?? null;
             if (!$ipdNo) {
-                $this->respondBadRequest('IPD Number is required');
+                $this->respondBadRequest('IPD Number or Patient ID is required');
             }
             
-            // Try to fetch from ipd_summary first
+            // Fetch base admission info from ipd_admissions (matching admission_id OR patient_id)
+            $admission = $this->db->fetchOne(
+                "SELECT 
+                    a.admission_id as ipd_no, 
+                    a.patient_id, 
+                    a.admitting_doctor_id as doctor_id, 
+                    d.full_name as doctor_name,
+                    a.admission_date,
+                    a.discharge_date,
+                    a.ward_name as ward,
+                    a.room_no,
+                    a.bed_id as bed_no,
+                    a.diagnosis as provisional_diagnosis,
+                    a.status
+                 FROM ipd_admissions a
+                 LEFT JOIN doctors d ON a.admitting_doctor_id = d.doctor_id
+                 WHERE a.admission_id = ? OR a.patient_id = ?
+                 ORDER BY a.admission_date DESC LIMIT 1",
+                [$ipdNo, $ipdNo]
+            );
+            
+            // Try to fetch from ipd_summary
             $summary = $this->db->fetchOne(
                 "SELECT id, ipd_no, patient_id, doctor_id, admission_date, discharge_date,
                         ward, room_no, bed_no, department, provisional_diagnosis, 
                         final_diagnosis, patient_condition, daily_reports, discharge_summary
                  FROM ipd_summary 
-                 WHERE ipd_no = ?",
-                [$ipdNo]
+                 WHERE ipd_no = ? OR patient_id = ?
+                 LIMIT 1",
+                [$ipdNo, $ipdNo]
             );
             
-            if (!$summary) {
-                // Not in summary table yet, check if it's a valid admission
-                $admission = $this->db->fetchOne(
-                    "SELECT 
-                        a.admission_id as ipd_no, 
-                        a.patient_id, 
-                        a.admitting_doctor_id as doctor_id, 
-                        a.admission_date,
-                        a.ward_name as ward,
-                        a.room_no,
-                        a.bed_id as bed_no,
-                        a.diagnosis as provisional_diagnosis,
-                        a.status
-                     FROM ipd_admissions a
-                     WHERE a.admission_id = ?",
-                    [$ipdNo]
-                );
-                
-                if (!$admission) {
-                    $this->respondNotFound('Admission record not found');
+            if (!$admission && !$summary) {
+                $this->respondNotFound('Admission record not found');
+            }
+            
+            $dailyReports = [];
+            
+            // 1. Get reports from ipd_summary table if present
+            if ($summary && !empty($summary['daily_reports'])) {
+                $decoded = json_decode($summary['daily_reports'], true);
+                if (is_array($decoded)) {
+                    $dailyReports = $decoded;
                 }
+            }
+            
+            // 2. Fetch daily records from ipd_clinical_records table
+            $clinicalRecords = $this->db->fetchAll(
+                "SELECT * FROM ipd_clinical_records WHERE admission_id = ? OR patient_id = ? ORDER BY record_date DESC",
+                [$ipdNo, $ipdNo]
+            );
+
+            $existingDates = array_column($dailyReports, 'date');
+            
+            foreach ($clinicalRecords as $cr) {
+                $date = $cr['record_date'];
                 
-                // Construct default response from admission data
-                $response = [
-                    'ipd_no' => $admission['ipd_no'],
-                    'patient_id' => $admission['patient_id'],
-                    'doctor_id' => $admission['doctor_id'],
-                    'admission_date' => $admission['admission_date'],
-                    'discharge_date' => null,
-                    'ward' => $admission['ward'],
-                    'room_no' => $admission['room_no'],
-                    'bed_no' => $admission['bed_no'],
-                    'department' => null,
-                    'provisional_diagnosis' => $admission['provisional_diagnosis'],
-                    'patient_condition' => 'Stable',
-                    'daily_reports' => [],
-                    'total_days' => 0,
-                    'is_discharged' => ($admission['status'] === 'Discharged')
-                ];
-            } else {
-                // Record exists in summary table
-                $dailyReports = [];
-                if (!empty($summary['daily_reports'])) {
-                    $decoded = json_decode($summary['daily_reports'], true);
-                    if (json_last_error() === JSON_ERROR_NONE) {
-                        $dailyReports = $decoded;
+                // Avoid duplicating if already present from ipd_summary
+                if (in_array($date, $existingDates)) {
+                    continue;
+                }
+
+                $doctorVisit = null;
+                $observations = '';
+                $medicalChanges = '';
+                $nurseProcedures = [];
+                $notes = '';
+
+                // Extract Consultant Visits
+                if (!empty($cr['consultant_visits'])) {
+                    $visits = json_decode($cr['consultant_visits'], true);
+                    if (is_array($visits) && !empty($visits)) {
+                        $lastV = end($visits);
+                        $doctorVisit = [
+                            'doctor_id' => $lastV['doctor_id'] ?? ($admission['doctor_id'] ?? ''),
+                            'doctor_name' => $lastV['doctor_name'] ?? ($admission['doctor_name'] ?? 'Consultant Doctor'),
+                            'visit_time' => $lastV['visit_time'] ?? (isset($lastV['created_at']) ? substr($lastV['created_at'], 11, 5) : '10:00'),
+                            'summary' => $lastV['notes'] ?? $lastV['summary'] ?? $lastV['assessment'] ?? 'Consultant visit recorded'
+                        ];
                     }
                 }
-                
-                $response = [
-                    'ipd_no' => $summary['ipd_no'],
-                    'patient_id' => $summary['patient_id'],
-                    'doctor_id' => $summary['doctor_id'],
-                    'admission_date' => $summary['admission_date'],
-                    'discharge_date' => $summary['discharge_date'],
-                    'ward' => $summary['ward'],
-                    'room_no' => $summary['room_no'],
-                    'bed_no' => $summary['bed_no'],
-                    'department' => $summary['department'],
-                    'provisional_diagnosis' => $summary['provisional_diagnosis'],
-                    'patient_condition' => $summary['patient_condition'],
-                    'daily_reports' => $dailyReports,
-                    'total_days' => count($dailyReports),
-                    'is_discharged' => !empty($summary['discharge_date'])
-                ];
+
+                // Extract Nursing Notes
+                if (!empty($cr['nursing_notes'])) {
+                    $nn = json_decode($cr['nursing_notes'], true);
+                    if (is_array($nn) && !empty($nn)) {
+                        $notesArr = [];
+                        foreach ($nn as $nItem) {
+                            if (is_array($nItem)) {
+                                $notesArr[] = $nItem['note'] ?? $nItem['summary'] ?? json_encode($nItem);
+                            } else {
+                                $notesArr[] = $nItem;
+                            }
+                        }
+                        $notes = implode('; ', $notesArr);
+                    }
+                }
+
+                // Extract Vitals
+                if (!empty($cr['vitals'])) {
+                    $v = json_decode($cr['vitals'], true);
+                    if (is_array($v) && !empty($v)) {
+                        $obsArr = [];
+                        foreach ($v as $vItem) {
+                            if (is_array($vItem)) {
+                                $temp = $vItem['temperature'] ?? '';
+                                $bp = isset($vItem['bp_systolic']) ? "{$vItem['bp_systolic']}/{$vItem['bp_diastolic']}" : '';
+                                $spo2 = $vItem['spo2'] ?? '';
+                                $obsArr[] = "Temp: {$temp}°F, BP: {$bp}, SpO2: {$spo2}%";
+                            }
+                        }
+                        $observations = implode(' | ', $obsArr);
+                    }
+                }
+
+                // Extract Procedures
+                if (!empty($cr['procedures'])) {
+                    $procs = json_decode($cr['procedures'], true);
+                    if (is_array($procs)) {
+                        foreach ($procs as $pItem) {
+                            if (is_array($pItem)) {
+                                $nurseProcedures[] = [
+                                    'time' => $pItem['time'] ?? (isset($pItem['created_at']) ? substr($pItem['created_at'], 11, 5) : '12:00'),
+                                    'procedure' => $pItem['procedure'] ?? $pItem['name'] ?? 'Nursing Procedure'
+                                ];
+                            }
+                        }
+                    }
+                }
+
+                if ($doctorVisit || $observations || $medicalChanges || !empty($nurseProcedures) || $notes) {
+                    $dailyReports[] = [
+                        'date' => $date,
+                        'doctor_visit' => $doctorVisit ?: [
+                            'doctor_id' => $admission['doctor_id'] ?? '',
+                            'doctor_name' => $admission['doctor_name'] ?? 'Attending Doctor',
+                            'visit_time' => '09:00',
+                            'summary' => 'Daily Clinical Record updated'
+                        ],
+                        'medical_changes' => $medicalChanges,
+                        'observations' => $observations,
+                        'nurse_procedures' => $nurseProcedures,
+                        'extra_data' => [
+                            'notes' => $notes,
+                            'created_at' => $date . ' 09:00:00',
+                            'created_by' => 'Nursing Staff'
+                        ]
+                    ];
+                }
             }
+
+            // Sort timeline reports (newest date first)
+            usort($dailyReports, function($a, $b) {
+                return strcmp($b['date'], $a['date']);
+            });
+
+            // Calculate length of stay
+            $admDateStr = $summary['admission_date'] ?? $admission['admission_date'] ?? date('Y-m-d');
+            $admDate = new \DateTime($admDateStr);
+            $endDate = !empty($summary['discharge_date'] ?? $admission['discharge_date']) 
+                ? new \DateTime($summary['discharge_date'] ?? $admission['discharge_date']) 
+                : new \DateTime();
+            $totalDaysCalculated = max(1, $admDate->diff($endDate)->days + 1);
+
+            $response = [
+                'ipd_no' => $summary['ipd_no'] ?? $admission['ipd_no'],
+                'patient_id' => $summary['patient_id'] ?? $admission['patient_id'],
+                'doctor_id' => $summary['doctor_id'] ?? $admission['doctor_id'],
+                'doctor_name' => $admission['doctor_name'] ?? 'Doctor',
+                'admission_date' => $summary['admission_date'] ?? $admission['admission_date'],
+                'discharge_date' => $summary['discharge_date'] ?? $admission['discharge_date'] ?? null,
+                'ward' => $summary['ward'] ?? $admission['ward'],
+                'room_no' => $summary['room_no'] ?? $admission['room_no'],
+                'bed_no' => $summary['bed_no'] ?? $admission['bed_no'],
+                'department' => $summary['department'] ?? null,
+                'provisional_diagnosis' => $summary['provisional_diagnosis'] ?? $admission['provisional_diagnosis'],
+                'patient_condition' => $summary['patient_condition'] ?? 'Stable',
+                'daily_reports' => $dailyReports,
+                'total_days' => $totalDaysCalculated,
+                'is_discharged' => (($summary['status'] ?? $admission['status'] ?? '') === 'Discharged')
+            ];
             
             $this->respondSuccess($response, 'Daily reports retrieved successfully');
             

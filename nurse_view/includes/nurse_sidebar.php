@@ -36,21 +36,37 @@
                         style="margin-left: auto; font-size: 0.65rem; padding: 2px 6px;">0</span>
                 </a>
 
-                <a href="vitals.php" class="sidebar-link" data-page="vitals">
-                    <i class="fas fa-heartbeat"></i>
-                    <span>Vital Signs</span>
-                </a>
-
-                <a href="medication.php" class="sidebar-link" data-page="medication">
+                <a href="medication.php?clear=1" class="sidebar-link" data-page="medication">
                     <i class="fas fa-pills"></i>
                     <span style="font-size: 0.8rem; letter-spacing: -0.2px;">Medications</span>
-                    <span class="badge badge-warning" id="pending-meds"
-                        style="margin-left: auto; font-size: 0.65rem; padding: 2px 6px;">0</span>
                 </a>
 
-                <a href="nurse_notes.php" class="sidebar-link" data-page="nurse_notes">
-                    <i class="fas fa-notes-medical"></i>
-                    <span>Nurse Notes</span>
+                <!-- Tests Menu -->
+                <a href="ipd_tests.php" class="sidebar-link" data-page="ipd_tests">
+                    <i class="fas fa-vials"></i>
+                    <span style="font-size: 0.8rem; letter-spacing: -0.2px;">Tests</span>
+                </a>
+
+                <!-- Pharmacy Menu -->
+                <div class="sidebar-dropdown">
+                    <a href="#" class="sidebar-link" onclick="toggleDropdown(event, 'pharmacy-menu')">
+                        <i class="fas fa-prescription-bottle-alt"></i>
+                        <span>Pharmacy</span>
+                        <i class="fas fa-chevron-down ms-auto" style="font-size: 0.7rem; margin-left: auto; width: auto;"></i>
+                    </a>
+                    <div class="sidebar-submenu" id="pharmacy-menu" style="display:none; padding-left: 1.5rem; margin-top: 2px;">
+                        <a href="ipd_pharmacy_order.php" class="sidebar-link" data-page="ipd_pharmacy_order">
+                            <i class="fas fa-cart-plus" style="font-size:0.85rem;"></i><span>Order</span>
+                        </a>
+                        <a href="ipd_pharmacy_return.php" class="sidebar-link" data-page="ipd_pharmacy_return">
+                            <i class="fas fa-undo" style="font-size:0.85rem;"></i><span>Return</span>
+                        </a>
+                    </div>
+                </div>
+
+                <a href="k_sheet_view.php" class="sidebar-link" data-page="k_sheet_view">
+                    <i class="fas fa-file-medical-alt"></i>
+                    <span>K-Sheet</span>
                 </a>
 
                 <a href="ipd_summary.php" class="sidebar-link" data-page="ipd_summary">
@@ -58,25 +74,29 @@
                     <span>IPD Summary</span>
                 </a>
 
-                <!-- Tasks & Schedule Section -->
+                <!-- Schedule Section -->
                 <div style="margin-top: 1.5rem; margin-bottom: 0.5rem;">
                     <p
                         style="color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; padding: 0 1rem; white-space: nowrap;">
-                        <i class="fas fa-calendar-check" style="margin-right: 0.5rem;"></i>Tasks & Schedule
+                        <i class="fas fa-calendar-check" style="margin-right: 0.5rem;"></i>Schedule
                     </p>
                 </div>
-
-                <a href="tasks.php" class="sidebar-link" data-page="tasks">
-                    <i class="fas fa-tasks"></i>
-                    <span style="font-size: 0.8rem; letter-spacing: -0.2px;">My Tasks</span>
-                    <span class="badge badge-danger" id="pending-tasks"
-                        style="margin-left: auto; font-size: 0.65rem; padding: 2px 6px;">0</span>
-                </a>
 
                 <a href="my_shift.php" class="sidebar-link" data-page="my_shift">
                     <i class="fas fa-clock"></i>
                     <span>My Shift</span>
                 </a>
+
+                <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['Superintendent_Nurse', 'Superintendent Nurse', 'admin', 'Admin', 'Head Nurse'])): ?>
+                <a href="shift_assignment.php" class="sidebar-link" data-page="shift_assignment">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Shift Assignment</span>
+                </a>
+                <a href="all_shift_assignments.php" class="sidebar-link" data-page="all_shift_assignments">
+                    <i class="fas fa-list-alt"></i>
+                    <span>All Assigned Shifts</span>
+                </a>
+                <?php endif; ?>
 
                 <!-- Ward Management Section -->
                 <div style="margin-top: 1.5rem; margin-bottom: 0.5rem;">
@@ -93,10 +113,12 @@
 
 
 
+                <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['Superintendent_Nurse', 'Superintendent Nurse', 'admin', 'Admin', 'Head Nurse'])): ?>
                 <a href="reports.php" class="sidebar-link" data-page="reports">
                     <i class="fas fa-chart-bar"></i>
                     <span>Reports</span>
                 </a>
+                <?php endif; ?>
             </div>
 
             <!-- Quick Actions -->
@@ -153,9 +175,11 @@
         margin-bottom: 2px;
     }
 
+
     .sidebar-link span:not(.badge) {
         flex: 1;
-        white-space: nowrap;
+        line-height: 1.25;
+        word-wrap: break-word;
     }
 
     .sidebar-link i {
@@ -251,12 +275,7 @@
                     medsBadge.style.display = 'inline-block';
                 }
 
-                // Update pending tasks
-                const tasksBadge = document.getElementById('pending-tasks');
-                if (tasksBadge) {
-                    tasksBadge.textContent = stats.tasks.pending || 0;
-                    tasksBadge.style.display = 'inline-block';
-                }
+
             }
         } catch (error) {
             console.error('Failed to load nurse counts:', error);
@@ -272,5 +291,26 @@
     function toggleSidebar() {
         const sidebar = document.getElementById('nurseSidebar');
         sidebar.classList.toggle('open');
+    }
+
+    // Toggle dropdown menus
+    function toggleDropdown(event, menuId) {
+        event.preventDefault();
+        const menu = document.getElementById(menuId);
+        const icon = event.currentTarget.querySelector('.fa-chevron-down, .fa-chevron-up');
+        
+        if (menu.style.display === 'none') {
+            menu.style.display = 'block';
+            if(icon) {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            }
+        } else {
+            menu.style.display = 'none';
+            if(icon) {
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
     }
 </script>

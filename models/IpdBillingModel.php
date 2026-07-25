@@ -505,6 +505,26 @@ class IpdBillingModel {
     }
     
     /**
+     * Get bill by admission ID (creates one if it doesn't exist)
+     * @param string $admissionId
+     * @return array Bill details
+     */
+    public function getBillByAdmissionId($admissionId) {
+        $billRecord = $this->db->fetchOne("SELECT bill_id FROM ipd_billing_master WHERE admission_id = ?", [$admissionId]);
+        
+        if ($billRecord) {
+            $billId = $billRecord['bill_id'];
+        } else {
+            $billId = $this->createAdmissionBill($admissionId);
+        }
+        
+        // Auto-calculate daily charges before returning
+        $this->calculateRoomCharges($billId);
+        
+        return $this->getBillDetails($billId);
+    }
+    
+    /**
      * Get all IPD bills with filters
      * 
      * @param array $filters Filter criteria

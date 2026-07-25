@@ -287,6 +287,14 @@ $router->add('POST', '#^/api/billing/opd/referral/?$#', 'GM_HMS\Controllers\api\
 $router->add('GET', '#^/api/billing/opd/referral/search/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'searchReferrals');
 $router->add('GET', '#^/api/billing/opd/sponsor/search/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'searchSponsors');
 
+// IPD Billing Routes
+$router->add('GET', '#^/api/billing/ipd/?$#', 'GM_HMS\Controllers\api\IpdBillingController', 'getAllBills');
+$router->add('GET', '#^/api/billing/ipd/stats/?$#', 'GM_HMS\Controllers\api\IpdBillingController', 'getStatistics');
+$router->add('GET', '#^/api/billing/ipd/admission/([^/]+)/?$#', 'GM_HMS\Controllers\api\IpdBillingController', 'getBillByAdmission');
+$router->add('GET', '#^/api/billing/ipd/([^/]+)/?$#', 'GM_HMS\Controllers\api\IpdBillingController', 'getBillById');
+$router->add('POST', '#^/api/billing/ipd/([^/]+)/add-item/?$#', 'GM_HMS\Controllers\api\IpdBillingController', 'addItem');
+$router->add('POST', '#^/api/billing/ipd/payment/?$#', 'GM_HMS\Controllers\api\IpdBillingController', 'recordPayment');
+
 // Laboratory Routes
 $router->add('GET', '#^/api/laboratory/services/?$#', 'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'getServices');
 $router->add('POST', '#^/api/laboratory/services/?$#', 'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'createService');

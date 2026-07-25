@@ -103,7 +103,7 @@ class NurseNotesModel {
                 INNER JOIN patient p ON nn.patient_id = p.patient_id
                 LEFT JOIN staff s ON nn.nurse_id = s.sl_no
                 LEFT JOIN ipd_admissions ia ON nn.admission_id = ia.admission_id
-                LEFT JOIN hospital_beds b ON ia.bed_id = b.bed_id
+                LEFT JOIN hospital_beds b ON ia.bed_id = b.sl_no
                 WHERE nn.handover_important = 1
                   AND DATE(nn.created_at) = ?
                 ORDER BY nn.created_at DESC";

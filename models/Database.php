@@ -32,9 +32,11 @@ class Database {
             session_start();
         }
         
-        $branch = $_SERVER['HTTP_X_HOSPITAL_BRANCH'] ?? $_SESSION['hospital_branch'] ?? $_SESSION['branch'] ?? '';
-        if (strtolower($branch) === 'basaveshwaranagar') {
+        $branch = strtolower($_SERVER['HTTP_X_HOSPITAL_BRANCH'] ?? $_SESSION['hospital_branch'] ?? $_SESSION['branch'] ?? '');
+        if ($branch === 'basaveshwaranagar' || $branch === 'basaveshwranagara') {
             $this->db_name = 'hmsc_basaveshwranagara';
+        } elseif ($branch === 'nagarabhavi') {
+            $this->db_name = 'hmsci';
         }
         
         try {

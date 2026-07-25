@@ -2,7 +2,7 @@
 session_start();
 
 // Check authentication
-if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['Nurse', 'admin', 'Admin'])) {
+if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['Nurse', 'Superintendent_Nurse', 'Nursing_Superintendent', 'admin', 'Admin'])) {
     header('Location: ../login.php');
     exit();
 }
@@ -271,7 +271,7 @@ $nurseName = $_SESSION['username'] ?? 'Nurse';
             <div class="main-content">
                 <div class="container">
                     <div class="page-header">
-                        <h1>All Admitted Patients</h1>
+                        <h1>My Ward Patients</h1>
                         <div class="search-container">
                             <input type="text" id="patientSearch" class="search-input" placeholder="Search by name, ID, room or ward...">
                             <button id="searchBtn" class="search-btn">
@@ -363,14 +363,8 @@ $nurseName = $_SESSION['username'] ?? 'Nurse';
                             ${p.doctor_name ? `<div style="grid-column: 1 / -1"><span class="info-label">Doctor</span><span class="info-value"><i class="fas fa-user-md" style="color:var(--primary);margin-right:4px;"></i>${p.doctor_name}</span></div>` : ''}
                         </div>
                         <div class="card-actions">
-                            <button onclick="navigateWithPatient('vitals.php', '${p.patient_id}', '${p.admission_id}')" class="btn-sm btn-outline">
-                                <i class="fas fa-heartbeat"></i> Vitals
-                            </button>
-                            <button onclick="navigateWithPatient('medication.php', '${p.patient_id}', '${p.admission_id}')" class="btn-sm btn-outline">
-                                <i class="fas fa-pills"></i> Meds
-                            </button>
-                            <button onclick="navigateWithPatient('nurse_notes.php', '${p.patient_id}', '${p.admission_id}')" class="btn-sm btn-primary" style="grid-column: 1 / -1; margin-top: 5px;">
-                                <i class="fas fa-file-medical"></i> Nursing Notes
+                            <button onclick="navigateWithPatient('medication.php', '${p.patient_id}', '${p.admission_id}')" class="btn-sm btn-primary" style="grid-column: 1 / -1;">
+                                <i class="fas fa-book-medical"></i> Open Medical Record
                             </button>
                         </div>
                     </div>
@@ -419,7 +413,27 @@ $nurseName = $_SESSION['username'] ?? 'Nurse';
         function navigateWithPatient(page, patientId, admissionId) {
             sessionStorage.setItem('selected_patient_id', patientId);
             if (admissionId) sessionStorage.setItem('selected_admission_id', admissionId);
-            window.location.href = page;
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = page;
+            
+            const pidInput = document.createElement('input');
+            pidInput.type = 'hidden';
+            pidInput.name = 'patient_id';
+            pidInput.value = patientId;
+            form.appendChild(pidInput);
+            
+            if (admissionId) {
+                const aidInput = document.createElement('input');
+                aidInput.type = 'hidden';
+                aidInput.name = 'admission_id';
+                aidInput.value = admissionId;
+                form.appendChild(aidInput);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
         }
 
         loadPatients();

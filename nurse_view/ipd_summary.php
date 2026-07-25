@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Nurse', 'admin', 'Admin'])) {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Nurse', 'Superintendent_Nurse', 'Nursing_Superintendent', 'admin', 'Admin'])) {
     header("Location: ../login.php");
     exit();
 }
@@ -33,16 +33,16 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Nurse', 'admi
 
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+            --primary-gradient: linear-gradient(135deg, #1f6b4a 0%, #144d34 100%);
             --glass-bg: rgba(255, 255, 255, 0.95);
             --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            --accent-color: #4A90E2;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
+            --accent-color: #1f6b4a;
+            --success-color: #16a34a;
+            --danger-color: #e11d48;
             --warning-color: #f59e0b;
             --text-main: #0f172a;
             --text-muted: #64748b;
-            --sidebar-color: #1e293b;
+            --sidebar-color: #1f6b4a;
         }
 
         * {
@@ -142,7 +142,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Nurse', 'admi
 
         .card-header-premium i {
             color: var(--accent-color);
-            background: rgba(74, 144, 226, 0.1);
+            background: rgba(31, 107, 74, 0.1);
             padding: 0.6rem;
             border-radius: 0.75rem;
         }
@@ -195,8 +195,8 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Nurse', 'admi
         }
 
         .stats-pill.blue .icon {
-            background: rgba(74, 144, 226, 0.1);
-            color: #4A90E2;
+            background: rgba(31, 107, 74, 0.1);
+            color: #1f6b4a;
         }
 
         .stats-pill.green .icon {
@@ -943,11 +943,8 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Nurse', 'admi
             const minutes = String(now.getMinutes()).padStart(2, '0');
             document.getElementById('visitTime').value = `${hours}:${minutes}`;
 
-            // Initialize Select2
+            // Initialize Select2 with dynamic AJAX search (no preloading)
             initializeSelect2();
-
-            // Load active admissions
-            loadActiveAdmissions();
 
             // Form submission
             document.getElementById('dailyReportForm').addEventListener('submit', function (e) {
@@ -971,61 +968,58 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Nurse', 'admi
             });
         });
 
-        // Initialize Select2 dropdown
+        // Initialize Select2 with Dynamic Server-Side AJAX Search
         function initializeSelect2() {
             $('#searchIpdNo').select2({
                 theme: 'bootstrap-5',
-                placeholder: 'Type Mobile, Name or ID...',
+                placeholder: 'Type Mobile, Patient Name, Patient ID, or Admission ID...',
                 allowClear: true,
-                width: '100%'
+                width: '100%',
+                minimumInputLength: 1,
+                ajax: {
+                    url: `${API_BASE_URL}/admissions?status=Admitted`,
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            search: params.term
+                        };
+                    },
+                    processResults: function (data) {
+                        if (data.success && data.data) {
+                            return {
+                                results: data.data.map(function (admission) {
+                                    return {
+                                        id: admission.admission_id,
+                                        text: admission.display_text,
+                                        admission_data: admission
+                                    };
+                                })
+                            };
+                        }
+                        return { results: [] };
+                    },
+                    cache: true
+                }
             });
 
-            // Auto-load when selection changes
+            // Auto-load report when patient is selected from search results
+            $('#searchIpdNo').on('select2:select', function (e) {
+                const selectedData = e.params.data;
+                if (selectedData && selectedData.admission_data) {
+                    currentAdmissionData = selectedData.admission_data;
+                }
+                loadDailyReports();
+            });
+
+            // Clear dashboard when search cleared
             $('#searchIpdNo').on('change', function () {
                 const selectedValue = $(this).val();
-                if (selectedValue) {
-                    loadDailyReports();
+                if (!selectedValue) {
+                    document.getElementById('patientDashboard').style.display = 'none';
+                    document.getElementById('welcomeState').style.display = 'block';
                 }
             });
-        }
-
-        // Load active IPD admissions
-        async function loadActiveAdmissions() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/admissions?status=Admitted`);
-                const data = await response.json();
-
-                if (data.success && data.data) {
-                    const select = $('#searchIpdNo');
-
-                    // Clear existing options except the first one
-                    select.find('option:not(:first)').remove();
-
-                    // Add new options
-                    data.data.forEach(admission => {
-                        const option = new Option(
-                            admission.display_text,
-                            admission.admission_id,
-                            false,
-                            false
-                        );
-
-                        // Store additional data
-                        $(option).data('admission', admission);
-                        select.append(option);
-                    });
-
-                    // Trigger change to update Select2
-                    select.trigger('change');
-
-                    console.log(`Loaded ${data.data.length} active admissions`);
-                } else {
-                    console.error('Failed to load admissions:', data.error);
-                }
-            } catch (error) {
-                console.error('Error loading admissions:', error);
-                showAlert('Failed to load admissions list', 'warning');
-            }
         }
 
         // Show floating premium alert

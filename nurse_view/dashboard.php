@@ -1,14 +1,26 @@
 <?php
 session_start();
 
+require_once __DIR__ . '/../core/Autoloader.php';
+require_once __DIR__ . '/includes/nurse_auth_helper.php';
+
+use GM_HMS\Database\SecureDatabase;
+
 // Check authentication
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Nurse', 'admin', 'Admin'])) {
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Nurse', 'Superintendent_Nurse', 'Nursing_Superintendent', 'admin', 'Admin'])) {
     header("Location: /GM_HMS/login.php");
     exit();
 }
 
 $nurseId = $_SESSION['user_id'] ?? null;
 $nurseName = $_SESSION['username'] ?? 'Nurse';
+
+$db = SecureDatabase::getInstance();
+$conn = $db->getConnection();
+$currentWard = getCurrentNurseWard($conn, $nurseId);
+$wardMsg = $currentWard 
+    ? "You are assigned to <strong>{$currentWard['ward_name']}</strong> ({$currentWard['floor_name']}) today." 
+    : "You are not currently assigned to a ward today.";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -206,7 +218,7 @@ $nurseName = $_SESSION['username'] ?? 'Nurse';
                 <div class="container">
                     <div class="welcome-card">
                         <h2>Welcome, <?php echo htmlspecialchars($nurseName); ?>! 👋</h2>
-                        <p>Your nurse dashboard is ready. Here's your overview for today.</p>
+                        <p><?php echo $wardMsg; ?></p>
                     </div>
 
                     <div class="stats-grid" id="statsGrid">
@@ -231,16 +243,6 @@ $nurseName = $_SESSION['username'] ?? 'Nurse';
                         </div>
 
                         <div class="stat-card">
-                            <div class="stat-icon orange">
-                                <i class="fas fa-tasks"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="pendingTasks">--</h3>
-                                <p>Pending Tasks</p>
-                            </div>
-                        </div>
-
-                        <div class="stat-card">
                             <div class="stat-icon red">
                                 <i class="fas fa-heartbeat"></i>
                             </div>
@@ -260,9 +262,6 @@ $nurseName = $_SESSION['username'] ?? 'Nurse';
                         </a>
                         <a href="nurse_notes.php" class="action-btn">
                             <i class="fas fa-notes-medical"></i> Nurse Notes
-                        </a>
-                        <a href="tasks.php" class="action-btn">
-                            <i class="fas fa-tasks"></i> My Tasks
                         </a>
                         <a href="patient_care.php" class="action-btn">
                             <i class="fas fa-user-injured"></i> My Patients
@@ -293,7 +292,7 @@ $nurseName = $_SESSION['username'] ?? 'Nurse';
                     
                     document.getElementById('totalPatients').textContent = stats.shift.total_patients || 0;
                     document.getElementById('pendingMeds').textContent = stats.medications.pending || 0;
-                    document.getElementById('pendingTasks').textContent = stats.tasks.pending || 0;
+
                     document.getElementById('vitalsRecorded').textContent = stats.vitals.total_recorded || 0;
                     
                     document.getElementById('loading').style.display = 'none';

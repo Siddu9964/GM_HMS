@@ -672,6 +672,141 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
         </div>
     </div>
 
+    <!-- IPD BILL DETAILS MODAL (Itemized View) -->
+    <div id="ipd-bill-details-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-5xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-modal">
+
+            <!-- Modal Header -->
+            <div class="p-6 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-black text-slate-900" id="ipd-modal-bill-id">IPD-BILL-ID</h3>
+                    <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">IPD Continuous Billing Ledger</p>
+                </div>
+                <button onclick="toggleIPDBillModal()" class="h-10 w-10 rounded-full hover:bg-slate-200 transition-all flex items-center justify-center text-slate-400 hover:text-slate-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-8">
+                <!-- Top Section: Patient & Admission Info -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <!-- Patient Card -->
+                    <div class="rounded-3xl p-6 text-white shadow-xl" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="h-16 w-16 bg-white/20 rounded-2xl backdrop-blur-md flex items-center justify-center text-3xl">
+                                <i class="fas fa-procedures"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-2xl font-black leading-none" id="ipd-detail-patient-name">Patient Name</h4>
+                                <p class="text-blue-100 font-medium mt-1 uppercase tracking-widest text-[10px]" id="ipd-detail-patient-id">PID-00000000</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-x-6 gap-y-4">
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phone Number</p>
+                                <p class="font-bold text-sm" id="ipd-detail-patient-phone">--</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Admission ID</p>
+                                <p class="font-bold text-sm" id="ipd-detail-admission-id">--</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Attending Doctor</p>
+                                <p class="font-bold text-sm" id="ipd-detail-doctor-name">--</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Stay (Days)</p>
+                                <p class="font-bold text-sm" id="ipd-detail-total-days">--</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Financial Stats -->
+                    <div class="bg-slate-50 rounded-3xl p-6 border border-slate-200 flex flex-col justify-between">
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Admission Date</p>
+                                    <p class="text-slate-900 font-black" id="ipd-detail-bill-date">--/--/----</p>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Payment Status</p>
+                                    <span id="ipd-detail-payment-status" class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-black uppercase tracking-widest inline-block mt-1">Paid</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pt-4 mt-4 border-t border-slate-200">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Current Balance Due</p>
+                                    <h5 class="text-4xl font-black text-rose-500 leading-none" id="ipd-detail-balance-due">₹0.00</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle Section: Detailed Itemized Billing -->
+                <div class="mb-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                            <div class="h-4 w-1 rounded-full" style="background: var(--gm-accent);"></div>
+                            Itemized Charges Ledger
+                        </h4>
+                        <button id="btn-add-ipd-charge" class="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm">
+                            <i class="fas fa-plus mr-1"></i> Add Manual Charge
+                        </button>
+                    </div>
+                    
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                        <table class="w-full text-sm">
+                            <thead class="bg-slate-50 border-b border-slate-200">
+                                <tr class="text-left font-bold text-slate-400 uppercase text-[10px] tracking-widest">
+                                    <th class="px-6 py-4">Date</th>
+                                    <th class="px-6 py-4">Service / Description</th>
+                                    <th class="px-6 py-4 text-center">Qty</th>
+                                    <th class="px-6 py-4 text-right">Unit Price (₹)</th>
+                                    <th class="px-6 py-4 text-right">Row Total (₹)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ipd-detail-items-tbody">
+                                <!-- Dynamic Itemized List grouped by Category -->
+                            </tbody>
+                            <tfoot id="ipd-detail-summary-tfoot" class="bg-slate-100 border-t-2 border-slate-200">
+                                <tr>
+                                    <td colspan="4" class="px-6 py-3 text-right text-xs font-black uppercase tracking-widest text-slate-500">Gross Subtotal</td>
+                                    <td class="px-6 py-3 text-right font-bold text-slate-700" id="ipd-foot-subtotal">₹0.00</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="px-6 py-3 text-right text-xs font-black uppercase tracking-widest text-slate-500">Taxes Added</td>
+                                    <td class="px-6 py-3 text-right font-bold text-slate-700" id="ipd-foot-tax">₹0.00</td>
+                                </tr>
+                                <tr class="bg-slate-200/50 border-t border-slate-300">
+                                    <td colspan="4" class="px-6 py-5 text-right text-sm font-black uppercase tracking-widest text-slate-900">Grand Total Billed</td>
+                                    <td class="px-6 py-5 text-right font-black text-slate-900 text-xl" id="ipd-foot-grand-total">₹0.00</td>
+                                </tr>
+                                <tr class="border-t border-slate-300 bg-green-50/50">
+                                    <td colspan="4" class="px-6 py-3 text-right text-xs font-black uppercase tracking-widest text-green-700">Total Amount Paid</td>
+                                    <td class="px-6 py-3 text-right font-black text-green-700" id="ipd-foot-amount-paid">₹0.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="p-6 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
+                <button id="ipd-btn-pay-modal" class="px-10 py-3 text-white font-black rounded-xl shadow-lg transition-all transform hover:-translate-y-1 flex items-center gap-2" style="background: var(--gm-accent);">
+                    <i class="fas fa-hand-holding-dollar"></i>
+                    Collect Due Payment
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>

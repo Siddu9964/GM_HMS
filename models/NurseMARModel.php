@@ -37,7 +37,7 @@ class NurseMARModel {
                 FROM nurse_mar nm
                 INNER JOIN patient p ON nm.patient_id = p.patient_id
                 LEFT JOIN ipd_admissions ia ON nm.admission_id = ia.admission_id
-                LEFT JOIN hospital_beds b ON ia.bed_id = b.bed_id
+                LEFT JOIN hospital_beds b ON ia.bed_id = b.sl_no
                 LEFT JOIN staff s ON nm.administered_by = s.sl_no
                 WHERE DATE(nm.scheduled_at) = ?";
         
@@ -99,7 +99,7 @@ class NurseMARModel {
                 FROM nurse_mar nm
                 INNER JOIN patient p ON nm.patient_id = p.patient_id
                 LEFT JOIN ipd_admissions ia ON nm.admission_id = ia.admission_id
-                LEFT JOIN hospital_beds b ON ia.bed_id = b.bed_id
+                LEFT JOIN hospital_beds b ON ia.bed_id = b.sl_no
                 WHERE DATE(nm.scheduled_at) = ?
                   AND nm.status = 'Missed'
                 ORDER BY nm.scheduled_at DESC";
@@ -130,20 +130,27 @@ class NurseMARModel {
      * @param string $date Date (Y-m-d)
      * @return array Statistics
      */
-    public function getMARStatistics($nurseId, $date = null) {
+    public function getMARStatistics($nurseId, $date = null, $currentWard = null) {
         $date = $date ?? date('Y-m-d');
         
         $stats = [];
         
+        $wardJoin = "";
+        $wardWhere = "";
+        $wardParams = [];
+        if ($currentWard) {
+            $wardJoin = " INNER JOIN ipd_admissions ia ON nm.admission_id = ia.admission_id 
+                          LEFT JOIN hospital_beds b ON ia.bed_id = b.sl_no ";
+            $wardWhere = " AND b.floor_name = ? AND b.ward_name = ? AND b.room_type = ? ";
+            $wardParams = [$currentWard['floor_name'], $currentWard['ward_name'], $currentWard['room_type']];
+        }
+
         // Total scheduled
         $sql = "SELECT COUNT(*) as count
-                FROM nurse_mar nm
-                INNER JOIN ipd_admissions ia ON nm.admission_id = ia.admission_id
-                INNER JOIN nurse_allocation na ON FIND_IN_SET(ia.bed_id, na.assigned_beds)
-                WHERE na.role_id = ?
-                  AND ? BETWEEN na.shift_date_from AND na.shift_date_to
-                  AND DATE(nm.scheduled_at) = ?";
-        $result = $this->db->fetchOne($sql, [$nurseId, $date, $date]);
+                FROM nurse_mar nm $wardJoin
+                WHERE DATE(nm.scheduled_at) = ? $wardWhere";
+        $params = array_merge([$date], $wardParams);
+        $result = $this->db->fetchOne($sql, $params);
         $stats['total_scheduled'] = (int)($result['count'] ?? 0);
         
         // Administered
@@ -157,26 +164,20 @@ class NurseMARModel {
         
         // Pending
         $sql = "SELECT COUNT(*) as count
-                FROM nurse_mar nm
-                INNER JOIN ipd_admissions ia ON nm.admission_id = ia.admission_id
-                INNER JOIN nurse_allocation na ON FIND_IN_SET(ia.bed_id, na.assigned_beds)
-                WHERE na.role_id = ?
-                  AND ? BETWEEN na.shift_date_from AND na.shift_date_to
-                  AND DATE(nm.scheduled_at) = ?
-                  AND nm.status = 'Scheduled'";
-        $result = $this->db->fetchOne($sql, [$nurseId, $date, $date]);
+                FROM nurse_mar nm $wardJoin
+                WHERE DATE(nm.scheduled_at) = ?
+                  AND nm.status = 'Scheduled' $wardWhere";
+        $params = array_merge([$date], $wardParams);
+        $result = $this->db->fetchOne($sql, $params);
         $stats['pending'] = (int)($result['count'] ?? 0);
         
         // Missed
         $sql = "SELECT COUNT(*) as count
-                FROM nurse_mar nm
-                INNER JOIN ipd_admissions ia ON nm.admission_id = ia.admission_id
-                INNER JOIN nurse_allocation na ON FIND_IN_SET(ia.bed_id, na.assigned_beds)
-                WHERE na.role_id = ?
-                  AND ? BETWEEN na.shift_date_from AND na.shift_date_to
-                  AND DATE(nm.scheduled_at) = ?
-                  AND nm.status = 'Missed'";
-        $result = $this->db->fetchOne($sql, [$nurseId, $date, $date]);
+                FROM nurse_mar nm $wardJoin
+                WHERE DATE(nm.scheduled_at) = ?
+                  AND nm.status = 'Missed' $wardWhere";
+        $params = array_merge([$date], $wardParams);
+        $result = $this->db->fetchOne($sql, $params);
         $stats['missed'] = (int)($result['count'] ?? 0);
         
         return $stats;
@@ -196,8 +197,8 @@ class NurseMARModel {
                 FROM nurse_mar nm
                 INNER JOIN patient p ON nm.patient_id = p.patient_id
                 INNER JOIN ipd_admissions ia ON nm.admission_id = ia.admission_id
-                INNER JOIN hospital_beds b ON ia.bed_id = b.bed_id
-                INNER JOIN nurse_allocation na ON FIND_IN_SET(b.bed_id, na.assigned_beds)
+                INNER JOIN hospital_beds b ON ia.bed_id = b.sl_no
+                INNER JOIN nurse_allocation na ON FIND_IN_SET(b.sl_no, na.assigned_beds)
                 WHERE na.role_id = ?
                   AND CURDATE() BETWEEN na.shift_date_from AND na.shift_date_to
                   AND nm.scheduled_at < NOW()

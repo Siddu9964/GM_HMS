@@ -91,7 +91,7 @@ class NurseVitalsModel {
                 FROM nurse_vitals nv
                 INNER JOIN patient p ON nv.patient_id = p.patient_id
                 INNER JOIN ipd_admissions ia ON nv.patient_id = ia.patient_id AND ia.status = 'Active'
-                INNER JOIN hospital_beds b ON ia.bed_id = b.bed_id
+                INNER JOIN hospital_beds b ON ia.bed_id = b.sl_no
                 WHERE DATE(nv.recorded_at) = CURDATE()";
         
         $rows = $this->db->fetchAll($sql);
