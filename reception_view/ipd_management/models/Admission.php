@@ -43,7 +43,7 @@ class Admission extends BaseModel {
         FROM ipd_admissions a
         LEFT JOIN patient p ON a.patient_id = p.patient_id
         LEFT JOIN doctors d ON a.admitting_doctor_id = d.doctor_id
-        LEFT JOIN hospital_beds b ON a.bed_no = b.sl_no
+        LEFT JOIN hospital_beds b ON a.bed_id = b.sl_no
         WHERE 1=1";
         
         $params = [];
@@ -114,7 +114,7 @@ class Admission extends BaseModel {
         FROM ipd_admissions a
         LEFT JOIN patient p ON a.patient_id = p.patient_id
         LEFT JOIN doctors d ON a.admitting_doctor_id = d.doctor_id
-        LEFT JOIN hospital_beds b ON a.bed_no = b.sl_no
+        LEFT JOIN hospital_beds b ON a.bed_id = b.sl_no
         WHERE {$whereClause}";
         
         return $this->fetchOne($query, [$id]);
@@ -138,7 +138,7 @@ class Admission extends BaseModel {
                   FROM ipd_admissions a
                   LEFT JOIN patient p ON a.patient_id = p.patient_id
                   LEFT JOIN doctors d ON a.admitting_doctor_id = d.doctor_id
-                  LEFT JOIN hospital_beds b ON a.bed_no = b.sl_no
+                  LEFT JOIN hospital_beds b ON a.bed_id = b.sl_no
                   WHERE 1=1";
         
         $params = [];
@@ -261,11 +261,11 @@ class Admission extends BaseModel {
             }
             
             // 8. Release bed if assigned
-            if ($admission['bed_no']) {
+            if ($admission['bed_id']) {
                 try {
                     $this->query(
                         "UPDATE hospital_beds SET bed_status = 'Available', patient_id = NULL, released_at = NOW() WHERE sl_no = ?",
-                        [$admission['bed_no']]
+                        [$admission['bed_id']]
                     );
                 } catch (Exception $e) {
                     error_log("Could not release bed: " . $e->getMessage());
@@ -315,24 +315,34 @@ class Admission extends BaseModel {
             'floor_number',
             'floor_name',
             'ward_name',
-            'ward_type',
             'room_no',
             'room_name',
+            'room_type',
             'admission_date',
             'admission_time',
             'admission_type',
             'chief_complaint',
             'diagnosis',
             'discharge_date',
-            'bed_no',
+            'bed_id',
             'status',
             'emergency_contact_name',
-            'emergency_contact_phone'
+            'emergency_contact_phone',
+            'amount_per_day',
+            'nursig_charge',
+            'doctor_charge',
+            'service_charge',
+            'total_bed_amount',
+            'referral_type',
+            'referral_name',
+            'payment_method',
+            'advance_amount',
+            'total_due'
         ];
         
-        // Map frontend bed_id to db bed_no if provided
+        // Map frontend bed_id to db bed_id if provided
         if (isset($data['bed_id']) && !empty($data['bed_id'])) {
-            $data['bed_no'] = $data['bed_id'];
+            $data['bed_id'] = $data['bed_id'];
         }
         
         $filteredData = [];
@@ -343,7 +353,7 @@ class Admission extends BaseModel {
         }
         
         // Validate required fields
-        $required = ['patient_id', 'admitting_doctor_id', 'bed_no', 'admission_date'];
+        $required = ['patient_id', 'admitting_doctor_id', 'bed_id', 'admission_date'];
         $errors = $this->validateRequired($filteredData, $required);
         
         if (!empty($errors)) {
@@ -353,7 +363,7 @@ class Admission extends BaseModel {
         // Fetch full bed details to populate admission record
         $bedDetails = $this->fetchOne(
             "SELECT * FROM hospital_beds WHERE sl_no = ?",
-            [$filteredData['bed_no']]
+            [$filteredData['bed_id']]
         );
         
         if (!$bedDetails) {
@@ -369,9 +379,16 @@ class Admission extends BaseModel {
         $filteredData['floor_number'] = $bedDetails['floor_number'];
         $filteredData['floor_name'] = $bedDetails['floor_name'];
         $filteredData['ward_name'] = $bedDetails['ward_name'];
-        $filteredData['ward_type'] = $bedDetails['ward_type'];
         $filteredData['room_no'] = $bedDetails['room_number'];
         $filteredData['room_name'] = $bedDetails['room_name'];
+        $filteredData['room_type'] = $bedDetails['room_type'];
+        
+        // Auto-fill bed charges into admission record
+        $filteredData['amount_per_day'] = $bedDetails['amount_per_day'];
+        $filteredData['nursig_charge'] = $bedDetails['nursig_charge'];
+        $filteredData['doctor_charge'] = $bedDetails['doctor_charge'];
+        $filteredData['service_charge'] = $bedDetails['service_charge'];
+        // Additional fields have already been processed in the generic loop above
         
         try {
             $this->beginTransaction();
@@ -385,14 +402,77 @@ class Admission extends BaseModel {
             // Update bed status (trigger will handle this, but we can do it explicitly)
             $this->query(
                 "UPDATE hospital_beds SET bed_status = 'Occupied', patient_id = ?, allocated_at = NOW() WHERE sl_no = ?",
-                [$filteredData['patient_id'], $filteredData['bed_no']]
+                [$filteredData['patient_id'], $filteredData['bed_id']]
             );
+            
+            // Auto-create Billing Master row
+            $billingMaster = new \GM_HMS\Models\IpdBillingMaster();
+            $masterRecord = $billingMaster->getOrCreateForAdmission([
+                'admission_id' => $data['admission_id'],
+                'patient_id' => $filteredData['patient_id'],
+                'doctor_id' => $filteredData['admitting_doctor_id'],
+                'admission_date' => $filteredData['admission_date'],
+                'bill_type' => (isset($filteredData['admission_type']) && $filteredData['admission_type'] === 'Insurance') ? 'INSURANCE' : 'IPD',
+                'created_by' => $_SESSION['username'] ?? 'system'
+            ]);
+            
+            $billId = $masterRecord['data']['bill_id'];
+            
+            // Auto-add Initial Charges
+            $admCharge = (isset($data['admission_charge']) && is_numeric($data['admission_charge'])) ? (float)$data['admission_charge'] : 350;
+            $mrdCharge = (isset($data['mrd_charge']) && is_numeric($data['mrd_charge'])) ? (float)$data['mrd_charge'] : 400;
+            $foodCharge = (isset($data['food_charge']) && is_numeric($data['food_charge'])) ? (float)$data['food_charge'] : 570;
+            $roomCharge = (isset($bedDetails['amount_per_day']) && is_numeric($bedDetails['amount_per_day'])) ? (float)$bedDetails['amount_per_day'] : 0;
+            
+            $createdBy = $_SESSION['username'] ?? 'system';
+            
+            $insertQuery = "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, status, created_by, created_at) VALUES 
+                 (?, ?, ?, CURDATE(), 'MISC', 'Admission Charge', ?, 'COMPLETED', ?, NOW()),
+                 (?, ?, ?, CURDATE(), 'MISC', 'MRD Charge', ?, 'COMPLETED', ?, NOW()),
+                 (?, ?, ?, CURDATE(), 'MISC', 'Food Charge - Day 1', ?, 'COMPLETED', ?, NOW()),
+                 (?, ?, ?, CURDATE(), 'ROOM_RENT', CONCAT('Room Rent - ', ?), ?, 'COMPLETED', ?, NOW())";
+                 
+            $this->query($insertQuery, [
+                $billId, $filteredData['patient_id'], $data['admission_id'], $admCharge, $createdBy,
+                $billId, $filteredData['patient_id'], $data['admission_id'], $mrdCharge, $createdBy,
+                $billId, $filteredData['patient_id'], $data['admission_id'], $foodCharge, $createdBy,
+                $billId, $filteredData['patient_id'], $data['admission_id'], $bedDetails['room_name'] ?? 'Day 1', $roomCharge, $createdBy
+            ]);
+            
+            // Note: Since IpdBillingMaster also has a broken schema mapping in recalculateMaster, 
+            // we manually update the other_charges and room_charges columns in ipd_billing_master instead of calling recalculateMaster.
+            $otherTotal = $admCharge + $mrdCharge + $foodCharge;
+            $grandTotal = $otherTotal + $roomCharge;
+            
+            $this->query("UPDATE ipd_billing_master SET room_charges = room_charges + ?, other_charges = other_charges + ?, subtotal = subtotal + ?, grand_total = grand_total + ?, patient_payable = patient_payable + ? WHERE bill_id = ?",
+                [ $roomCharge, $otherTotal, $grandTotal, $grandTotal, $grandTotal, $billId ]
+            );
+
+            // Process Advance Payment if any
+            if (isset($data['advance_payment']) && is_numeric($data['advance_payment']) && (float)$data['advance_payment'] > 0) {
+                $paymentMethod = $data['payment_method'] ?? 'CASH';
+                require_once __DIR__ . '/../../../Models/IpdPayment.php';
+                $ipdPayment = new \GM_HMS\Models\IpdPayment();
+                $ipdPayment->recordPayment([
+                    'bill_id' => $billId,
+                    'admission_id' => $data['admission_id'],
+                    'patient_id' => $filteredData['patient_id'],
+                    'payment_type' => 'ADVANCE',
+                    'payment_mode' => $paymentMethod,
+                    'amount' => (float)$data['advance_payment'],
+                    'created_by' => $_SESSION['username'] ?? 'system'
+                ]);
+            }
+            
+            // Recalculate Master
+            $billingMaster->recalculateMaster($billId, 'system');
             
             $this->commit();
             
             return ['success' => true, 'admission_id' => $data['admission_id'], 'sl_no' => $admissionId];
         } catch (Exception $e) {
             $this->rollback();
+            error_log("IPD ADMISSION CREATION FAILED: " . $e->getMessage());
             return ['success' => false, 'errors' => ['Failed to create admission: ' . $e->getMessage()]];
         }
     }
@@ -436,8 +516,8 @@ class Admission extends BaseModel {
             }
             
             // Check if bed is being changed
-            $newBedId = $data['bed_id'] ?? ($data['bed_no'] ?? null);
-            $oldBedId = $currentAdmission['bed_no'];
+            $newBedId = $data['bed_id'] ?? ($data['bed_id'] ?? null);
+            $oldBedId = $currentAdmission['bed_id'];
             
             if ($newBedId && $newBedId != $oldBedId) {
                 // Fetch new bed details to update admission record
@@ -501,7 +581,7 @@ class Admission extends BaseModel {
             } else {
                 // No bed change, just update
                 unset($data['bed_id']); // Don't update bed_id if not changing
-                unset($data['bed_no']); // Also unset bed_no
+                unset($data['bed_id']); // Also unset bed_id
                 $result = $this->update($id, $data);
                 
                 if ($result === 0) {
@@ -563,11 +643,11 @@ class Admission extends BaseModel {
             }
             
             // Release bed if assigned
-            if ($admission['bed_no']) {
+            if ($admission['bed_id']) {
                 try {
                     $this->query(
                         "UPDATE hospital_beds SET bed_status = 'Available', patient_id = NULL, released_at = NOW() WHERE sl_no = ?",
-                        [$admission['bed_no']]
+                        [$admission['bed_id']]
                     );
                 } catch (Exception $e) {
                     // Log but don't fail if bed table doesn't exist
@@ -601,14 +681,12 @@ class Admission extends BaseModel {
     public function calculateTotalCharges($admissionId) {
         try {
             $result = $this->fetchOne(
-                "SELECT COALESCE(SUM(amount), 0) as total FROM charges WHERE admission_id = ?",
+                "SELECT COALESCE(SUM(grand_total), 0) as total FROM ipd_billing_master WHERE admission_id = ?",
                 [$admissionId]
             );
-            
             return (float)$result['total'];
         } catch (Exception $e) {
-            // If charges table doesn't exist, return 0
-            error_log("Charges table not found: " . $e->getMessage());
+            error_log("Error fetching charges from ipd_billing_master: " . $e->getMessage());
             return 0.0;
         }
     }
@@ -619,14 +697,12 @@ class Admission extends BaseModel {
     public function calculateTotalPayments($admissionId) {
         try {
             $result = $this->fetchOne(
-                "SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE admission_sl_no = (SELECT sl_no FROM ipd_admissions WHERE admission_id = ?) AND status = 'Completed'",
+                "SELECT COALESCE(SUM(amount_paid), 0) as total FROM ipd_billing_master WHERE admission_id = ?",
                 [$admissionId]
             );
-            
             return (float)$result['total'];
         } catch (Exception $e) {
-            // If payments table doesn't exist, return 0
-            error_log("Payments table not found: " . $e->getMessage());
+            error_log("Error fetching payments from ipd_billing_master: " . $e->getMessage());
             return 0.0;
         }
     }
@@ -635,13 +711,33 @@ class Admission extends BaseModel {
      * Get balance due for admission
      */
     public function getBalance($admissionId) {
-        $charges = $this->calculateTotalCharges($admissionId);
-        $payments = $this->calculateTotalPayments($admissionId);
+        try {
+            // Fetch directly from ipd_billing_master since it maintains grand_total, amount_paid, and balance_due
+            $result = $this->fetchOne(
+                "SELECT COALESCE(SUM(grand_total), 0) as total_charges, 
+                        COALESCE(SUM(amount_paid), 0) as total_payments,
+                        COALESCE(SUM(balance_due), 0) as balance_due 
+                 FROM ipd_billing_master 
+                 WHERE admission_id = ?",
+                [$admissionId]
+            );
+            
+            if ($result) {
+                return [
+                    'total_charges' => (float)$result['total_charges'],
+                    'total_payments' => (float)$result['total_payments'],
+                    'balance_due' => (float)$result['balance_due']
+                ];
+            }
+        } catch (Exception $e) {
+            error_log("Error fetching balance from ipd_billing_master: " . $e->getMessage());
+        }
         
+        // Fallback
         return [
-            'total_charges' => $charges,
-            'total_payments' => $payments,
-            'balance_due' => $charges - $payments
+            'total_charges' => 0.0,
+            'total_payments' => 0.0,
+            'balance_due' => 0.0
         ];
     }
     

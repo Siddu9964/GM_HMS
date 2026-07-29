@@ -171,7 +171,7 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
             <a href="opd_beds.php"
                 class="sidebar-item <?php echo isActive('opd_beds.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
                 <i class="fas fa-bed"></i>
-                <span>OPD Beds Details</span>
+                <span>IPD Beds Details</span>
             </a>
 
             <a href="#blood-bank" class="sidebar-item">
@@ -207,13 +207,21 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
             </div>
 
             <a href="billing_management.php"
-
                 class="sidebar-item <?php echo isActive('billing_management.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
-
                 <i class="fas fa-file-invoice-dollar"></i>
+                <span>OPD Billing</span>
+            </a>
 
-                <span>Billing</span>
+            <a href="ipd_billing.php"
+                class="sidebar-item <?php echo isActive('ipd_billing.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
+                <i class="fas fa-bed"></i>
+                <span>IPD Billing</span>
+            </a>
 
+            <a href="ot_billing.php"
+                class="sidebar-item <?php echo isActive('ot_billing.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
+                <i class="fas fa-procedures"></i>
+                <span>OT Billing</span>
             </a>
 
             <a href="#insurance" class="sidebar-item">

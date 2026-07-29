@@ -43,6 +43,12 @@ $router->add('PUT', '#^/api/patients/(PID-\d{8}-\d{3})/?$#', 'GM_HMS\Controllers
 $router->add('POST', '#^/api/patients/([^/]+)/image/?$#', 'GM_HMS\Controllers\api\PatientController', 'uploadImage');
 $router->add('GET', '#^/api/patients/check-duplicate/?$#', 'GM_HMS\Controllers\api\PatientController', 'checkDuplicate');
 $router->add('DELETE', '#^/api/patients/(PID-\d{8}-\d{3})/?$#', 'GM_HMS\Controllers\api\PatientController', 'delete');
+// Doctor Routes
+$router->add('GET', '#^/api/doctors/?$#', 'GM_HMS\Controllers\api\DoctorController', 'index');
+$router->add('GET', '#^/api/doctors/([^/]+)/?$#', 'GM_HMS\Controllers\api\DoctorController', 'show');
+
+// OT Billing Routes
+$router->add('POST', '#^/api/ot-billing/?$#', 'GM_HMS\Controllers\api\OtBillingController', 'create');
 
 // Auth Routes
 $router->add('POST', '#^/api/auth/login/?$#', 'GM_HMS\Controllers\api\AuthController', 'login');
@@ -97,6 +103,9 @@ $router->add('GET', '#^/api/prescriptions/([^/]+)/?$#', 'GM_HMS\Controllers\api\
 $router->add('GET', '#^/api/prescriptions/?$#', 'GM_HMS\Controllers\api\PrescriptionController', 'listAll');
 $router->add('POST', '#^/api/prescriptions/log-print/?$#', 'GM_HMS\Controllers\api\PrescriptionController', 'logPrint');
 $router->add('POST', '#^/api/prescriptions/?$#', 'GM_HMS\Controllers\api\PrescriptionController', 'create');
+
+// IPD Billing Routes
+$router->add('GET', '#^/api/new-ipd-billing/admission/([^/]+)/?$#', 'GM_HMS\Controllers\api\NewIpdBillingController', 'getAdmissionDetails');
 
 // Appointment Routes
 $router->add('GET', '#^/api/appointments/?$#', 'GM_HMS\Controllers\api\AppointmentController', 'index');
@@ -196,6 +205,21 @@ $router->add('POST',   '#^/api/pharmacy/grn/?$#',                   'GM_HMS\\Con
 $router->add('DELETE', '#^/api/pharmacy/grn/([^/]+)/?$#',           'GM_HMS\\Controllers\\api\\PharmacyGrnController', 'delete');
 $router->add('DELETE', '#^/api/pharmacy/grn-item/([0-9]+)/?$#',      'GM_HMS\\Controllers\\api\\PharmacyGrnController', 'deleteItem');
 
+// ── IPD Billing Module ────────────────────────────────────────────────────────
+$router->add('GET',    '#^/api/ipd-billing-master/?$#',             'GM_HMS\\Controllers\\api\\IpdBillingMasterController', 'handleRequest');
+$router->add('POST',   '#^/api/ipd-billing-master/?$#',             'GM_HMS\\Controllers\\api\\IpdBillingMasterController', 'handleRequest');
+$router->add('PUT',    '#^/api/ipd-billing-master/?$#',             'GM_HMS\\Controllers\\api\\IpdBillingMasterController', 'handleRequest');
+
+$router->add('GET',    '#^/api/ipd-billing-items/?$#',              'GM_HMS\\Controllers\\api\\IpdBillingItemController', 'handleRequest');
+$router->add('POST',   '#^/api/ipd-billing-items/?$#',              'GM_HMS\\Controllers\\api\\IpdBillingItemController', 'handleRequest');
+$router->add('DELETE', '#^/api/ipd-billing-items/?$#',              'GM_HMS\\Controllers\\api\\IpdBillingItemController', 'handleRequest');
+
+$router->add('GET',    '#^/api/ipd-payment/?$#',                    'GM_HMS\\Controllers\\api\\IpdPaymentController', 'handleRequest');
+$router->add('POST',   '#^/api/ipd-payment/?$#',                    'GM_HMS\\Controllers\\api\\IpdPaymentController', 'handleRequest');
+
+$router->add('GET',    '#^/api/ipd-insurance/?$#',                  'GM_HMS\\Controllers\\api\\IpdInsuranceController', 'handleRequest');
+$router->add('POST',   '#^/api/ipd-insurance/?$#',                  'GM_HMS\\Controllers\\api\\IpdInsuranceController', 'handleRequest');
+$router->add('PUT',    '#^/api/ipd-insurance/?$#',                  'GM_HMS\\Controllers\\api\\IpdInsuranceController', 'handleRequest');
 // ── Pharmacy: Reports ─────────────────────────────────────────────────────────
 $router->add('GET',    '#^/api/pharmacy/reports/sales/?$#',         'GM_HMS\\Modules\\Pharmacy\\Controllers\\ReportController', 'sales');
 $router->add('GET',    '#^/api/pharmacy/reports/expiry/?$#',        'GM_HMS\\Modules\\Pharmacy\\Controllers\\ReportController', 'expiry');
@@ -288,6 +312,8 @@ $router->add('GET', '#^/api/billing/opd/referral/search/?$#', 'GM_HMS\Controller
 $router->add('GET', '#^/api/billing/opd/sponsor/search/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'searchSponsors');
 
 // IPD Billing Routes
+$router->add('GET', '#^/api/new-ipd-billing/admission/([^/]+)/?$#', 'GM_HMS\Controllers\api\NewIpdBillingController', 'getAdmissionDetails');
+$router->add('POST', '#^/api/billing/ipd/?$#', 'GM_HMS\Controllers\api\IpdBillingController', 'createBill');
 $router->add('GET', '#^/api/billing/ipd/?$#', 'GM_HMS\Controllers\api\IpdBillingController', 'getAllBills');
 $router->add('GET', '#^/api/billing/ipd/stats/?$#', 'GM_HMS\Controllers\api\IpdBillingController', 'getStatistics');
 $router->add('GET', '#^/api/billing/ipd/admission/([^/]+)/?$#', 'GM_HMS\Controllers\api\IpdBillingController', 'getBillByAdmission');
@@ -312,6 +338,10 @@ $router->add('PUT',  '#^/api/laboratory/orders/([^/]+)/status/?$#',             
 $router->add('GET',  '#^/api/laboratory/orders/([^/]+)/result/?$#',             'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'getResult');
 $router->add('POST', '#^/api/laboratory/orders/([^/]+)/result/?$#',             'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'saveResult');
 $router->add('GET',  '#^/api/laboratory/prescribed-tests/?$#',                  'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'getPrescribedTests');
+
+// Payment Module Routes
+$router->add('POST', '#^/api/payment/clinical-billing-sync/?$#',                'GM_HMS\Modules\Payment\Controllers\PaymentController', 'syncClinicalBilling');
+
 
 // IPD Summary Routes
 $router->add('GET', '#^/api/ipd-summary/draft/?$#', 'GM_HMS\Controllers\api\IpdSummaryController', 'getDraft');

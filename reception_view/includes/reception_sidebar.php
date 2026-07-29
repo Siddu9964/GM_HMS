@@ -62,7 +62,7 @@ $basePath = str_repeat('../', $depth);
                     <button class="opd-drop-btn" id="opdBtn" onclick="toggleOpd(this)" aria-expanded="false">
                         <span class="opd-btn-left">
                             <i class="fas fa-file-invoice-dollar"></i>
-                            <span>OPD Billing</span>
+                            <span>Billing</span>
                         </span>
                         <i class="fas fa-chevron-right opd-arrow"></i>
                     </button>
@@ -70,9 +70,10 @@ $basePath = str_repeat('../', $depth);
                         <!-- Removed Registration / Appointment -->
                         <a href="<?php echo $basePath; ?>opd_billing.php" class="opd-item" data-pd="opd_billing"
                             style="--n:1">
-                            <i class="fas fa-flask"></i>
-                            <span>Opd Billing</span>
+                            <i class="fas fa-file-invoice"></i>
+                            <span>OPD Billing</span>
                         </a>
+
                     </div>
                 </div>
 

@@ -29,13 +29,19 @@ const IPD = {
                 error: function (xhr, status, error) {
                     // Try to parse JSON error response
                     let errorMessage = error || 'Request failed';
+                    let errorDetails = [];
                     try {
                         const errorResponse = JSON.parse(xhr.responseText);
                         if (errorResponse.message) {
                             errorMessage = errorResponse.message;
                             if (errorResponse.debug_error) {
-                                errorMessage += ' (' + errorResponse.debug_error + ')';
+                                errorDetails.push(errorResponse.debug_error);
                             }
+                        }
+                        if (errorResponse.errors && Array.isArray(errorResponse.errors)) {
+                            errorDetails = errorResponse.errors;
+                        } else if (errorResponse.data && errorResponse.data.errors && Array.isArray(errorResponse.data.errors)) {
+                            errorDetails = errorResponse.data.errors;
                         }
                     } catch (e) {
                         // Use default error message
@@ -44,6 +50,7 @@ const IPD = {
                     reject({
                         success: false,
                         message: errorMessage,
+                        details: errorDetails,
                         status: xhr.status
                     });
                 }
@@ -71,6 +78,38 @@ const IPD = {
                 background: bgColor
             }
         }).showToast();
+    },
+
+    /**
+     * Show detailed error popup
+     */
+    showError: function (errorObj) {
+        let title = errorObj.message || 'An error occurred';
+        
+        let detailsHtml = '';
+        let detailsText = '';
+        if (errorObj.details && errorObj.details.length > 0) {
+            detailsHtml = '<ul style="text-align:left; color:#d32f2f;">' + errorObj.details.map(e => '<li>' + e + '</li>').join('') + '</ul>';
+            detailsText = errorObj.details.join('\n');
+        }
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                html: '<div style="text-align: left; max-height: 400px; overflow-y: auto;"><strong>' + title + '</strong><br><br>' + detailsHtml + '</div>',
+                width: '80%',
+                customClass: {
+                    popup: 'swal-wide'
+                }
+            });
+        } else {
+            let msg = "ERROR: " + title;
+            if (detailsText) {
+                msg += "\n\nDetails:\n" + detailsText;
+            }
+            alert(msg);
+        }
     },
 
     /**

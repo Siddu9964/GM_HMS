@@ -1,0 +1,257 @@
+/* 
+  IPD Pharmacy Order - Modern CSS
+  Matches the gm-theme aesthetics with glassmorphism and clean UI.
+*/
+
+/* General UI */
+body {
+    background-color: var(--gm-bg);
+}
+
+.glass-card {
+    background: var(--gm-glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--gm-glass-border);
+    border-radius: var(--gm-r-xl);
+    box-shadow: var(--gm-shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+/* Patient Search & Info */
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid var(--border-light, #e2e8f0);
+    border-radius: var(--gm-r-md);
+    padding: 10px 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    transition: all 0.3s ease;
+}
+
+.search-container:focus-within {
+    border-color: var(--gm-primary);
+    box-shadow: 0 4px 12px rgba(31, 107, 74, 0.1);
+}
+
+.search-icon {
+    color: var(--gm-text-muted);
+    font-size: 1.1rem;
+    margin-right: 12px;
+}
+
+.search-box {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 1rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--gm-text);
+    background: transparent;
+}
+
+.suggestions-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: var(--gm-r-lg);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border: 1px solid var(--gm-border);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 100;
+}
+
+.suggestion-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--gm-border);
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: rgba(31, 107, 74, 0.04);
+}
+
+.suggestion-details strong {
+    display: block;
+    color: var(--gm-text);
+    font-size: 14.5px;
+    margin-bottom: 4px;
+}
+
+.suggestion-details span {
+    font-size: 12px;
+    color: var(--gm-text-muted);
+}
+
+.suggestion-price .stock {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gm-primary);
+    background: rgba(31, 107, 74, 0.1);
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+/* Patient Card */
+.patient-card {
+    display: none; /* hidden by default */
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+    background: linear-gradient(135deg, rgba(31, 107, 74, 0.05) 0%, rgba(31, 107, 74, 0.01) 100%);
+    border: 1px solid rgba(31, 107, 74, 0.15);
+}
+
+.patient-card div {
+    display: flex;
+    flex-direction: column;
+}
+
+.patient-card div span {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gm-text-muted);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.patient-card div strong {
+    font-size: 15px;
+    color: var(--gm-text);
+    font-weight: 700;
+}
+
+.btn-change-patient {
+    background: white;
+    color: var(--gm-danger, #ef4444);
+    border: 1px solid var(--gm-danger, #ef4444);
+    padding: 8px 16px;
+    border-radius: var(--gm-r-md);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-change-patient:hover {
+    background: var(--gm-danger, #ef4444);
+    color: white;
+}
+
+/* Cart Table */
+.cart-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.cart-table thead th {
+    background: #f8fafc;
+    padding: 14px 18px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gm-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: left;
+    border-bottom: 2px solid var(--gm-border);
+}
+
+.cart-table tbody td {
+    padding: 16px 18px;
+    font-size: 14px;
+    color: var(--gm-text);
+    border-bottom: 1px solid var(--gm-border);
+    vertical-align: middle;
+}
+
+.cart-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.cart-table tbody tr:hover {
+    background: rgba(31, 107, 74, 0.02);
+}
+
+.qty-input {
+    width: 80px;
+    padding: 8px 12px;
+    border: 1px solid var(--gm-border);
+    border-radius: var(--gm-r-sm);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.qty-input:focus {
+    border-color: var(--gm-primary);
+}
+
+.btn-remove {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-remove:hover {
+    background: #ef4444;
+    color: white;
+    transform: scale(1.05);
+}
+
+/* Save Button */
+.btn-save {
+    background: #1f6b4a !important;
+    color: #ffffff !important;
+    border: none;
+    padding: 12px 24px !important;
+    border-radius: var(--gm-r-lg) !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    cursor: pointer;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 4px 12px rgba(31, 107, 74, 0.2) !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-save:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(31, 107, 74, 0.3) !important;
+}
+
+.btn-save:disabled {
+    background: var(--gm-text-muted) !important;
+    transform: none !important;
+    box-shadow: none !important;
+    cursor: not-allowed !important;
+}

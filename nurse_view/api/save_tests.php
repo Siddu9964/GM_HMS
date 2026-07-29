@@ -35,11 +35,15 @@ try {
             $column = 'radiology_tests';
         }
         
-        // Remove badge UI colors before saving to DB
-        unset($item['badgeBg']);
-        unset($item['badgeColor']);
+        // Save both ID and Name in the same JSON object in the main column
+        $testData = [
+            'id' => $item['id'] ?? '',
+            'name' => $item['name'] ?? '',
+            'qty' => $item['qty'] ?? 1,
+            'category' => $item['category'] ?? ''
+        ];
         
-        $model->appendToDailyRecord($patientId, $admissionId, $column, $item, $nurseId);
+        $model->appendToDailyRecord($patientId, $admissionId, $column, $testData, $nurseId);
     }
     
     echo json_encode(['success' => true, 'message' => 'Test orders saved successfully.']);

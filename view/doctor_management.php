@@ -768,12 +768,12 @@
                             </select>
                         </div>
                         <div class="input-group">
-                            <label>Date of Birth <span class="required">*</span></label>
-                            <input type="date" name="date_of_birth" required onchange="calculateAge()">
+                            <label>Date of Birth</label>
+                            <input type="date" name="date_of_birth" onchange="calculateAge()">
                         </div>
                         <div class="input-group">
                             <label>Age</label>
-                            <input type="number" name="age" readonly placeholder="Calculated">
+                            <input type="number" name="age" placeholder="Enter age">
                         </div>
                         <div class="input-group">
                             <label>Blood Group</label>

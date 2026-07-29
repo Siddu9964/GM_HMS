@@ -221,9 +221,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                         <div class="billing-tab active" onclick="switchTab('opd')">
                             <i class="fas fa-stethoscope mr-2"></i> OPD Billing
                         </div>
-                        <div class="billing-tab" onclick="switchTab('ipd')">
-                            <i class="fas fa-bed mr-2"></i> IPD Billing
-                        </div>
                         <div class="billing-tab" onclick="switchTab('payments')">
                             <i class="fas fa-receipt mr-2"></i> Receipts
                         </div>
@@ -289,122 +286,111 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     <!-- NEW BILL MODAL (Professional Redesign) -->
     <div id="billing-form-container"
         class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-        <div
-            class="bg-white w-full max-w-5xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-modal">
+        <div class="w-full max-w-6xl max-h-[90vh] rounded-lg shadow-2xl overflow-hidden flex flex-col animate-modal" style="background-color: #f3efe6;">
 
             <!-- Modal Header -->
-            <div class="p-6 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                <div>
-                    <h3 id="form-mode-title" class="text-xl font-black text-slate-900 flex items-center gap-2">
-                        <i class="fas fa-file-circle-plus" style="color: var(--gm-accent);"></i>
-                        New OPD Invoice
-                    </h3>
-                    <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">Patient Billing Portal
-                    </p>
-                </div>
+            <div class="px-6 py-4 bg-[#f9f9f9] border-b border-gray-200 flex justify-between items-center rounded-t-lg">
+                <h3 id="form-mode-title" class="text-lg font-black flex items-center gap-2" style="color: #1f6b4a;">
+                    New OPD Invoice
+                </h3>
                 <button onclick="toggleBillingForm()"
-                    class="h-10 w-10 rounded-full hover:bg-slate-200 transition-all flex items-center justify-center text-slate-400 hover:text-slate-600">
+                    class="hover:opacity-70 transition-all flex items-center justify-center" style="color: #1f6b4a;">
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
 
-            <form id="opd-billing-form" class="flex-1 overflow-y-auto">
-                <div class="p-8 space-y-8">
+            <form id="opd-billing-form" class="flex-1 overflow-y-auto flex flex-col">
+                <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
+                    
+                    <!-- LEFT COLUMN -->
+                    <div class="space-y-6">
+                        <!-- Primary Details -->
+                        <div>
+                            <div class="flex items-center gap-2 mb-3">
+                                <i class="fas fa-file-invoice" style="color: #1f6b4a;"></i>
+                                <h4 class="text-sm font-bold" style="color: #1f6b4a;">Primary Details</h4>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold uppercase tracking-wider" style="color: #1f6b4a;">Search Patient *</label>
+                                    <select id="patient-select" name="patient_id" class="w-full py-1.5 px-2 bg-white border border-gray-300 rounded outline-none focus:border-[#1f6b4a] text-xs" required></select>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold uppercase tracking-wider" style="color: #1f6b4a;">Consulting Physician</label>
+                                    <select id="doctor-select" name="doctor_id" class="w-full py-1.5 px-2 bg-white border border-gray-300 rounded outline-none focus:border-[#1f6b4a] text-xs"></select>
+                                </div>
 
-                    <!-- Section: Patient Selection -->
-                    <div>
-                        <div class="flex items-center gap-2 mb-4">
-                            <div class="h-6 w-1 rounded-full" style="background: var(--gm-accent);"></div>
-                            <h4 class="text-sm font-black uppercase tracking-widest text-slate-400">Step 1: Patient
-                                Selection</h4>
+                                <!-- Hidden Patient Info Card -->
+                                <div id="patient-info"
+                                    class="hidden col-span-2 p-3 bg-white rounded border border-[#1f6b4a40] flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="h-8 w-8 rounded flex items-center justify-center text-white text-sm" style="background: #1f6b4a;">
+                                            <i class="fas fa-user-injured"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-[9px] font-bold uppercase tracking-wider" style="color: #1f6b4a;">Selected Patient</p>
+                                            <h5 class="text-sm font-black text-slate-900 leading-none" id="info-patient-id">--</h5>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-6">
+                                        <div class="text-center">
+                                            <p class="text-[9px] font-bold uppercase tracking-wider" style="color: #1f6b4a;">AGE/SEX</p>
+                                            <p class="font-black text-xs" id="info-age-sex">--</p>
+                                        </div>
+                                        <div class="text-center">
+                                            <p class="text-[9px] font-bold uppercase tracking-wider" style="color: #1f6b4a;">PHONE</p>
+                                            <p class="font-black text-xs" id="info-phone">--</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div
-                            class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                            <div class="space-y-2">
-                                <label class="text-sm font-bold text-slate-700">Search Patient *</label>
-                                <select id="patient-select" name="patient_id" class="w-full" required></select>
-                            </div>
-                            <div class="space-y-2">
-                                <label class="text-sm font-bold text-slate-700">Consulting Physician</label>
-                                <select id="doctor-select" name="doctor_id" class="w-full"></select>
+
+                        <!-- Pricing & Services -->
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-list" style="color: #1f6b4a;"></i>
+                                    <h4 class="text-sm font-bold" style="color: #1f6b4a;">Pricing & Services</h4>
+                                </div>
+                                <button type="button" onclick="addBillingItem()"
+                                    class="px-2 py-1 rounded text-[10px] font-bold transition-all flex items-center gap-1 border" style="background: #e8f4ed; color: #1f6b4a; border-color: #1f6b4a40;">
+                                    <i class="fas fa-plus"></i> Add Line Item
+                                </button>
                             </div>
 
-                            <!-- Hidden Patient Info Card -->
-                            <div id="patient-info"
-                                class="hidden md:col-span-2 mt-4 p-4 bg-white rounded-xl border border-blue-100 flex items-center justify-between">
-                                <div class="flex items-center gap-4">
-                                        class="h-12 w-12 rounded-full flex items-center justify-center text-white text-xl" style="background: var(--gm-accent);">
-                                        <i class="fas fa-user-injured"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Selected
-                                            Patient</p>
-                                        <h5 class="text-lg font-black text-slate-900 leading-none" id="info-patient-id">
-                                            --</h5>
-                                    </div>
-                                </div>
-                                <div class="flex gap-8">
-                                    <div class="text-center">
-                                        <p class="text-xs font-bold text-slate-400">AGE/SEX</p>
-                                        <p class="font-black" id="info-age-sex">--</p>
-                                    </div>
-                                    <div class="text-center">
-                                        <p class="text-xs font-bold text-slate-400">PHONE</p>
-                                        <p class="font-black" id="info-phone">--</p>
-                                    </div>
-                                </div>
+                            <div class="border rounded bg-white overflow-hidden shadow-sm" style="border-color: #1f6b4a40;">
+                                <table class="w-full text-xs">
+                                    <thead style="background-color: #f9f9f9; border-bottom: 1px solid #1f6b4a40;">
+                                        <tr class="text-left font-bold uppercase text-[9px] tracking-wider" style="color: #1f6b4a;">
+                                            <th class="px-3 py-2">Service/Item Name</th>
+                                            <th class="px-3 py-2 w-16 text-center">Qty</th>
+                                            <th class="px-3 py-2 w-24 text-right">Unit Rate</th>
+                                            <th class="px-3 py-2 w-24 text-right">Amount</th>
+                                            <th class="px-2 py-2 w-8"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="billing-items-tbody">
+                                        <!-- Dynamic Items -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Section: Billing Items -->
-                    <div>
-                        <div class="flex justify-between items-center mb-4">
-                            <div class="flex items-center gap-2">
-                                <div class="h-6 w-1 rounded-full" style="background: var(--gm-accent);"></div>
-                                <h4 class="text-sm font-black uppercase tracking-widest text-slate-400">Step 2: Pricing
-                                    & Services</h4>
+                    <!-- RIGHT COLUMN -->
+                    <div class="space-y-6">
+                        <!-- Payment Information -->
+                        <div>
+                            <div class="flex items-center gap-2 mb-3">
+                                <i class="fas fa-money-bill-wave" style="color: #1f6b4a;"></i>
+                                <h4 class="text-sm font-bold" style="color: #1f6b4a;">Payment Information</h4>
                             </div>
-                            <button type="button" onclick="addBillingItem()"
-                                class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-slate-800 transition-all flex items-center gap-2">
-                                <i class="fas fa-plus"></i> Add Line Item
-                            </button>
-                        </div>
-
-                        <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                            <table class="w-full text-sm">
-                                <thead class="bg-slate-50 border-b border-slate-200">
-                                    <tr
-                                        class="text-left font-bold text-slate-500 uppercase text-[10px] tracking-widest">
-                                        <th class="px-4 py-4 w-40">Category</th>
-                                        <th class="px-4 py-4">Service/Item Name</th>
-                                        <th class="px-4 py-4 w-24 text-center">Qty</th>
-                                        <th class="px-4 py-4 w-32 text-right">Unit Rate</th>
-                                        <th class="px-4 py-4 w-32 text-right">Amout (₹)</th>
-                                        <th class="px-4 py-4 w-12"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="billing-items-tbody">
-                                    <!-- Dynamic Items -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Section: Checkout & Summary -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                        <!-- Left: Payment Method -->
-                        <div class="space-y-6">
-                            <div class="flex items-center gap-2">
-                                <div class="h-6 w-1 rounded-full" style="background: var(--gm-accent);"></div>
-                                <h4 class="text-sm font-black uppercase tracking-widest text-slate-400">Step 3: Payment
-                                </h4>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="space-y-2">
-                                    <label class="text-sm font-bold text-slate-700">Method</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold uppercase tracking-wider" style="color: #1f6b4a;">Method</label>
                                     <select name="payment_method"
-                                        class="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20">
+                                        class="w-full py-1.5 px-2 bg-white border border-gray-300 rounded outline-none focus:border-[#1f6b4a] text-xs">
                                         <option value="Cash">Cash Payment</option>
                                         <option value="Card">Credit/Debit Card</option>
                                         <option value="UPI">UPI / QR Code</option>
@@ -412,59 +398,62 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                                         <option value="Cheque">Bank Cheque</option>
                                     </select>
                                 </div>
-                                <div class="space-y-2">
-                                    <label class="text-sm font-bold text-slate-700">Immediate Payment</label>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold uppercase tracking-wider" style="color: #1f6b4a;">Immediate Payment</label>
                                     <input type="number" name="amount_paid" id="amount-paid" step="0.01"
-                                        class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-blue-600 outline-none focus:ring-2 focus:ring-blue-500/20 placeholder:text-slate-300">
+                                        class="w-full py-1.5 px-2 border border-gray-300 rounded font-bold outline-none focus:border-[#1f6b4a] text-xs" style="background-color: #e8f4ed; color: #1f6b4a;">
                                 </div>
-                            </div>
-                            <div class="space-y-2">
-                                <label class="text-sm font-bold text-slate-700">Internal Remarks</label>
-                                <textarea name="notes" rows="3"
-                                    class="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 text-sm"
-                                    placeholder="Any special instructions or reference numbers..."></textarea>
+                                <div class="space-y-1 col-span-2">
+                                    <label class="text-[10px] font-bold uppercase tracking-wider" style="color: #1f6b4a;">Internal Remarks</label>
+                                    <input type="text" name="notes"
+                                        class="w-full py-1.5 px-2 bg-white border border-gray-300 rounded outline-none focus:border-[#1f6b4a] text-xs"
+                                        placeholder="Any special instructions...">
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Right: Totals -->
-                        <div class="bg-slate-50 p-8 rounded-3xl border border-slate-200 space-y-4">
-                            <div
-                                class="flex justify-between items-center text-slate-500 font-bold text-sm tracking-tight">
-                                <span>Subtotal</span>
-                                <span id="summary-subtotal">₹0.00</span>
+                        <!-- Summary -->
+                        <div>
+                            <div class="flex items-center gap-2 mb-3">
+                                <i class="fas fa-calculator" style="color: #1f6b4a;"></i>
+                                <h4 class="text-sm font-bold" style="color: #1f6b4a;">Summary</h4>
                             </div>
-                            <div
-                                class="flex justify-between items-center text-slate-500 font-bold text-sm tracking-tight">
-                                <span>Adjustment/Discount (-)</span>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-rose-500 font-black">-</span>
-                                    <input type="number" id="discount-amount" name="discount_amount"
-                                        onchange="calculateTotals()" placeholder="0.00"
-                                        class="w-24 text-right bg-transparent border-b border-rose-200 text-rose-600 font-black outline-none focus:border-rose-500">
+                            <div class="bg-white p-4 rounded border space-y-2" style="border-color: #1f6b4a40;">
+                                <div class="flex justify-between items-center text-xs font-bold" style="color: #1f6b4a;">
+                                    <span>Subtotal</span>
+                                    <span id="summary-subtotal">₹0.00</span>
                                 </div>
-                            </div>
-                            <div
-                                class="flex justify-between items-center text-slate-400 font-bold text-xs uppercase tracking-widest pt-4 border-t border-slate-200">
-                                <span>Taxable Base</span>
-                                <span id="summary-taxable">₹0.00</span>
-                            </div>
-                            <div class="flex justify-between items-center pt-4 mt-4 border-t-2 border-slate-900">
-                                <span class="text-lg font-black text-slate-900 uppercase">Grand Total</span>
-                                <span class="text-3xl font-black text-slate-900" id="summary-grand-total">₹0.00</span>
+                                <div class="flex justify-between items-center text-xs font-bold" style="color: #1f6b4a;">
+                                    <span>Adjustment/Discount (-)</span>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-rose-500 font-black">-</span>
+                                        <input type="number" id="discount-amount" name="discount_amount"
+                                            onchange="calculateTotals()" placeholder="0.00"
+                                            class="w-20 py-0.5 text-right bg-transparent border-b border-rose-200 text-rose-600 font-black outline-none focus:border-rose-500 text-xs">
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider pt-2 border-t" style="border-color: #1f6b4a20; color: #1f6b4a;">
+                                    <span>Taxable Base</span>
+                                    <span id="summary-taxable">₹0.00</span>
+                                </div>
+                                <div class="flex justify-between items-center pt-2 mt-2 border-t-2" style="border-color: #1f6b4a;">
+                                    <span class="text-sm font-black uppercase" style="color: #1f6b4a;">Grand Total</span>
+                                    <span class="text-xl font-black" id="summary-grand-total" style="color: #1f6b4a;">₹0.00</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Footer Actions -->
-                <div class="p-6 bg-slate-50 border-t border-slate-200 flex justify-end gap-3 sticky bottom-0">
+                <div class="px-6 py-4 flex justify-end gap-3 rounded-b-lg border-t" style="border-color: #1f6b4a20;">
                     <button type="button" onclick="toggleBillingForm()"
-                        class="px-8 py-3 text-slate-500 font-bold hover:text-slate-900 transition-all rounded-xl">
+                        class="px-4 py-1.5 bg-white font-bold rounded text-xs transition-all border" style="color: #1f6b4a; border-color: #1f6b4a;">
                         Cancel
                     </button>
                     <button type="submit" id="btn-submit-bill"
-                        class="px-10 py-3 text-white font-black rounded-xl shadow-lg transition-all transform hover:-translate-y-1 active:scale-95 flex items-center gap-2" style="background: var(--gm-accent);">
-                        <i class="fas fa-check-double"></i>
+                        class="px-4 py-1.5 text-white font-bold rounded shadow text-xs transition-all flex items-center gap-2" style="background: #1f6b4a;">
+                        <i class="fas fa-save"></i>
                         Confirm & Generate
                     </button>
                 </div>
@@ -477,194 +466,157 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     </div>
 
     <!-- BILL DETAILS MODAL (Patient Card & Invoice View) -->
-    <div id="bill-details-modal"
-        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-        <div
-            class="bg-white w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-modal">
+    <div id="bill-details-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+        <div class="w-full max-w-4xl max-h-[90vh] rounded-xl shadow-2xl overflow-hidden flex flex-col animate-modal" style="background-color: #f3efe6;">
 
-            <!-- Modal Header -->
-            <div class="p-6 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-                <div>
-                    <h3 class="text-xl font-black text-slate-900" id="modal-bill-id">BILL-ID</h3>
-                    <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">Invoice & Patient
-                        Detail Card</p>
+            <!-- Header Controls -->
+            <div class="px-6 py-4 flex justify-between items-center" style="background-color: #f3efe6;">
+                <h3 class="text-lg font-bold" style="color: #1f6b4a;">
+                    <i class="fas fa-file-invoice"></i> Bill Details
+                </h3>
+                <div class="flex items-center gap-3">
+                    <button id="btn-print-modal" onclick="printBill('')" class="px-4 py-2 bg-white font-bold text-sm rounded hover:bg-slate-50 transition-all flex items-center gap-2 border shadow-sm" style="color: #1f6b4a; border-color: #1f6b4a40;">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                    <button onclick="toggleBillModal()" class="h-8 w-8 rounded-full hover:bg-slate-200/50 transition-all flex items-center justify-center text-slate-500">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <button onclick="toggleBillModal()"
-                    class="h-10 w-10 rounded-full hover:bg-slate-200 transition-all flex items-center justify-center text-slate-400 hover:text-slate-600">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-8">
-                <!-- Top Section: Patient & Doctor Card -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                    <!-- Patient & Appointment Card -->
-                    <div class="rounded-3xl p-6 text-white shadow-xl" style="background: var(--gm-accent);">
-                        <div class="flex items-center gap-4 mb-6">
-                            <div
-                                class="h-16 w-16 bg-white/20 rounded-2xl backdrop-blur-md flex items-center justify-center text-3xl">
-                                <i class="fas fa-user-injured"></i>
-                            </div>
-                            <div>
-                                <h4 class="text-2xl font-black leading-none" id="detail-patient-name">Patient Name</h4>
-                                <p class="text-blue-100 font-medium mt-1 uppercase tracking-widest text-[10px]"
-                                    id="detail-patient-id">PID-00000000</p>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-x-6 gap-y-4">
-                            <div>
-                                <p class="text-[10px] font-bold text-blue-100 uppercase tracking-widest">Phone Number
-                                </p>
-                                <p class="font-bold text-sm" id="detail-patient-phone">9876543210</p>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-bold text-blue-100 uppercase tracking-widest">Appointment ID
-                                </p>
-                                <p class="font-bold text-sm" id="detail-appointment-id">--</p>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-bold text-blue-100 uppercase tracking-widest">Consulting
-                                    Doctor</p>
-                                <p class="font-bold text-sm" id="detail-doctor-name">Dr. Name</p>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-bold text-blue-100 uppercase tracking-widest">Billing Time
-                                </p>
-                                <p class="font-bold text-sm" id="detail-bill-time">00:00:00</p>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Receipt Content (Scrollable) -->
+            <div class="flex-1 overflow-y-auto px-10 py-8 relative bg-[#fdfdfc] mx-4 mb-4 rounded-lg shadow-inner">
 
-                    <!-- Quick Financial Stats -->
-                    <div class="bg-slate-50 rounded-3xl p-6 border border-slate-200 flex flex-col justify-between">
-                        <div class="grid grid-cols-2 gap-6">
-                            <div class="space-y-4">
-                                <div>
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Invoice
-                                        Date</p>
-                                    <p class="text-slate-900 font-black" id="detail-bill-date">--/--/----</p>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Payment
-                                        Mode</p>
-                                    <p class="text-slate-900 font-bold" id="detail-payment-mode">Cash</p>
-                                </div>
-                            </div>
-                            <div class="space-y-4">
-                                <div>
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</p>
-                                    <span id="detail-payment-status"
-                                        class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-black uppercase tracking-widest inline-block mt-1">Paid</span>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Purpose
-                                    </p>
-                                    <p class="text-slate-900 font-bold text-sm truncate" id="detail-bill-purpose"
-                                        title="Purpose">OPD Service</p>
-                                </div>
-                            </div>
+                <!-- Hospital Header -->
+                <div class="flex justify-between items-start border-b-2 pb-4 mb-6" style="border-color: #1f6b4a;">
+                    <div>
+                        <h1 class="text-2xl font-bold tracking-tight" style="color: #1f6b4a;">GM HOSPITAL (Basaveshwar Nagar)</h1>
+                        <p class="text-xs text-slate-500 mt-1">No. 335, 3rd Stage, 4th Block, Siddaiah Puranik Road,</p>
+                        <p class="text-xs text-slate-500">Basaveshwara nagar, Bengaluru 560079</p>
+                        <p class="text-xs text-slate-500">Tel. No 0802221160 Mob. No 9900003527</p>
+                        <p class="text-xs text-slate-500">GST NO: 29AAFCP8756N3ZE</p>
+                    </div>
+                    <div class="text-right flex flex-col items-end">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span id="detail-payment-status"></span>
+                            <h2 class="text-xl font-bold uppercase tracking-wide" style="color: #1f6b4a;">PAYMENT RECEIPT</h2>
                         </div>
-                        <div class="pt-4 mt-4 border-t border-slate-200">
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                                        Current Balance Due</p>
-                                    <h5 class="text-4xl font-black text-rose-500 leading-none" id="detail-balance-due">
-                                        ₹0.00</h5>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Generated
-                                        By</p>
-                                    <p class="text-slate-900 font-bold" id="detail-created-by">System Admin</p>
-                                </div>
-                            </div>
+                        <div class="text-sm font-bold mt-1" id="modal-bill-id" style="color: #1f6b4a;">BILL-ID</div>
+                        <div class="text-xs text-slate-500 mt-1">
+                            <span id="detail-bill-date">--/--/----</span> <span id="detail-bill-time"></span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Middle Section: Billing Items -->
-                <div class="mb-8">
-                    <h4
-                        class="text-sm font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-                        <div class="h-4 w-1 rounded-full" style="background: var(--gm-accent);"></div>
-                        Invoice Line Items
-                    </h4>
-                    <div class="border border-slate-100 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="bg-slate-50 border-b border-slate-100">
-                                <tr class="text-left font-bold text-slate-400 uppercase text-[10px] tracking-widest">
-                                    <th class="px-6 py-4">Service / Description</th>
-                                    <th class="px-6 py-4 text-center">Qty</th>
-                                    <th class="px-6 py-4 text-right">Unit Rate</th>
-                                    <th class="px-6 py-4 text-right">Row Total (₹)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="detail-items-tbody">
-                                <!-- Dynamic Items -->
-                            </tbody>
-                            <tfoot id="detail-summary-tfoot" class="bg-slate-50/50">
-                                <tr>
-                                    <td colspan="3"
-                                        class="px-6 py-2 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                        Gross Subtotal</td>
-                                    <td class="px-6 py-2 text-right font-bold text-slate-700" id="foot-subtotal">₹0.00
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="3"
-                                        class="px-6 py-2 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                        Discount (<span id="foot-discount-percent">0</span>%)</td>
-                                    <td class="px-6 py-2 text-right font-bold text-rose-600" id="foot-discount">- ₹0.00
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="3"
-                                        class="px-6 py-2 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                        Taxable Amount</td>
-                                    <td class="px-6 py-2 text-right font-bold text-slate-700" id="foot-taxable">₹0.00
-                                    </td>
-                                </tr>
-                                <tr class="bg-slate-100/50">
-                                    <td colspan="3"
-                                        class="px-6 py-4 text-right text-xs font-black uppercase tracking-widest text-slate-900">
-                                        Grand Total Invoice</td>
-                                    <td class="px-6 py-4 text-right font-black text-slate-900 text-lg"
-                                        id="foot-grand-total">₹0.00</td>
-                                </tr>
-                                <tr class="border-t border-slate-200">
-                                    <td colspan="3"
-                                        class="px-6 py-2 text-right text-[10px] font-black uppercase tracking-widest text-green-600">
-                                        Total Amount Paid</td>
-                                    <td class="px-6 py-2 text-right font-black text-green-600" id="foot-amount-paid">
-                                        ₹0.00</td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                <!-- Patient Info Box -->
+                <div class="grid grid-cols-2 gap-4 rounded-lg p-5 mb-8 border" style="background-color: #fdfdfc; border-color: #1f6b4a40;">
+                    <div class="space-y-3">
+                        <div class="flex items-center text-xs">
+                            <span class="w-28 font-bold text-slate-400 uppercase tracking-wider">Patient</span>
+                            <span class="font-bold text-slate-800" id="detail-patient-name">Patient Name</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <span class="w-28 font-bold text-slate-400 uppercase tracking-wider">Phone</span>
+                            <span class="font-medium text-slate-700" id="detail-patient-phone">9876543210</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <span class="w-28 font-bold text-slate-400 uppercase tracking-wider">Appointment</span>
+                            <span class="font-medium text-slate-700" id="detail-appointment-id">--</span>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center text-xs">
+                            <span class="w-28 font-bold text-slate-400 uppercase tracking-wider">Patient ID</span>
+                            <span class="font-medium text-slate-700" id="detail-patient-id">PID-00000000</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <span class="w-28 font-bold text-slate-400 uppercase tracking-wider">Doctor</span>
+                            <span class="font-medium text-slate-700" id="detail-doctor-name">Dr. Name</span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                            <span class="w-28 font-bold text-slate-400 uppercase tracking-wider">Created By</span>
+                            <span class="font-medium text-slate-700" id="detail-created-by">System Admin</span>
+                        </div>
+                        <div class="flex items-center text-xs hidden">
+                            <span id="detail-bill-purpose"></span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Bottom Section: Remarks -->
-                <div id="detail-notes-container" class="hidden">
-                    <h4
-                        class="text-sm font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-2">
-                        <div class="h-4 w-1 bg-amber-500 rounded-full"></div>
-                        Internal Notes / Remarks
-                    </h4>
-                    <div class="p-4 bg-amber-50 border border-amber-100 rounded-xl text-slate-600 text-sm whitespace-pre-line"
-                        id="detail-notes">
-                        No additional notes for this invoice.
+                <!-- Billing Items -->
+                <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Billing Items</div>
+                <table class="w-full text-sm mb-6 border-collapse">
+                    <thead>
+                        <tr style="background-color: #1f6b4a; color: white;">
+                            <th class="px-4 py-2 text-left font-semibold text-xs rounded-l">DESCRIPTION</th>
+                            <th class="px-4 py-2 text-center font-semibold text-xs">QTY</th>
+                            <th class="px-4 py-2 text-right font-semibold text-xs">RATE (₹)</th>
+                            <th class="px-4 py-2 text-right font-semibold text-xs rounded-r">AMOUNT (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detail-items-tbody" class="border-b" style="border-color: #1f6b4a40;">
+                        <!-- Dynamic Items injected by JS -->
+                    </tbody>
+                </table>
+
+                <!-- Summary Totals -->
+                <div class="flex justify-end mb-6">
+                    <div class="w-72 space-y-2 text-sm">
+                        <div class="flex justify-between items-center text-slate-600">
+                            <span>Subtotal</span>
+                            <span id="foot-subtotal">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-600">
+                            <span>Discount (<span id="foot-discount-percent">0</span>%)</span>
+                            <span id="foot-discount">- ₹0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-600 hidden">
+                            <span>Taxable</span>
+                            <span id="foot-taxable">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-y-2 mt-2 font-bold" style="border-color: #1f6b4a; color: #1f6b4a;">
+                            <span>Receipt Amount</span>
+                            <span id="foot-grand-total">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-600 font-semibold pt-1">
+                            <span>Payment Mode</span>
+                            <span id="detail-payment-mode">Cash</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-600 pt-1">
+                            <span>Amount Paid</span>
+                            <span id="foot-amount-paid">₹0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center text-rose-600 font-bold pt-1">
+                            <span>Balance Due</span>
+                            <span id="detail-balance-due">₹0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Notes -->
+                <div id="detail-notes-container" class="hidden mb-6">
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Remarks</div>
+                    <div class="p-3 bg-white border border-slate-200 rounded text-slate-600 text-xs whitespace-pre-line" id="detail-notes">
+                    </div>
+                </div>
+
+                <!-- Footer Signatures -->
+                <div class="flex justify-between items-end mt-12 pt-6 border-t border-slate-200 border-dashed">
+                    <div class="text-[10px] text-slate-400">
+                        <p>Printed on: <?php echo date('d M Y, h:i A'); ?></p>
+                        <p>Thank you for choosing GM Hospital.</p>
+                        <p>This is a computer-generated bill and does not require a signature.</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-32 border-t border-slate-800 mx-auto mb-1"></div>
+                        <span class="text-[10px] text-slate-500">Authorised Signatory</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Footer Actions -->
-            <div class="p-6 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
-                <button id="btn-print-modal" onclick="printBill('')"
-                    class="px-8 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition-all flex items-center gap-2">
-                    <i class="fas fa-print"></i> Print Invoice
-                </button>
-                <button id="btn-pay-modal" onclick="alert('Proceed to payment...')"
-                    class="px-10 py-3 text-white font-black rounded-xl shadow-lg transition-all transform hover:-translate-y-1 flex items-center gap-2" style="background: var(--gm-accent);">
+            <!-- Modal Footer Action -->
+            <div class="p-4 border-t flex justify-end gap-3" style="background-color: #f3efe6; border-color: #1f6b4a20;">
+                <button id="btn-pay-modal" onclick="alert('Proceed to payment...')" class="px-8 py-2 text-white font-bold rounded shadow transition-all flex items-center gap-2" style="background: #1f6b4a;">
                     <i class="fas fa-hand-holding-dollar"></i>
                     Collect Due Payment
                 </button>

@@ -3,7 +3,7 @@
     <!-- Left Section: Mobile Menu + Page Title -->
     <div style="display: flex; align-items: center; gap: 1rem;">
         <!-- Mobile Menu Toggle -->
-        <button onclick="toggleSidebar()" class="btn btn-outline" style="display: none;" id="mobile-menu-btn">
+        <button onclick="toggleSidebar()" class="btn btn-outline" id="mobile-menu-btn">
             <i class="fas fa-bars"></i>
         </button>
 
@@ -20,7 +20,7 @@
     </div>
 
     <!-- Right Section: Quick Actions + Notifications + Profile -->
-    <div style="display: flex; align-items: center; gap: 1rem;">
+    <div class="navbar-right-section" style="display: flex; align-items: center; gap: 1rem;">
         <!-- Quick Vitals Button -->
         <button onclick="window.location.href='vitals.php'" class="btn btn-primary" title="Record Vitals">
             <i class="fas fa-heartbeat"></i>
@@ -569,13 +569,37 @@
         transform: translateX(16px);
     }
 
-    @media (max-width: 768px) {
+    #mobile-menu-btn {
+        display: none;
+    }
+
+    @media (max-width: 1023px) {
         #mobile-menu-btn {
             display: inline-flex !important;
         }
 
         .hide-mobile {
             display: none !important;
+        }
+        
+        #page-subtitle {
+            display: none !important;
+        }
+
+        .nurse-navbar {
+            padding: 0 0.75rem !important;
+        }
+
+        .navbar-right-section {
+            gap: 0.25rem !important;
+        }
+
+        .btn {
+            padding: 0.5rem;
+        }
+        
+        .profile-button {
+            padding: 0.25rem;
         }
     }
 </style>

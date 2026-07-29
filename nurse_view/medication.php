@@ -103,177 +103,163 @@ if (empty($initials)) $initials = 'PT';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
+    
+    
     <style>
         :root {
             --primary: #1F6B4A;
             --primary-light: #2c8c64;
-            --bg-cream: #F3EFE6;
-            --white: #FFFFFF;
-            --text-main: #1B1B1B;
-            --text-muted: #5e646a;
-            --border: #D9D3C7;
-            --success: #2E7D32;
-            --warning: #FF9800;
-            --danger: #D32F2F;
-            --glass-bg: rgba(255, 255, 255, 0.85);
-            --glass-border: rgba(255, 255, 255, 0.6);
-            --shadow-soft: 0 10px 30px rgba(31,107,74,.08);
-            --shadow-hover: 0 18px 40px rgba(31,107,74,.12);
-            --radius-lg: 24px;
-            --radius-md: 16px;
-            --radius-sm: 12px;
-            --transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            --primary-dark: #154d34;
+            --primary-glow: rgba(31,107,74,0.08);
+            --bg-body: #F8FAFC;
+            --bg-surface: #FFFFFF;
+            --text-main: #1E293B;
+            --text-muted: #64748B;
+            --border-light: #E2E8F0;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05);
+            --danger: #EF4444;
+            --success: #10B981;
+            --radius-md: 12px;
+            --radius-lg: 16px;
         }
-        
-        /* Hide number input arrows/spinners */
-        input[type="number"]::-webkit-outer-spin-button,
-        input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type="number"] { -moz-appearance: textfield; }
-
         * { font-family: 'Plus Jakarta Sans', sans-serif; box-sizing: border-box; }
-        body { background-color: var(--bg-cream); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 80px; }
+        body { background: var(--bg-body); color: var(--text-main); margin: 0; padding-bottom: 40px; }
         
-        /* Master Layout Container (With Sidebar Margin) */
-        
-        /* Glass Card Base */
-        .glass-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border);
+        /* Patient Banner */
+        .patient-banner {
+            background: #fff;
+            padding: 20px 24px;
+            margin: 20px 24px 0 24px;
             border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-soft);
-            transition: var(--transition);
-            padding: 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-        .glass-card:hover { box-shadow: var(--shadow-hover); }
+        .banner-avatar {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: var(--primary-glow);
+            color: var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; font-weight: 700;
+        }
+        .banner-info { flex: 1; }
+        .banner-name { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
+        .status-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; display: inline-block; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2); }
+        .banner-chips { display: flex; flex-wrap: wrap; gap: 12px; }
+        .b-chip { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+        .b-chip strong { color: var(--text-main); font-weight: 600; }
 
-        /* Patient Header */
-        .patient-header {
-            position: sticky; top: 15px; z-index: 100;
-            display: grid; grid-template-columns: auto 1fr auto; gap: 25px; align-items: center;
+        /* Main Layout */
+        .medication-layout {
+            display: flex;
+            gap: 24px;
+            margin: 24px;
+            align-items: flex-start;
         }
-        .patient-avatar { width: 80px; height: 80px; border-radius: 50%; background: var(--primary); color: var(--white); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; box-shadow: var(--shadow-soft); }
-        .patient-details h1 { font-weight: 800; font-size: 24px; margin: 0 0 10px 0; color: var(--primary); }
-        .patient-meta { display: flex; gap: 10px; flex-wrap: wrap; }
-        
-        /* Modern Chips */
-        .chip {
-            font-size: 13px; font-weight: 700; color: var(--primary);
-            background: rgba(31,107,74,0.1); padding: 6px 14px;
-            border-radius: 50px; border: 1px solid rgba(31,107,74,0.2);
-            display: inline-flex; align-items: center; gap: 6px;
-        }
-        .chip span { color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* Floating Search */
-        .floating-search { display: flex; align-items: center; background: var(--white); border-radius: 50px; padding: 12px 24px; width: 350px; border: 1px solid var(--border); box-shadow: var(--shadow-soft); }
-        .floating-search input { border: none; outline: none; width: 100%; padding-left: 10px; font-size: 15px; font-weight: 500; background: transparent; }
-
-        /* Summary Cards Row */
-        .summary-row { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
-        .summary-row::-webkit-scrollbar { display: none; }
-        .summary-card {
-            flex: 0 0 auto; width: 180px; display: flex; flex-direction: column; gap: 8px;
-            padding: 15px 20px; border-radius: var(--radius-md); text-align: left;
+        /* Sidebar Navigation */
+        .medication-sidebar {
+            width: 260px;
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            position: sticky;
+            top: 150px;
+            flex-shrink: 0;
+            max-height: calc(100vh - 170px);
+            overflow-y: auto;
         }
-        .summary-card i { font-size: 20px; color: var(--primary); }
-        .summary-card .count { font-size: 28px; font-weight: 800; color: var(--text-main); line-height: 1; }
-        .summary-card .label { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
-
-        /* Quick Action Ribbon */
-        .quick-action-ribbon { 
-            display: flex; 
-            flex-wrap: nowrap; 
-            gap: 10px; 
-            padding: 15px 5px; 
-            border-bottom: 2px solid var(--border); 
-            margin-bottom: 15px; 
-            overflow-x: auto; 
-            -webkit-overflow-scrolling: touch; 
-            scrollbar-width: none; 
+        /* Custom Scrollbar for Sidebar */
+        .medication-sidebar::-webkit-scrollbar { width: 6px; }
+        .medication-sidebar::-webkit-scrollbar-track { background: transparent; }
+        .medication-sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+        .medication-sidebar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+        .med-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 4px;
+            border: 1px solid transparent;
         }
-        .quick-action-ribbon::-webkit-scrollbar { display: none; }
-        .ribbon-btn {
-            background: var(--white); color: var(--text-muted); border: 1px solid var(--border);
-            padding: 12px 20px; border-radius: 50px; font-weight: 700; font-size: 14px;
-            cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
-            transition: var(--transition); white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.02);
-            flex: 0 0 auto; justify-content: center; min-height: 44px; /* Touch target size */
+        .med-nav-item:hover { background: #f1f5f9; }
+        .med-nav-item.active { background: var(--primary-glow); border-color: rgba(31,107,74,0.1); }
+        .med-nav-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            background: #f1f5f9; color: var(--text-muted);
+            font-size: 14px; transition: all 0.2s ease;
         }
-        .ribbon-btn:hover { background: var(--primary-light); color: var(--white); border-color: var(--primary-light); transform: translateY(-2px); box-shadow: var(--shadow-hover); }
-        .ribbon-btn.active { background: var(--primary); color: var(--white); border-color: var(--primary); box-shadow: var(--shadow-soft); }
+        .med-nav-item.active .med-nav-icon { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .med-nav-text { display: flex; flex-direction: column; }
+        .med-nav-title { font-size: 14px; font-weight: 600; color: var(--text-main); }
+        .med-nav-item.active .med-nav-title { color: var(--primary-dark); }
+        .med-nav-desc { font-size: 11px; color: var(--text-muted); }
 
-        /* Dynamic Workspace */
-        .workspace-grid { display: block; }
-        
-        .section-container { display: none; animation: fadeIn 0.4s ease-out; }
+        /* Content Area */
+        .medication-content { flex: 1; min-width: 0; }
+        .section-container { display: none; animation: fadeIn 0.3s ease; }
         .section-container.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid var(--border); flex-wrap: wrap; gap: 10px; }
-        .section-header h2 { font-size: 22px; font-weight: 800; color: var(--primary); margin: 0; }
-        
-        /* Buttons */
-        .btn-action { background: var(--primary); color: var(--white); border: none; padding: 12px 24px; border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: var(--transition); box-shadow: 0 4px 12px rgba(31,107,74,0.2); min-height: 44px; }
-        .btn-action:hover { background: var(--primary-light); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(31,107,74,0.3); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .section-header h2 { font-size: 22px; font-weight: 700; margin: 0; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
+        .section-header h2 i { color: var(--primary); font-size: 20px; }
 
-        /* Forms */
-        .entry-form-card { background: var(--white); border: 1px dashed var(--primary); padding: 25px; border-radius: var(--radius-lg); margin-bottom: 25px; display: none; }
-        .entry-form-card.active { display: block; animation: fadeIn 0.3s; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
-        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
-        .form-group label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-control { padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-cream); font-size: 15px; font-weight: 500; transition: var(--transition); min-height: 48px; }
-        .form-control:focus { outline: none; border-color: var(--primary); background: var(--white); box-shadow: 0 0 0 4px rgba(31,107,74,0.15); }
+        /* Cards & Forms */
+        .glass-card, .card { background: var(--bg-surface); border-radius: var(--radius-lg); border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); margin-bottom: 24px; padding: 24px; overflow: hidden; }
+        .card-header { padding-bottom: 16px; border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .card-header h3 { font-size: 16px; font-weight: 600; margin: 0; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+        .card-header h3 i { color: var(--primary); }
+        
+        .entry-form-card { background: #f8fafc; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 20px; margin-bottom: 20px; display: none; }
+        .entry-form-card.active { display: block; animation: slideDown 0.3s ease; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .entry-form-card h4 { font-size: 14px; font-weight: 600; color: var(--primary); margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-control { padding: 10px 14px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 14px; transition: all 0.2s ease; width: 100%; background: #fff; }
+        .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+        .form-control[readonly] { background: #f1f5f9; color: var(--text-muted); cursor: not-allowed; }
+
+        /* Buttons */
+        .btn-action { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s ease; background: var(--primary); color: white; box-shadow: var(--shadow-sm); }
+        .btn-action:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .btn-action.btn-delete { background: var(--danger); }
+        .btn-action.btn-delete:hover { background: #dc2626; }
+        
+        .btn-add, .section-header .btn-action { display: inline-flex; align-items: center; gap: 8px; background: white; color: var(--primary); border: 1px solid var(--primary); padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: none; }
+        .btn-add:hover, .section-header .btn-action:hover { background: var(--primary-glow); transform: none; color: var(--primary); }
 
         /* Tables */
-        .data-table-wrapper { background: var(--white); border-radius: var(--radius-md); overflow-x: auto; border: 1px solid var(--border); margin-bottom: 25px; -webkit-overflow-scrolling: touch; }
-        .data-table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        .data-table th, .data-table td { padding: 16px; text-align: left; font-size: 15px; border-bottom: 1px solid var(--border); }
-        .data-table th { background: var(--bg-cream); font-weight: 700; color: var(--text-muted); text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; white-space: nowrap; }
-        .data-table tr:hover td { background: rgba(243, 239, 230, 0.5); }
+        .table-scroll, .data-table-wrapper { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-light); margin-top: 10px; }
+        .data-table { width: 100%; border-collapse: collapse; background: white; }
+        .data-table thead th { background: #f8fafc; padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-light); text-align: left; }
+        .data-table tbody td { padding: 14px 16px; font-size: 14px; color: var(--text-main); border-bottom: 1px solid var(--border-light); }
+        .data-table tbody tr:hover td { background: #f8fafc; }
         
-        .subsection-title { font-size: 18px; font-weight: 800; color: var(--primary); margin: 30px 0 20px 0; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
-
-        /* Right Timeline Panel */
-        .timeline-panel { background: var(--white); border-radius: var(--radius-lg); padding: 25px; border: 1px solid var(--border); box-shadow: var(--shadow-soft); position: sticky; top: 150px; }
-        .timeline-panel h3 { font-size: 18px; font-weight: 800; color: var(--primary); margin-top: 0; margin-bottom: 20px; }
-        .timeline { padding-left: 15px; border-left: 2px solid rgba(31,107,74,0.2); }
-        .timeline-item { position: relative; margin-bottom: 20px; padding: 15px; background: var(--bg-cream); border-radius: var(--radius-md); border: 1px solid var(--border); }
-        .timeline-item::before { content: ''; position: absolute; left: -22px; top: 20px; width: 12px; height: 12px; border-radius: 50%; background: var(--primary); border: 2px solid var(--white); }
-        .timeline-item .time { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 5px; display: block; }
-        .timeline-item .event { font-size: 14px; font-weight: 600; color: var(--text-main); }
-
-        /* Smart Bottom Toolbar */
-        .bottom-toolbar {
-            position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9);
-            backdrop-filter: blur(20px); border-top: 1px solid var(--border);
-            padding: 15px 40px; display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.05); z-index: 1000;
-        }
-        .toolbar-status { display: flex; gap: 20px; align-items: center; }
-        .status-pill { font-size: 13px; font-weight: 700; color: var(--text-muted); background: var(--bg-cream); padding: 8px 16px; border-radius: 50px; }
-        .status-pill.unsaved { color: var(--warning); background: rgba(255,152,0,0.1); }
-        
-        .toolbar-actions { display: flex; gap: 15px; }
-
-        /* Mobile Adjustments */
+        /* Responsive */
         @media (max-width: 768px) {
-            .patient-header { grid-template-columns: 1fr; text-align: center; justify-items: center; gap: 15px; }
-            .patient-details h1 { font-size: 20px; }
-            .patient-details > div { justify-content: center; }
-            .patient-meta { justify-content: center; }
-            .patient-avatar { width: 60px; height: 60px; font-size: 20px; }
-            .entry-form-card { padding: 15px; }
-            .bottom-toolbar { flex-direction: column; padding: 15px; gap: 10px; }
-            .content-wrapper { padding: 10px; }
+            .medication-layout { flex-direction: column; }
+            .medication-sidebar { width: 100%; position: static; }
         }
-
     </style>
+
+
 </head>
 <body>
     <!-- Hidden Form for Patient Selection -->
@@ -287,7 +273,7 @@ if (empty($initials)) $initials = 'PT';
     <?php include 'includes/nurse_sidebar.php'; ?>
 
     <!-- Main Content -->
-    <div class="content-wrapper" style="flex: 1; display: flex; flex-direction: column; overflow-x: hidden;">
+    <div class="content-wrapper" style="flex: 1; display: block !important; overflow-x: hidden !important; overflow-y: auto !important; height: 100%;">
         <!-- Header -->
         <?php 
         $pageTitle = 'Medications';
@@ -296,49 +282,69 @@ if (empty($initials)) $initials = 'PT';
 
         <?php if ($patientId && $patientId !== 'undefined'): ?>
 
-        <!-- Sticky Patient Header -->
-        <div class="glass-card patient-header">
-            <div class="patient-avatar"><?php echo htmlspecialchars($initials); ?></div>
-            <div class="patient-details">
-                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 8px;">
-                    <h1><?php echo htmlspecialchars($patientName); ?></h1>
-                    <div class="chip" style="background: rgba(255,152,0,0.1); color: var(--warning); border-color: rgba(255,152,0,0.2);"><span>Status</span> ACTIVE TREATMENT</div>
+                <!-- PATIENT BANNER -->
+        <div class="patient-banner">
+            <div class="banner-avatar"><?php echo htmlspecialchars($initials); ?></div>
+            <div class="banner-info">
+                <div class="banner-name"><?php echo htmlspecialchars($patientName); ?> <span class="status-dot"></span></div>
+                <div class="banner-chips">
+                    <div class="b-chip"><i class="fas fa-id-card"></i> <strong>PID:</strong> <?php echo htmlspecialchars($patientPID); ?></div>
+                    <div class="b-chip"><i class="fas fa-file-invoice"></i> <strong>IP No:</strong> <?php echo htmlspecialchars($patientIP); ?></div>
+                    <div class="b-chip"><i class="fas fa-bed"></i> <strong>Ward:</strong> <?php echo htmlspecialchars($patientLocation); ?></div>
+                    <div class="b-chip"><i class="fas fa-user-md"></i> <strong>Doctor:</strong> <?php echo htmlspecialchars($patientConsultant); ?></div>
+                    <div class="b-chip"><i class="fas fa-tint"></i> <strong>Blood:</strong> <?php echo htmlspecialchars($patientBlood); ?></div>
+                    <div class="b-chip"><i class="fas fa-user"></i> <strong>Age/Sex:</strong> <?php echo htmlspecialchars($patientAgeSex); ?></div>
                 </div>
-                <div class="patient-meta">
-                    <div class="chip"><span>PID</span> <?php echo htmlspecialchars($patientPID); ?></div>
-                    <div class="chip"><span>Admission</span> <?php echo htmlspecialchars($patientIP); ?></div>
-                    <div class="chip"><span>Ward</span> <?php echo htmlspecialchars($patientLocation); ?></div>
-                    <div class="chip"><span>Doctor</span> <?php echo htmlspecialchars($patientConsultant); ?></div>
-                    <div class="chip"><span>Blood Group</span> <?php echo htmlspecialchars($patientBlood); ?></div>
-                    <div class="chip"><span>Age/Sex</span> <?php echo htmlspecialchars($patientAgeSex); ?></div>
-                    <div class="chip"><span>Allergy</span> ❌ NKA</div>
-                </div>
-            </div>
-            
-            <div class="floating-search" style="display:none;">
-                <!-- Hidden since we restored the main top-navbar search -->
-                <i class="fas fa-search" style="color:var(--text-muted);"></i>
-                <input type="text" placeholder="Search entire patient record...">
             </div>
         </div>
 
         <!-- Quick Action Ribbon (Horizontal Nav) -->
-        <div class="quick-action-ribbon">
-            <button class="ribbon-btn active" onclick="switchSection('sec-activity'); activateRibbon(this)"><i class="fas fa-file-medical"></i> Activity</button>
-            <button class="ribbon-btn" onclick="switchSection('sec-transfer'); activateRibbon(this)"><i class="fas fa-exchange-alt"></i> Transfer</button>
-            <button class="ribbon-btn" onclick="switchSection('sec-visits'); activateRibbon(this)"><i class="fas fa-stethoscope"></i> Doctor Visits</button>
-            <button class="ribbon-btn" onclick="switchSection('sec-clinical'); activateRibbon(this)"><i class="fas fa-heartbeat"></i> Clinical Chart</button>
-            <button class="ribbon-btn" onclick="switchSection('sec-dialysis'); activateRibbon(this)"><i class="fas fa-filter"></i> Dialysis</button>
-            <button class="ribbon-btn" onclick="switchSection('sec-oxygen'); activateRibbon(this)"><i class="fas fa-wind"></i> Oxygen</button>
-            <button class="ribbon-btn" onclick="switchSection('sec-vent'); activateRibbon(this)"><i class="fas fa-lungs"></i> Ventilator</button>
-            <button class="ribbon-btn" onclick="switchSection('sec-blood'); activateRibbon(this)"><i class="fas fa-tint"></i> Blood</button>
-            <button class="ribbon-btn" onclick="switchSection('sec-nurse'); activateRibbon(this)"><i class="fas fa-user-nurse"></i> Nursing</button>
-            <button class="ribbon-btn" onclick="switchSection('sec-support'); activateRibbon(this)"><i class="fas fa-file-invoice-dollar"></i> Support</button>
-        </div>
+        
+        <div class="medication-layout">
+            <div class="medication-sidebar">
+                <div class="med-nav-item active" onclick="switchSection('sec-activity'); activateMedTab(this)">
+                    <div class="med-nav-icon"><i class="fas fa-file-medical"></i></div>
+                    <div class="med-nav-text"><span class="med-nav-title">Activity Record</span><span class="med-nav-desc">Admission & Status</span></div>
+                </div>
+                <div class="med-nav-item" onclick="switchSection('sec-transfer'); activateMedTab(this)">
+                    <div class="med-nav-icon"><i class="fas fa-exchange-alt"></i></div>
+                    <div class="med-nav-text"><span class="med-nav-title">Ward Transfer</span><span class="med-nav-desc">Patient movement</span></div>
+                </div>
+                <div class="med-nav-item" onclick="switchSection('sec-visits'); activateMedTab(this)">
+                    <div class="med-nav-icon"><i class="fas fa-stethoscope"></i></div>
+                    <div class="med-nav-text"><span class="med-nav-title">Doctor Visits</span><span class="med-nav-desc">Consultant logs</span></div>
+                </div>
+                <div class="med-nav-item" onclick="switchSection('sec-clinical'); activateMedTab(this)">
+                    <div class="med-nav-icon"><i class="fas fa-heartbeat"></i></div>
+                    <div class="med-nav-text"><span class="med-nav-title">Clinical Chart</span><span class="med-nav-desc">GRBS & Nebulization</span></div>
+                </div>
+                <div class="med-nav-item" onclick="switchSection('sec-dialysis'); activateMedTab(this)">
+                    <div class="med-nav-icon"><i class="fas fa-filter"></i></div>
+                    <div class="med-nav-text"><span class="med-nav-title">Dialysis</span><span class="med-nav-desc">Session records</span></div>
+                </div>
+                <div class="med-nav-item" onclick="switchSection('sec-oxygen'); activateMedTab(this)">
+                    <div class="med-nav-icon"><i class="fas fa-wind"></i></div>
+                    <div class="med-nav-text"><span class="med-nav-title">Oxygen</span><span class="med-nav-desc">Usage tracking</span></div>
+                </div>
+                <div class="med-nav-item" onclick="switchSection('sec-vent'); activateMedTab(this)">
+                    <div class="med-nav-icon"><i class="fas fa-lungs"></i></div>
+                    <div class="med-nav-text"><span class="med-nav-title">Ventilator</span><span class="med-nav-desc">Machine logs</span></div>
+                </div>
+                <div class="med-nav-item" onclick="switchSection('sec-blood'); activateMedTab(this)">
+                    <div class="med-nav-icon"><i class="fas fa-tint"></i></div>
+                    <div class="med-nav-text"><span class="med-nav-title">Blood Transfusion</span><span class="med-nav-desc">Bag tracking</span></div>
+                </div>
+                <div class="med-nav-item" onclick="switchSection('sec-nurse'); activateMedTab(this)">
+                    <div class="med-nav-icon"><i class="fas fa-user-nurse"></i></div>
+                    <div class="med-nav-text"><span class="med-nav-title">Nursing Notes</span><span class="med-nav-desc">Shift records</span></div>
+                </div>
+            </div>
+            
+            <div class="medication-content">
+
 
         <!-- Dynamic Workspace + Right Timeline -->
-        <div class="workspace-grid">
-            <div class="content-panels">
+        
                 
                 <!-- Section 1: Activity Record -->
                 <div id="sec-activity" class="section-container active">
@@ -362,7 +368,7 @@ if (empty($initials)) $initials = 'PT';
                 <!-- Section 2: Ward Transfer -->
                 <div id="sec-transfer" class="section-container">
                     <div class="section-header"><h2><i class="fas fa-exchange-alt"></i> Ward Transfer</h2><button class="btn-action" onclick="toggleForm('transfer-form')"><i class="fas fa-plus"></i> Add Transfer</button></div>
-                    <div id="transfer-form" class="entry-form-card">
+                    <div id="transfer-form" class="entry-form-card active">
                         <h4><i class="fas fa-random"></i> New Transfer</h4>
                         <div class="form-grid">
                             <div class="form-group"><label>Date & Time</label><input type="datetime-local" class="form-control"></div>
@@ -377,7 +383,7 @@ if (empty($initials)) $initials = 'PT';
                 <!-- Section 3: Consultant Visits -->
                 <div id="sec-visits" class="section-container">
                     <div class="section-header"><h2><i class="fas fa-stethoscope"></i> Consultant Visits</h2><button class="btn-action" onclick="toggleForm('visit-form')"><i class="fas fa-plus"></i> Log Visit</button></div>
-                    <div id="visit-form" class="entry-form-card">
+                    <div id="visit-form" class="entry-form-card active">
                         <h4><i class="fas fa-user-md"></i> Log Visit</h4>
                         <div class="form-grid">
                             <div class="form-group"><label>Date</label><input type="date" class="form-control" name="date"></div>
@@ -407,7 +413,7 @@ if (empty($initials)) $initials = 'PT';
                             <h3 style="margin:0; font-size:18px; color:var(--primary);">GRBS Chart</h3>
                             <button class="btn-action" onclick="toggleForm('grbs-form')"><i class="fas fa-plus"></i> Add GRBS</button>
                         </div>
-                        <div id="grbs-form" class="entry-form-card">
+                        <div id="grbs-form" class="entry-form-card active">
                             <div class="form-grid">
                                 <div class="form-group"><label>Date</label><input type="date" class="form-control" name="grbs_date"></div>
                                 <div class="form-group"><label>Time</label><input type="time" class="form-control" name="grbs_time"></div>
@@ -431,7 +437,7 @@ if (empty($initials)) $initials = 'PT';
                             <h3 style="margin:0; font-size:18px; color:var(--primary);">Nebulization Chart</h3>
                             <button class="btn-action" onclick="toggleForm('nebu-form')"><i class="fas fa-plus"></i> Add Nebulization</button>
                         </div>
-                        <div id="nebu-form" class="entry-form-card">
+                        <div id="nebu-form" class="entry-form-card active">
                             <div class="form-grid">
                                 <div class="form-group"><label>Date</label><input type="date" class="form-control" name="nebu_date"></div>
                                 <div class="form-group"><label>Time</label><input type="time" class="form-control" name="nebu_time"></div>
@@ -462,7 +468,7 @@ if (empty($initials)) $initials = 'PT';
                             <h3 style="margin:0; font-size:18px; color:var(--primary);">Dialysis Chart</h3>
                             <button class="btn-action" onclick="toggleForm('dialysis-form')"><i class="fas fa-plus"></i> Add Dialysis</button>
                         </div>
-                        <div id="dialysis-form" class="entry-form-card">
+                        <div id="dialysis-form" class="entry-form-card active">
                             <div class="form-grid">
                                 <div class="form-group"><label>Date</label><input type="date" class="form-control" name="dia_date"></div>
                                 <div class="form-group"><label>Connecting Time</label><input type="time" class="form-control time-calc-start" name="dia_start" onchange="calculateDuration(this)"></div>
@@ -491,7 +497,7 @@ if (empty($initials)) $initials = 'PT';
                             <h3 style="margin:0; font-size:18px; color:var(--primary);">Oxygen Chart</h3>
                             <button class="btn-action" onclick="toggleForm('oxy-form')"><i class="fas fa-plus"></i> Add Oxygen</button>
                         </div>
-                        <div id="oxy-form" class="entry-form-card">
+                        <div id="oxy-form" class="entry-form-card active">
                             <div class="form-grid">
                                 <div class="form-group"><label>Date</label><input type="date" class="form-control" name="oxy_date"></div>
                                 <div class="form-group"><label>Connecting Time</label><input type="time" class="form-control time-calc-start" name="oxy_start" onchange="calculateDuration(this)"></div>
@@ -520,7 +526,7 @@ if (empty($initials)) $initials = 'PT';
                             <h3 style="margin:0; font-size:18px; color:var(--primary);">Ventilation Chart</h3>
                             <button class="btn-action" onclick="toggleForm('vent-form')"><i class="fas fa-plus"></i> Add Ventilation</button>
                         </div>
-                        <div id="vent-form" class="entry-form-card">
+                        <div id="vent-form" class="entry-form-card active">
                             <div class="form-grid">
                                 <div class="form-group"><label>Date</label><input type="date" class="form-control" name="vent_date"></div>
                                 <div class="form-group"><label>Connecting Time</label><input type="time" class="form-control time-calc-start" name="vent_start" onchange="calculateDuration(this)"></div>
@@ -543,8 +549,13 @@ if (empty($initials)) $initials = 'PT';
 
                 <!-- Section: Nurses Record -->
                 <div id="sec-nurse" class="section-container">
-                    <div class="section-header"><h2><i class="fas fa-user-nurse"></i> Nurses Record</h2><button class="btn-action" onclick="toggleForm('nurse-form')"><i class="fas fa-plus"></i> Add Record</button></div>
-                    <div id="nurse-form" class="entry-form-card">
+                    <div class="section-header"><h2><i class="fas fa-user-nurse"></i> Nurses Record</h2></div>
+                    <div class="glass-card">
+                        <div class="section-header" style="border:none; padding:0; margin-bottom:15px;">
+                            <h3 style="margin:0; font-size:18px; color:var(--primary);">Nursing Notes</h3>
+                            <button class="btn-action" onclick="toggleForm('nurse-form')"><i class="fas fa-plus"></i> Add Record</button>
+                        </div>
+                        <div id="nurse-form" class="entry-form-card active">
                         <div class="form-grid">
                             <div class="form-group"><label>Date</label><input type="date" class="form-control" name="nurse_date"></div>
                             <div class="form-group"><label>Time</label><input type="time" class="form-control" name="nurse_time"></div>
@@ -560,13 +571,18 @@ if (empty($initials)) $initials = 'PT';
                             <tbody id="nurse-tbody"><tr><td colspan="6" style="text-align:center;">No records</td></tr></tbody>
                         </table>
                     </div>
+                    </div> <!-- end glass-card -->
                 </div>
-
 
                 <!-- Section: Blood Transfusion -->
                 <div id="sec-blood" class="section-container">
-                    <div class="section-header"><h2><i class="fas fa-tint"></i> Blood Transfusion Chart</h2><button class="btn-action" onclick="toggleForm('blood-form')"><i class="fas fa-plus"></i> Add Record</button></div>
-                    <div id="blood-form" class="entry-form-card">
+                    <div class="section-header"><h2><i class="fas fa-tint"></i> Blood Transfusion Chart</h2></div>
+                    <div class="glass-card">
+                        <div class="section-header" style="border:none; padding:0; margin-bottom:15px;">
+                            <h3 style="margin:0; font-size:18px; color:var(--primary);">Blood Transfusion</h3>
+                            <button class="btn-action" onclick="toggleForm('blood-form')"><i class="fas fa-plus"></i> Add Record</button>
+                        </div>
+                        <div id="blood-form" class="entry-form-card active">
                         <div class="form-grid">
                             <div class="form-group"><label>Date</label><input type="date" class="form-control" name="trans_date"></div>
                             <div class="form-group"><label>Blood Group</label><input type="text" class="form-control" name="blood_group"></div>
@@ -587,6 +603,7 @@ if (empty($initials)) $initials = 'PT';
                             </tbody>
                         </table>
                     </div>
+                    </div> <!-- end glass-card -->
                 </div>
 
                 <!-- Section: Support / Misc Charges -->
@@ -595,7 +612,7 @@ if (empty($initials)) $initials = 'PT';
                     <div class="glass-card">
                         <div class="subsection-title">Ambulance Charges</div>
                         <button class="btn-action" onclick="toggleForm('amb-form')" style="margin-bottom:15px;"><i class="fas fa-plus"></i> Add Ambulance</button>
-                        <div id="amb-form" class="entry-form-card">
+                        <div id="amb-form" class="entry-form-card active">
                             <div class="form-grid">
                                 <div class="form-group"><label>Date</label><input type="date" class="form-control" name="amb_date"></div>
                                 <div class="form-group"><label>Driver Name</label><input type="text" class="form-control" name="amb_driver"></div>
@@ -619,7 +636,7 @@ if (empty($initials)) $initials = 'PT';
                     <div class="glass-card" style="margin-top: 20px;">
                         <div class="subsection-title">Miscellaneous Charges</div>
                         <button class="btn-action" onclick="toggleForm('misc-form')" style="margin-bottom:15px;"><i class="fas fa-plus"></i> Add Charge</button>
-                        <div id="misc-form" class="entry-form-card">
+                        <div id="misc-form" class="entry-form-card active">
                             <div class="form-grid">
                                 <div class="form-group"><label>Date</label><input type="date" class="form-control" name="misc_date"></div>
                                 <div class="form-group"><label>Service Name</label><input type="text" class="form-control" name="misc_service"></div>
@@ -643,8 +660,47 @@ if (empty($initials)) $initials = 'PT';
 
 
         </div> <!-- End of workspace-grid -->
-    
-    <?php else: ?>
+            </div> <!-- end medication-content -->
+        </div> <!-- end medication-layout -->
+
+
+            </div> <!-- end medication-content -->
+        </div> <!-- end medication-layout -->
+ 
+            </div> <!-- end medication-content -->
+        </div> <!-- end medication-layout -->
+ 
+            </div> <!-- end medication-content -->
+        </div> <!-- end medication-layout -->
+ 
+            </div> <!-- end medication-content -->
+        </div> <!-- end medication-layout -->
+ 
+            </div> <!-- end medication-content -->
+        </div> <!-- end medication-layout -->
+
+
+            </div> <!-- end medication-content -->
+        </div> <!-- end medication-layout -->
+ 
+            </div> <!-- end medication-content -->
+        </div> <!-- end medication-layout -->
+ 
+            </div> <!-- end medication-content -->
+        </div> <!-- end medication-layout -->
+ 
+            </div> <!-- end medication-content -->
+        </div> <!-- end medication-layout -->
+ 
+            </div> <!-- end medication-content -->
+        </div> <!-- end medication-layout -->
+            </div> <!-- end medication-content -->
+        </div> <!-- end medication-layout -->
+
+
+            </div> <!-- end medication-content -->
+        </div> <!-- end medication-layout -->
+<?php else: ?>
         <div class="glass-card" style="text-align: center; padding: 60px 20px; margin-top: 30px;">
             <i class="fas fa-search-plus" style="font-size: 64px; color: var(--border); margin-bottom: 20px;"></i>
             <h2 style="color: var(--text-muted); font-size: 24px; font-weight: 800;">No Patient Selected</h2>
@@ -655,6 +711,12 @@ if (empty($initials)) $initials = 'PT';
 </div> <!-- End of main-layout -->
 
     <script>
+        
+        function activateMedTab(element) {
+            document.querySelectorAll('.med-nav-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+        }
+
         function activateRibbon(btn) {
             document.querySelectorAll('.ribbon-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
@@ -690,6 +752,7 @@ if (empty($initials)) $initials = 'PT';
 
 
 
+        const currentNurseName = "<?php echo addslashes($nurseName); ?>";
         function autoFillDateTime(container = document) {
             const now = new Date();
             // Format YYYY-MM-DD in local time
@@ -708,6 +771,15 @@ if (empty($initials)) $initials = 'PT';
             container.querySelectorAll('input[type="datetime-local"]').forEach(input => {
                 if (!input.value) input.value = localDateTime;
             });
+            // Auto fill nurse names
+            if (currentNurseName) {
+                container.querySelectorAll('input[type="text"]').forEach(input => {
+                    const name = input.getAttribute('name');
+                    if (name && (name.includes('_nurse') || name.includes('_sign') || name === 'nurse')) {
+                        if (!input.value) input.value = currentNurseName;
+                    }
+                });
+            }
         }
 
         async function loadExistingRecords() {
@@ -1018,10 +1090,12 @@ if (empty($initials)) $initials = 'PT';
         }
 
         function calculateDuration(element) {
-            const row = element.closest('tr');
-            const startInput = row.querySelector('.time-calc-start');
-            const endInput = row.querySelector('.time-calc-end');
-            const durInput = row.querySelector('.time-calc-dur');
+            let container = element.closest('.entry-form-card');
+            if(!container) container = element.closest('tr');
+            if(!container) return;
+            const startInput = container.querySelector('.time-calc-start');
+            const endInput = container.querySelector('.time-calc-end');
+            const durInput = container.querySelector('.time-calc-dur');
             
             if (startInput.value && endInput.value) {
                 const start = new Date(`1970-01-01T${startInput.value}:00`);

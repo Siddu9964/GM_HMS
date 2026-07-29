@@ -21,28 +21,33 @@ try {
     $stmt = $conn->prepare("
         SELECT * 
         FROM ipd_clinical_records 
-        WHERE patient_id = ? AND admission_id = ? AND record_date = ?
-        LIMIT 1
+        WHERE patient_id = ? AND admission_id = ?
+        ORDER BY record_date ASC
     ");
     
-    $stmt->bind_param("sss", $patientId, $admissionId, $date);
+    $stmt->bind_param("ss", $patientId, $admissionId);
     $stmt->execute();
     $result = $stmt->get_result();
     
+    $jsonColumns = [
+        'consultant_visits', 'lab_tests', 'radiology_tests', 'other_tests', 
+        'pharmacy_orders', 'pharmacy_returns', 'grbs_chart', 'nebulization_chart', 
+        'dialysis_chart', 'oxygen_chart', 'ventilation_chart', 'blood_transfusion_chart', 
+        'nurses_record', 'vitals', 'nursing_notes', 'procedures', 'billing_items', 'attachments'
+    ];
+    
+    // Initialize all arrays
     $records = [];
-    if ($row = $result->fetch_assoc()) {
-        $jsonColumns = [
-            'consultant_visits', 'lab_tests', 'radiology_tests', 'other_tests', 
-            'pharmacy_orders', 'pharmacy_returns', 'grbs_chart', 'nebulization_chart', 
-            'dialysis_chart', 'oxygen_chart', 'ventilation_chart', 'blood_transfusion_chart', 
-            'nurses_record', 'vitals', 'nursing_notes', 'procedures', 'billing_items', 'attachments'
-        ];
-        
+    foreach ($jsonColumns as $col) {
+        $records[$col] = [];
+    }
+
+    while ($row = $result->fetch_assoc()) {
         foreach ($jsonColumns as $col) {
             if (!empty($row[$col])) {
                 $decoded = json_decode($row[$col], true);
                 if (is_array($decoded)) {
-                    $records[$col] = $decoded;
+                    $records[$col] = array_merge($records[$col], $decoded);
                 }
             }
         }

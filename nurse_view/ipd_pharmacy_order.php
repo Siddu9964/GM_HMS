@@ -11,65 +11,16 @@ if (!isset($_SESSION['user_id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pharmacy Order - IPD</title>
-    <link rel="stylesheet" href="/GM_HMS/assets/css/gm-theme.css">
+    <link rel="stylesheet" href="/GM_HMS/assets/css/gm-theme.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-cream, #F3EFE6); margin: 0; color: #333; overflow-x: hidden; display: flex; }
-        .main-layout { display: flex; width: 100%; }
-        .content-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 100vh; padding: 20px; }
-        
-        @media (min-width: 1024px) {
-            .content-wrapper { margin-left: 185px; }
-        }
-        @media (max-width: 1023px) {
-            .content-wrapper { margin-left: 0; padding: 10px; }
-            .patient-card { flex-direction: column; gap: 10px; }
-        }
-
-        .top-navbar h2 { margin: 0; font-size: 1.5rem; color: #1F6B4A; display: flex; align-items: center; gap: 10px; }
-        
-        .glass-card { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-        
-        .search-container { position: relative; max-width: 600px; margin-bottom: 30px; }
-        .search-box { width: 100%; padding: 14px 20px 14px 45px; border-radius: 30px; border: 1px solid #ddd; font-size: 15px; box-sizing: border-box; outline: none; transition: border 0.3s, box-shadow 0.3s; }
-        .search-box:focus { border-color: #1F6B4A; box-shadow: 0 0 0 3px rgba(31,107,74,0.1); }
-        .search-icon { position: absolute; left: 18px; top: 16px; color: #888; font-size: 16px; }
-        
-        .suggestions-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border-radius: 10px; border: 1px solid #eee; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-top: 5px; z-index: 100; max-height: 350px; overflow-y: auto; display: none; }
-        .suggestion-item { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f5f5f5; cursor: pointer; transition: background 0.2s; }
-        .suggestion-item:last-child { border-bottom: none; }
-        .suggestion-item:hover { background: #f0f7f4; }
-        .suggestion-details strong { display: block; font-size: 15px; color: #222; }
-        .suggestion-details span { font-size: 12px; color: #666; display: block; margin-top:2px; }
-        .suggestion-price { text-align: right; }
-        .suggestion-price .stock { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #e0e7ff; color: #4338ca; font-weight: 600; display: inline-block; margin-bottom: 4px; }
-        .suggestion-price .price { font-weight: 600; color: #1F6B4A; font-size: 15px; }
-
-        .cart-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; }
-        .cart-table th { background: #f8f9fa; color: #555; padding: 12px 15px; text-align: left; font-weight: 600; font-size: 13px; text-transform: uppercase; border-bottom: 2px solid #ddd; }
-        .cart-table td { padding: 15px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        .cart-table tr:hover td { background: #fafafa; }
-        
-        .qty-input { width: 60px; padding: 6px; border: 1px solid #ddd; border-radius: 5px; text-align: center; }
-        .btn-remove { background: #fee2e2; color: #ef4444; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s; }
-        .btn-remove:hover { background: #fca5a5; color: white; }
-        
-        .cart-footer { display: flex; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 2px solid #eee; }
-        .total-amount { font-size: 1.5rem; font-weight: 700; color: #1F6B4A; }
-        .patient-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; display: flex; gap: 20px; margin-bottom: 25px; display: none; }
-        .patient-card div { flex: 1; }
-        .patient-card span { display: block; font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.5px; }
-        .patient-card strong { font-size: 16px; color: #0f172a; }
-        .btn-change-patient { background: #e2e8f0; color: #475569; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; height: fit-content; align-self: center; }
-        .btn-change-patient:hover { background: #cbd5e1; }
-    </style>
+    <link rel="stylesheet" href="/GM_HMS/assets/css/ipd_pharmacy_order.css?v=<?php echo time(); ?>">
 </head>
 <body>
 <div class="main-layout">
     <?php include 'includes/nurse_sidebar.php'; ?>
     
-    <div class="content-wrapper">
+    <div class="content-wrapper" style="flex: 1; display: block !important; overflow-x: hidden !important; overflow-y: auto !important; height: 100%;">
         <?php 
         $pageTitle = 'Pharmacy Order';
         include 'includes/nurse_navbar.php'; 
@@ -100,22 +51,24 @@ if (!isset($_SESSION['user_id'])) {
             </div>
             
             <h3 style="margin-top: 0; color: #444;">Order Items</h3>
-            <table class="cart-table" id="cartTable">
-                <thead>
-                    <tr>
-                        <th>Medicine</th>
-                        <th>Batch / Stock</th>
-                        <th>Qty</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="cartBody">
-                    <tr><td colspan="4" style="text-align:center; color:#888;">No items added yet. Search and click to add.</td></tr>
-                </tbody>
-            </table>
+            <div style="overflow-x: hidden; border: 1px solid #eee; border-radius: 8px;">
+                <table class="cart-table" id="cartTable" style="margin-top: 0;">
+                    <thead style="position: sticky; top: 0; z-index: 10;">
+                        <tr>
+                            <th>Medicine</th>
+                            <th>Batch / Stock</th>
+                            <th>Qty</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartBody">
+                        <tr><td colspan="4" style="text-align:center; color:#888;">No items added yet. Search and click to add.</td></tr>
+                    </tbody>
+                </table>
+            </div>
             
             <div class="cart-footer" style="justify-content: flex-end; align-items: center; display: flex; margin-top: 20px; padding-top: 20px; border-top: 2px solid #eee;">
-                <button class="btn-save" id="btnSave" onclick="saveOrder()" style="background: #1F6B4A; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: none;">
+                <button class="btn-save" id="btnSave" onclick="saveOrder()" style="background: #1f6b4a !important; color: #ffffff !important; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 700; text-shadow: none; cursor: pointer; display: none;">
                     <i class="fas fa-save" style="margin-right: 5px;"></i> Save Order
                 </button>
             </div>
@@ -401,6 +354,16 @@ if (!isset($_SESSION['user_id'])) {
                     showCenterMessage(true, 'Order Saved', 'Pharmacy order saved successfully!');
                     cart = [];
                     renderCart();
+                    
+                    // TRIGGER BILLING SYNC (REST API)
+                    fetch('/GM_HMS/api/payment/clinical-billing-sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            admission_id: currentPatient.admission_id,
+                            record_date: new Date().toISOString().split('T')[0]
+                        })
+                    }).catch(e => console.error('Billing sync failed:', e));
                 } else {
                     showCenterMessage(false, 'Error', data.message || 'Error saving order.');
                 }

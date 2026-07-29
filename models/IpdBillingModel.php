@@ -20,6 +20,102 @@ class IpdBillingModel {
         $this->db = SecureDatabase::getInstance();
     }
     
+    public function createBill($data) {
+     try {
+            $this->db->beginTransaction();
+            
+            $billId = $this->generateBillId();
+            $admissionId = $data['admission_id'];
+            
+            $subtotal = 0;
+            if (isset($data['items']) && is_array($data['items'])) {
+                foreach ($data['items'] as $item) {
+                    $subtotal += ($item['quantity'] * $item['unit_price']);
+                }
+            }
+            
+            $discountAmt = $data['discount_amount'] ?? 0;
+            $grandTotal = $subtotal - $discountAmt;
+            if ($grandTotal < 0) $grandTotal = 0;
+            
+            $amountPaid = 0;
+            if (!empty($data['payment']) && isset($data['payment']['amount'])) {
+                $amountPaid = $data['payment']['amount'];
+            }
+            
+            $balanceDue = max(0, $grandTotal - $amountPaid);
+            $paymentStatus = 'Unpaid';
+            if ($amountPaid >= $grandTotal && $grandTotal > 0) $paymentStatus = 'Paid';
+            elseif ($amountPaid > 0) $paymentStatus = 'Partial';
+            
+            $admSql = "SELECT admission_date FROM ipd_admissions WHERE admission_id = ?";
+            $admission = $this->db->fetchOne($admSql, [$admissionId]);
+            $admissionDate = $admission['admission_date'] ?? date('Y-m-d');
+            
+            $sql = "INSERT INTO ipd_billing_master (
+                        bill_id, admission_id, patient_id, doctor_id, admission_date,
+                        subtotal, discount_amount, discount_percentage,
+                        grand_total, amount_paid, balance_due, payment_status,
+                        notes, created_by, payment_mode, referral_type, referred_by, sponsor
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    
+            $this->db->execute($sql, [
+                $billId,
+                $admissionId,
+                $data['patient_id'],
+                $data['doctor_id'] ?? null,
+                $admissionDate,
+                $subtotal,
+                $discountAmt,
+                $data['discount_percentage'] ?? 0,
+                $grandTotal,
+                $amountPaid,
+                $balanceDue,
+                $paymentStatus,
+                $data['remarks'] ?? $data['notes'] ?? null,
+                $_SESSION['user_id'] ?? 'system',
+                $data['payment']['payment_mode'] ?? null,
+                $data['referral_type'] ?? null,
+                $data['referred_by'] ?? null,
+                $data['sponsor'] ?? null
+            ]);
+            
+            if (isset($data['items']) && is_array($data['items'])) {
+                foreach ($data['items'] as $item) {
+                    $this->addDailyCharge($billId, [
+                        'charge_type' => $item['item_type'],
+                        'item_code' => $item['item_code'] ?? null,
+                        'item_name' => $item['item_name'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'is_taxable' => $item['is_taxable'] ?? 0,
+                        'tax_percentage' => $item['tax_percentage'] ?? 0,
+                        'discount_amount' => $item['discount_amount'] ?? 0,
+                        'payment_mode' => $data['payment']['payment_mode'] ?? null
+                    ]);
+                }
+            }
+            
+            $receiptId = null;
+            if ($amountPaid > 0) {
+                // recordPayment updates the master table balances
+                $receiptId = $this->recordPayment($billId, [
+                    'amount' => $amountPaid,
+                    'payment_method' => $data['payment']['payment_mode'] ?? 'Cash',
+                    'transaction_id' => $data['payment']['reference_no'] ?? null,
+                    'notes' => 'Initial payment'
+                ]);
+            }
+            
+            $this->db->commit();
+            return ['bill_id' => $billId, 'receipt_id' => $receiptId];
+            
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw new Exception("Failed to generate IPD bill: " . $e->getMessage());
+        }
+    }
+    
     /**
      * Create IPD bill for admission
      * 
@@ -45,8 +141,8 @@ class IpdBillingModel {
             // Insert bill master
             $sql = "INSERT INTO ipd_billing_master (
                         bill_id, admission_id, patient_id, doctor_id,
-                        admission_date, created_by
-                    ) VALUES (?, ?, ?, ?, ?, ?)";
+                        admission_date, created_by, referral_type, referred_by, sponsor
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             
             $this->db->execute($sql, [
                 $billId,
@@ -54,7 +150,10 @@ class IpdBillingModel {
                 $admission['patient_id'],
                 $admission['doctor_id'],
                 $admission['admission_date'],
-                $billData['created_by'] ?? $_SESSION['user_id']
+                $billData['created_by'] ?? ($_SESSION['user_id'] ?? 'system'),
+                $billData['referral_type'] ?? null,
+                $billData['referred_by'] ?? null,
+                $billData['sponsor'] ?? null
             ]);
             
             // Log action
@@ -81,31 +180,78 @@ class IpdBillingModel {
         $unitPrice = $charge['unit_price'];
         $totalPrice = $quantity * $unitPrice;
         
-        $sql = "INSERT INTO ipd_billing_items (
-                    bill_id, charge_date, charge_type, item_code, item_name, item_description,
-                    quantity, unit_price, total_price, is_taxable, tax_percentage, 
-                    discount_amount, created_by
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $allowedTypes = ['Room', 'Procedure', 'Medication', 'Investigation', 'Nursing', 'Consumable', 'Other'];
+        $incomingType = $charge['charge_type'] ?? 'Other';
+        $mappedType = 'Other';
         
-        $this->db->execute($sql, [
-            $billId,
-            $charge['charge_date'] ?? date('Y-m-d'),
-            $charge['charge_type'],
-            $charge['item_code'] ?? null,
-            $charge['item_name'],
-            $charge['item_description'] ?? null,
-            $quantity,
-            $unitPrice,
-            $totalPrice,
-            $charge['is_taxable'] ?? true,
-            $charge['tax_percentage'] ?? 18.00,
-            $charge['discount_amount'] ?? 0.00,
-            $charge['created_by'] ?? $_SESSION['user_id']
-        ]);
+        if (in_array($incomingType, $allowedTypes)) {
+            $mappedType = $incomingType;
+        } else {
+            $t = strtolower($incomingType);
+            if (strpos($t, 'medicine') !== false || strpos($t, 'drug') !== false) {
+                $mappedType = 'Medication';
+            } elseif (strpos($t, 'investigation') !== false || strpos($t, 'lab') !== false || strpos($t, 'blood') !== false || strpos($t, 'scan') !== false || strpos($t, 'x-ray') !== false || strpos($t, 'x ray') !== false || strpos($t, 'radiology') !== false) {
+                $mappedType = 'Investigation';
+            } elseif (strpos($t, 'procedure') !== false || strpos($t, 'surgery') !== false) {
+                $mappedType = 'Procedure';
+            }
+        }
+
+        $chargeDate = $charge['charge_date'] ?? date('Y-m-d');
         
-        $itemId = $this->db->lastInsertId();
+        // Fetch patient_id and admission_id from master table
+        $masterSql = "SELECT patient_id, admission_id FROM ipd_billing_master WHERE bill_id = ?";
+        $masterData = $this->db->fetchOne($masterSql, [$billId]);
+        $patientId = $masterData['patient_id'] ?? null;
+        $admissionId = $masterData['admission_id'] ?? null;
+
+        $newItem = [
+            'charge_type' => $mappedType,
+            'item_code' => $charge['item_code'] ?? null,
+            'item_name' => $charge['item_name'],
+            'quantity' => $quantity,
+            'unit_price' => (float)$unitPrice,
+            'total_price' => (float)$totalPrice,
+            'discount_amount' => (float)($charge['discount_amount'] ?? 0.00),
+            'is_taxable' => $charge['is_taxable'] ?? 0,
+            'tax_percentage' => (float)($charge['tax_percentage'] ?? 0),
+            'payment_mode' => $charge['payment_mode'] ?? null
+        ];
+
+        // Check if there is already a row for this date
+        $checkSql = "SELECT item_id, items_json FROM ipd_billing_items WHERE bill_id = ? AND charge_date = ?";
+        $existing = $this->db->fetchOne($checkSql, [$billId, $chargeDate]);
+
+        if ($existing) {
+            $itemsArray = [];
+            if (!empty($existing['items_json'])) {
+                $itemsArray = json_decode($existing['items_json'], true) ?: [];
+            }
+            $itemsArray[] = $newItem;
+            $itemsJson = json_encode($itemsArray);
+            
+            $updateSql = "UPDATE ipd_billing_items SET items_json = ? WHERE item_id = ?";
+            $this->db->execute($updateSql, [$itemsJson, $existing['item_id']]);
+            $itemId = $existing['item_id'];
+        } else {
+            $itemsArray = [$newItem];
+            $itemsJson = json_encode($itemsArray);
+            
+            $insertSql = "INSERT INTO ipd_billing_items (
+                            bill_id, patient_id, admission_id, charge_date, items_json, created_by
+                        ) VALUES (?, ?, ?, ?, ?, ?)";
+            
+            $execResult = $this->db->execute($insertSql, [
+                $billId,
+                $patientId,
+                $admissionId,
+                $chargeDate,
+                $itemsJson,
+                $charge['created_by'] ?? ($_SESSION['user_id'] ?? 'system')
+            ]);
+            $itemId = $execResult['insert_id'] ?? 0;
+        }
         
-        // Recalculate totals
         $this->calculateTotals($billId);
         
         return $itemId;
@@ -141,16 +287,6 @@ class IpdBillingModel {
         $bed = $this->db->fetchOne($bedSql, [$bill['bed_id']]);
         
         // Get room charge from service catalog
-        $roomType = $bed['room_type'];
-        $serviceCode = $this->getRoomServiceCode($roomType);
-        
-        $serviceSql = "SELECT * FROM billing_service_catalog WHERE service_code = ?";
-        $service = $this->db->fetchOne($serviceSql, [$serviceCode]);
-        
-        if (!$service) {
-            return 0;
-        }
-        
         // Calculate date range
         $startDate = $fromDate ?? $bill['admission_date'];
         $endDate = $toDate ?? date('Y-m-d');
@@ -165,11 +301,22 @@ class IpdBillingModel {
         }
         
         // Check if charges already exist
-        $checkSql = "SELECT COUNT(*) as count FROM ipd_billing_items 
-                     WHERE bill_id = ? AND charge_type = 'Room' AND charge_date BETWEEN ? AND ?";
-        $existing = $this->db->fetchOne($checkSql, [$billId, $startDate, $endDate]);
+        $checkSql = "SELECT items_json FROM ipd_billing_items 
+                     WHERE bill_id = ? AND charge_date BETWEEN ? AND ?";
+        $rows = $this->db->fetchAll($checkSql, [$billId, $startDate, $endDate]);
         
-        if ($existing['count'] > 0) {
+        $count = 0;
+        foreach ($rows as $row) {
+            $items = json_decode($row['items_json'], true) ?: [];
+            foreach ($items as $item) {
+                if (($item['charge_type'] ?? '') === 'Room') {
+                    $count++;
+                    break;
+                }
+            }
+        }
+        
+        if ($count > 0) {
             return 0; // Already calculated
         }
         
@@ -177,17 +324,19 @@ class IpdBillingModel {
         $chargesAdded = 0;
         $currentDate = clone $start;
         
+        $bedAmount = $bed['total_bed_amount'] ?? $bed['amount_per_day'] ?? 0;
+        
         while ($currentDate <= $end) {
             $this->addDailyCharge($billId, [
                 'charge_date' => $currentDate->format('Y-m-d'),
                 'charge_type' => 'Room',
-                'item_code' => $service['service_code'],
-                'item_name' => $service['service_name'] . " - " . $bed['room_number'],
+                'item_code' => $this->getRoomServiceCode($bed['room_type']),
+                'item_name' => "Room charge - " . $bed['room_number'],
                 'item_description' => "Room charge for {$bed['room_type']} - Bed {$bed['bed_number']}",
                 'quantity' => 1,
-                'unit_price' => $service['unit_price'],
-                'is_taxable' => $service['is_taxable'],
-                'tax_percentage' => $service['tax_percentage']
+                'unit_price' => $bedAmount,
+                'is_taxable' => 0,
+                'tax_percentage' => 0
             ]);
             
             $chargesAdded++;
@@ -272,15 +421,10 @@ class IpdBillingModel {
      * @return array Calculated totals
      */
     public function calculateTotals($billId) {
-        // Get all items grouped by charge type
-        $sql = "SELECT charge_type, 
-                       SUM(total_price - discount_amount) as category_total,
-                       SUM(CASE WHEN is_taxable THEN (total_price - discount_amount) * tax_percentage / 100 ELSE 0 END) as category_tax
-                FROM ipd_billing_items 
-                WHERE bill_id = ? 
-                GROUP BY charge_type";
+        // Get all items grouped by charge type from json arrays
+        $sql = "SELECT items_json FROM ipd_billing_items WHERE bill_id = ?";
         
-        $categories = $this->db->fetchAll($sql, [$billId]);
+        $rows = $this->db->fetchAll($sql, [$billId]);
         
         $roomCharges = 0;
         $procedureCharges = 0;
@@ -291,32 +435,40 @@ class IpdBillingModel {
         $otherCharges = 0;
         $totalTax = 0;
         
-        foreach ($categories as $cat) {
-            $amount = $cat['category_total'];
-            $tax = $cat['category_tax'];
-            $totalTax += $tax;
-            
-            switch ($cat['charge_type']) {
-                case 'Room':
-                    $roomCharges = $amount;
-                    break;
-                case 'Procedure':
-                    $procedureCharges = $amount;
-                    break;
-                case 'Medication':
-                    $medicationCharges = $amount;
-                    break;
-                case 'Investigation':
-                    $investigationCharges = $amount;
-                    break;
-                case 'Nursing':
-                    $nursingCharges = $amount;
-                    break;
-                case 'Consumable':
-                    $consumableCharges = $amount;
-                    break;
-                default:
-                    $otherCharges += $amount;
+        foreach ($rows as $row) {
+            $items = json_decode($row['items_json'], true) ?: [];
+            foreach ($items as $item) {
+                $amount = (float)($item['total_price'] ?? 0) - (float)($item['discount_amount'] ?? 0);
+                
+                $isTaxable = !empty($item['is_taxable']);
+                $taxPercentage = (float)($item['tax_percentage'] ?? 0);
+                if ($isTaxable && $taxPercentage > 0) {
+                    $totalTax += ($amount * $taxPercentage / 100);
+                }
+                
+                $type = $item['charge_type'] ?? 'Other';
+                switch ($type) {
+                    case 'Room':
+                        $roomCharges += $amount;
+                        break;
+                    case 'Procedure':
+                        $procedureCharges += $amount;
+                        break;
+                    case 'Medication':
+                        $medicationCharges += $amount;
+                        break;
+                    case 'Investigation':
+                        $investigationCharges += $amount;
+                        break;
+                    case 'Nursing':
+                        $nursingCharges += $amount;
+                        break;
+                    case 'Consumable':
+                        $consumableCharges += $amount;
+                        break;
+                    default:
+                        $otherCharges += $amount;
+                }
             }
         }
         
@@ -335,35 +487,25 @@ class IpdBillingModel {
         $taxableAmount = $subtotal - $billDiscount;
         $grandTotal = $taxableAmount + $totalTax;
         
-        // Update bill master
+        // Update bill master (only columns that exist in the schema)
         $updateSql = "UPDATE ipd_billing_master SET 
                         room_charges = ?,
-                        procedure_charges = ?,
-                        medication_charges = ?,
-                        investigation_charges = ?,
-                        nursing_charges = ?,
                         consumable_charges = ?,
                         other_charges = ?,
                         subtotal = ?,
                         discount_amount = ?,
-                        taxable_amount = ?,
-                        tax_amount = ?,
                         grand_total = ?,
-                        balance_due = grand_total - amount_paid
+                        balance_due = CASE WHEN (grand_total - amount_paid) < 0 THEN 0 ELSE (grand_total - amount_paid) END
                       WHERE bill_id = ?";
         
         $this->db->execute($updateSql, [
             $roomCharges,
-            $procedureCharges,
-            $medicationCharges,
-            $investigationCharges,
-            $nursingCharges,
             $consumableCharges,
-            $otherCharges,
+            // Roll procedure, medication, investigation, nursing and tax into other_charges if needed, 
+            // but actually we just sum the rest as other_charges for the DB column
+            $procedureCharges + $medicationCharges + $investigationCharges + $nursingCharges + $otherCharges + $totalTax,
             $subtotal,
             $billDiscount,
-            $taxableAmount,
-            $totalTax,
             $grandTotal,
             $billId
         ]);
@@ -402,7 +544,7 @@ class IpdBillingModel {
             
             $amount = $paymentData['amount'];
             $newAmountPaid = $bill['amount_paid'] + $amount;
-            $balanceDue = $bill['grand_total'] - $newAmountPaid;
+            $balanceDue = max(0, $bill['grand_total'] - $newAmountPaid);
             
             // Determine payment status
             if ($balanceDue <= 0) {
@@ -437,7 +579,7 @@ class IpdBillingModel {
                 $paymentData['bank_name'] ?? null,
                 $paymentData['insurance_company'] ?? null,
                 $paymentData['insurance_claim_number'] ?? null,
-                $paymentData['received_by'] ?? $_SESSION['user_id'],
+                $paymentData['received_by'] ?? ($_SESSION['user_id'] ?? 'system'),
                 $paymentData['notes'] ?? null
             ]);
             
@@ -486,11 +628,26 @@ class IpdBillingModel {
             throw new Exception("Bill not found");
         }
         
-        // Get items grouped by date
+        // Get items grouped by date and flatten them
         $itemsSql = "SELECT * FROM ipd_billing_items 
                      WHERE bill_id = ? 
-                     ORDER BY charge_date DESC, charge_type, item_id";
-        $items = $this->db->fetchAll($itemsSql, [$billId]);
+                     ORDER BY charge_date DESC";
+        $dbItems = $this->db->fetchAll($itemsSql, [$billId]);
+        
+        $items = [];
+        foreach ($dbItems as $dbItem) {
+            $jsonItems = [];
+            if (!empty($dbItem['items_json'])) {
+                $jsonItems = json_decode($dbItem['items_json'], true) ?: [];
+            }
+            foreach ($jsonItems as $jItem) {
+                $jItem['item_id'] = $dbItem['item_id'];
+                $jItem['bill_id'] = $dbItem['bill_id'];
+                $jItem['charge_date'] = $dbItem['charge_date'];
+                $jItem['created_by'] = $dbItem['created_by'];
+                $items[] = $jItem;
+            }
+        }
         
         // Get payments
         $paymentsSql = "SELECT * FROM payment_receipts 
@@ -531,7 +688,14 @@ class IpdBillingModel {
      * @return array List of bills
      */
     public function getAllBills($filters = []) {
-        $sql = "SELECT * FROM v_ipd_billing_summary WHERE 1=1";
+        $sql = "SELECT ibm.*, 
+                       CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
+                       CONCAT(p.first_name, ' ', p.last_name) AS name,
+                       d.full_name AS doctor_name
+                FROM ipd_billing_master ibm
+                LEFT JOIN patient p ON ibm.patient_id = p.patient_id
+                LEFT JOIN doctors d ON ibm.doctor_id = d.doctor_id
+                WHERE 1=1";
         $params = [];
         
         if (!empty($filters['payment_status'])) {

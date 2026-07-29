@@ -1,0 +1,119 @@
+﻿    private function sync24HourCharges(string $billId, string $user): void {
+        $data = $this->fetchOne(
+            "SELECT bm.admission_id, ia.admission_date, ia.admission_time, ia.discharge_date, ia.discharge_time, 
+                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.service_charge
+             FROM ipd_billing_master bm
+             JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
+             LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
+             WHERE bm.bill_id = ?",
+            [$billId]
+        );
+        
+        if (!$data || empty($data['admission_date'])) return;
+        
+        $admTime = empty($data['admission_time']) ? '00:00:00' : $data['admission_time'];
+        $admStr = $data['admission_date'] . ' ' . $admTime;
+        $admTimestamp = strtotime($admStr);
+        if (!$admTimestamp) return;
+        
+        if (!empty($data['discharge_date'])) {
+            $disTime = empty($data['discharge_time']) ? '23:59:59' : $data['discharge_time'];
+            $endStr = $data['discharge_date'] . ' ' . $disTime;
+            $endTimestamp = strtotime($endStr);
+        } else {
+            $endTimestamp = time();
+        }
+        
+        $secondsElapsed = $endTimestamp - $admTimestamp;
+        if ($secondsElapsed < 0) $secondsElapsed = 0;
+        
+        // 1st charge at admission (0 hours). 2nd charge at 24 hours. 3rd charge at 48 hours.
+        $blocks = (int)floor($secondsElapsed / 86400) + 1;
+        
+        for ($i = 0; $i < $blocks; $i++) {
+            $chargeDate = date('Y-m-d', $admTimestamp + ($i * 86400));
+            
+            $exists = $this->fetchOne(
+                "SELECT item_id FROM ipd_billing_items WHERE bill_id = ? AND charge_date = ? AND charge_type = 'ROOM_RENT' AND status != 'CANCELLED'",
+                [$billId, $chargeDate]
+            );
+            
+            if (!$exists) {
+                // Room Rent
+                $this->db->insert('ipd_billing_items', [
+                    'bill_id' => $billId,
+                    'charge_date' => $chargeDate,
+                    'charge_type' => 'ROOM_RENT',
+                    'item_name' => 'Room Rent',
+                    'quantity' => 1,
+                    'unit_price' => (float)($data['amount_per_day'] ?? 0),
+                    'total_amount' => (float)($data['amount_per_day'] ?? 0),
+                    'status' => 'BILLED',
+                    'created_by' => $user,
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+                
+                // Nursing
+                if ((float)($data['nursig_charge'] ?? 0) > 0) {
+                    $this->db->insert('ipd_billing_items', [
+                        'bill_id' => $billId,
+                        'charge_date' => $chargeDate,
+                        'charge_type' => 'OTHER',
+                        'item_name' => 'Nursing Charges',
+                        'quantity' => 1,
+                        'unit_price' => (float)$data['nursig_charge'],
+                        'total_amount' => (float)$data['nursig_charge'],
+                        'status' => 'BILLED',
+                        'created_by' => $user,
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                }
+                
+                // Doctor Visit
+                if ((float)($data['doctor_charge'] ?? 0) > 0) {
+                    $this->db->insert('ipd_billing_items', [
+                        'bill_id' => $billId,
+                        'charge_date' => $chargeDate,
+                        'charge_type' => 'DOCTOR_VISIT',
+                        'item_name' => 'Duty Doctor Charges',
+                        'quantity' => 1,
+                        'unit_price' => (float)$data['doctor_charge'],
+                        'total_amount' => (float)$data['doctor_charge'],
+                        'status' => 'BILLED',
+                        'created_by' => $user,
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                }
+                
+                // Service Charge
+                if ((float)($data['service_charge'] ?? 0) > 0) {
+                    $this->db->insert('ipd_billing_items', [
+                        'bill_id' => $billId,
+                        'charge_date' => $chargeDate,
+                        'charge_type' => 'OTHER',
+                        'item_name' => 'Service Charges',
+                        'quantity' => 1,
+                        'unit_price' => (float)$data['service_charge'],
+                        'total_amount' => (float)$data['service_charge'],
+                        'status' => 'BILLED',
+                        'created_by' => $user,
+                        'created_at' => date('Y-m-d H:i:s')
+                    ]);
+                }
+                
+                // Food
+                $this->db->insert('ipd_billing_items', [
+                    'bill_id' => $billId,
+                    'charge_date' => $chargeDate,
+                    'charge_type' => 'OTHER',
+                    'item_name' => 'Food Charges',
+                    'quantity' => 1,
+                    'unit_price' => 570.00,
+                    'total_amount' => 570.00,
+                    'status' => 'BILLED',
+                    'created_by' => $user,
+                    'created_at' => date('Y-m-d H:i:s')
+                ]);
+            }
+        }
+    }

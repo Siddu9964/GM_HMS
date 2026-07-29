@@ -25,7 +25,7 @@ class NurseClinicalModel {
      */
     public function appendToDailyRecord($patientId, $admissionId, $columnName, $itemData, $nurseId) {
         $validColumns = [
-            'doctor_visits', 'lab_tests', 'radiology_tests', 'other_tests',
+            'doctor_visits', 'lab_tests', 'lab_tests_id', 'radiology_tests', 'radiology_test_id', 'other_tests', 'other_test_id',
             'pharmacy_orders', 'pharmacy_returns', 'nursing_notes', 
             'vitals', 'medications', 'grbs_records', 'procedures', 'billing_items'
         ];

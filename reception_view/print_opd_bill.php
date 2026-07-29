@@ -151,7 +151,10 @@ const HOSPITAL_BRANCH = '<?= addslashes($_SESSION["hospital_branch"] ?? "Nagarab
 
 async function loadBill() {
     try {
-        const res  = await fetch(`/GM_HMS/api/index.php/api/billing/opd/${encodeURIComponent(BILL_ID)}`, { credentials: 'same-origin' });
+        const isIpd = BILL_ID.startsWith('IPD');
+        const endpoint = isIpd ? `/GM_HMS/api/index.php/api/billing/ipd/${encodeURIComponent(BILL_ID)}` : `/GM_HMS/api/index.php/api/billing/opd/${encodeURIComponent(BILL_ID)}`;
+        
+        const res  = await fetch(endpoint, { credentials: 'same-origin' });
         const json = await res.json();
         if (!json.success) throw new Error(json.message || 'Not found');
         renderBill(json.data);

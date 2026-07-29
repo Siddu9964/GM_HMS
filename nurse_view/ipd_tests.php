@@ -11,49 +11,10 @@ if (!isset($_SESSION['user_id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tests Order - IPD</title>
-    <link rel="stylesheet" href="/GM_HMS/assets/css/gm-theme.css">
+    <link rel="stylesheet" href="/GM_HMS/assets/css/gm-theme.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-cream, #F3EFE6); margin: 0; color: #333; overflow-x: hidden; display: flex; width: 100%; }
-        .main-layout { display: flex; width: 100%; }
-        .content-wrapper { flex: 1; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        .top-navbar { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.7); backdrop-filter: blur(20px); border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .top-navbar h2 { margin: 0; font-size: 1.5rem; color: #1F6B4A; display: flex; align-items: center; gap: 10px; }
-        
-        .glass-card { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-        
-        .search-container { position: relative; max-width: 600px; margin-bottom: 30px; }
-        .search-box { width: 100%; padding: 14px 20px 14px 45px; border-radius: 30px; border: 1px solid #ddd; font-size: 15px; box-sizing: border-box; outline: none; transition: border 0.3s, box-shadow 0.3s; }
-        .search-box:focus { border-color: #1F6B4A; box-shadow: 0 0 0 3px rgba(31,107,74,0.1); }
-        .search-icon { position: absolute; left: 18px; top: 16px; color: #888; font-size: 16px; }
-        
-        .suggestions-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border-radius: 10px; border: 1px solid #eee; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-top: 5px; z-index: 100; max-height: 350px; overflow-y: auto; display: none; }
-        .suggestion-item { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f5f5f5; cursor: pointer; transition: background 0.2s; }
-        .suggestion-item:last-child { border-bottom: none; }
-        .suggestion-item:hover { background: #f0f7f4; }
-        .suggestion-details strong { display: block; font-size: 15px; color: #222; }
-        .suggestion-details span { font-size: 12px; color: #666; }
-        .suggestion-price { font-weight: 600; color: #1F6B4A; }
-
-        .cart-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; }
-        .cart-table th { background: #f8f9fa; color: #555; padding: 12px 15px; text-align: left; font-weight: 600; font-size: 13px; text-transform: uppercase; border-bottom: 2px solid #ddd; }
-        .cart-table td { padding: 15px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        .cart-table tr:hover td { background: #fafafa; }
-        
-        .qty-input { width: 60px; padding: 6px; border: 1px solid #ddd; border-radius: 5px; text-align: center; }
-        .btn-remove { background: #fee2e2; color: #ef4444; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s; }
-        .btn-remove:hover { background: #fca5a5; color: white; }
-        
-        .cart-footer { display: flex; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 2px solid #eee; }
-        .total-amount { font-size: 1.5rem; font-weight: 700; color: #1F6B4A; }
-        .patient-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; display: flex; gap: 20px; margin-bottom: 25px; display: none; }
-        .patient-card div { flex: 1; }
-        .patient-card span { display: block; font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.5px; }
-        .patient-card strong { font-size: 16px; color: #0f172a; }
-        .btn-change-patient { background: #e2e8f0; color: #475569; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; height: fit-content; align-self: center; }
-        .btn-change-patient:hover { background: #cbd5e1; }
-    </style>
+    <link rel="stylesheet" href="/GM_HMS/assets/css/ipd_tests.css?v=<?php echo time(); ?>">
 </head>
 <body>
 <div class="main-layout">
@@ -90,24 +51,47 @@ if (!isset($_SESSION['user_id'])) {
             </div>
             
             <h3 style="margin-top: 0; color: #444;">Selected Tests</h3>
-            <table class="cart-table" id="cartTable">
-                <thead>
-                    <tr>
-                        <th>Test Name</th>
-                        <th>Category</th>
-                        <th>Qty</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="cartBody">
-                    <tr><td colspan="4" style="text-align:center; color:#888;">No tests selected yet. Search and click to add.</td></tr>
-                </tbody>
-            </table>
+            <div style="overflow-x: hidden; border: 1px solid #eee; border-radius: 8px;">
+                <table class="cart-table" id="cartTable" style="margin-top: 0;">
+                    <thead style="position: sticky; top: 0; z-index: 10;">
+                        <tr>
+                            <th>Test Name</th>
+                            <th>Category</th>
+                            <th>Qty</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartBody">
+                        <tr><td colspan="4" style="text-align:center; color:#888;">No tests selected yet. Search and click to add.</td></tr>
+                    </tbody>
+                </table>
+            </div>
             
             <div class="cart-footer" style="justify-content: flex-end; align-items: center; display: flex; margin-top: 20px; padding-top: 20px; border-top: 2px solid #eee;">
                 <button class="btn-save" id="btnSave" onclick="saveOrder()" style="background: #1F6B4A; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: none;">
                     <i class="fas fa-save" style="margin-right: 5px;"></i> Save Order
                 </button>
+            </div>
+        </div>
+
+        <!-- Assigned Tests History Section -->
+        <div class="glass-card" id="assignedTestsSection" style="display: none; margin-top: 20px;">
+            <h3 style="margin-top: 0; color: #444; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">Assigned Tests History</h3>
+            <div style="overflow-x: auto; border: 1px solid #eee; border-radius: 8px;">
+                <table class="cart-table" style="margin-top: 0;">
+                    <thead style="position: sticky; top: 0; background-color: #f8f9fa;">
+                        <tr>
+                            <th>Date</th>
+                            <th>Test Name</th>
+                            <th>Category</th>
+                            <th>Qty</th>
+                            <th>Assigned By</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assignedTestsBody">
+                        <tr><td colspan="5" style="text-align:center; color:#888;">Loading assigned tests...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -189,6 +173,9 @@ if (!isset($_SESSION['user_id'])) {
             document.getElementById('patientSearchSection').style.display = 'none';
             document.getElementById('patientInfoCard').style.display = 'flex';
             document.getElementById('testOrderSection').style.display = 'block';
+            document.getElementById('assignedTestsSection').style.display = 'block';
+            
+            fetchAssignedTests(p.patient_id, p.admission_id);
         }
         
         function changePatient() {
@@ -196,9 +183,105 @@ if (!isset($_SESSION['user_id'])) {
             document.getElementById('patientSearchSection').style.display = 'block';
             document.getElementById('patientInfoCard').style.display = 'none';
             document.getElementById('testOrderSection').style.display = 'none';
+            document.getElementById('assignedTestsSection').style.display = 'none';
             // Optional: clear cart when changing patient?
             cart = [];
             renderCart();
+        }
+
+        function fetchAssignedTests(patientId, admissionId) {
+            const tbody = document.getElementById('assignedTestsBody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#888;"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+            
+            fetch(`api/get_clinical_records.php?patient_id=${patientId}&admission_id=${admissionId}`)
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success && res.data) {
+                        const data = res.data;
+                        let allTests = [];
+                        
+                        // Parse Lab Tests
+                        if (data.lab_tests && Array.isArray(data.lab_tests)) {
+                            data.lab_tests.forEach(t => {
+                                const info = t.data || t;
+                                allTests.push({
+                                    date: t.created_date || (t.data ? t.data.created_date : 'N/A'),
+                                    name: info.name || info.test_name,
+                                    category: 'LAB',
+                                    qty: info.qty || info.quantity || 1,
+                                    by: t.created_by || (t.data ? t.data.created_by : 'N/A')
+                                });
+                            });
+                        }
+                        // Parse Radiology Tests
+                        if (data.radiology_tests && Array.isArray(data.radiology_tests)) {
+                            data.radiology_tests.forEach(t => {
+                                const info = t.data || t;
+                                allTests.push({
+                                    date: t.created_date || (t.data ? t.data.created_date : 'N/A'),
+                                    name: info.name || info.test_name,
+                                    category: 'RADIOLOGY',
+                                    qty: info.qty || info.quantity || 1,
+                                    by: t.created_by || (t.data ? t.data.created_by : 'N/A')
+                                });
+                            });
+                        }
+                        // Parse Other Tests
+                        if (data.other_tests && Array.isArray(data.other_tests)) {
+                            data.other_tests.forEach(t => {
+                                const info = t.data || t;
+                                allTests.push({
+                                    date: t.created_date || (t.data ? t.data.created_date : 'N/A'),
+                                    name: info.name || info.test_name,
+                                    category: 'OTHER',
+                                    qty: info.qty || info.quantity || 1,
+                                    by: t.created_by || (t.data ? t.data.created_by : 'N/A')
+                                });
+                            });
+                        }
+                        
+                        renderAssignedTestsTable(allTests);
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#888;">No history found.</td></tr>';
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ef4444;">Failed to load assigned tests.</td></tr>';
+                });
+        }
+
+        function renderAssignedTestsTable(tests) {
+            const tbody = document.getElementById('assignedTestsBody');
+            if (tests.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#888;">No tests assigned yet.</td></tr>';
+                return;
+            }
+            
+            // Sort tests by date descending
+            tests.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            tbody.innerHTML = '';
+            tests.forEach(test => {
+                let badgeColor, badgeBg;
+                if(test.category === 'LAB') {
+                    badgeColor = '#0284c7'; badgeBg = '#e0f2fe';
+                } else if(test.category === 'RADIOLOGY') {
+                    badgeColor = '#d97706'; badgeBg = '#fef3c7';
+                } else {
+                    badgeColor = '#9333ea'; badgeBg = '#f3e8ff';
+                }
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${test.date}</td>
+                    <td><strong>${test.name}</strong></td>
+                    <td><span style="background:${badgeBg}; color:${badgeColor}; padding:4px 8px; border-radius:4px; font-size:12px; font-weight: 500;">${test.category}</span></td>
+                    <td>${test.qty}</td>
+                    <td>${test.by}</td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
         
         // --- Tests Search Logic ---
@@ -382,6 +465,17 @@ if (!isset($_SESSION['user_id'])) {
                     showCenterMessage(true, 'Order Saved', 'Tests order saved successfully!');
                     cart = [];
                     renderCart();
+                    fetchAssignedTests(currentPatient.patient_id, currentPatient.admission_id); // Refresh table
+                    
+                    // TRIGGER BILLING SYNC (REST API)
+                    fetch('/GM_HMS/api/payment/clinical-billing-sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            admission_id: currentPatient.admission_id,
+                            record_date: new Date().toISOString().split('T')[0]
+                        })
+                    }).catch(e => console.error('Billing sync failed:', e));
                 } else {
                     showCenterMessage(false, 'Error', data.message || 'Error saving order.');
                 }

@@ -1,0 +1,214 @@
+/* k_sheet_view.css - Simple Table View */
+
+:root {
+    --primary: #1F6B4A;
+    --text-main: #333333;
+    --border: #cccccc;
+    --background: #ffffff;
+}
+
+body, html {
+    background-color: var(--background);
+    color: var(--text-main);
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow: auto !important;
+    height: auto !important;
+}
+
+.main-layout {
+    display: flex;
+    min-height: 100vh;
+    overflow: visible !important;
+}
+
+.content-wrapper {
+    flex: 1;
+    padding: 20px;
+    margin-left: 260px; /* Assuming sidebar is 260px */
+    width: calc(100% - 260px);
+    box-sizing: border-box;
+    background: #ffffff;
+    overflow: visible !important;
+}
+
+/* Top Navbar */
+.top-navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.btn-modern {
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-modern.btn-primary {
+    background: var(--primary);
+    color: white;
+    border: 1px solid var(--primary);
+}
+
+/* Patient List Grid */
+.bento-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.patient-bento-card {
+    border: 1px solid var(--border);
+    padding: 15px;
+    cursor: pointer;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.patient-bento-card:hover {
+    background: #f0f0f0;
+}
+
+.bento-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.bento-header .avatar {
+    width: 40px;
+    height: 40px;
+    background: #ddd;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 4px;
+}
+
+.bento-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.bento-details {
+    display: flex;
+    gap: 20px;
+}
+
+.badge-chip {
+    padding: 4px 8px;
+    background: #eee;
+    border: 1px solid #ccc;
+    font-size: 12px;
+}
+
+/* Patient Details Header (Simple Table Style) */
+.hero-card {
+    border: 1px solid var(--border);
+    padding: 15px;
+    margin-bottom: 20px;
+    background: #fdfdfd;
+}
+
+.hero-title {
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #666;
+    margin: 0 0 5px 0;
+}
+
+.hero-name {
+    font-size: 24px;
+    margin: 0 0 15px 0;
+    color: var(--primary);
+}
+
+.hero-chips {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.hero-chip {
+    border: 1px solid #eee;
+    padding: 8px;
+    font-size: 14px;
+    background: #fff;
+}
+
+/* Sections - No Cards, Just Tables */
+.glass-panel {
+    margin-bottom: 30px;
+}
+
+.section-header {
+    margin-bottom: 10px;
+    padding: 5px;
+    background: #f5f5f5;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-header i {
+    color: var(--primary);
+    font-size: 16px;
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+/* Simple Standard Table */
+.modern-table-wrapper {
+    overflow-x: auto;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table th,
+.modern-table td {
+    border: 1px solid var(--border);
+    padding: 8px;
+    text-align: left;
+    font-size: 14px;
+}
+
+.modern-table th {
+    background: #eeeeee;
+    font-weight: bold;
+    color: #333;
+}
+
+.modern-table tbody tr:nth-child(even) {
+    background: #fafafa;
+}
+
+/* Print Styles */
+@media print {
+    .main-layout { display: block; }
+    .sidebar { display: none !important; }
+    .content-wrapper { margin: 0 !important; width: 100% !important; padding: 0 !important; }
+    .top-navbar { display: none !important; }
+    .glass-panel { margin-bottom: 20px; page-break-inside: avoid; }
+}

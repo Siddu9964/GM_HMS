@@ -20,6 +20,9 @@ if (!isset($_SESSION['user_id'])) {
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- Common Admin CSS -->
+    <link rel="stylesheet" href="assets/css/admin_common.css">
+    
     <link rel="stylesheet" href="/GM_HMS/assets/css/organic_map.css?v=<?php echo time(); ?>">
 </head>
 <body class="bg-[#f0ebe0] text-slate-900">
@@ -710,6 +713,6 @@ if (!isset($_SESSION['user_id'])) {
             document.getElementById('successPopupModal').classList.add('active');
         }
     </script>
-    <script src="/GM_HMS/assets/js/gm-sidebar.js"></script>
+    <script src="assets/js/admin_common.js"></script>
     </body>
 </html>

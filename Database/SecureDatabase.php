@@ -48,9 +48,9 @@ class SecureDatabase
 
             $branch = strtolower($_SERVER['HTTP_X_HOSPITAL_BRANCH'] ?? $_SESSION['hospital_branch'] ?? $_SESSION['branch'] ?? '');
             if ($branch === 'basaveshwaranagar' || $branch === 'basaveshwranagara') {
-                $dbConfig['name'] = 'hmsc_basaveshwranagara';
+                $dbConfig['name'] = $this->config->get('DB_NAME_BASAVESHWARANAGAR', 'hmsc_basaveshwranagara');
             } elseif ($branch === 'nagarabhavi') {
-                $dbConfig['name'] = 'hmsci';
+                $dbConfig['name'] = $this->config->get('DB_NAME_NAGARABHAVI', 'hmsci');
             }
 
             mysqli_report(MYSQLI_REPORT_OFF);

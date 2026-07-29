@@ -253,16 +253,6 @@ function renderBillingItems() {
     tbody.innerHTML = billingItems.map(item => `
         <tr class="border-b border-slate-100 group hover:bg-slate-50 transition-all">
             <td class="px-4 py-3">
-                <select class="w-full bg-white border border-slate-200 rounded-lg p-2 outline-none focus:ring-2 focus:ring-blue-500/20 text-xs font-bold" 
-                        onchange="updateItemField(${item.id}, 'item_type', this.value)">
-                    <option value="Consultation" ${item.item_type === 'Consultation' ? 'selected' : ''}>Consultation</option>
-                    <option value="Investigation" ${item.item_type === 'Investigation' ? 'selected' : ''}>Investigation</option>
-                    <option value="Procedure" ${item.item_type === 'Procedure' ? 'selected' : ''}>Procedure</option>
-                    <option value="Medication" ${item.item_type === 'Medication' ? 'selected' : ''}>Medication</option>
-                    <option value="Other" ${item.item_type === 'Other' ? 'selected' : ''}>Other</option>
-                </select>
-            </td>
-            <td class="px-4 py-3">
                 <input type="text" class="w-full bg-white border border-slate-200 rounded-lg p-2 outline-none focus:ring-2 focus:ring-blue-500/20 text-sm placeholder:text-slate-300" 
                        value="${item.item_name}" 
                        onchange="updateItemField(${item.id}, 'item_name', this.value)"
@@ -767,18 +757,18 @@ function showIPDBillDetails(billId) {
     document.getElementById('ipd-modal-bill-id').textContent = 'Loading...';
 
     $.ajax({
-        url: \`../api/index.php/api/billing/ipd/\${billId}\`,
+        url: `../api/index.php/api/billing/ipd/${billId}`,
         method: 'GET',
         success: function (response) {
             if (response.status === 'success') {
                 const bill = response.data;
-                const fmt = (val) => \`₹\${parseFloat(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}\`;
+                const fmt = (val) => `₹${parseFloat(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
                 document.getElementById('ipd-modal-bill-id').textContent = bill.bill_id;
                 document.getElementById('ipd-detail-patient-name').textContent = bill.patient_name || 'N/A';
                 document.getElementById('ipd-detail-patient-id').textContent = bill.patient_id || 'N/A';
                 document.getElementById('ipd-detail-patient-phone').textContent = bill.phone || 'N/A';
-                document.getElementById('ipd-detail-doctor-name').textContent = bill.doctor_name ? \`Dr. \${bill.doctor_name}\` : 'N/A';
+                document.getElementById('ipd-detail-doctor-name').textContent = bill.doctor_name ? `Dr. ${bill.doctor_name}` : 'N/A';
                 document.getElementById('ipd-detail-admission-id').textContent = bill.admission_id || 'N/A';
                 
                 document.getElementById('ipd-detail-bill-date').textContent = bill.admission_date;
@@ -787,9 +777,9 @@ function showIPDBillDetails(billId) {
 
                 const statusEl = document.getElementById('ipd-detail-payment-status');
                 statusEl.textContent = bill.payment_status;
-                statusEl.className = \`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest \${bill.payment_status === 'Paid' ? 'bg-green-100 text-green-700' :
+                statusEl.className = `px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${bill.payment_status === 'Paid' ? 'bg-green-100 text-green-700' :
                         bill.payment_status === 'Partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-                    }\`;
+                    }`;
 
                 // Footer Stats
                 document.getElementById('ipd-foot-subtotal').textContent = fmt(bill.subtotal);
@@ -806,23 +796,23 @@ function showIPDBillDetails(billId) {
                     bill.items.forEach(item => {
                         if (item.charge_type !== currentCategory) {
                             currentCategory = item.charge_type;
-                            itemsHtml += \`
+                            itemsHtml += `
                                 <tr class="bg-slate-100">
                                     <td colspan="5" class="px-6 py-2 font-black text-slate-700 text-xs uppercase tracking-widest">
-                                        <i class="fas fa-layer-group mr-2 text-blue-500"></i> \${currentCategory} Charges
+                                        <i class="fas fa-layer-group mr-2 text-blue-500"></i> ${currentCategory} Charges
                                     </td>
                                 </tr>
-                            \`;
+                            `;
                         }
-                        itemsHtml += \`
+                        itemsHtml += `
                             <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-3 text-xs font-medium text-slate-500">\${item.charge_date}</td>
-                                <td class="px-6 py-3 font-medium text-slate-700">\${item.item_name}</td>
-                                <td class="px-6 py-3 text-center text-slate-500 font-bold">\${parseFloat(item.quantity)}</td>
-                                <td class="px-6 py-3 text-right text-slate-500">\${fmt(item.unit_price)}</td>
-                                <td class="px-6 py-3 text-right font-black text-slate-900">\${fmt(item.total_price)}</td>
+                                <td class="px-6 py-3 text-xs font-medium text-slate-500">${item.charge_date}</td>
+                                <td class="px-6 py-3 font-medium text-slate-700">${item.item_name}</td>
+                                <td class="px-6 py-3 text-center text-slate-500 font-bold">${parseFloat(item.quantity)}</td>
+                                <td class="px-6 py-3 text-right text-slate-500">${fmt(item.unit_price)}</td>
+                                <td class="px-6 py-3 text-right font-black text-slate-900">${fmt(item.total_price)}</td>
                             </tr>
-                        \`;
+                        `;
                     });
                     itemsTbody.innerHTML = itemsHtml;
                 } else {
@@ -830,13 +820,13 @@ function showIPDBillDetails(billId) {
                 }
 
                 // Add Manual Charge Button Setup
-                document.getElementById('btn-add-ipd-charge').setAttribute('onclick', \`openAddIpdChargeModal('\${bill.bill_id}')\`);
+                document.getElementById('btn-add-ipd-charge').setAttribute('onclick', `openAddIpdChargeModal('${bill.bill_id}')`);
 
                 // Payment Button Setup
                 const payBtn = document.getElementById('ipd-btn-pay-modal');
                 if (parseFloat(bill.balance_due) > 0) {
                     payBtn.classList.remove('hidden');
-                    payBtn.setAttribute('onclick', \`recordIpdQuickPayment('\${bill.bill_id}', \${bill.balance_due})\`);
+                    payBtn.setAttribute('onclick', `recordIpdQuickPayment('${bill.bill_id}', ${bill.balance_due})`);
                 } else {
                     payBtn.classList.add('hidden');
                 }
@@ -863,7 +853,7 @@ function openAddIpdChargeModal(billId) {
     if(!price) return;
 
     $.ajax({
-        url: \`../api/index.php/api/billing/ipd/\${billId}/add-item\`,
+        url: `../api/index.php/api/billing/ipd/${billId}/add-item`,
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
@@ -885,7 +875,7 @@ function openAddIpdChargeModal(billId) {
 }
 
 function recordIpdQuickPayment(billId, amount) {
-    const confirmPay = confirm(\`Record full payment of ₹\${amount} for IPD Bill \${billId}?\`);
+    const confirmPay = confirm(`Record full payment of ₹${amount} for IPD Bill ${billId}?`);
     if (confirmPay) {
         $.ajax({
             url: '../api/index.php/api/billing/ipd/payment',

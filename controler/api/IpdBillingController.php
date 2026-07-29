@@ -14,6 +14,33 @@ class IpdBillingController extends BaseController {
     }
     
     /**
+     * POST /api/billing/ipd
+     */
+    public function createBill() {
+        $this->restrictMethod('POST');
+        
+        try {
+            $input = $this->getJsonInput();
+            
+            if (empty($input['admission_id']) || empty($input['patient_id'])) {
+                $this->respondBadRequest('Admission ID and Patient ID are required');
+            }
+            
+            if (empty($input['items']) || !is_array($input['items'])) {
+                $this->respondBadRequest('Billing items are required');
+            }
+            
+            $billId = $this->model->createBill($input);
+            
+            $response = ['bill_id' => $billId];
+            
+            $this->respondSuccess($response, 'Bill generated successfully');
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+    
+    /**
      * GET /api/billing/ipd
      */
     public function getAllBills() {

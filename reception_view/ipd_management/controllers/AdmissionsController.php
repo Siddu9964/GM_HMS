@@ -105,7 +105,6 @@ class AdmissionsController extends BaseController {
                 $this->error($errorMessage, 400);
             }
         } else {
-            // Create new admission
             $result = $this->model->createAdmission($data);
             
             if ($result['success']) {
@@ -113,6 +112,7 @@ class AdmissionsController extends BaseController {
                     'admission_id' => $result['admission_id']
                 ], 'Admission created successfully', 201);
             } else {
+                file_put_contents('debug.log', "DATA: " . print_r($data, true) . "\nRESULT: " . print_r($result, true) . "\n", FILE_APPEND);
                 $this->error('Failed to create admission', 400, $result['errors']);
             }
         }
@@ -177,3 +177,4 @@ class AdmissionsController extends BaseController {
         }
     }
 }
+

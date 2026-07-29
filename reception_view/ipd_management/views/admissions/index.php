@@ -23,6 +23,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
 
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/GM_HMS/reception_view/assets/css/opd_billing.css">
 
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
@@ -100,58 +101,113 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             color: #dc3545;
         }
 
+        
         /* Status Badges Enhancement */
         .admission-status {
-            padding: 4px 12px;
+            padding: 6px 16px;
             border-radius: 100px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-transform: capitalize;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .admission-status.admitted {
-            background-color: #ecfdf5;
-            color: #059669;
-            border: 1px solid #10b98133;
+            background-color: #f3efe6;
+            color: #1f6b4a;
+            border: 1px solid rgba(31, 107, 74, 0.2);
+            box-shadow: 0 2px 10px rgba(31, 107, 74, 0.1);
         }
 
         .admission-status.discharged {
-            background-color: #f3f4f6;
-            color: #6b7280;
-            border: 1px solid #9ca3af33;
+            background-color: #f8fafc;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+/* Table Enhancement - Advanced View */
+        .table-container {
+            background: transparent;
+            padding: 10px;
         }
 
-        /* Table Enhancement */
+        .table-header h2 {
+            color: #1f6b4a;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .table-header .btn-primary {
+            background: linear-gradient(135deg, #1f6b4a 0%, #144d34 100%);
+            border: 1px solid #d4af37;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            font-weight: 600;
+            border-radius: 20px;
+            padding: 8px 24px;
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+        .table-header .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+        }
+
         #admissionsTable {
             border-collapse: separate;
-            border-spacing: 0 8px;
+            border-spacing: 0 10px;
+            margin-top: 15px;
         }
 
-        #admissionsTable tr {
-            background: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-            transition: all 0.2s ease;
+        #admissionsTable thead th {
+            border: none;
+            padding: 1.2rem 1rem;
+            text-transform: capitalize;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+            font-weight: 600;
+            background: #1f6b4a;
         }
 
-        #admissionsTable tr:hover {
-            background: #fcfcfc;
-            transform: scale(1.002);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        #admissionsTable thead th:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+        #admissionsTable thead th:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px; }
+
+        #admissionsTable tbody tr {
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+        }
+
+        #admissionsTable tbody tr td:first-child {
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+
+        #admissionsTable tbody tr td:last-child {
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        #admissionsTable tbody tr:hover {
+            transform: translateY(-2px) scale(1.005);
+            box-shadow: 0 12px 25px rgba(212, 175, 55, 0.15);
+            outline: 2px solid #d4af37;
+            outline-offset: -2px;
+            z-index: 10;
+            position: relative;
         }
 
         #admissionsTable td {
-            padding: 1rem 0.75rem;
+            padding: 1rem 1rem;
             vertical-align: middle;
             border: none;
-        }
-
-        #admissionsTable th {
-            border: none;
-            padding: 1rem 0.75rem;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 1px;
-            color: #94a3b8;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.9rem;
         }
 
         .animated {
@@ -210,6 +266,13 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             border-radius: 0.75rem !important;
             z-index: 99999 !important;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable,
+        .select2-container--default .select2-results__option--highlighted[aria-selected],
+        .select2-container--default .select2-results__option--highlighted[data-selected] {
+            background-color: #1f6b4a !important;
+            color: #f3efe6 !important;
         }
 
         /* ── Modern Wizard UI Styles ── */
@@ -356,8 +419,8 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
         }
 
         .patient-selection-summary {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
+            background: #f3efe6 !important;
+            border: 1px solid #1f6b4a !important;
             border-radius: 0.75rem;
             padding: 1rem;
             display: flex;
@@ -366,11 +429,19 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             margin-top: 1rem;
         }
 
+        .patient-selection-summary h6,
+        .patient-selection-summary .text-muted,
+        .patient-selection-summary .badge,
+        .patient-selection-summary .badge i,
+        .patient-selection-summary .btn {
+            color: #1f6b4a !important;
+        }
+
         .p-avatar {
             width: 48px;
             height: 48px;
-            background: #3b82f6;
-            color: #fff;
+            background: #1f6b4a !important;
+            color: #f3efe6 !important;
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -378,11 +449,99 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             font-size: 1.25rem;
             flex-shrink: 0;
         }
+    
+        /* Exact Modal UI Styles */
+        .glass-modal-overlay {
+            background: rgba(243, 239, 230, 0.6) !important;
+            backdrop-filter: blur(8px);
+        }
+        
+        .glass-modal-card {
+            background: linear-gradient(to bottom, rgba(225, 240, 230, 0.95) 0%, rgba(243, 239, 230, 0.98) 100%) !important;
+            border-radius: 20px !important;
+            border: 1px solid rgba(255, 255, 255, 0.5) !important;
+            box-shadow: 0 25px 50px -12px rgba(31, 107, 74, 0.25) !important;
+            padding: 2rem !important;
+        }
+
+        .glass-modal-card h2 {
+            color: #1f6b4a;
+            font-weight: 800;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .gold-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .gold-card-header {
+            background: linear-gradient(135deg, #d4af37 0%, #f9f0d0 100%);
+            padding: 12px 20px;
+            font-weight: 700;
+            color: #333;
+            font-size: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .gold-card-body {
+            padding: 20px;
+        }
+
+        .material-input {
+            border: none !important;
+            border-bottom: 2px solid #ccc !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            font-weight: 500;
+            color: #333 !important;
+            box-shadow: none !important;
+            transition: all 0.3s ease;
+        }
+
+        .material-input:focus {
+            border-bottom-color: #d4af37 !important;
+        }
+
+        .material-label {
+            font-size: 0.75rem;
+            color: #1f6b4a;
+            font-weight: 600;
+            text-transform: capitalize;
+            margin-bottom: 2px;
+        }
+        
+        .btn-register {
+            background: #1f6b4a !important;
+            color: white !important;
+            border: 2px solid #d4af37 !important;
+            border-radius: 8px !important;
+            padding: 10px 30px !important;
+            font-weight: 700 !important;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4) !important;
+            transition: all 0.3s ease;
+        }
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.6) !important;
+        }
+
     </style>
 </head>
 
 <body>
-    <div class="reception-layout">
+    <div class="reception-layout" style="background-color: #f3efe6;">
         <!-- Sidebar -->
         <?php include '../../../includes/reception_sidebar.php'; ?>
 
@@ -395,7 +554,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             ?>
 
             <!-- Dashboard Content -->
-            <div class="reception-content">
+            <div class="reception-content" style="background: transparent;">
                 <!-- Page Header -->
                 <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
                     <div>
@@ -464,329 +623,452 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
     </div>
     <!-- End Reception Layout -->
 
-    <!-- Add Admission Modal (Redesigned) -->
-    <div id="addAdmissionModal" class="ref-modal-overlay hidden" onclick="closeAddAdmissionModalOnBackdrop(event)">
-        <div class="ref-modal-card" onclick="event.stopPropagation()" style="max-width: 900px;">
-            <div class="ref-modal-header">
-                <h2>New Admission</h2>
-                <button onclick="closeAddAdmissionModal()" class="ref-modal-close" title="Close">
+    
+    <style>
+        /* Product Configuration Style Overrides for IPD Admission Modal */
+        #addAdmissionModal.ref-modal-overlay {
+            overflow-y: auto !important;
+            padding: 40px 0 !important;
+            align-items: flex-start !important;
+        }
+        #addAdmissionModal .ref-modal-card {
+            background-color: #f6f8f5 !important;
+            border-radius: 8px !important;
+            border: 1px solid #d1e0d7 !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+            margin: auto;
+            max-height: none !important;
+            height: auto !important;
+            overflow: visible !important;
+        }
+        #addAdmissionModal .position-relative {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e0e8e3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f6f8f5;
+            border-radius: 8px 8px 0 0;
+        }
+        #addAdmissionModal h2 {
+            color: #1f6b4a !important;
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        #addAdmissionModal .ref-modal-close {
+            position: relative !important;
+            right: auto !important;
+            top: auto !important;
+            color: #1f6b4a !important;
+            font-size: 1.2rem !important;
+            padding: 4px;
+            opacity: 0.7;
+        }
+        #addAdmissionModal .ref-modal-close:hover {
+            opacity: 1;
+        }
+        #addAdmissionModal .ref-modal-body {
+            padding: 24px !important;
+            overflow: visible !important;
+            max-height: none !important;
+            height: auto !important;
+        }
+        #addAdmissionModal .gold-card {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            height: 100%;
+        }
+        #addAdmissionModal .gold-card-header {
+            background: transparent !important;
+            padding: 0 0 12px 0 !important;
+            border-bottom: none !important;
+            color: #1f6b4a !important;
+            font-size: 13px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #addAdmissionModal .gold-card-header i {
+            font-size: 14px;
+        }
+        #addAdmissionModal .material-label {
+            font-size: 11px;
+            font-weight: 800;
+            color: #1f6b4a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            display: block;
+        }
+        #addAdmissionModal .material-input {
+            background: #ffffff !important;
+            border: 1px solid #d1e0d7 !important;
+            border-radius: 6px !important;
+            padding: 8px 12px !important;
+            font-size: 14px !important;
+            color: #333 !important;
+            height: 40px !important;
+            box-shadow: none !important;
+        }
+        #addAdmissionModal .material-input:focus {
+            border-color: #1f6b4a !important;
+            outline: none !important;
+        }
+        /* Style for the first input to match screenshot's pale green background */
+        #addAdmissionModal #patientSearchInput {
+            background-color: #eaf3ed !important;
+        }
+        #addAdmissionModal .modal-footer-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding-top: 16px;
+            border-top: 1px solid #e0e8e3;
+            margin-top: 24px;
+        }
+        #addAdmissionModal .btn-cancel-new {
+            background: #ffffff;
+            color: #1f6b4a;
+            border: 1px solid #1f6b4a;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        #addAdmissionModal .btn-cancel-new:hover {
+            background: #f0f5f2;
+        }
+        #addAdmissionModal .btn-submit-new {
+            background: #1f6b4a;
+            color: #ffffff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        #addAdmissionModal .btn-submit-new:hover {
+            background: #144d34;
+        }
+    </style>
+
+    <style>
+        /* Bridge between GM HMS .hidden and opd_billing.css */
+        #addAdmissionModal:not(.hidden) {
+            display: flex !important;
+        }
+        #addAdmissionModal .billing-modal-card {
+            height: auto !important;
+            max-height: 95vh;
+            overflow: visible !important;
+        }
+        #addAdmissionModal .modal-body-scroll {
+            overflow: visible !important;
+        }
+    </style>
+
+    <!-- Add Admission Modal (OPD Billing Terminal Style) -->
+    <div id="addAdmissionModal" class="modal-overlay hidden" onclick="closeAddAdmissionModalOnBackdrop(event)">
+        <div class="billing-modal-card" onclick="event.stopPropagation()">
+            <div class="billing-modal-head">
+                <h3><i class="fas fa-procedures"></i> New IPD Admission</h3>
+                <button class="btn-close-modal" type="button" onclick="closeAddAdmissionModal()" title="Close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             
-            <div class="ref-modal-body">
+            <div class="modal-body-scroll">
                 <form id="addAdmissionForm">
-                    <div class="ref-form-grid">
-                        
-                        <!-- SECTION: Patient Selection -->
-                        <div class="ref-section-title">
-                            <i class="fas fa-user-injured"></i> Patient Selection
-                        </div>
-                        
-                        <div class="ref-field ref-col-2 position-relative">
-                            <label>Search Patient (Name or Mobile) <span class="req">*</span></label>
-                            <input type="text" class="form-control" id="patientSearchInput" placeholder="Start typing name or mobile...">
-                            <input type="hidden" id="patientSelect" name="patient_id" required>
-                            
-                            <!-- Search Results Dropdown -->
-                            <div id="patientSearchResults" class="position-absolute w-100 bg-white border rounded shadow-sm mt-1" style="display:none; max-height:200px; overflow-y:auto; z-index:1050;">
-                            </div>
-                        </div>
-
-                        <div class="ref-field ref-col-2 d-flex align-items-end">
-                            <button type="button" class="btn btn-secondary w-100" style="height: 42px; border-radius: 8px;" onclick="openAdvancedPatientSearch()">
-                                <i class="fas fa-search-plus me-1"></i> Advanced Search
-                            </button>
-                        </div>
-
-                        <!-- Selected Patient Summary (Spans 4 cols to go below the search) -->
-                        <div class="ref-col-4">
-                            <div id="patientSelectedSummary" class="alert alert-info border-0 p-2 mb-0 mt-2" style="display:none;">
-                                <div class="patient-selection-summary shadow-sm">
-                                    <div class="p-avatar"><i class="fas fa-user"></i></div>
-                                    <div class="flex-grow-1">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <h6 class="mb-0 fw-bold text-dark" id="selPatientName">-</h6>
-                                            <button type="button" class="btn btn-sm btn-outline-danger border-0 py-0" onclick="clearPatientSelection()">
-                                                <i class="fas fa-times"></i> Change
-                                            </button>
-                                        </div>
-                                        <span class="text-muted small" id="selPatientID">-</span>
-                                        <div class="mt-1">
-                                            <span class="badge bg-soft-primary text-primary me-2"><i class="fas fa-phone-alt me-1"></i> <span id="selPatientPhone">-</span></span>
-                                            <span class="badge bg-soft-info text-info"><i class="fas fa-venus-mars me-1"></i> <span id="selPatientGender">-</span></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="ref-field ref-col-4">
-                            <label>Consulting Doctor <span class="req">*</span></label>
-                            <select class="form-select" id="doctorSelect" name="admitting_doctor_id" required>
-                                <option value="">-- Select a patient first --</option>
-                            </select>
-                            <span style="font-size:11px; color:#64748b; margin-top:4px; display:block;"><i class="fas fa-magic text-primary"></i> Doctor is auto-filled, but you can search to change it</span>
-                        </div>
-
-                        <!-- SECTION: Bed Allocation -->
-                        <div class="ref-section-title mt-2">
-                            <i class="fas fa-bed"></i> Stay & Bed Allocation
-                        </div>
-
-                        <div class="ref-field ref-col-1">
-                            <label>Floor No.</label>
-                            <select class="form-select" id="selFloorNumber" onchange="onFloorNumberChange()">
-                                <option value="">-- No. --</option>
-                            </select>
-                        </div>
-                        <div class="ref-field ref-col-1">
-                            <label>Floor Name</label>
-                            <select class="form-select" id="selFloorName" disabled onchange="onFloorNameChange()">
-                                <option value="">-- Name --</option>
-                            </select>
-                        </div>
-                        <div class="ref-field ref-col-1">
-                            <label>Ward</label>
-                            <select class="form-select" id="selWardName" disabled onchange="onWardNameChange()">
-                                <option value="">-- Ward --</option>
-                            </select>
-                        </div>
-                        <div class="ref-field ref-col-1">
-                            <label>Type</label>
-                            <select class="form-select" id="selWardType" disabled onchange="onWardTypeChange()">
-                                <option value="">-- Type --</option>
-                            </select>
-                        </div>
-                        <div class="ref-field ref-col-2">
-                            <label>Room Allocation</label>
-                            <select class="form-select" id="selRoomNumber" disabled onchange="onRoomNumberChange()">
-                                <option value="">-- Select Room --</option>
-                            </select>
-                        </div>
-                        <div class="ref-field ref-col-2">
-                            <label>Bed Assignment <span class="req">*</span></label>
-                            <select class="form-select" id="bedSelect" name="bed_id" required disabled onchange="showBedDetails(this.value)">
-                                <option value="">-- Select Bed --</option>
-                            </select>
-                        </div>
-
-                        <!-- Bed Summary -->
-                        <div id="bedDetailCard" class="ref-col-4" style="display:none; margin-top: 5px;">
-                            <div class="alert alert-success border-0 small py-3 px-4 shadow-sm mb-0 rounded-3">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-check-circle text-success me-2 fs-5"></i>
-                                    <h6 class="mb-0 text-success">Bed Selection Verified</h6>
-                                </div>
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <span class="text-muted d-block small">Location</span>
-                                        <strong>Floor <span id="bdFloorNo"></span> (<span id="bdFloorName"></span>)</strong>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <span class="text-muted d-block small">Ward Details</span>
-                                        <strong><span id="bdWardName"></span> (<span id="bdWardType"></span>)</strong>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <span class="text-muted d-block small">Room & Bed</span>
-                                        <strong>Room <span id="bdRoomNo"></span> (<span id="bdRoomName"></span>)</strong>
-                                    </div>
-                                </div>
-                                <hr class="my-2 border-success border-opacity-25">
-                                <div class="row g-2 mt-2">
-                                    <div class="col-md-2">
-                                        <label class="form-label text-muted mb-1" style="font-size: 0.75rem;">Bed Rate (₹)</label>
-                                        <input type="number" class="form-control form-control-sm" id="bdAmountPerDay" name="amount_per_day" value="0" oninput="calculateTotalRent()">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label text-muted mb-1" style="font-size: 0.75rem;">Nursing (₹)</label>
-                                        <input type="number" class="form-control form-control-sm" id="bdNursingCharge" name="nursig_charge" value="0" oninput="calculateTotalRent()">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label class="form-label text-muted mb-1" style="font-size: 0.75rem;">Doctor (₹)</label>
-                                        <input type="number" class="form-control form-control-sm" id="bdDoctorCharge" name="doctor_charge" value="0" oninput="calculateTotalRent()">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label text-muted mb-1" style="font-size: 0.75rem;">Service (₹)</label>
-                                        <input type="number" class="form-control form-control-sm" id="bdServiceCharge" name="service_charge" value="0" oninput="calculateTotalRent()">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label text-success fw-bold mb-1" style="font-size: 0.75rem;">Total Amount (₹)</label>
-                                        <input type="number" class="form-control form-control-sm bg-light border-success text-success fw-bold" id="bdTotalAmount" name="total_bed_amount" readonly value="0">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="ref-field ref-col-2 mt-2">
-                            <label>Admission Type</label>
-                            <select class="form-select" name="admission_type">
-                                <option value="Planned">Planned</option>
-                                <option value="Emergency" selected>Emergency</option>
-                                <option value="Transfer">Transfer</option>
-                            </select>
-                        </div>
-                        <div class="ref-field ref-col-1 mt-2">
-                            <label>Date</label>
-                            <input type="text" class="form-control bg-white" id="admissionDate" name="admission_date" required placeholder="Select Date">
-                        </div>
-                        <div class="ref-field ref-col-1 mt-2">
-                            <label>Time <span class="req">*</span></label>
-                            <div class="d-flex align-items-center gap-1">
-                                <select class="form-select bg-white" id="timeHour" style="padding-right: 24px;">
-                                    <option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option>
-                                    <option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option>
-                                    <option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
-                                </select>
-                                <span>:</span>
-                                <select class="form-select bg-white" id="timeMinute" style="padding-right: 24px;">
-                                    <option value="00">00</option><option value="05">05</option><option value="10">10</option><option value="15">15</option>
-                                    <option value="20">20</option><option value="25">25</option><option value="30">30</option><option value="35">35</option>
-                                    <option value="40">40</option><option value="45">45</option><option value="50">50</option><option value="55">55</option>
-                                </select>
-                                <select class="form-select bg-white" id="timeAmPm" style="padding-right: 24px;">
-                                    <option value="AM">AM</option>
-                                    <option value="PM">PM</option>
-                                </select>
-                            </div>
-                            <input type="hidden" id="admissionTime" name="admission_time" required>
-                        </div>
-
-                        <!-- SECTION: Medical Notes -->
-                        <div class="ref-section-title mt-2">
-                            <i class="fas fa-notes-medical"></i> Medical & Contact Details
-                        </div>
-                        
-                        <div class="ref-field ref-col-4">
-                            <label>Chief Complaint</label>
-                            <textarea class="form-control" name="chief_complaint" rows="2" placeholder="Primary symptoms..."></textarea>
-                        </div>
-                        <div class="ref-field ref-col-4">
-                            <label>Preliminary Diagnosis</label>
-                            <textarea class="form-control" name="diagnosis" rows="2" placeholder="Initial findings..."></textarea>
-                        </div>
-                        <div class="ref-field ref-col-2">
-                            <label>Emergency Contact Person</label>
-                            <input type="text" class="form-control" name="emergency_contact_name" placeholder="Full Name">
-                        </div>
-                        <div class="ref-field ref-col-2">
-                            <label>Mobile Number</label>
-                            <input type="tel" class="form-control" name="emergency_contact_phone" placeholder="10 Digits" pattern="[0-9]{10}">
-                        </div>
-
-                    </div>
                     
-                    <div class="ref-modal-footer" style="margin-top: 24px;">
-                        <button type="button" onclick="closeAddAdmissionModal()" class="ref-btn-cancel">Cancel</button>
-                        <button type="button" class="ref-btn-submit" onclick="saveAdmission()">
-                            <i class="fas fa-check-double"></i> Complete Admission
-                        </button>
+                    <div class="modal-section-card">
+                        <div class="modal-section-body" style="padding: 0.75rem;">
+                            <!-- Ultra-Dense Grid with 5 Columns -->
+                            <div class="form-row" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.4rem 0.6rem; align-items: end;">
+                                
+                                <!-- SECTION 1: PATIENT & MEDICAL INFO -->
+                                <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0;">
+                                    <i class="fas fa-user-md me-1"></i> Patient & Medical Info
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Patient *</label>
+                                    <div class="input-with-icon-inside suggestion-wrapper">
+                                        <input type="text" id="patientSearchInput" placeholder="Select Patient..." style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                        <div id="patientSearchResults" class="suggestion-list"></div>
+                                        <input type="hidden" id="patientSelect" name="patient_id" required>
+                                    </div>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admitting Doctor *</label>
+                                    <select id="doctorSelect" name="admitting_doctor_id" required style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;">
+                                        <option value="">Select Doctor...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Chief Complaint</label>
+                                    <input type="text" name="chief_complaint" placeholder="Brief complaint..." style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Diagnosis</label>
+                                    <input type="text" name="diagnosis" placeholder="Diagnosis..." style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Emergency Contact Name</label>
+                                    <input type="text" name="emergency_contact_name" placeholder="Contact Name" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Emergency Contact Phone</label>
+                                    <input type="text" name="emergency_contact_phone" placeholder="Phone Number" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                </div>
+                                <div style="grid-column: span 1;"></div> <!-- spacer to push next section to new line if needed, but flex grid handles it -->
+
+                                <!-- SECTION 2: BED ALLOCATION -->
+                                <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0.3rem;">
+                                    <i class="fas fa-bed me-1"></i> Hospital Bed Allocation
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Floor No.</label>
+                                    <select id="selFloorNumber" onchange="onFloorNumberChange()" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #f1f5f9;">
+                                        <option value="">-- Floor No --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Floor Name</label>
+                                    <select id="selFloorName" disabled onchange="onFloorNameChange()" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #f1f5f9;">
+                                        <option value="">-- Floor Name --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Ward Name</label>
+                                    <select id="selWardName" disabled onchange="onWardNameChange()" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #f1f5f9;">
+                                        <option value="">-- Ward Name --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Room Type</label>
+                                    <select id="selWardType" disabled onchange="onWardTypeChange()" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #f1f5f9;">
+                                        <option value="">-- Room Type --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Room No.</label>
+                                    <select id="selRoomNumber" disabled onchange="onRoomNumberChange()" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #f1f5f9;">
+                                        <option value="">-- Room No --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Bed Select *</label>
+                                    <select id="bedSelect" name="bed_id" required disabled onchange="showBedDetails(this.value)" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #f1f5f9;">
+                                        <option value="">-- Bed --</option>
+                                    </select>
+                                </div>
+
+                                <!-- SECTION 3: ADMISSION & REFERRAL -->
+                                <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0.3rem;">
+                                    <i class="fas fa-hospital-user me-1"></i> Admission & Referral
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admission Type</label>
+                                    <select name="admission_type" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;">
+                                        <option value="Emergency">Emergency</option>
+                                        <option value="OPD">OPD</option>
+                                        <option value="Routine">Routine</option>
+                                        <option value="Transfer">Transfer</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admission Date *</label>
+                                    <input type="date" id="admissionDate" name="admission_date" required style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admission Time</label>
+                                    <input type="time" name="admission_time" value="<?= date('H:i') ?>" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                    <script>document.querySelector('input[name="admission_time"]').value = new Date().toTimeString().slice(0,5);</script>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Referral Type</label>
+                                    <select id="referralTypeSelect" name="referral_type" onchange="onReferralTypeChange()" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;">
+                                        <option value="">None</option>
+                                        <option value="Internal">Internal</option>
+                                        <option value="External">External</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;" id="refNameContainer">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Referral Name</label>
+                                    <input type="text" id="refNameText" name="referral_name" placeholder="Referral Name" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                    <select id="refNameSelect" class="d-none" style="width: 100%;"><option value="">Select Doctor...</option></select>
+                                </div>
+
+                                <!-- SECTION 4: BILLING & CHARGES -->
+                                <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0.3rem;">
+                                    <i class="fas fa-tags me-1"></i> Billing & Charges
+                                </div>
+
+                                <!-- ROW 1: Charges -->
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Amount/Day</label>
+                                    <input type="number" id="bdAmountPerDay" name="amount_per_day" value="0" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background: #f1f5f9;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Nursing Chg</label>
+                                    <input type="number" id="bdNursingCharge" name="nursig_charge" value="0" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background: #f1f5f9;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Doctor Chg</label>
+                                    <input type="number" id="bdDoctorCharge" name="doctor_charge" value="0" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background: #f1f5f9;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Service Chg</label>
+                                    <input type="number" id="bdServiceCharge" name="service_charge" value="0" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background: #f1f5f9;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Total Bed Amt</label>
+                                    <input type="number" id="bdTotalAmount" name="total_bed_amount" value="0" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background: #e0f2fe; color: #0284c7; font-weight: bold;">
+                                </div>
+
+                                <!-- ROW 2: Payment & Buttons -->
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Payment Type</label>
+                                    <select name="payment_method" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;">
+                                        <option value="CASH">Cash</option>
+                                        <option value="UPI">UPI</option>
+                                        <option value="CARD">Card</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Adv. Amount</label>
+                                    <input type="number" name="advance_payment" placeholder="Amount" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Total Due Now</label>
+                                    <div class="d-flex align-items-center justify-content-between" style="border: 1px solid var(--gray-300); border-radius: 4px; padding: 0.2rem 0.4rem; background: #fff;">
+                                        <span id="lblGrandTotal" style="color: var(--teal-dark); font-weight: 700; font-size: 0.75rem; text-align: center; width: 100%;">-₹0.00</span>
+                                    </div>
+                                    <div class="d-none">
+                                        <input type="hidden" id="bdAdmissionCharge" name="admission_charge" value="350">
+                                        <input type="hidden" id="bdMrdCharge" name="mrd_charge" value="400">
+                                        <input type="hidden" id="bdFoodCharge" name="food_charge" value="570">
+                                    </div>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2; display: flex; justify-content: flex-end; gap: 0.5rem; align-items: flex-end; height: 100%;">
+                                    <button type="button" class="btn btn-outline" style="border: 1px solid var(--gray-300); background: #fff; padding: 0.3rem 1rem; border-radius: 4px; color: var(--gray-700); font-weight: 600; font-size: 0.75rem; height: 26px; line-height: 1;" onclick="closeAddAdmissionModal()">Cancel</button>
+                                    <button type="button" class="btn btn-success" style="padding: 0.3rem 1.5rem; border-radius: 4px; background: #0d9488; color: #ffffff !important; border: none; font-weight: 700; font-size: 0.75rem; height: 26px; line-height: 1;" onclick="saveAdmission()">
+                                        <i class="fas fa-check-circle me-1"></i> Admit
+                                    </button>
+                                </div>
+                                
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Edit Admission Modal -->
-    <div class="modal fade" id="editAdmissionModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Admission</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="editAdmissionForm">
-                        <input type="hidden" id="editAdmissionId" name="admission_id">
-                        <input type="hidden" id="editSlNo" name="sl_no">
+        <!-- Edit Admission Modal -->
+    <div id="editAdmissionModal" class="modal-overlay hidden" onclick="closeEditAdmissionModalOnBackdrop(event)">
+        <div class="billing-modal-card" onclick="event.stopPropagation()">
+            <div class="billing-modal-head">
+                <h3><i class="fas fa-edit"></i> Edit IPD Admission</h3>
+                <button class="btn-close-modal" type="button" onclick="closeEditAdmissionModal()" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body-scroll">
+                <form id="editAdmissionForm">
+                    <input type="hidden" id="editAdmissionId" name="admission_id">
+                    <input type="hidden" id="editSlNo" name="sl_no">
 
-                        <div class="row">
-                            <!-- Patient & Doctor Information -->
-                            <div class="col-12 mb-3">
-                                <h6 class="text-primary mb-3"><i class="fas fa-user-injured"></i> Patient & Doctor
-                                    Information</h6>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label"><i class="fas fa-user"></i> Patient *</label>
-                                <div class="select2-spacing">
-                                    <select class="form-select" id="editPatientSelect" name="patient_id"
-                                        required></select>
-                                    <small class="text-muted d-block mt-1">Search by name or patient ID</small>
+                    <div class="modal-section-card">
+                        <div class="modal-section-body" style="padding: 0.75rem;">
+                            <!-- Ultra-Dense Grid with 5 Columns -->
+                            <div class="form-row" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.4rem 0.6rem; align-items: end;">
+                                
+                                <!-- SECTION 1: PATIENT & MEDICAL -->
+                                <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-bottom: 0.2rem;">
+                                    <i class="fas fa-user-injured me-1"></i> Patient & Medical Info
                                 </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label"><i class="fas fa-user-md"></i> Admitting Doctor *</label>
-                                <div class="select2-spacing">
-                                    <select class="form-select" id="editDoctorSelect" name="admitting_doctor_id"
-                                        required></select>
+                                
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Patient *</label>
+                                    <select id="editPatientSelect" name="patient_id" required style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;"></select>
                                 </div>
-                            </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admitting Doctor *</label>
+                                    <select id="editDoctorSelect" name="admitting_doctor_id" required style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;"></select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Bed Assignment *</label>
+                                    <select id="editBedSelect" name="bed_id" required style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;"></select>
+                                </div>
 
-                            <!-- Bed & Admission Details -->
-                            <div class="col-12 mb-3 mt-2">
-                                <h6 class="text-primary mb-3"><i class="fas fa-bed"></i> Bed & Admission Details</h6>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label"><i class="fas fa-bed"></i> Bed Assignment *</label>
-                                <select class="form-select" id="editBedSelect" name="bed_id" required></select>
-                                <small class="text-muted">Available beds and current bed shown</small>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label"><i class="fas fa-calendar-check"></i> Admission Type *</label>
-                                <select class="form-select" id="editAdmissionType" name="admission_type">
-                                    <option value="Planned">Planned</option>
-                                    <option value="Emergency">Emergency</option>
-                                    <option value="Transfer">Transfer</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label"><i class="fas fa-calendar"></i> Admission Date *</label>
-                                <input type="date" class="form-control" id="editAdmissionDate" name="admission_date"
-                                    required>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label"><i class="fas fa-clock"></i> Admission Time *</label>
-                                <input type="time" class="form-control" id="editAdmissionTime" name="admission_time"
-                                    required>
-                            </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Chief Complaint</label>
+                                    <input type="text" id="editChiefComplaint" name="chief_complaint" placeholder="Brief complaint..." style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 3;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Diagnosis</label>
+                                    <input type="text" id="editDiagnosis" name="diagnosis" placeholder="Diagnosis..." style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                </div>
+                                
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Contact Name</label>
+                                    <input type="text" id="editEmergencyName" name="emergency_contact_name" placeholder="Contact Name" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 3;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Contact Phone</label>
+                                    <input type="text" id="editEmergencyPhone" name="emergency_contact_phone" placeholder="Phone Number" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                </div>
+                                
+                                <!-- SECTION 2: ADMISSION DETAILS -->
+                                <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0.3rem;">
+                                    <i class="fas fa-sign-in-alt me-1"></i> Admission Details
+                                </div>
+                                
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admission Type</label>
+                                    <select id="editAdmissionType" name="admission_type" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;">
+                                        <option value="Emergency">Emergency</option>
+                                        <option value="Planned">Planned</option>
+                                        <option value="Transfer">Transfer</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admission Date *</label>
+                                    <input type="date" id="editAdmissionDate" name="admission_date" required style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #ecfdf5; color: #065f46; font-weight: 600;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admission Time</label>
+                                    <input type="time" id="editAdmissionTime" name="admission_time" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                </div>
 
-
-                            <!-- Medical Information -->
-                            <div class="col-12 mb-3 mt-2">
-                                <h6 class="text-primary mb-3"><i class="fas fa-notes-medical"></i> Medical Information
-                                </h6>
-                            </div>
-                            <div class="col-md-12 mb-3">
-                                <label class="form-label"><i class="fas fa-stethoscope"></i> Chief Complaint</label>
-                                <textarea class="form-control" id="editChiefComplaint" name="chief_complaint"
-                                    rows="2"></textarea>
-                            </div>
-                            <div class="col-md-12 mb-3">
-                                <label class="form-label"><i class="fas fa-diagnoses"></i> Preliminary Diagnosis</label>
-                                <textarea class="form-control" id="editDiagnosis" name="diagnosis" rows="2"></textarea>
-                            </div>
-
-                            <!-- Emergency Contact -->
-                            <div class="col-12 mb-3 mt-2">
-                                <h6 class="text-primary mb-3"><i class="fas fa-phone-alt"></i> Emergency Contact</h6>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label"><i class="fas fa-user-friends"></i> Contact Name</label>
-                                <input type="text" class="form-control" id="editEmergencyName"
-                                    name="emergency_contact_name">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label"><i class="fas fa-mobile-alt"></i> Contact Phone</label>
-                                <input type="tel" class="form-control" id="editEmergencyPhone"
-                                    name="emergency_contact_phone" pattern="[0-9]{10}">
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2; display: flex; justify-content: flex-end; gap: 0.5rem; align-items: flex-end; height: 100%;">
+                                    <button type="button" class="btn btn-outline" style="border: 1px solid var(--gray-300); background: #fff; padding: 0.3rem 1rem; border-radius: 4px; color: var(--gray-700); font-weight: 600; font-size: 0.75rem; height: 26px; line-height: 1;" onclick="closeEditAdmissionModal()">Cancel</button>
+                                    <button type="button" class="btn btn-primary" style="padding: 0.3rem 1.5rem; border-radius: 4px; background: #0ea5e9; color: #ffffff !important; border: none; font-weight: 700; font-size: 0.75rem; height: 26px; line-height: 1;" onclick="updateAdmission()">
+                                        <i class="fas fa-save me-1"></i> Update
+                                    </button>
+                                </div>
+                                
                             </div>
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="updateAdmission()">Update Admission</button>
-                </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -867,7 +1149,12 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     dataSrc: 'data.admissions'
                 },
                 columns: [
-                    { data: 'admission_id' },
+                    { 
+                        data: 'admission_id',
+                        render: function(data, type, row) {
+                            return `<a href="javascript:void(0)" onclick="viewAdmission('${data}')" style="color: #1f6b4a; font-weight: 800; text-decoration: underline; cursor: pointer;">${data}</a>`;
+                        }
+                    },
                     { data: 'patient_id' },
                     { data: 'patient_name' },
                     { data: 'patient_contact' },
@@ -914,6 +1201,13 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             });
 
             // ── Admission Custom Modal Logic ──────────────────────────────────
+            window.clearPatientSelection = function() {
+                $('#patientSearchInput').val('');
+                $('#patientSelect').val('');
+                $('#doctorSelect').empty().append('<option value="">-- Select a patient first --</option>');
+                $('#patientSearchResults').hide().empty();
+            };
+
             window.showAddAdmissionModal = function () {
                 $('#addAdmissionModal').removeClass('hidden');
                 
@@ -941,6 +1235,16 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 $('#addAdmissionModal').addClass('hidden');
             };
 
+                        window.closeEditAdmissionModal = function () {
+                $('#editAdmissionModal').addClass('hidden');
+            };
+
+            window.closeEditAdmissionModalOnBackdrop = function (e) {
+                if (e.target === e.currentTarget) {
+                    closeEditAdmissionModal();
+                }
+            };
+
             window.closeAddAdmissionModalOnBackdrop = function (e) {
                 if (e.target === e.currentTarget) {
                     closeAddAdmissionModal();
@@ -951,6 +1255,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             let patientSearchTimeout;
 
             $('#patientSearchInput').on('input', function () {
+                $('#patientSelect').val(''); // Clear the selected ID if they type
                 const query = $(this).val().trim();
                 clearTimeout(patientSearchTimeout);
 
@@ -995,30 +1300,15 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             window.selectPatient = function (pat) {
                 // Set hidden patient_id field
                 $('#patientSelect').val(pat.patient_id || '');
-                // Hide search input, show selected name
-                $('#patientSearchInput').val(pat.name).parent().hide();
+                // Populate search input with name and ID
+                $('#patientSearchInput').val(pat.name + ' (' + pat.patient_id + ')');
                 $('#patientSearchResults').hide();
-
-                // Show selection summary card
-                $('#selPatientName').text(pat.name || '-');
-                $('#selPatientID').text(pat.patient_id || '-');
-                $('#selPatientPhone').text(pat.contact || 'N/A');
-                $('#selPatientGender').text(pat.gender || '-');
-                $('#patientSelectedSummary').show();
 
                 // Clear out doctor select until we fetch the latest one
                 $('#doctorSelect').empty().append('<option value="">-- Fetching doctor... --</option>');
                 
                 // Fetch the latest doctor for this patient
                 fetchLatestDoctor(pat.patient_id);
-            };
-
-            window.clearPatientSelection = function () {
-                $('#patientSelect').val('');
-                $('#patientSearchInput').val('').parent().show();
-                $('#patientSelectedSummary').hide();
-                // Reset doctor dropdown back to placeholder
-                $('#doctorSelect').empty().append('<option value="">-- Select a patient first --</option>');
             };
 
             // Hide results on click outside
@@ -1135,7 +1425,8 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     }
                 }
             });
-            document.getElementById('bedDetailCard').style.display = 'none';
+            const bdc = document.getElementById('bedDetailCard');
+            if (bdc) bdc.style.display = 'none';
         }
 
         function getFiltered(field, value) {
@@ -1223,7 +1514,8 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             const bedSel = document.getElementById('bedSelect');
             bedSel.innerHTML = '<option value="">-- Select Bed --</option>';
             bedSel.disabled = true;
-            document.getElementById('bedDetailCard').style.display = 'none';
+            const bdc = document.getElementById('bedDetailCard');
+            if (bdc) bdc.style.display = 'none';
 
             if (!roomNumber) return;
 
@@ -1254,16 +1546,11 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
         }
 
         function showBedDetails(bedId) {
-            if (!bedId) { document.getElementById('bedDetailCard').style.display = 'none'; return; }
+            const bdc = document.getElementById('bedDetailCard');
+            if (!bedId) { if(bdc) bdc.style.display = 'none'; return; }
             const opt = document.querySelector(`#bedSelect option[value="${bedId}"]`);
-            if (!opt || !opt.dataset.bed) { document.getElementById('bedDetailCard').style.display = 'none'; return; }
+            if (!opt || !opt.dataset.bed) { if(bdc) bdc.style.display = 'none'; return; }
             const bed = JSON.parse(opt.dataset.bed);
-            document.getElementById('bdFloorNo').textContent = bed.floor_number || '-';
-            document.getElementById('bdFloorName').textContent = bed.floor_name || '-';
-            document.getElementById('bdWardName').textContent = bed.ward_name || '-';
-            document.getElementById('bdWardType').textContent = bed.room_type || '-';
-            document.getElementById('bdRoomNo').textContent = bed.room_number || '-';
-            document.getElementById('bdRoomName').textContent = bed.room_name || '-';
             
             // Financial details
             document.getElementById('bdAmountPerDay').value = bed.amount_per_day || '0';
@@ -1272,7 +1559,9 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             document.getElementById('bdServiceCharge').value = bed.service_charge || '0';
             document.getElementById('bdTotalAmount').value = bed.total_bed_amount || '0';
             
-            document.getElementById('bedDetailCard').style.display = 'block';
+            calculateTotalRent(); // Update the ribbon total display
+            
+            if (bdc) bdc.style.display = 'block';
         }
 
         function calculateTotalRent() {
@@ -1280,9 +1569,74 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             const nursing = parseFloat(document.getElementById('bdNursingCharge').value) || 0;
             const doctor = parseFloat(document.getElementById('bdDoctorCharge').value) || 0;
             const service = parseFloat(document.getElementById('bdServiceCharge').value) || 0;
-            document.getElementById('bdTotalAmount').value = (bed + nursing + doctor + service).toString();
+            const dailyTotal = bed + nursing + doctor + service;
+            document.getElementById('bdTotalAmount').value = dailyTotal.toString();
+            
+            const lbl = document.getElementById('lblDailyTotal');
+            if(lbl) lbl.innerText = dailyTotal.toString();
+            
+            // Calculate Initial Total
+            const adm = parseFloat(document.getElementById('bdAdmissionCharge').value) || 350;
+            const mrd = parseFloat(document.getElementById('bdMrdCharge').value) || 400;
+            const food = parseFloat(document.getElementById('bdFoodCharge').value) || 570;
+            const initialTotal = adm + mrd + food;
+            
+            const lblInit = document.getElementById('lblInitialTotal');
+            if(lblInit) lblInit.innerText = initialTotal.toString();
+            
+            // Grand Total (Daily + Initial)
+            const grandTotal = dailyTotal + initialTotal;
+            const lblGrand = document.getElementById('lblGrandTotal');
+            if(lblGrand) lblGrand.innerText = grandTotal.toString();
         }
 
+
+        function onReferralTypeChange() {
+            const type = document.getElementById('referralTypeSelect').value;
+            const txt = document.getElementById('refNameText');
+            const sel = document.getElementById('refNameSelect');
+            
+            if (type === 'Internal') {
+                txt.style.display = 'none';
+                txt.removeAttribute('name');
+                
+                sel.setAttribute('name', 'referral_name');
+                $(sel).removeClass('d-none');
+                
+                if (!$(sel).data('select2')) {
+                    $(sel).select2({
+                        ajax: {
+                            url: IPD.API_BASE + '/dashboard/doctors',
+                            dataType: 'json',
+                            delay: 250,
+                            data: function (params) {
+                                return { search: params.term || '' };
+                            },
+                            processResults: function (data) {
+                                return {
+                                    results: data.data.doctors.map(d => ({
+                                        id: d.name,
+                                        text: `${d.name} - ${d.specialization}`
+                                    }))
+                                };
+                            }
+                        },
+                        placeholder: 'Search internal doctor...',
+                        tags: true,
+                        dropdownParent: $('#addAdmissionModal')
+                    });
+                }
+                $(sel).next('.select2-container').show();
+            } else {
+                sel.removeAttribute('name');
+                if ($(sel).data('select2')) {
+                    $(sel).next('.select2-container').hide();
+                }
+                
+                txt.setAttribute('name', 'referral_name');
+                txt.style.display = 'block';
+            }
+        }
 
         function saveAdmission() {
             const form = document.getElementById('addAdmissionForm');
@@ -1304,87 +1658,192 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     admissionsTable.ajax.reload();
                 })
                 .catch(error => {
-                    IPD.toast(error.message || 'Failed to create admission', 'error');
+                    IPD.showError(error);
                 });
         }
 
         function viewAdmission(id) {
-            // Fetch admission details via API and show in modal
             IPD.ajax(`admissions?id=${id}`, 'GET')
                 .then(response => {
                     const admission = response.data;
 
-                    // Create modal content
                     const modalContent = `
-                        <div class="modal fade" id="viewAdmissionModal" tabindex="-1">
-                            <div class="modal-dialog modal-lg">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Admission Details - ${admission.admission_id}</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <h6>Patient Information</h6>
-                                                <p><strong>Name:</strong> ${admission.patient_name}</p>
-                                                <p><strong>Age:</strong> ${admission.patient_age}</p>
-                                                <p><strong>Gender:</strong> ${admission.patient_gender}</p>
-                                                <p><strong>Contact:</strong> ${admission.patient_contact}</p>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <h6>Admission Information</h6>
-                                                <p><strong>Doctor:</strong> ${admission.doctor_name}</p>
-                                                <p><strong>Bed:</strong> ${admission.bed_number} (${admission.ward_name})</p>
-                                                <p><strong>Location:</strong> Floor: ${admission.floor_name || '-'}, Room: ${admission.room_name || admission.room_no || '-'}</p>
-                                                <p><strong>Ward Type:</strong> ${admission.ward_type || '-'}</p>
-                                                <p><strong>Admission Date:</strong> ${IPD.formatDate(admission.admission_date)}</p>
-                                                <p><strong>Days Admitted:</strong> ${admission.days_admitted}</p>
-                                                <p><strong>Status:</strong> <span class="badge bg-${admission.status === 'Admitted' ? 'success' : 'secondary'}">${admission.status}</span></p>
-                                            </div>
-                                        </div>
-                                        ${admission.financials ? `
-                                            <hr>
-                                            <h6>Financial Summary</h6>
-                                            <div class="row">
-                                                <div class="col-md-4">
-                                                    <p><strong>Total Charges:</strong> ${IPD.formatCurrency(admission.financials.total_charges)}</p>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <p><strong>Total Payments:</strong> ${IPD.formatCurrency(admission.financials.total_payments)}</p>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <p><strong>Balance Due:</strong> <span class="text-${admission.financials.balance_due > 0 ? 'danger' : 'success'}">${IPD.formatCurrency(admission.financials.balance_due)}</span></p>
-                                                </div>
-                                            </div>
-                                        ` : ''}
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    </div>
-                                </div>
+    <div id="viewAdmissionModal" class="modal-overlay" style="display: flex;" onclick="closeViewAdmissionModalOnBackdrop(event)">
+        <div class="billing-modal-card" onclick="event.stopPropagation()">
+            <div class="billing-modal-head">
+                <h3><i class="fas fa-eye"></i> Admission Details - ${admission.admission_id}</h3>
+                <button class="btn-close-modal" type="button" onclick="closeViewAdmissionModal()" title="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body-scroll">
+                <div class="modal-section-card">
+                    <div class="modal-section-body" style="padding: 0.75rem;">
+                        <!-- Ultra-Dense Grid with 5 Columns -->
+                        <div class="form-row" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.4rem 0.6rem; align-items: end;">
+                            
+                            <!-- SECTION 1: PATIENT & MEDICAL INFO -->
+                            <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0;">
+                                <i class="fas fa-user-md me-1"></i> Patient & Medical Info
                             </div>
+
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Patient Name</label>
+                                <div style="font-weight: 700; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.patient_name || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Age</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.patient_age || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Gender</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.patient_gender || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Contact</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.patient_contact || '-'}</div>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Doctor</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.doctor_name || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Chief Complaint</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.chief_complaint || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Diagnosis</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.diagnosis || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Emerg. Name</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.emergency_contact_name || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Emerg. Phone</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.emergency_contact_phone || '-'}</div>
+                            </div>
+
+                            <!-- SECTION 2: BED ALLOCATION -->
+                            <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0.3rem;">
+                                <i class="fas fa-bed me-1"></i> Hospital Bed Allocation
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Floor</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.floor_name || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Ward</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.ward_name || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Room Type</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.room_category || admission.room_type || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Room No</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.room_no || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Bed No</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.bed_number || '-'}</div>
+                            </div>
+
+                            <!-- SECTION 3: ADMISSION & REFERRAL -->
+                            <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0.3rem; display: flex; justify-content: space-between;">
+                                <div><i class="fas fa-hospital-user me-1"></i> Admission & Referral</div>
+                                <span style="background: #1f6b4a; color: white; padding: 0.1rem 0.5rem; border-radius: 12px; font-size: 0.65rem;">${admission.status}</span>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admission Type</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.admission_type || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admiss. Date</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${IPD.formatDate(admission.admission_date)}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admiss. Time</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.admission_time || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Referral Type</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.referral_type || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Referral Name</label>
+                                <div style="font-weight: 500; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.referral_name || '-'}</div>
+                            </div>
+
+                            <!-- SECTION 4: FINANCIAL -->
+                            ${admission.financials ? `
+                            <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0.3rem;">
+                                <i class="fas fa-file-invoice-dollar me-1"></i> Financial Summary
+                            </div>
+                            
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Amount/Day</label>
+                                <div style="font-weight: 700; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${IPD.formatCurrency(admission.amount_per_day || 0)}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Nursing Chg</label>
+                                <div style="font-weight: 700; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${IPD.formatCurrency(admission.nursig_charge || 0)}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Doctor Chg</label>
+                                <div style="font-weight: 700; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${IPD.formatCurrency(admission.doctor_charge || 0)}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Service Chg</label>
+                                <div style="font-weight: 700; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${IPD.formatCurrency(admission.service_charge || 0)}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Total Bed Amt</label>
+                                <div style="font-weight: 700; color: #0284c7; padding: 0.2rem 0.4rem; background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 4px; font-size: 0.75rem;">${IPD.formatCurrency(admission.total_bed_amount || 0)}</div>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Payment Type</label>
+                                <div style="font-weight: 700; color: #333; padding: 0.2rem 0.4rem; background: #f8fafc; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">${admission.payment_method || '-'}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Total Payments / Adv</label>
+                                <div style="font-weight: 700; color: #1f6b4a; padding: 0.2rem 0.4rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; font-size: 0.75rem;">${IPD.formatCurrency(admission.financials.total_payments)}</div>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Balance Due</label>
+                                <div style="font-weight: 800; padding: 0.2rem 0.4rem; background: ${admission.financials.balance_due > 0 ? '#fef2f2' : '#f0fdf4'}; border: 1px solid ${admission.financials.balance_due > 0 ? '#fca5a5' : '#bbf7d0'}; border-radius: 4px; font-size: 0.75rem; color: ${admission.financials.balance_due > 0 ? '#dc2626' : '#16a34a'};">${IPD.formatCurrency(admission.financials.balance_due)}</div>
+                            </div>
+                            ` : ''}
+
                         </div>
-                    `;
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+`;
 
-                    // Remove existing modal if any
-                    $('#viewAdmissionModal').remove();
+            $('#viewAdmissionModal').remove();
+            $('body').append(modalContent);
+        })
+        .catch(error => {
+            IPD.toast(error.message || 'Failed to fetch admission details', 'error');
+        });
+}
 
-                    // Add modal to body and show
-                    $('body').append(modalContent);
-                    const modal = new bootstrap.Modal(document.getElementById('viewAdmissionModal'));
-                    modal.show();
-
-                    // Clean up modal after it's hidden
-                    $('#viewAdmissionModal').on('hidden.bs.modal', function () {
-                        $(this).remove();
-                    });
-                })
-                .catch(error => {
-                    IPD.toast(error.message || 'Failed to load admission details', 'error');
-                });
-        }
-
+window.closeViewAdmissionModal = function() {
+    $('#viewAdmissionModal').remove();
+};
+window.closeViewAdmissionModalOnBackdrop = function(e) {
+    if (e.target === e.currentTarget) {
+        closeViewAdmissionModal();
+    }
+};
 
         function dischargePatient(id) {
             IPD.confirm('Are you sure you want to discharge this patient?', () => {
@@ -1458,9 +1917,30 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     $('#editDiagnosis').val(admission.diagnosis || '');
                     $('#editEmergencyName').val(admission.emergency_contact_name || '');
                     $('#editEmergencyPhone').val(admission.emergency_contact_phone || '');
+                    
+                    // New Fields Population
+                    $('#editReferralTypeSelect').val(admission.referral_type || '');
+                    $('#editRefNameText').val(admission.referral_name || '');
+                    
+                    $('#editSelFloorNumber').html(`<option value="${admission.floor_number || ''}">${admission.floor_number || '-'}</option>`);
+                    $('#editSelFloorName').html(`<option value="${admission.floor_name || ''}">${admission.floor_name || '-'}</option>`);
+                    $('#editSelWardName').html(`<option value="${admission.ward_name || ''}">${admission.ward_name || '-'}</option>`);
+                    $('#editSelWardType').html(`<option value="${admission.room_category || admission.room_type || ''}">${admission.room_category || admission.room_type || '-'}</option>`);
+                    $('#editSelRoomNumber').html(`<option value="${admission.room_no || ''}">${admission.room_no || '-'}</option>`);
+
+                    $('#editBdAmountPerDay').val(admission.amount_per_day || 0);
+                    $('#editBdNursingCharge').val(admission.nursig_charge || 0);
+                    $('#editBdDoctorCharge').val(admission.doctor_charge || 0);
+                    $('#editBdServiceCharge').val(admission.service_charge || 0);
+                    $('#editBdTotalAmount').val(admission.total_bed_amount || 0);
+                    
+                    $('#editPaymentMethod').val(admission.payment_method || 'CASH');
+                    $('#editAdvAmount').val(admission.advance_amount || 0);
+                    $('#editTotalDue').val(admission.total_due || 0);
+
 
                     // Show modal
-                    $('#editAdmissionModal').modal('show');
+                    $('#editAdmissionModal').removeClass('hidden');
                 })
                 .catch(error => {
                     IPD.toast(error.message || 'Failed to load admission details', 'error');
@@ -1527,7 +2007,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             IPD.ajax(`admissions?id=${admissionId}`, 'PUT', formData)
                 .then(response => {
                     IPD.toast('Admission updated successfully!', 'success');
-                    $('#editAdmissionModal').modal('hide');
+                    $('#editAdmissionModal').addClass('hidden');
                     admissionsTable.ajax.reload();
                 })
                 .catch(error => {
