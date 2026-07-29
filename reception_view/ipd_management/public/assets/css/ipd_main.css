@@ -1021,16 +1021,16 @@ textarea.form-control {
 }
 
 .adv-action-btn:hover {
-    background: #1f6b4a !important;
-    color: white !important;
+    background: #e6f0eb !important;
+    color: #1f6b4a !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 8px 20px rgba(31, 107, 74, 0.2) !important;
+    box-shadow: 0 4px 12px rgba(31, 107, 74, 0.1) !important;
     border-color: #1f6b4a !important;
 }
 
 .adv-action-btn:hover .adv-action-icon {
-    color: #1f6b4a !important;
-    background: #ffffff !important;
+    color: #ffffff !important;
+    background: #1f6b4a !important;
     transform: scale(1.1) !important;
 }
 
@@ -1040,7 +1040,7 @@ textarea.form-control {
 }
 
 .adv-action-btn:hover span {
-    color: #ffffff !important;
+    color: #1f6b4a !important;
 }
 
 /* Modules Grid */

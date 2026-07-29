@@ -17345,3 +17345,160 @@ Stack trace:
 [29-Jul-2026 11:29:01 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
 [29-Jul-2026 11:29:01 Europe/Berlin] [DEBUG] AuthController::login hit
 [29-Jul-2026 11:29:01 Europe/Berlin] Audit [info]: User sheela logged in as Superintendent_Nurse []
+[29-Jul-2026 11:53:51 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[29-Jul-2026 11:53:51 Europe/Berlin] [DEBUG] AuthController::login hit
+[29-Jul-2026 11:53:52 Europe/Berlin] Audit [info]: User shalini logged in as Receptionist []
+[29-Jul-2026 12:04:19 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[29-Jul-2026 12:04:19 Europe/Berlin] [DEBUG] AuthController::login hit
+[29-Jul-2026 12:04:19 Europe/Berlin] Audit [info]: User monika logged in as Pharmacist []
+[29-Jul-2026 12:04:21 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:04:21 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/dashboard, Method: GET
+[29-Jul-2026 12:04:25 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:04:25 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/suppliers, Method: GET
+[29-Jul-2026 12:04:28 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents, Method: GET
+[29-Jul-2026 12:04:28 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:04:32 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents/auto-generate, Method: POST
+[29-Jul-2026 12:04:33 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents, Method: GET
+[29-Jul-2026 12:10:53 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents, Method: GET
+[29-Jul-2026 12:10:53 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:11:08 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[29-Jul-2026 12:11:08 Europe/Berlin] [DEBUG] AuthController::login hit
+[29-Jul-2026 12:11:08 Europe/Berlin] Audit [info]: User shalini logged in as Receptionist []
+[29-Jul-2026 12:16:20 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[29-Jul-2026 12:16:20 Europe/Berlin] [DEBUG] AuthController::login hit
+[29-Jul-2026 12:16:20 Europe/Berlin] Audit [warning]: Failed login attempt for rekha []
+[29-Jul-2026 12:16:26 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[29-Jul-2026 12:16:26 Europe/Berlin] [DEBUG] AuthController::login hit
+[29-Jul-2026 12:16:27 Europe/Berlin] Audit [info]: User monika logged in as Pharmacist []
+[29-Jul-2026 12:16:28 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:16:29 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/dashboard, Method: GET
+[29-Jul-2026 12:16:39 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:16:39 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/prescriptions, Method: GET
+[29-Jul-2026 12:18:37 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:18:37 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/products, Method: GET
+[29-Jul-2026 12:18:49 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:18:50 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/products, Method: GET
+[29-Jul-2026 12:18:51 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:18:51 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/prescriptions, Method: GET
+[29-Jul-2026 12:18:52 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:18:52 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/products, Method: GET
+[29-Jul-2026 12:23:52 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:23:52 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/suppliers, Method: GET
+[29-Jul-2026 12:23:54 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents, Method: GET
+[29-Jul-2026 12:23:54 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:23:57 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents/auto-generate, Method: POST
+[29-Jul-2026 12:23:57 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents, Method: GET
+[29-Jul-2026 12:24:25 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents/bulk-assign, Method: POST
+[29-Jul-2026 12:24:32 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents/bulk-status, Method: POST
+[29-Jul-2026 12:24:32 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents, Method: GET
+[29-Jul-2026 12:25:27 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:25:27 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/suppliers, Method: GET
+[29-Jul-2026 12:25:46 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/suppliers, Method: POST
+[29-Jul-2026 12:25:46 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:25:47 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/suppliers, Method: GET
+[29-Jul-2026 12:25:49 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:25:49 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents, Method: GET
+[29-Jul-2026 12:26:09 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents/bulk-assign, Method: POST
+[29-Jul-2026 12:26:14 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents/bulk-status, Method: POST
+[29-Jul-2026 12:26:14 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents, Method: GET
+[29-Jul-2026 12:28:29 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/quotations, Method: GET
+[29-Jul-2026 12:28:29 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:28:38 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/quotations, Method: POST
+[29-Jul-2026 12:28:39 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/quotations, Method: POST
+[29-Jul-2026 12:28:41 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/quotations, Method: POST
+[29-Jul-2026 12:29:39 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:29:40 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/purchase-orders, Method: GET
+[29-Jul-2026 12:29:44 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/purchase-orders/8, Method: GET
+[29-Jul-2026 12:29:57 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/purchase-orders/8, Method: GET
+[29-Jul-2026 12:30:07 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:30:08 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/grn, Method: GET
+[29-Jul-2026 12:31:00 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/grn/bulk-submit, Method: POST
+[29-Jul-2026 12:31:00 Europe/Berlin] [DEBUG] bulkSubmit - Raw POST: {"ids":"40,39,38"}
+[29-Jul-2026 12:31:00 Europe/Berlin] [DEBUG] bulkSubmit - Raw php://input: 
+[29-Jul-2026 12:31:00 Europe/Berlin] [DEBUG] bulkSubmit - Parsed IDs: [40,39,38]
+[29-Jul-2026 12:31:00 Europe/Berlin] [DEBUG] bulkSubmit - Draft GRNs found: [{"receive_no":"REC-1785320975-38"},{"receive_no":"REC-1785320975-39"},{"receive_no":"REC-1785320975-40"}]
+[29-Jul-2026 12:31:00 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/grn, Method: GET
+[29-Jul-2026 12:31:03 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:31:03 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/products, Method: GET
+[29-Jul-2026 12:32:22 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:32:22 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/billing/sponsors, Method: GET
+[29-Jul-2026 12:33:44 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:33:44 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/suppliers, Method: GET
+[29-Jul-2026 12:33:45 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:33:45 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents, Method: GET
+[29-Jul-2026 12:33:53 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents/auto-generate, Method: POST
+[29-Jul-2026 12:33:56 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents, Method: GET
+[29-Jul-2026 12:34:32 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:34:33 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/prescriptions, Method: GET
+[29-Jul-2026 12:34:45 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/billing/sponsors, Method: GET
+[29-Jul-2026 12:34:46 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:35:18 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:35:18 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/products, Method: GET
+[29-Jul-2026 12:35:49 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:35:49 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/billing/sponsors, Method: GET
+[29-Jul-2026 12:35:52 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/billing/products, Method: GET
+[29-Jul-2026 12:37:34 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/billing/products, Method: GET
+[29-Jul-2026 12:38:41 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:38:41 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/dashboard, Method: GET
+[29-Jul-2026 12:38:55 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:39:40 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:39:48 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/settings, Method: POST
+[29-Jul-2026 12:39:52 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:39:53 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/products, Method: GET
+[29-Jul-2026 12:39:54 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:43:14 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:43:15 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents, Method: GET
+[29-Jul-2026 12:43:18 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents/auto-generate, Method: POST
+[29-Jul-2026 12:43:18 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/indents, Method: GET
+[29-Jul-2026 12:44:15 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:44:16 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/billing/sponsors, Method: GET
+[29-Jul-2026 12:44:21 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/billing/patients, Method: GET
+[29-Jul-2026 12:44:29 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/billing/prescriptions, Method: GET
+[29-Jul-2026 12:44:29 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/billing/products, Method: GET
+[29-Jul-2026 12:44:33 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/billing/products, Method: GET
+[29-Jul-2026 12:46:14 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:46:14 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/sales, Method: GET
+[29-Jul-2026 12:46:17 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/sales/119, Method: GET
+[29-Jul-2026 12:46:21 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/sales/119/reprint, Method: GET
+[29-Jul-2026 12:46:36 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:46:36 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/dashboard, Method: GET
+[29-Jul-2026 12:48:32 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:48:32 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/billing/sponsors, Method: GET
+[29-Jul-2026 12:48:41 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/notifications/counts, Method: GET
+[29-Jul-2026 12:48:41 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/pharmacy/prescriptions, Method: GET
+[29-Jul-2026 12:52:27 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[29-Jul-2026 12:52:27 Europe/Berlin] [DEBUG] AuthController::login hit
+[29-Jul-2026 12:52:27 Europe/Berlin] Audit [info]: User nethra logged in as admin []
+[29-Jul-2026 12:52:29 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/admin/dashboard-summary, Method: GET
+[29-Jul-2026 12:52:30 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/admin/bed-availability, Method: GET
+[29-Jul-2026 12:52:30 Europe/Berlin] Controller exception: Query preparation failed: Unknown column 'ward_type' in 'field list'. Query: SELECT 
+                        ward_name,
+                        ward_type,
+                        room_name,
+                        room_category,
+                        COUNT(*) as total_beds,
+                        SUM(CASE WHEN bed_status = 'Occupied' THEN 1 ELSE 0 END) as occupied_beds,
+                        SUM(CASE WHEN bed_status = 'Available' THEN 1 ELSE 0 END) as available_beds,
+                        SUM(CASE WHEN bed_status = 'Blocked' THEN 1 ELSE 0 END) as blocked_beds,
+                        SUM(CASE WHEN bed_status = 'Maintenance' THEN 1 ELSE 0 END) as maintenance_beds
+                    FROM hospital_beds
+                    GROUP BY ward_name, ward_type, room_name, room_category
+                    ORDER BY ward_name, room_name
+[29-Jul-2026 12:52:30 Europe/Berlin] Audit [error]: Query preparation failed: Unknown column 'ward_type' in 'field list'. Query: SELECT 
+                        ward_name,
+                        ward_type,
+                        room_name,
+                        room_category,
+                        COUNT(*) as total_beds,
+                        SUM(CASE WHEN bed_status = 'Occupied' THEN 1 ELSE 0 END) as occupied_beds,
+                        SUM(CASE WHEN bed_status = 'Available' THEN 1 ELSE 0 END) as available_beds,
+                        SUM(CASE WHEN bed_status = 'Blocked' THEN 1 ELSE 0 END) as blocked_beds,
+                        SUM(CASE WHEN bed_status = 'Maintenance' THEN 1 ELSE 0 END) as maintenance_beds
+                    FROM hospital_beds
+                    GROUP BY ward_name, ward_type, room_name, room_category
+                    ORDER BY ward_name, room_name {"trace":"#0 D:\\xampp\\htdocs\\GM_HMS\\Database\\SecureDatabase.php(147): GM_HMS\\Database\\SecureDatabase->execute('SELECT \\r\\n      ...', Array, NULL)\n#1 D:\\xampp\\htdocs\\GM_HMS\\controler\\api\\AdminInfoController.php(292): GM_HMS\\Database\\SecureDatabase->fetchAll('SELECT \\r\\n      ...')\n#2 D:\\xampp\\htdocs\\GM_HMS\\api\\index.php(458): GM_HMS\\Controllers\\api\\AdminInfoController->getBedAvailability()\n#3 {main}"}
+[29-Jul-2026 12:52:30 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/admin/active-departments, Method: GET
+[29-Jul-2026 12:52:30 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/admin/analytics, Method: GET
+[29-Jul-2026 12:52:43 Europe/Berlin] [DEBUG] Routing - Processed Path: /api/auth/login, Method: POST
+[29-Jul-2026 12:52:44 Europe/Berlin] [DEBUG] AuthController::login hit
+[29-Jul-2026 12:52:44 Europe/Berlin] Audit [info]: User shalini logged in as Receptionist []

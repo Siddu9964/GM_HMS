@@ -10,7 +10,7 @@
 require_once __DIR__ . '/../core/BaseController.php';
 require_once __DIR__ . '/../models/Admission.php';
 require_once __DIR__ . '/../models/Bed.php';
-require_once __DIR__ . '/../models/Payment.php';
+require_once __DIR__ . '/../models/IpdPayment.php';
 require_once __DIR__ . '/../models/Patient.php';
 require_once __DIR__ . '/../models/Doctor.php';
 require_once __DIR__ . '/../models/Appointment.php';
@@ -57,7 +57,7 @@ class DashboardController extends BaseController
             // Get dashboard statistics
             $admissionModel = new Admission();
             $bedModel = new Bed();
-            $paymentModel = new Payment();
+            $paymentModel = new IpdPayment();
 
             $stats = [
                 'admissions' => [

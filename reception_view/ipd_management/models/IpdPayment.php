@@ -163,4 +163,39 @@ class IpdPayment extends BaseModel {
         );
         return $row ?? [];
     }
+    /* ───────────────────────────────────────────────────────────────
+     * 6. GET PAYMENT STATS (DASHBOARD)
+     * ─────────────────────────────────────────────────────────────── */
+    public function getPaymentStats(string $dateRange = 'today'): array {
+        $dateCondition = '';
+        $params = [];
+        
+        switch ($dateRange) {
+            case 'today':
+                $dateCondition = "DATE(payment_date) = CURDATE()";
+                break;
+            case 'week':
+                $dateCondition = "payment_date >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+                break;
+            case 'month':
+                $dateCondition = "payment_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+                break;
+        }
+        
+        $query = "SELECT 
+            COUNT(*) as total_payments,
+            COALESCE(SUM(amount), 0) as total_amount,
+            COALESCE(AVG(amount), 0) as average_amount,
+            SUM(CASE WHEN payment_mode = 'CASH' THEN amount ELSE 0 END) as cash_payments,
+            SUM(CASE WHEN payment_mode = 'CARD' THEN amount ELSE 0 END) as card_payments,
+            SUM(CASE WHEN payment_mode = 'UPI' THEN amount ELSE 0 END) as upi_payments
+        FROM ipd_payment
+        WHERE payment_type != 'REFUND'";
+        
+        if ($dateCondition) {
+            $query .= " AND {$dateCondition}";
+        }
+        
+        return $this->fetchOne($query, $params) ?: [];
+    }
 }
