@@ -12,6 +12,8 @@ const billing = (function () {
     let currentPatientId = null;
     let currentMaster = null;
     let currentBedInfo = null;
+    window.allAdmittedPatientsList = [];
+    window.currentPatientSort = { col: 'admission_date', asc: false };
 
     const API_URL = window.BILLING_API || '/GM_HMS/api/';
     const USER_ROLE = window.USER_ROLE || 'Receptionist';
@@ -23,7 +25,7 @@ const billing = (function () {
         initSearch();
         initShortcuts();
         initCloseClick();
-        loadDashboardStats();
+        loadAllAdmittedPatients();
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -188,7 +190,7 @@ const billing = (function () {
         }
 
         // Print buttons
-        document.getElementById('btnPrintFinal').disabled = m.billing_status !== 'FINALIZED';
+        document.getElementById('btnPrintFinal').disabled = false;
 
         // Financial Summary Panel
         animateValue(document.getElementById('fsVal_ROOM_RENT'), parseFloat(m.room_charges), true);
@@ -495,17 +497,111 @@ const billing = (function () {
         if(window.lucide) lucide.createIcons();
     }
 
-    async function loadDashboardStats() {
+    async function loadAllAdmittedPatients() {
         try {
-            const res = await fetch(`${API_URL}ipd-billing-master?action=stats`);
+            const res = await fetch(`${API_URL}ipd-billing-master?action=search_admissions&q=`);
             const json = await res.json();
             if (json.success && json.data) {
-                document.getElementById('estTotalBills').textContent = json.data.total_bills || 0;
-                document.getElementById('estTotalCollected').textContent = '₹' + parseFloat(json.data.total_collected || 0).toLocaleString('en-IN');
-                document.getElementById('estPending').textContent = '₹' + parseFloat(json.data.total_pending || 0).toLocaleString('en-IN');
+                window.allAdmittedPatientsList = json.data;
+                billing.filterPatientsTable(); // This will trigger rendering based on active filters
+            } else {
+                document.getElementById('admittedPatientsList').innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color: #666;">No admitted patients found.</td></tr>`;
             }
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error(e);
+            document.getElementById('admittedPatientsList').innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color: red;">Failed to load patients.</td></tr>`;
+        }
     }
+
+    window.filterPatientsTable = function() {
+        const tbody = document.getElementById('admittedPatientsList');
+        if (!tbody || !window.allAdmittedPatientsList) return;
+
+        const statusFilter = document.getElementById('patientStatusFilter').value;
+        const searchQuery = (document.getElementById('patientTableSearch').value || '').toLowerCase();
+        
+        // Filtering
+        let filtered = window.allAdmittedPatientsList.filter(p => {
+            // Determine active vs discharged
+            const isDischarged = (p.discharge_date !== null && p.discharge_date !== undefined && p.discharge_date !== '');
+            const isActive = !isDischarged;
+            
+            // Status Check
+            if (statusFilter === 'ACTIVE' && !isActive) return false;
+            if (statusFilter === 'DISCHARGED' && !isDischarged) return false;
+            
+            // Search Check
+            if (searchQuery) {
+                const searchStr = `${p.admission_id} ${p.patient_name} ${p.phone} ${p.doctor_name} ${p.ward_name} ${p.room_name}`.toLowerCase();
+                if (!searchStr.includes(searchQuery)) return false;
+            }
+            return true;
+        });
+
+        // Sorting
+        filtered.sort((a, b) => {
+            let valA = a[window.currentPatientSort.col] || '';
+            let valB = b[window.currentPatientSort.col] || '';
+            
+            // Special handling for computed status
+            if (window.currentPatientSort.col === 'status') {
+                valA = a.discharge_date ? 'Discharged' : 'Active';
+                valB = b.discharge_date ? 'Discharged' : 'Active';
+            }
+
+            if (valA < valB) return window.currentPatientSort.asc ? -1 : 1;
+            if (valA > valB) return window.currentPatientSort.asc ? 1 : -1;
+            return 0;
+        });
+
+        // Rendering
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color: #666;">No matching patients found.</td></tr>`;
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(p => {
+            const isDischarged = (p.discharge_date !== null && p.discharge_date !== undefined && p.discharge_date !== '');
+            const statusLabel = isDischarged ? `<span style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:12px; font-size:0.8em; font-weight:bold;">Discharged</span>` 
+                                             : `<span style="background:#dcfce7; color:#166534; padding:3px 8px; border-radius:12px; font-size:0.8em; font-weight:bold;">Active</span>`;
+
+            html += `
+                <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 12px; font-weight: 500;">${p.admission_id}</td>
+                    <td style="padding: 12px;">
+                        <div style="font-weight: 600;">${p.patient_name}</div>
+                    </td>
+                    <td style="padding: 12px;">${p.age} / ${p.sex ? p.sex.charAt(0) : '-'}</td>
+                    <td style="padding: 12px;">${p.phone || '-'}</td>
+                    <td style="padding: 12px;">
+                        <div>${p.ward_name || '-'}</div>
+                        <div style="font-size: 0.85em; color: var(--slate);">${p.room_name || '-'} (${p.bed_number || '-'})</div>
+                    </td>
+                    <td style="padding: 12px;">${p.doctor_name || '-'}</td>
+                    <td style="padding: 12px;">${statusLabel}</td>
+                    <td style="padding: 12px;">
+                        <button onclick="billing.loadAdmission('${p.admission_id}', '${p.patient_id}')" 
+                                style="background: var(--primary-color); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                            <i data-lucide="external-link" style="width: 14px; height: 14px;"></i> Open
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+        if(window.lucide) lucide.createIcons();
+    };
+
+    window.sortPatientsTable = function(col) {
+        if (window.currentPatientSort.col === col) {
+            window.currentPatientSort.asc = !window.currentPatientSort.asc;
+        } else {
+            window.currentPatientSort.col = col;
+            window.currentPatientSort.asc = true;
+        }
+        billing.filterPatientsTable();
+    };
 
     // ─────────────────────────────────────────────────────────────
     // TABS & MENUS
@@ -1701,32 +1797,65 @@ const billing = (function () {
 
             // Close modals on Escape
             if (e.key === 'Escape') {
-                document.querySelectorAll('.billing-modal-overlay.open').forEach(el => {
-                    el.classList.remove('open');
-                });
-                closeChargeMenu();
+                const openModals = document.querySelectorAll('.billing-modal-overlay.open');
+                if (openModals.length > 0) {
+                    openModals.forEach(el => el.classList.remove('open'));
+                } else if (document.getElementById('chargeMenuDropdown') && document.getElementById('chargeMenuDropdown').classList.contains('active')) {
+                    closeChargeMenu();
+                } else {
+                    // Close workspace if no modals are open
+                    closeWorkspace();
+                }
             }
         });
     }
 
+    // ── CLOSE WORKSPACE ──
+    function closeWorkspace() {
+        document.getElementById('billingWorkspace').style.display = 'none';
+        document.getElementById('billingEmptyState').style.display = 'flex';
+        document.getElementById('billingSearchZone').style.display = 'flex';
+        
+        currentMaster = null;
+        currentBillId = null;
+        currentPatientId = null;
+        currentBedInfo = null;
+
+        // optionally refresh patients list to get latest status
+        loadAllAdmittedPatients();
+    }
+
     // ── PRINTING ──
+    function openPrintPage(url, data) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        form.target = '_blank';
+        for (const key in data) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = data[key];
+            form.appendChild(input);
+        }
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    }
+
     function printInterim() {
         if (!currentBillId) return;
-        window.open(`../views/billing/print_interim.php?bill_id=${currentBillId}`, '_blank');
+        openPrintPage('/GM_HMS/reception_view/print_interim.php', { bill_id: currentBillId });
     }
 
     function printFinal() {
         if (!currentBillId) return;
-        if (currentMaster.billing_status !== 'FINALIZED') {
-            showToast('Final bill can only be printed after status is Finalized', 'warning');
-            return;
-        }
-        window.open(`../views/billing/print_final.php?bill_id=${currentBillId}`, '_blank');
+        openPrintPage('/GM_HMS/reception_view/print_final.php', { bill_id: currentBillId });
     }
 
     function printReceipt() {
         if (!currentBillId) return;
-        window.open(`../views/billing/print_receipt.php?bill_id=${currentBillId}`, '_blank');
+        openPrintPage('/GM_HMS/reception_view/print_receipt.php', { bill_id: currentBillId });
     }
 
     // Export exposed functions
@@ -1785,7 +1914,10 @@ const billing = (function () {
         // Discharge
         dischargePatient,
         submitDischarge,
-        openDischargeHistory
+        openDischargeHistory,
+        filterPatientsTable,
+        sortPatientsTable,
+        closeWorkspace
     };
 
 })();

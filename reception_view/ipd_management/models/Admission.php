@@ -422,7 +422,16 @@ class Admission extends BaseModel {
             $admCharge = (isset($data['admission_charge']) && is_numeric($data['admission_charge'])) ? (float)$data['admission_charge'] : 350;
             $mrdCharge = (isset($data['mrd_charge']) && is_numeric($data['mrd_charge'])) ? (float)$data['mrd_charge'] : 400;
             $foodCharge = (isset($data['food_charge']) && is_numeric($data['food_charge'])) ? (float)$data['food_charge'] : 570;
-            $roomCharge = (isset($bedDetails['amount_per_day']) && is_numeric($bedDetails['amount_per_day'])) ? (float)$bedDetails['amount_per_day'] : 0;
+            $roomCharge = (isset($bedDetails['total_bed_amount']) && is_numeric($bedDetails['total_bed_amount'])) ? (float)$bedDetails['total_bed_amount'] : 0;
+            
+            $roomRentBase = (isset($bedDetails['amount_per_day']) && is_numeric($bedDetails['amount_per_day'])) ? (float)$bedDetails['amount_per_day'] : 0;
+            $nursingCharge = (isset($bedDetails['nursig_charge']) && is_numeric($bedDetails['nursig_charge'])) ? (float)$bedDetails['nursig_charge'] : 0;
+            $doctorCharge = (isset($bedDetails['doctor_charge']) && is_numeric($bedDetails['doctor_charge'])) ? (float)$bedDetails['doctor_charge'] : 0;
+            $serviceCharge = (isset($bedDetails['service_charge']) && is_numeric($bedDetails['service_charge'])) ? (float)$bedDetails['service_charge'] : 0;
+            
+            $roomName = $bedDetails['room_name'] ?? 'General Room';
+            $breakdown = "Room Rent: ₹" . number_format($roomRentBase, 0) . " | Nursing Charges: ₹" . number_format($nursingCharge, 0) . " | Duty Doctor Charges: ₹" . number_format($doctorCharge, 0) . " | Service Charges: ₹" . number_format($serviceCharge, 0);
+            $roomDesc = "Room Rent - " . $roomName . " - Day 1<br><small style='color: #6c757d; font-size: 0.85em;'>" . $breakdown . "</small>";
             
             $createdBy = $_SESSION['username'] ?? 'system';
             
@@ -430,13 +439,13 @@ class Admission extends BaseModel {
                  (?, ?, ?, CURDATE(), 'MISC', 'Admission Charge', ?, 'COMPLETED', ?, NOW()),
                  (?, ?, ?, CURDATE(), 'MISC', 'MRD Charge', ?, 'COMPLETED', ?, NOW()),
                  (?, ?, ?, CURDATE(), 'MISC', 'Food Charge - Day 1', ?, 'COMPLETED', ?, NOW()),
-                 (?, ?, ?, CURDATE(), 'ROOM_RENT', CONCAT('Room Rent - ', ?), ?, 'COMPLETED', ?, NOW())";
+                 (?, ?, ?, CURDATE(), 'ROOM_RENT', ?, ?, 'COMPLETED', ?, NOW())";
                  
             $this->query($insertQuery, [
                 $billId, $filteredData['patient_id'], $data['admission_id'], $admCharge, $createdBy,
                 $billId, $filteredData['patient_id'], $data['admission_id'], $mrdCharge, $createdBy,
                 $billId, $filteredData['patient_id'], $data['admission_id'], $foodCharge, $createdBy,
-                $billId, $filteredData['patient_id'], $data['admission_id'], $bedDetails['room_name'] ?? 'Day 1', $roomCharge, $createdBy
+                $billId, $filteredData['patient_id'], $data['admission_id'], $roomDesc, $roomCharge, $createdBy
             ]);
             
             // Note: Since IpdBillingMaster also has a broken schema mapping in recalculateMaster, 
@@ -449,10 +458,29 @@ class Admission extends BaseModel {
             );
 
             // Process Advance Payment if any
-            if (isset($data['advance_payment']) && is_numeric($data['advance_payment']) && (float)$data['advance_payment'] > 0) {
+            require_once __DIR__ . '/../../../Models/IpdPayment.php';
+            $ipdPayment = new \GM_HMS\Models\IpdPayment();
+            
+            if (isset($data['payments']) && is_array($data['payments'])) {
+                // New logic: Multiple payment splits
+                foreach ($data['payments'] as $payment) {
+                    $amt = (float)($payment['amount'] ?? 0);
+                    $mode = $payment['mode'] ?? 'CASH';
+                    if ($amt > 0) {
+                        $ipdPayment->recordPayment([
+                            'bill_id' => $billId,
+                            'admission_id' => $data['admission_id'],
+                            'patient_id' => $filteredData['patient_id'],
+                            'payment_type' => 'ADVANCE',
+                            'payment_mode' => $mode,
+                            'amount' => $amt,
+                            'created_by' => $_SESSION['username'] ?? 'system'
+                        ]);
+                    }
+                }
+            } elseif (isset($data['advance_payment']) && is_numeric($data['advance_payment']) && (float)$data['advance_payment'] > 0) {
+                // Fallback: Legacy single payment
                 $paymentMethod = $data['payment_method'] ?? 'CASH';
-                require_once __DIR__ . '/../../../Models/IpdPayment.php';
-                $ipdPayment = new \GM_HMS\Models\IpdPayment();
                 $ipdPayment->recordPayment([
                     'bill_id' => $billId,
                     'admission_id' => $data['admission_id'],

@@ -641,7 +641,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             height: auto !important;
             overflow: visible !important;
         }
-        #addAdmissionModal .position-relative {
+        #addAdmissionModal .ref-modal-head {
             padding: 16px 24px;
             border-bottom: 1px solid #e0e8e3;
             display: flex;
@@ -773,10 +773,36 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
         #addAdmissionModal .billing-modal-card {
             height: auto !important;
             max-height: 95vh;
-            overflow: visible !important;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden !important; /* Keep card boundaries clean */
         }
         #addAdmissionModal .modal-body-scroll {
-            overflow: visible !important;
+            overflow-y: auto !important;
+            flex: 1;
+            padding-bottom: 1rem; /* Extra padding at the bottom */
+        }
+        
+        /* Fix for Select2 in Referral Name */
+        #refNameContainer .select2-container {
+            width: 100% !important;
+        }
+        #refNameContainer .select2-selection--single {
+            min-height: 25.5px !important; /* To match other fields padding+borders */
+            height: auto !important;
+            border: 1px solid var(--gray-300) !important;
+            border-radius: 4px !important;
+            font-size: 0.75rem !important;
+            display: flex;
+            align-items: center;
+        }
+        #refNameContainer .select2-selection__rendered {
+            padding: 0.2rem 0.4rem !important;
+            line-height: normal !important;
+            color: #333 !important;
+        }
+        #refNameContainer .select2-selection__arrow {
+            height: 100% !important;
         }
     </style>
 
@@ -794,9 +820,9 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 <form id="addAdmissionForm">
                     
                     <div class="modal-section-card">
-                        <div class="modal-section-body" style="padding: 0.75rem;">
-                            <!-- Ultra-Dense Grid with 5 Columns -->
-                            <div class="form-row" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.4rem 0.6rem; align-items: end;">
+                        <div class="modal-section-body" style="padding: 0.4rem;">
+                            <!-- Ultra-Dense Grid with 6 Columns -->
+                            <div class="form-row" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.2rem 0.4rem; align-items: end;">
                                 
                                 <!-- SECTION 1: PATIENT & MEDICAL INFO -->
                                 <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0;">
@@ -811,7 +837,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                                         <input type="hidden" id="patientSelect" name="patient_id" required>
                                     </div>
                                 </div>
-                                <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admitting Doctor *</label>
                                     <select id="doctorSelect" name="admitting_doctor_id" required style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;">
                                         <option value="">Select Doctor...</option>
@@ -825,18 +851,17 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Diagnosis</label>
                                     <input type="text" name="diagnosis" placeholder="Diagnosis..." style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
                                 </div>
-                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 3;">
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Emergency Contact Name</label>
                                     <input type="text" name="emergency_contact_name" placeholder="Contact Name" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
                                 </div>
-                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 3;">
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Emergency Contact Phone</label>
                                     <input type="text" name="emergency_contact_phone" placeholder="Phone Number" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
                                 </div>
-                                <div style="grid-column: span 1;"></div> <!-- spacer to push next section to new line if needed, but flex grid handles it -->
 
                                 <!-- SECTION 2: BED ALLOCATION -->
-                                <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0.3rem;">
+                                <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0.2rem;">
                                     <i class="fas fa-bed me-1"></i> Hospital Bed Allocation
                                 </div>
 
@@ -889,6 +914,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                                         <option value="OPD">OPD</option>
                                         <option value="Routine">Routine</option>
                                         <option value="Transfer">Transfer</option>
+                                        <option value="Insurance">Insurance</option>
                                     </select>
                                 </div>
                                 <div class="form-group" style="margin-bottom: 0;">
@@ -908,14 +934,27 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                                         <option value="External">External</option>
                                     </select>
                                 </div>
-                                <div class="form-group" style="margin-bottom: 0;" id="refNameContainer">
+                                <div class="form-group position-relative" style="margin-bottom: 0;" id="refNameContainer">
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Referral Name</label>
                                     <input type="text" id="refNameText" name="referral_name" placeholder="Referral Name" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                    <i class="fas fa-user-plus d-none" id="btnExternalRefAdd" onclick="toggleExternalRefCard()" style="position: absolute; right: 25px; bottom: 6px; cursor: pointer; color: var(--teal-dark); font-size: 0.8rem; z-index: 10;" title="Add External Referral Details"></i>
                                     <select id="refNameSelect" class="d-none" style="width: 100%;"><option value="">Select Doctor...</option></select>
+
+                                    <!-- External Referral Popup Card -->
+                                    <div id="externalRefCard" class="d-none" style="position: absolute; top: 100%; left: 0; width: 220px; background: #fff; border: 1px solid var(--gray-300); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1050; padding: 0.6rem; margin-top: 0.3rem;">
+                                        <div style="font-size: 0.7rem; font-weight: 700; color: var(--teal-dark); margin-bottom: 0.4rem;">Add External Referral</div>
+                                        <input type="text" id="extRefName" placeholder="Name" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.7rem; margin-bottom: 0.3rem;">
+                                        <input type="text" id="extRefPhone" placeholder="Phone Number" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.7rem; margin-bottom: 0.4rem;">
+                                        <div class="d-flex gap-1 justify-content-end">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 4px;" onclick="toggleExternalRefCard()">Cancel</button>
+                                            <button type="button" class="btn btn-sm btn-success" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 4px;" onclick="saveExternalRef()">Add</button>
+                                        </div>
+                                    </div>
                                 </div>
+                                <div style="grid-column: span 1;"></div>
 
                                 <!-- SECTION 4: BILLING & CHARGES -->
-                                <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0.3rem;">
+                                <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0.2rem;">
                                     <i class="fas fa-tags me-1"></i> Billing & Charges
                                 </div>
 
@@ -936,25 +975,29 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Service Chg</label>
                                     <input type="number" id="bdServiceCharge" name="service_charge" value="0" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background: #f1f5f9;">
                                 </div>
-                                <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Total Bed Amt</label>
                                     <input type="number" id="bdTotalAmount" name="total_bed_amount" value="0" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background: #e0f2fe; color: #0284c7; font-weight: bold;">
                                 </div>
 
-                                <!-- ROW 2: Payment & Buttons -->
-                                <div class="form-group" style="margin-bottom: 0;">
-                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Payment Type</label>
-                                    <select name="payment_method" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;">
-                                        <option value="CASH">Cash</option>
-                                        <option value="UPI">UPI</option>
-                                        <option value="CARD">Card</option>
-                                    </select>
+                                <!-- ROW 2: Payment Splits & Buttons -->
+                                <div style="grid-column: 1 / -1; margin-top: 0.4rem; background: #fdfdfd; padding: 0.5rem; border: 1px solid rgba(31, 107, 74, 0.2); border-radius: 8px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                                    <div class="d-flex justify-content-between align-items-center mb-2 pb-1" style="border-bottom: 1px dashed rgba(31, 107, 74, 0.2);">
+                                        <label style="font-size: 0.85rem; font-weight: 800; color: #1f6b4a; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
+                                            <i class="fas fa-wallet me-1"></i> Advance Payments
+                                        </label>
+                                        <button type="button" class="btn btn-sm" style="font-size: 0.7rem; padding: 0.2rem 0.6rem; font-weight: 700; border-radius: 6px; background: rgba(31, 107, 74, 0.1); color: #1f6b4a; border: 1px solid rgba(31, 107, 74, 0.2); transition: all 0.2s;" onmouseover="this.style.background='#1f6b4a'; this.style.color='#fff';" onmouseout="this.style.background='rgba(31, 107, 74, 0.1)'; this.style.color='#1f6b4a';" onclick="addPaymentSplitRow()">
+                                            <i class="fas fa-plus"></i> Add Split
+                                        </button>
+                                    </div>
+                                    <div id="paymentSplitsContainer" class="d-flex flex-column gap-2">
+                                        <!-- Default first row added via JS -->
+                                    </div>
+                                    <!-- Hidden old field for backward compatibility or serialization ease if needed -->
+                                    <input type="hidden" name="advance_payment" id="totalAdvancePaymentInput" value="0">
                                 </div>
-                                <div class="form-group" style="margin-bottom: 0;">
-                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Adv. Amount</label>
-                                    <input type="number" name="advance_payment" placeholder="Amount" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
-                                </div>
-                                <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
+
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Total Due Now</label>
                                     <div class="d-flex align-items-center justify-content-between" style="border: 1px solid var(--gray-300); border-radius: 4px; padding: 0.2rem 0.4rem; background: #fff;">
                                         <span id="lblGrandTotal" style="color: var(--teal-dark); font-weight: 700; font-size: 0.75rem; text-align: center; width: 100%;">-₹0.00</span>
@@ -965,6 +1008,9 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                                         <input type="hidden" id="bdFoodCharge" name="food_charge" value="570">
                                     </div>
                                 </div>
+                                
+                                <div style="grid-column: span 1;"></div>
+                                
                                 <div class="form-group" style="margin-bottom: 0; grid-column: span 2; display: flex; justify-content: flex-end; gap: 0.5rem; align-items: flex-end; height: 100%;">
                                     <button type="button" class="btn btn-outline" style="border: 1px solid var(--gray-300); background: #fff; padding: 0.3rem 1rem; border-radius: 4px; color: var(--gray-700); font-weight: 600; font-size: 0.75rem; height: 26px; line-height: 1;" onclick="closeAddAdmissionModal()">Cancel</button>
                                     <button type="button" class="btn btn-success" style="padding: 0.3rem 1.5rem; border-radius: 4px; background: #0d9488; color: #ffffff !important; border: none; font-weight: 700; font-size: 0.75rem; height: 26px; line-height: 1;" onclick="saveAdmission()">
@@ -1213,6 +1259,13 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 
                 // Reset Search
                 clearPatientSelection();
+                
+                // Reset Payment Splits
+                if (typeof splitPaymentCount !== 'undefined') {
+                    splitPaymentCount = 0;
+                    document.getElementById('paymentSplitsContainer').innerHTML = '';
+                    addPaymentSplitRow();
+                }
 
                 // Set current date (Robust Local Time)
                 const now = new Date();
@@ -1586,8 +1639,21 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             
             // Grand Total (Daily + Initial)
             const grandTotal = dailyTotal + initialTotal;
+            
+            // Calculate Total Advance Payments
+            let totalAdvance = 0;
+            document.querySelectorAll('.split-amount-input').forEach(input => {
+                totalAdvance += parseFloat(input.value) || 0;
+            });
+            const totalAdvanceInput = document.getElementById('totalAdvancePaymentInput');
+            if (totalAdvanceInput) {
+                totalAdvanceInput.value = totalAdvance;
+            }
+            
+            const totalDue = grandTotal - totalAdvance;
+
             const lblGrand = document.getElementById('lblGrandTotal');
-            if(lblGrand) lblGrand.innerText = grandTotal.toString();
+            if(lblGrand) lblGrand.innerText = "₹" + totalDue.toString();
         }
 
 
@@ -1596,46 +1662,157 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             const txt = document.getElementById('refNameText');
             const sel = document.getElementById('refNameSelect');
             
+            if ($(sel).data('select2')) {
+                $(sel).select2('destroy');
+                sel.innerHTML = '<option value="">Search...</option>';
+            }
+            
             if (type === 'Internal') {
-                txt.style.display = 'none';
+                document.getElementById('refNameText').classList.add('d-none');
                 txt.removeAttribute('name');
                 
                 sel.setAttribute('name', 'referral_name');
                 $(sel).removeClass('d-none');
                 
-                if (!$(sel).data('select2')) {
-                    $(sel).select2({
-                        ajax: {
-                            url: IPD.API_BASE + '/dashboard/doctors',
-                            dataType: 'json',
-                            delay: 250,
-                            data: function (params) {
-                                return { search: params.term || '' };
-                            },
-                            processResults: function (data) {
-                                return {
-                                    results: data.data.doctors.map(d => ({
-                                        id: d.name,
-                                        text: `${d.name} - ${d.specialization}`
-                                    }))
-                                };
-                            }
+                $(sel).select2({
+                    ajax: {
+                        url: IPD.API_BASE + '/dashboard/doctors',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return { search: params.term || '' };
                         },
-                        placeholder: 'Search internal doctor...',
-                        tags: true,
-                        dropdownParent: $('#addAdmissionModal')
-                    });
-                }
+                        processResults: function (data) {
+                            return {
+                                results: data.data.doctors.map(d => ({
+                                    id: d.name,
+                                    text: `${d.name} - ${d.specialization}`
+                                }))
+                            };
+                        }
+                    },
+                    placeholder: 'Search internal doctor...',
+                    tags: true,
+                    dropdownParent: $('#addAdmissionModal')
+                });
+                
                 $(sel).next('.select2-container').show();
-            } else {
-                sel.removeAttribute('name');
-                if ($(sel).data('select2')) {
-                    $(sel).next('.select2-container').hide();
+                document.getElementById('btnExternalRefAdd').classList.add('d-none');
+                document.getElementById('externalRefCard').classList.add('d-none');
+                
+            } else if (type === 'External') {
+                document.getElementById('refNameText').classList.add('d-none');
+                txt.removeAttribute('name');
+                
+                sel.setAttribute('name', 'referral_name');
+                $(sel).removeClass('d-none');
+                
+                let baseUrl = '';
+                if (typeof IPD !== 'undefined' && IPD.API_BASE) {
+                    baseUrl = IPD.API_BASE.split('/reception_view/')[0];
+                } else {
+                    baseUrl = '/GM_HMS'; // Fallback
                 }
                 
+                $(sel).select2({
+                    ajax: {
+                        url: baseUrl + '/api/billing/opd/referral/search',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return { q: params.term || '' };
+                        },
+                        processResults: function (data) {
+                            let refs = [];
+                            if (data && data.data) {
+                                refs = Array.isArray(data.data) ? data.data : (data.data.referrals || []);
+                            } else if (Array.isArray(data)) {
+                                refs = data;
+                            }
+                            return {
+                                results: refs.map(d => ({
+                                    id: d.mobile ? `${d.name} (${d.mobile})` : d.name,
+                                    text: d.mobile ? `${d.name} - ${d.mobile}` : d.name
+                                }))
+                            };
+                        }
+                    },
+                    placeholder: 'Search external referral...',
+                    tags: true,
+                    dropdownParent: $('#addAdmissionModal')
+                });
+                
+                $(sel).next('.select2-container').show();
+                document.getElementById('btnExternalRefAdd').classList.remove('d-none');
+                document.getElementById('externalRefCard').classList.add('d-none');
+                
+            } else {
+                sel.removeAttribute('name');
+                sel.classList.add('d-none');
+                
                 txt.setAttribute('name', 'referral_name');
-                txt.style.display = 'block';
+                document.getElementById('refNameText').classList.remove('d-none');
+                
+                document.getElementById('btnExternalRefAdd').classList.add('d-none');
+                document.getElementById('externalRefCard').classList.add('d-none');
             }
+        }
+        
+        function toggleExternalRefCard() {
+            const card = document.getElementById('externalRefCard');
+            card.classList.toggle('d-none');
+            if (!card.classList.contains('d-none')) {
+                document.getElementById('extRefName').focus();
+            }
+        }
+        
+        async function saveExternalRef() {
+            const btn = document.querySelector('#externalRefCard .btn-success');
+            const originalText = btn ? btn.innerText : 'Add';
+            if (btn) { btn.innerText = 'Saving...'; btn.disabled = true; }
+            
+            const name = document.getElementById('extRefName').value.trim();
+            const phone = document.getElementById('extRefPhone').value.trim();
+            
+            if (name) {
+                try {
+                    let baseUrl = '';
+                    if (typeof IPD !== 'undefined' && IPD.API_BASE) {
+                        baseUrl = IPD.API_BASE.split('/reception_view/')[0];
+                    } else {
+                        baseUrl = '/GM_HMS'; 
+                    }
+                    
+                    const response = await fetch(baseUrl + '/api/billing/opd/referral', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: name, mobile: phone })
+                    });
+                    
+                    if (!response.ok) console.error('Failed to save referral data');
+                } catch(e) {
+                    console.error('Error saving referral data', e);
+                }
+                
+                let text = name;
+                if (phone) text += ` (${phone})`;
+                
+                const type = document.getElementById('referralTypeSelect').value;
+                if (type === 'External') {
+                    const sel = $('#refNameSelect');
+                    if (sel.length) {
+                        const newOption = new Option(text, text, true, true);
+                        sel.append(newOption).trigger('change');
+                    }
+                } else {
+                    document.getElementById('refNameText').value = text;
+                }
+            }
+            
+            if (btn) { btn.innerText = originalText; btn.disabled = false; }
+            document.getElementById('extRefName').value = '';
+            document.getElementById('extRefPhone').value = '';
+            toggleExternalRefCard();
         }
 
         function saveAdmission() {
@@ -2013,6 +2190,43 @@ window.closeViewAdmissionModalOnBackdrop = function(e) {
                 .catch(error => {
                     IPD.toast(error.message || 'Failed to update admission', 'error');
                 });
+        }
+        
+        // ── Payment Splits Logic ──────────────────────────────────────────────
+        let splitPaymentCount = 0;
+
+        function addPaymentSplitRow() {
+            const container = document.getElementById('paymentSplitsContainer');
+            if (!container) return;
+            const rowId = 'split_row_' + splitPaymentCount;
+            const html = `
+                <div class="d-flex gap-2 align-items-center payment-split-row" id="${rowId}" style="animation: fadeIn 0.3s ease;">
+                    <div style="flex: 1; position: relative;">
+                        <i class="fas fa-money-check-alt" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #1f6b4a; font-size: 0.8rem;"></i>
+                        <select name="payments[${splitPaymentCount}][mode]" class="form-select" style="padding: 0.3rem 0.4rem 0.3rem 2rem; font-size: 0.8rem; font-weight: 600; color: #1f6b4a; border: 1px solid #d1e0d7; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer; height: auto;">
+                            <option value="CASH">Cash</option>
+                            <option value="UPI">UPI</option>
+                            <option value="CARD">Card</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; position: relative;">
+                        <i class="fas fa-rupee-sign" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #1f6b4a; font-size: 0.8rem;"></i>
+                        <input type="number" name="payments[${splitPaymentCount}][amount]" class="form-control split-amount-input" placeholder="Amount" value="0" style="padding: 0.3rem 0.4rem 0.3rem 2rem; font-size: 0.8rem; font-weight: 700; color: #1f6b4a; border: 1px solid #d1e0d7; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); height: auto;" oninput="calculateTotalRent()">
+                    </div>
+                    <button type="button" class="btn btn-link text-danger p-0 ms-1" style="font-size: 1.1rem; transition: transform 0.2s; opacity: 0.7;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)';" onmouseout="this.style.opacity='0.7'; this.style.transform='scale(1)';" onclick="removePaymentSplitRow('${rowId}')" title="Remove Split">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+            splitPaymentCount++;
+            calculateTotalRent();
+        }
+
+        function removePaymentSplitRow(rowId) {
+            const el = document.getElementById(rowId);
+            if (el) el.remove();
+            calculateTotalRent();
         }
     </script>
 </body>

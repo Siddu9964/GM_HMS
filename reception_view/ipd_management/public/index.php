@@ -217,40 +217,40 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     <!-- Left: Stats Cards -->
                     <div>
                         <h2 class="section-heading" style="font-size: 1.1rem; color: #64748b; margin-bottom: 1rem;"><i class="fas fa-chart-pie"></i> Overview</h2>
-                        <div class="kpi-cards-grid" id="statsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem;">
+                        <div class="stats-grid" id="statsGrid">
                             <!-- Active Admissions -->
-                            <div class="kpi-card card border-0 shadow-sm" style="width: 100% !important; max-width: none !important;">
-                                <div class="kpi-icon-wrapper"><i class="fas fa-bed"></i></div>
-                                <div class="kpi-content-inline">
-                                    <span class="kpi-card-value" id="activeAdmissions">-</span>
-                                    <span class="kpi-card-label">Active Admissions</span>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-bed"></i></div>
+                                <div class="stat-info">
+                                    <h3 id="activeAdmissions">-</h3>
+                                    <p>Active Admissions</p>
                                 </div>
                             </div>
                             
                             <!-- Bed Occupancy -->
-                            <div class="kpi-card card border-0 shadow-sm" style="width: 100% !important; max-width: none !important;">
-                                <div class="kpi-icon-wrapper"><i class="fas fa-procedures"></i></div>
-                                <div class="kpi-content-inline">
-                                    <span class="kpi-card-value" id="bedOccupancy">-</span>
-                                    <span class="kpi-card-label">Bed Occupancy</span>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-procedures"></i></div>
+                                <div class="stat-info">
+                                    <h3 id="bedOccupancy">-</h3>
+                                    <p>Bed Occupancy</p>
                                 </div>
                             </div>
                             
                             <!-- Admissions Today -->
-                            <div class="kpi-card card border-0 shadow-sm" style="width: 100% !important; max-width: none !important;">
-                                <div class="kpi-icon-wrapper"><i class="fas fa-user-plus"></i></div>
-                                <div class="kpi-content-inline">
-                                    <span class="kpi-card-value" id="admissionsToday">-</span>
-                                    <span class="kpi-card-label">Admissions Today</span>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-user-plus"></i></div>
+                                <div class="stat-info">
+                                    <h3 id="admissionsToday">-</h3>
+                                    <p>Admissions Today</p>
                                 </div>
                             </div>
                             
                             <!-- Payments Today -->
-                            <div class="kpi-card card border-0 shadow-sm" style="width: 100% !important; max-width: none !important;">
-                                <div class="kpi-icon-wrapper"><i class="fas fa-rupee-sign"></i></div>
-                                <div class="kpi-content-inline">
-                                    <span class="kpi-card-value" id="paymentsToday">-</span>
-                                    <span class="kpi-card-label">Payments Today</span>
+                            <div class="stat-card">
+                                <div class="stat-icon"><i class="fas fa-rupee-sign"></i></div>
+                                <div class="stat-info">
+                                    <h3 id="paymentsToday">-</h3>
+                                    <p>Payments Today</p>
                                 </div>
                             </div>
                         </div>

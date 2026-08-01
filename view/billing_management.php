@@ -55,13 +55,18 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
             position: relative;
             cursor: pointer;
             padding: 1rem 1.5rem;
-            color: #64748b;
+            color: rgba(31, 107, 74, 0.6);
             font-weight: 500;
             transition: all 0.3s ease;
         }
 
+        .billing-tab:hover {
+            color: rgba(31, 107, 74, 0.9);
+        }
+
         .billing-tab.active {
-            color: #2563eb;
+            color: #1f6b4a;
+            font-weight: 700;
         }
 
         .billing-tab.active::after {
@@ -71,7 +76,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
             left: 0;
             width: 100%;
             height: 2px;
-            background: #2563eb;
+            background: #1f6b4a;
         }
 
         /* Select2 Premium Styling */
@@ -147,18 +152,44 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
         }
 
         /* Table Styles */
+        .premium-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+        }
+
         .premium-table thead th {
-            background: #f8fafc;
+            background: #1f6b4a;
+            color: #f3efe6;
             text-transform: uppercase;
             font-size: 0.75rem;
+            font-weight: 700;
             letter-spacing: 0.05em;
-            color: #64748b;
             padding: 1rem 1.5rem;
+            border-bottom: none;
+        }
+        
+        .premium-table thead th:first-child {
+            border-top-left-radius: 0.75rem;
+        }
+        
+        .premium-table thead th:last-child {
+            border-top-right-radius: 0.75rem;
+        }
+
+        .premium-table tbody {
+            background: #fdfdfc;
         }
 
         .premium-table tbody td {
             padding: 1rem 1.5rem;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid rgba(31, 107, 74, 0.15);
+            color: #1f6b4a;
+            font-weight: 500;
+        }
+        
+        .premium-table tbody tr:hover td {
+            background-color: #f3efe6;
         }
     </style>
 </head>
@@ -229,19 +260,27 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                         </div>
                     </div>
 
-                    <!-- Main Table Area -->
-                    <div class="p-6">
+                    <!-- OPD Billing Tab Content -->
+                    <div id="tab-opd" class="tab-content">
+                        <div class="p-6 rounded-xl" style="background-color: #f3efe6; border: 1px solid rgba(31, 107, 74, 0.2); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
                         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                            <h3 class="text-lg font-bold text-slate-900">Recent Transactions</h3>
+                            <h3 class="text-xl font-black flex items-center gap-2" style="color: #1f6b4a;">
+                                <i class="fas fa-list-alt"></i> Recent Transactions
+                            </h3>
                             <div class="flex items-center gap-3 w-full md:w-auto">
                                 <div class="relative flex-1 md:w-64">
-                                    <i
-                                        class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2" style="color: rgba(31, 107, 74, 0.6);"></i>
                                     <input type="text" id="search-bills" placeholder="Search invoices..."
-                                        class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                                        class="w-full pl-10 pr-4 py-2 bg-white rounded-xl outline-none transition-all"
+                                        style="border: 1px solid rgba(31, 107, 74, 0.3); color: #1f6b4a;"
+                                        onfocus="this.style.borderColor='#1f6b4a'; this.style.boxShadow='0 0 0 3px rgba(31, 107, 74, 0.15)';"
+                                        onblur="this.style.borderColor='rgba(31, 107, 74, 0.3)'; this.style.boxShadow='none';">
                                 </div>
                                 <select id="filter-status" onchange="loadBills()"
-                                    class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20">
+                                    class="px-4 py-2 bg-white rounded-xl outline-none transition-all font-medium"
+                                    style="border: 1px solid rgba(31, 107, 74, 0.3); color: #1f6b4a; cursor: pointer;"
+                                    onfocus="this.style.borderColor='#1f6b4a'; this.style.boxShadow='0 0 0 3px rgba(31, 107, 74, 0.15)';"
+                                    onblur="this.style.borderColor='rgba(31, 107, 74, 0.3)'; this.style.boxShadow='none';">
                                     <option value="">All Status</option>
                                     <option value="Paid">Paid</option>
                                     <option value="Partial">Partial</option>
@@ -250,7 +289,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                             </div>
                         </div>
 
-                        <div class="overflow-x-auto border border-slate-100 rounded-xl">
+                        <div class="overflow-x-auto bg-white rounded-xl" style="border: 1px solid rgba(31, 107, 74, 0.2); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
                             <table class="w-full premium-table">
                                 <thead>
                                     <tr>
@@ -262,20 +301,161 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                                         <th class="text-right">Received</th>
                                         <th class="text-right">Balance</th>
                                         <th class="text-center">Status</th>
-                                        <th class="text-right tracking-widest">•••</th>
+                                        <th class="text-center sticky right-0 bg-white z-10 shadow-[inset_1px_0_0_rgba(0,0,0,0.05)]">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody id="bills-tbody" class="bg-white divide-y divide-slate-100 text-sm font-medium">
+                                <tbody id="bills-tbody">
                                     <tr>
-                                        <td colspan="9" class="px-6 py-12 text-center">
+                                        <td colspan="9" class="px-6 py-12 text-center" style="background-color: #fdfdfc;">
                                             <div class="animate-pulse flex flex-col items-center gap-4">
-                                                <div class="h-10 w-10 bg-slate-100 rounded-full"></div>
-                                                <div class="h-4 w-48 bg-slate-100 rounded"></div>
+                                                <div class="h-10 w-10 rounded-full" style="background-color: #e8f4ed;"></div>
+                                                <div class="h-4 w-48 rounded" style="background-color: #e8f4ed;"></div>
                                             </div>
                                         </td>
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                    </div>
+
+                    <!-- Receipts Tab Content -->
+                    <div id="tab-payments" class="tab-content hidden">
+                        <div class="p-6 rounded-xl" style="background-color: #f3efe6; border: 1px solid rgba(31, 107, 74, 0.2); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                            <h3 class="text-xl font-black flex items-center gap-2 mb-6" style="color: #1f6b4a;">
+                                <i class="fas fa-receipt"></i> Recent Receipts
+                            </h3>
+                            <div class="overflow-x-auto bg-white rounded-xl" style="border: 1px solid rgba(31, 107, 74, 0.2); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                                <table class="w-full premium-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Receipt ID</th>
+                                            <th>Bill Ref</th>
+                                            <th>Patient</th>
+                                            <th>Date</th>
+                                            <th class="text-right">Amount Received</th>
+                                            <th class="text-center">Payment Mode</th>
+                                            <th class="text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="receipts-tbody">
+                                        <tr>
+                                            <td colspan="7" class="px-6 py-8 text-center" style="color: #1f6b4a; font-weight: 500;">
+                                                <i class="fas fa-info-circle mr-2"></i> Select a paid bill from OPD Billing to view receipts, or load receipt history here.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Tab Content -->
+                    <div id="tab-reports" class="tab-content hidden">
+                        <div class="p-6 rounded-xl" style="background-color: #f3efe6; border: 1px solid rgba(31, 107, 74, 0.2); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+                            
+                            <!-- Analytics Header & Filters -->
+                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                                <h3 class="text-xl font-black flex items-center gap-2" style="color: #1f6b4a;">
+                                    <i class="fas fa-chart-pie"></i> OPD Financial Analytics
+                                </h3>
+                                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                                    <input type="date" id="analytics-start" class="px-3 py-2 bg-white rounded-lg outline-none transition-all text-sm font-medium" style="border: 1px solid rgba(31, 107, 74, 0.3); color: #1f6b4a;" onchange="loadAnalytics()">
+                                    <span style="color: #1f6b4a;">to</span>
+                                    <input type="date" id="analytics-end" class="px-3 py-2 bg-white rounded-lg outline-none transition-all text-sm font-medium" style="border: 1px solid rgba(31, 107, 74, 0.3); color: #1f6b4a;" onchange="loadAnalytics()">
+                                    
+                                    <select id="analytics-receptionist" class="px-3 py-2 bg-white rounded-lg outline-none transition-all text-sm font-medium" style="border: 1px solid rgba(31, 107, 74, 0.3); color: #1f6b4a;" onchange="loadAnalytics()">
+                                        <option value="">All Receptionists</option>
+                                    </select>
+                                    
+                                    <select id="analytics-method" class="px-3 py-2 bg-white rounded-lg outline-none transition-all text-sm font-medium" style="border: 1px solid rgba(31, 107, 74, 0.3); color: #1f6b4a;" onchange="loadAnalytics()">
+                                        <option value="">All Payment Modes</option>
+                                        <option value="Cash">Cash</option>
+                                        <option value="UPI">UPI</option>
+                                        <option value="Card">Card</option>
+                                        <option value="Bank Transfer">Bank Transfer</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- KPI Cards -->
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                    <div class="text-xs font-bold text-slate-500 uppercase mb-1">Total OPD Bills</div>
+                                    <div class="text-2xl font-black text-[#1f6b4a]" id="kpi-total-bills">0</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                    <div class="text-xs font-bold text-slate-500 uppercase mb-1">Total Billing Amt</div>
+                                    <div class="text-2xl font-black text-[#1f6b4a]" id="kpi-total-billing">₹0</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                    <div class="text-xs font-bold text-green-600 uppercase mb-1">Amount Collected</div>
+                                    <div class="text-2xl font-black text-green-600" id="kpi-collected">₹0</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                    <div class="text-xs font-bold text-red-500 uppercase mb-1">Pending Balance</div>
+                                    <div class="text-2xl font-black text-red-500" id="kpi-pending">₹0</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                    <div class="text-xs font-bold text-amber-500 uppercase mb-1">Total Discounts</div>
+                                    <div class="text-2xl font-black text-amber-500" id="kpi-discount">₹0</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                    <div class="text-xs font-bold text-purple-500 uppercase mb-1">Total Refunds</div>
+                                    <div class="text-2xl font-black text-purple-500" id="kpi-refunds">₹0</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                    <div class="text-xs font-bold text-slate-500 uppercase mb-1">Average Bill Value</div>
+                                    <div class="text-2xl font-black text-slate-700" id="kpi-avg">₹0</div>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                    <div class="text-xs font-bold text-slate-500 uppercase mb-1">Cancelled Bills</div>
+                                    <div class="text-2xl font-black text-slate-700" id="kpi-cancelled">0</div>
+                                </div>
+                            </div>
+
+                            <!-- Charts -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                    <h4 class="font-bold mb-4 text-[#1f6b4a]">Weekly Revenue (Last 7 Days)</h4>
+                                    <div class="relative h-64 flex justify-center items-center">
+                                        <canvas id="weeklyRevenueChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                    <h4 class="font-bold mb-4 text-[#1f6b4a]">Payment Method Breakdown</h4>
+                                    <div class="relative h-64 flex justify-center items-center">
+                                        <canvas id="paymentChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Receptionist Performance Table -->
+                            <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                                <div class="p-4 border-b border-slate-100">
+                                    <h4 class="font-bold text-[#1f6b4a]"><i class="fas fa-users-cog mr-2"></i> Receptionist-wise Performance</h4>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full premium-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Rank</th>
+                                                <th>Receptionist</th>
+                                                <th class="text-center">Bills Gen.</th>
+                                                <th class="text-right">Total Billing</th>
+                                                <th class="text-right">Collected</th>
+                                                <th class="text-right">Pending</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="receptionist-performance-tbody">
+                                            <tr>
+                                                <td colspan="6" class="text-center py-6 text-slate-500">Loading performance data...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -762,12 +942,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="assets/js/billing_management.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="assets/js/billing_management.js?v=<?= time() ?>"></script>
 </body>
-
-</html>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="assets/js/billing_management.js?v=<?= time() ?>"></script>
-</body>
-
 </html>

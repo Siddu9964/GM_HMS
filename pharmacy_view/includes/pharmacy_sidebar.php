@@ -84,6 +84,9 @@ $isAssistant = ($userDesignation === 'Assistant Pharmacist');
         <?= navLink('settings.php', 'fas fa-cog', 'Settings', $cur) ?>
         <?php endif; ?>
         <li><a href="../logout.php" class="ph-nav-link"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
+        <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'Admin'])): ?>
+        <li style="margin-top: 10px;"><a href="/GM_HMS/view/admin_dashboard.php" class="ph-nav-link" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border-radius: 8px;"><i class="fas fa-arrow-left" style="color: #ef4444;"></i><span>Exit to Admin</span></a></li>
+        <?php endif; ?>
       </ul>
     </div>
 

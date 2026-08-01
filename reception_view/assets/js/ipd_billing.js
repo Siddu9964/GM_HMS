@@ -1386,9 +1386,26 @@ const billing = (function() {
     }
 
     // ── PRINTING ──
+    function openPrintPage(url, data) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        form.target = '_blank';
+        for (const key in data) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = data[key];
+            form.appendChild(input);
+        }
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    }
+
     window.printInterim = function() {
         if(!currentBillId) return;
-        window.open(`../views/billing/print_interim.php?bill_id=${currentBillId}`, '_blank');
+        openPrintPage('/GM_HMS/reception_view/print_ipd_interim.php', { bill_id: currentBillId });
     };
     
     window.printFinal = function() {
@@ -1397,12 +1414,12 @@ const billing = (function() {
             showToast('Final bill can only be printed after status is Finalized', 'warning');
             return;
         }
-        window.open(`../views/billing/print_final.php?bill_id=${currentBillId}`, '_blank');
+        openPrintPage('/GM_HMS/reception_view/print_ipd_final.php', { bill_id: currentBillId });
     };
     
     window.printReceipt = function() {
         if(!currentBillId) return;
-        window.open(`../views/billing/print_receipt.php?bill_id=${currentBillId}`, '_blank');
+        openPrintPage('/GM_HMS/reception_view/print_ipd_receipt.php', { bill_id: currentBillId });
     };
 
     // Export exposed functions

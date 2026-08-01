@@ -434,6 +434,74 @@ function loadBills() {
 function renderBillsTable(bills) {
     const tbody = document.getElementById('bills-tbody');
 
+    // 1. Calculate Stats
+    let todayRevenue = 0;
+    let monthRevenue = 0;
+    let pendingCount = 0;
+    let outstandingAmount = 0;
+
+    // We'll use JS Date to format today and month to match bill_date formats (assuming YYYY-MM-DD)
+    const now = new Date();
+    // Use local date string padded manually just in case
+    const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    const monthStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
+    bills.forEach(bill => {
+        const balance = parseFloat(bill.balance_due) || 0;
+        const paid = parseFloat(bill.amount_paid) || 0;
+        
+        if (balance > 0) {
+            pendingCount++;
+            outstandingAmount += balance;
+        }
+        
+        if (bill.bill_date && bill.bill_date.includes(todayStr)) {
+            todayRevenue += paid;
+        }
+        if (bill.bill_date && bill.bill_date.includes(monthStr)) {
+            monthRevenue += paid;
+        }
+    });
+
+    const statToday = document.getElementById('stat-today-revenue');
+    const statMonth = document.getElementById('stat-month-revenue');
+    const statPending = document.getElementById('stat-pending-bills');
+    const statOut = document.getElementById('stat-outstanding');
+    
+    if(statToday) statToday.innerText = '₹' + todayRevenue.toFixed(2);
+    if(statMonth) statMonth.innerText = '₹' + monthRevenue.toFixed(2);
+    if(statPending) statPending.innerText = pendingCount;
+    if(statOut) statOut.innerText = '₹' + outstandingAmount.toFixed(2);
+
+    // 2. Populate Receipts Table
+    const receiptsTbody = document.getElementById('receipts-tbody');
+    if (receiptsTbody) {
+        const paidBills = bills.filter(b => parseFloat(b.amount_paid) > 0);
+        if (paidBills.length === 0) {
+            receiptsTbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">No receipts found.</td></tr>';
+        } else {
+            receiptsTbody.innerHTML = paidBills.map(bill => {
+                const recId = bill.bill_id.replace('BILL-', 'REC-');
+                return `
+                    <tr class="hover:bg-gray-50 text-sm">
+                        <td class="px-6 py-4 font-black text-[#1f6b4a]">${recId}</td>
+                        <td class="px-6 py-4 font-medium text-gray-700">${bill.bill_id}</td>
+                        <td class="px-6 py-4">${bill.patient_name || '-'}</td>
+                        <td class="px-6 py-4 text-gray-500">${bill.bill_date}</td>
+                        <td class="px-6 py-4 text-right font-bold text-green-600">₹${parseFloat(bill.amount_paid).toFixed(2)}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="px-2 py-1 bg-[#e8f4ed] text-[#1f6b4a] rounded-full text-xs font-bold">${bill.payment_mode || 'Cash'}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="showBillDetails('${bill.bill_id}')" class="text-[#1f6b4a] hover:opacity-80 p-2 border border-[#1f6b4a40] rounded shadow-sm"><i class="fas fa-print"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+
+    // 3. Render Main OPD Bills Table
     if (bills.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" class="text-center text-gray-500 py-4">No bills found</td></tr>';
         return;
@@ -450,7 +518,7 @@ function renderBillsTable(bills) {
         return `
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <a href="javascript:void(0)" onclick="showBillDetails('${bill.bill_id}')" class="text-blue-600 hover:text-blue-800 font-black decoration-2 underline-offset-4 hover:underline">
+                    <a href="javascript:void(0)" onclick="showBillDetails('${bill.bill_id}')" class="text-[#1f6b4a] hover:opacity-80 font-black decoration-2 underline-offset-4 hover:underline">
                         ${bill.bill_id}
                     </a>
                 </td>
@@ -465,28 +533,20 @@ function renderBillsTable(bills) {
                         ${bill.payment_status}
                     </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-right relative">
-                    <div class="relative inline-block text-left" class="action-dropdown-container">
-                        <button onclick="toggleActionDropdown(event, '${bill.bill_id}')" class="text-slate-400 hover:text-blue-600 p-2 rounded-full hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-100">
-                            <i class="fas fa-ellipsis-v w-4 text-center"></i>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-center sticky right-0 bg-white z-10 shadow-[inset_1px_0_0_rgba(0,0,0,0.05)]">
+                    <div class="flex items-center justify-center gap-2">
+                        <button onclick="viewBill('${bill.bill_id}')" title="View Details" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors shadow-sm border border-transparent hover:border-blue-100">
+                            <i class="fas fa-eye"></i>
                         </button>
-                        <div id="dropdown-${bill.bill_id}" class="action-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 z-[100] overflow-hidden origin-top-right">
-                            <div class="py-1">
-                                <a href="javascript:void(0)" onclick="viewBill('${bill.bill_id}'); closeAllDropdowns();" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                                    <i class="fas fa-eye w-4 text-center"></i> View Details
-                                </a>
-                                <a href="javascript:void(0)" onclick="editBill('${bill.bill_id}'); closeAllDropdowns();" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-amber-50 hover:text-amber-700 transition-colors">
-                                    <i class="fas fa-edit w-4 text-center text-amber-500"></i> Edit Bill
-                                </a>
-                                <a href="javascript:void(0)" onclick="printBill('${bill.bill_id}'); closeAllDropdowns();" class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors">
-                                    <i class="fas fa-print w-4 text-center text-emerald-500"></i> Print Invoice
-                                </a>
-                                <div class="h-px bg-slate-100 my-1"></div>
-                                <a href="javascript:void(0)" onclick="deleteBill('${bill.bill_id}'); closeAllDropdowns();" class="flex items-center gap-3 px-4 py-2.5 text-sm font-black text-rose-600 hover:bg-rose-50 transition-colors group">
-                                    <i class="fas fa-trash-alt w-4 text-center group-hover:scale-110 transition-transform"></i> Delete Bill
-                                </a>
-                            </div>
-                        </div>
+                        <button onclick="editBill('${bill.bill_id}')" title="Edit Bill" class="text-amber-500 hover:bg-amber-50 p-2 rounded-lg transition-colors shadow-sm border border-transparent hover:border-amber-100">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="printBill('${bill.bill_id}')" title="Print Invoice" class="text-emerald-500 hover:bg-emerald-50 p-2 rounded-lg transition-colors shadow-sm border border-transparent hover:border-emerald-100">
+                            <i class="fas fa-print"></i>
+                        </button>
+                        <button onclick="deleteBill('${bill.bill_id}')" title="Delete Bill" class="text-rose-500 hover:bg-rose-50 p-2 rounded-lg transition-colors shadow-sm border border-transparent hover:border-rose-100">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -1066,14 +1126,60 @@ $('#search-bills').on('keyup', function () {
  * Show success notification
  */
 function showSuccess(message) {
-    alert('✅ ' + message);
+    // Remove ✅ from message if it was passed by any older call
+    message = message.replace('✅ ', '');
+    
+    const toast = document.createElement('div');
+    toast.className = 'fixed inset-0 flex items-center justify-center z-[9999] pointer-events-none transition-opacity duration-300';
+    toast.innerHTML = `
+        <div class="bg-white px-10 py-8 rounded-3xl shadow-2xl flex flex-col items-center gap-4 transform scale-95 transition-transform duration-300 border border-green-100" style="box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
+            <div class="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center text-green-500 text-4xl mb-2">
+                <i class="fas fa-check"></i>
+            </div>
+            <p class="text-xl font-black text-slate-800 text-center whitespace-pre-wrap">${message}</p>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        const inner = toast.querySelector('div');
+        if(inner) { inner.classList.remove('scale-95'); inner.classList.add('scale-100'); }
+    }, 10);
+
+    setTimeout(() => {
+        toast.classList.add('opacity-0');
+        setTimeout(() => toast.remove(), 300);
+    }, 2500);
 }
 
 /**
  * Show error notification
  */
 function showError(message) {
-    alert('❌ ' + message);
+    // Remove ❌ from message if it was passed
+    message = message.replace('❌ ', '');
+    
+    const toast = document.createElement('div');
+    toast.className = 'fixed inset-0 flex items-center justify-center z-[9999] pointer-events-none transition-opacity duration-300';
+    toast.innerHTML = `
+        <div class="bg-white px-10 py-8 rounded-3xl shadow-2xl flex flex-col items-center gap-4 transform scale-95 transition-transform duration-300 border border-red-100" style="box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
+            <div class="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center text-red-500 text-4xl mb-2">
+                <i class="fas fa-times"></i>
+            </div>
+            <p class="text-xl font-black text-slate-800 text-center whitespace-pre-wrap">${message}</p>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        const inner = toast.querySelector('div');
+        if(inner) { inner.classList.remove('scale-95'); inner.classList.add('scale-100'); }
+    }, 10);
+
+    setTimeout(() => {
+        toast.classList.add('opacity-0');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
 
 /**
@@ -1200,3 +1306,244 @@ function editBill(billId) {
         }
     });
 }
+
+/**
+ * Handle Tab Switching
+ */
+function switchTab(tabId) {
+    // 1. Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.add('hidden');
+    });
+    
+    // 2. Remove 'active' class from all tabs
+    document.querySelectorAll('.billing-tab').forEach(el => {
+        el.classList.remove('active');
+        el.style.fontWeight = '500';
+    });
+    
+    // 3. Show selected tab content
+    const targetContent = document.getElementById('tab-' + tabId);
+    if(targetContent) targetContent.classList.remove('hidden');
+    
+    // 4. Set 'active' on clicked tab
+    document.querySelectorAll('.billing-tab').forEach(el => {
+        if(el.getAttribute('onclick').includes(tabId)) {
+            el.classList.add('active');
+            el.style.fontWeight = '700';
+        }
+    });
+
+    // If analytics tab is clicked, load data
+    if(tabId === 'reports') {
+        loadAnalytics();
+    }
+}
+
+/**
+ * ==============================================================
+ * OPD BILLING ANALYTICS DASHBOARD
+ * ==============================================================
+ */
+
+let weeklyRevenueChartInstance = null;
+let paymentChartInstance = null;
+
+function loadAnalytics() {
+    const startDate = document.getElementById('analytics-start').value;
+    const endDate = document.getElementById('analytics-end').value;
+    const receptionist = document.getElementById('analytics-receptionist').value;
+    const method = document.getElementById('analytics-method').value;
+
+    let url = '../api/index.php/api/billing/opd/analytics?';
+    if(startDate) url += `start_date=${startDate}&`;
+    if(endDate) url += `end_date=${endDate}&`;
+    if(receptionist) url += `receptionist=${receptionist}&`;
+    if(method) url += `payment_mode=${method}&`;
+
+    $.ajax({
+        url: url,
+        method: 'GET',
+        success: function (res) {
+            if (res.status === 'success') {
+                renderAnalytics(res.data);
+            }
+        },
+        error: function (xhr) {
+            console.error('Failed to load analytics', xhr);
+        }
+    });
+}
+
+function renderAnalytics(data) {
+    const metrics = data.metrics;
+    const receptionistPerf = data.receptionist_performance;
+    const paymentMethods = data.payment_methods;
+    const trends = data.trends;
+
+    // 1. Update KPI Cards
+    document.getElementById('kpi-total-bills').innerText = metrics.total_bills || 0;
+    document.getElementById('kpi-total-billing').innerText = '₹' + parseFloat(metrics.total_billing_amount || 0).toFixed(2);
+    document.getElementById('kpi-collected').innerText = '₹' + parseFloat(metrics.total_collected || 0).toFixed(2);
+    document.getElementById('kpi-pending').innerText = '₹' + parseFloat(metrics.total_pending || 0).toFixed(2);
+    document.getElementById('kpi-discount').innerText = '₹' + parseFloat(metrics.total_discount || 0).toFixed(2);
+    document.getElementById('kpi-refunds').innerText = '₹' + parseFloat(metrics.total_refund || 0).toFixed(2);
+    document.getElementById('kpi-cancelled').innerText = metrics.cancelled_bills || 0;
+    
+    let avg = 0;
+    if (metrics.total_bills > 0) {
+        avg = parseFloat(metrics.total_billing_amount) / parseFloat(metrics.total_bills);
+    }
+    document.getElementById('kpi-avg').innerText = '₹' + avg.toFixed(2);
+
+    // 2. Populate Receptionist Table & Dropdown
+    const rTable = document.getElementById('receptionist-performance-tbody');
+    const rSelect = document.getElementById('analytics-receptionist');
+    const currentSelected = rSelect.value;
+    
+    if (receptionistPerf.length === 0) {
+        rTable.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-500">No data available for this period.</td></tr>';
+    } else {
+        let html = '';
+        let options = '<option value="">All Receptionists</option>';
+        receptionistPerf.forEach((r, index) => {
+            let badge = '';
+            if(index === 0) badge = '<i class="fas fa-medal text-yellow-500 mr-2"></i>';
+            else if(index === 1) badge = '<i class="fas fa-medal text-gray-400 mr-2"></i>';
+            else if(index === 2) badge = '<i class="fas fa-medal text-amber-700 mr-2"></i>';
+
+            html += `
+                <tr class="hover:bg-gray-50 text-sm">
+                    <td class="px-6 py-4 font-bold text-slate-500">#${index + 1}</td>
+                    <td class="px-6 py-4 font-bold text-[#1f6b4a]">${badge}${r.receptionist || 'System'}</td>
+                    <td class="px-6 py-4 text-center">${r.bills_generated}</td>
+                    <td class="px-6 py-4 text-right font-medium">₹${parseFloat(r.total_billing).toFixed(2)}</td>
+                    <td class="px-6 py-4 text-right font-bold text-green-600">₹${parseFloat(r.collected).toFixed(2)}</td>
+                    <td class="px-6 py-4 text-right font-bold text-red-500">₹${parseFloat(r.pending).toFixed(2)}</td>
+                </tr>
+            `;
+            // Only populate dropdown once (if it's empty other than default)
+            if (rSelect.options.length <= 1 || rSelect.querySelector(`option[value="${r.receptionist}"]`)) {
+                options += `<option value="${r.receptionist}">${r.receptionist || 'System'}</option>`;
+            }
+        });
+        rTable.innerHTML = html;
+        if(rSelect.options.length <= 1) {
+            rSelect.innerHTML = options;
+            rSelect.value = currentSelected;
+        }
+    }
+
+    // 3. Render Charts
+    const receptionist = document.getElementById('analytics-receptionist').value;
+    const method = document.getElementById('analytics-method').value;
+    renderWeeklyRevenueChart(receptionist, method);
+    renderPaymentChart(paymentMethods);
+}
+
+function renderWeeklyRevenueChart(receptionist = '', method = '') {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(end.getDate() - 6);
+    
+    const startDateStr = start.getFullYear() + '-' + String(start.getMonth() + 1).padStart(2, '0') + '-' + String(start.getDate()).padStart(2, '0');
+    const endDateStr = end.getFullYear() + '-' + String(end.getMonth() + 1).padStart(2, '0') + '-' + String(end.getDate()).padStart(2, '0');
+    
+    let url = `../api/index.php/api/billing/opd/analytics?start_date=${startDateStr}&end_date=${endDateStr}`;
+    if (receptionist) url += `&receptionist=${receptionist}`;
+    if (method) url += `&payment_mode=${method}`;
+
+    $.ajax({
+        url: url,
+        method: 'GET',
+        success: function(res) {
+            if (res.status === 'success') {
+                const trends = res.data.trends || [];
+                const ctx = document.getElementById('weeklyRevenueChart').getContext('2d');
+                
+                const labels = [];
+                const revenue = [];
+                
+                for (let i = 6; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                    const displayStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+                    
+                    labels.push(displayStr);
+                    const trendData = trends.find(t => t.trend_date === dateStr);
+                    revenue.push(trendData ? parseFloat(trendData.revenue || 0) : 0);
+                }
+
+                if(weeklyRevenueChartInstance) weeklyRevenueChartInstance.destroy();
+
+                weeklyRevenueChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Revenue (₹)',
+                            data: revenue,
+                            backgroundColor: 'rgba(31, 107, 74, 0.8)',
+                            borderColor: '#1f6b4a',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        }
+    });
+}
+
+function renderPaymentChart(paymentMethods) {
+    const ctx = document.getElementById('paymentChart').getContext('2d');
+    
+    const labels = paymentMethods.map(p => p.method);
+    const data = paymentMethods.map(p => parseFloat(p.total));
+    const bgColors = ['#1f6b4a', '#3b82f6', '#f59e0b', '#8b5cf6', '#64748b'];
+
+    if(paymentChartInstance) paymentChartInstance.destroy();
+
+    paymentChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: bgColors,
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+// Set default dates on load
+document.addEventListener('DOMContentLoaded', () => {
+    const now = new Date();
+    // Default to the beginning of the current year so old dummy data is included
+    const firstDay = new Date(now.getFullYear(), 0, 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    document.getElementById('analytics-start').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('analytics-end').value = lastDay.toISOString().split('T')[0];
+});

@@ -296,6 +296,7 @@ $router->add('POST', '#^/api/referred-doctors/?$#', 'GM_HMS\Controllers\api\Rece
 
 // OPD Billing Routes
 $router->add('GET', '#^/api/billing/opd/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'getAllBills');
+$router->add('GET', '#^/api/billing/opd/analytics/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'getOpdAnalytics');
 $router->add('GET', '#^/api/billing/opd/stats/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'getStatistics');
 $router->add('GET', '#^/api/billing/stats/daily/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'getDailyStats');
 $router->add('GET', '#^/api/billing/opd/consultation-fee/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'getConsultationFee');

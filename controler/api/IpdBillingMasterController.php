@@ -24,7 +24,6 @@ class IpdBillingMasterController extends IpdBaseController {
 
         switch ($action) {
             case 'search_admissions':
-                if (strlen($q) < 1) { $this->success([]); return; }
                 $this->success($this->model->searchActiveAdmissions($q));
                 break;
 

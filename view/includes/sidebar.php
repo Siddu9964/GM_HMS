@@ -206,23 +206,34 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
 
             </div>
 
-            <a href="billing_management.php"
-                class="sidebar-item <?php echo isActive('billing_management.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
-                <i class="fas fa-file-invoice-dollar"></i>
-                <span>OPD Billing</span>
-            </a>
-
-            <a href="ipd_billing.php"
-                class="sidebar-item <?php echo isActive('ipd_billing.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
-                <i class="fas fa-bed"></i>
-                <span>IPD Billing</span>
-            </a>
-
-            <a href="ot_billing.php"
-                class="sidebar-item <?php echo isActive('ot_billing.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
-                <i class="fas fa-procedures"></i>
-                <span>OT Billing</span>
-            </a>
+            <div class="billing-flyout-wrap" style="position: relative;">
+                <?php
+                $isBillingActive = isActive('billing_management.php', $current_file, $current_path, $request_uri) || 
+                                   isActive('ipd_billing.php', $current_file, $current_path, $request_uri) || 
+                                   isActive('ot_billing.php', $current_file, $current_path, $request_uri);
+                ?>
+                <button class="billing-flyout-btn <?php echo $isBillingActive ? 'active' : ''; ?>" id="billingBtn" onclick="toggleBillingFlyout(this)" aria-expanded="false">
+                    <span class="billing-btn-left">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>Billing</span>
+                    </span>
+                    <i class="fas fa-chevron-right billing-arrow"></i>
+                </button>
+                <div class="billing-flyout-panel" id="billingPanel">
+                    <a href="billing_management.php" class="billing-item <?php echo isActive('billing_management.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>" style="--n:1">
+                        <i class="fas fa-stethoscope"></i>
+                        <span>OPD Billing</span>
+                    </a>
+                    <a href="ipd_billing.php" class="billing-item <?php echo isActive('ipd_billing.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>" style="--n:2">
+                        <i class="fas fa-bed"></i>
+                        <span>IPD Billing</span>
+                    </a>
+                    <a href="ot_billing.php" class="billing-item <?php echo isActive('ot_billing.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>" style="--n:3">
+                        <i class="fas fa-procedures"></i>
+                        <span>OT Billing</span>
+                    </a>
+                </div>
+            </div>
 
             <a href="#insurance" class="sidebar-item">
 
@@ -278,6 +289,47 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
 
 </aside>
 
+<script>
+function toggleBillingFlyout(btn) {
+    var panel = document.getElementById('billingPanel');
+    
+    // Move panel to body to escape sidebar overflow clipping (because sidebar has overflow-y: auto)
+    if (panel.parentNode !== document.body) {
+        document.body.appendChild(panel);
+    }
+    
+    var isOpen = btn.getAttribute('aria-expanded') === 'true';
+    if (!isOpen) {
+        var rect = btn.getBoundingClientRect();
+        var gap = 10;
+        panel.style.top = rect.top + 'px';
+        panel.style.left = (rect.right + gap) + 'px';
+        
+        btn.setAttribute('aria-expanded', 'true');
+        var arrow = btn.querySelector('.billing-arrow');
+        if (arrow) {
+            arrow.style.transform = 'translateX(3px)';
+            arrow.style.color = '#ffffff';
+        }
+        panel.classList.add('open');
+        
+        // Retrigger animations
+        panel.querySelectorAll('.billing-item').forEach(function(el) {
+            el.style.animation = 'none';
+            el.offsetHeight;
+            el.style.animation = '';
+        });
+    } else {
+        btn.setAttribute('aria-expanded', 'false');
+        var arrow = btn.querySelector('.billing-arrow');
+        if (arrow) {
+            arrow.style.transform = 'translateX(0)';
+            arrow.style.color = 'rgba(255,255,255,0.5)';
+        }
+        panel.classList.remove('open');
+    }
+}
+</script>
 
 
 <style>
@@ -312,26 +364,62 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
         margin-right: 0;
     }
 
-    .sidebar-item:hover {
+    .sidebar-item:hover, .sidebar-item.active {
         background: rgba(255, 255, 255, 0.06);
         color: #fff;
         transform: none;
     }
 
-    .sidebar-item:hover i {
+    .sidebar-item:hover i, .sidebar-item.active i {
         color: #fff;
     }
 
-    .sidebar-item.active {
-        background: rgba(255, 255, 255, 0.1) !important;
-        color: #fff !important;
-        font-weight: 600;
-        box-shadow: none;
+    /* Billing Flyout Styles */
+    .billing-flyout-btn {
+        display: flex; align-items: center; justify-content: space-between; width: 100%; padding: .6rem .85rem;
+        background: transparent; border: none; border-radius: 10px; cursor: pointer; transition: background .2s, transform .2s; margin-bottom: 2px;
     }
-
-    .sidebar-item.active i {
-        color: #fff !important;
+    .billing-btn-left { display: flex; align-items: center; gap: .75rem; }
+    .billing-btn-left i { width: 20px; text-align: center; font-size: 1.05rem; color: rgba(255, 255, 255, 0.5); transition: color .2s; flex-shrink: 0; }
+    .billing-btn-left span { font-size: .81rem; font-weight: 500; color: rgba(255, 255, 255, 0.75); transition: color .2s; }
+    
+    .billing-flyout-btn:hover { background: rgba(255, 255, 255, 0.06); }
+    .billing-flyout-btn:hover .billing-btn-left span, .billing-flyout-btn.active .billing-btn-left span { color: #fff !important; }
+    .billing-flyout-btn:hover .billing-btn-left i, .billing-flyout-btn.active .billing-btn-left i { color: #fff !important; }
+    .billing-flyout-btn.active { background: rgba(255, 255, 255, 0.1) !important; }
+    
+    .billing-arrow { font-size: .62rem; color: rgba(255, 255, 255, 0.5); transition: color .25s, transform .25s cubic-bezier(.34, 1.56, .64, 1); }
+    .billing-flyout-btn.active .billing-arrow { color: #fff !important; }
+    
+    .billing-flyout-panel {
+        position: fixed; z-index: 99999; min-width: 200px; padding: .5rem; border-radius: .75rem;
+        background: #1f6b4a; border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 10px 40px rgba(0, 0, 0, .55);
+        opacity: 0; visibility: hidden; transform: translateX(-10px) scale(.96); transform-origin: left center;
+        transition: opacity .22s ease, transform .25s cubic-bezier(.34, 1.56, .64, 1), visibility 0s linear .25s; pointer-events: none;
     }
+    .billing-flyout-panel::before {
+        content: ''; position: absolute; left: -6px; top: 50%; transform: translateY(-50%);
+        border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-right: 6px solid #1f6b4a;
+    }
+    .billing-flyout-panel::after {
+        content: 'BILLING'; display: block; font-size: .6rem; font-weight: 700; color: #f3efe6; padding: 0 .5rem .35rem .5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, .15); margin-bottom: .3rem; opacity: .8; letter-spacing: 0.05em;
+    }
+    .billing-flyout-panel.open {
+        opacity: 1; visibility: visible; transform: translateX(0) scale(1);
+        transition: opacity .22s ease, transform .25s cubic-bezier(.34, 1.56, .64, 1), visibility 0s linear 0s; pointer-events: auto;
+    }
+    .billing-item {
+        display: flex; align-items: center; gap: .55rem; padding: .4rem .65rem; margin-bottom: .18rem; color: #f3efe6;
+        text-decoration: none; border-radius: 8px; font-size: .8rem; font-weight: 500; opacity: 0; transform: translateX(-8px) scale(.96);
+    }
+    .billing-flyout-panel.open .billing-item { animation: flyChipIn .22s ease forwards; animation-delay: calc(.06s + var(--n) * .07s); }
+    @keyframes flyChipIn { to { opacity: 1; transform: translateX(0) scale(1); } }
+    .billing-item i {
+        display: flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 50%;
+        font-size: .65rem; background: rgba(255, 255, 255, 0.15); color: #fff; flex-shrink: 0;
+    }
+    .billing-item:hover, .billing-item.active { background: rgba(255, 255, 255, 0.15); color: #fff; transform: translateX(5px); }
 
     .sidebar p.uppercase {
         color: rgba(255, 255, 255, 0.6) !important;

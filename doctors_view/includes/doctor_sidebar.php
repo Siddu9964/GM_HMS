@@ -93,6 +93,15 @@
                     <span class="badge badge-danger" id="notification-count" style="margin-left: auto; font-size: 0.7rem; display: none;">0</span>
                 </a>
             </div>
+
+            <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'Admin'])): ?>
+            <div style="margin-top: auto; padding: 1rem;">
+                <a href="/GM_HMS/view/admin_dashboard.php" class="sidebar-link" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; justify-content: center; border: 1px solid rgba(239, 68, 68, 0.2);">
+                    <i class="fas fa-arrow-left" style="color: #ef4444; margin-right: 5px;"></i>
+                    <span>Exit to Admin</span>
+                </a>
+            </div>
+            <?php endif; ?>
         </nav>
     </div>
 </aside>

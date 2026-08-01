@@ -155,7 +155,7 @@ class AppointmentManager {
                 if (doctors.length > 0) {
                     doctorSelect.innerHTML = '<option value="">Select Doctor</option>' +
                         doctors.map(doc => {
-                            const dept = String(doc.department_id || doc.department || doc.specialization || '').replace(/"/g, '&quot;');
+                            const dept = String(doc.specialization || '').replace(/"/g, '&quot;');
                             const name = String(doc.full_name || doc.name || '').replace(/"/g, '&quot;');
                             return `
                                 <option value="${doc.doctor_id || doc.id || ''}" 
@@ -354,6 +354,7 @@ class AppointmentManager {
         }
 
         hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+        this.checkAvailability();
     }
 
     set12HourFrom24(time24) {
@@ -895,12 +896,11 @@ class AppointmentManager {
                 if (dept) {
                     const deptSelect = document.getElementById('departmentSelect');
                     if (deptSelect) {
-                        deptSelect.value = dept;
-                        if (typeof $(deptSelect).select2 === 'function' && $(deptSelect).hasClass('select2-hidden-accessible')) {
-                            $(deptSelect).trigger('change.select2');
-                        } else {
-                            $(deptSelect).trigger('change');
+                        // Dynamically add the doctor's specialization as an option if it doesn't exist
+                        if ($(deptSelect).find(`option[value="${dept}"]`).length === 0) {
+                            $(deptSelect).append(new Option(dept, dept, true, true));
                         }
+                        $(deptSelect).val(dept).trigger('change');
                     }
                 }
 

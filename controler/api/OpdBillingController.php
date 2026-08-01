@@ -99,6 +99,21 @@ class OpdBillingController extends BaseController {
         try {
             $input = $this->getJsonInput();
             
+            $payments = $input['payments'] ?? [];
+            if (isset($input['payment']) && empty($payments)) {
+                $payments = [$input['payment']]; // Fallback for old single payment payload
+            }
+            
+            $masterPaymentMode = 'Cash';
+            if (!empty($payments)) {
+                $modes = array_unique(array_filter(array_column($payments, 'payment_mode')));
+                if (count($modes) > 1) {
+                    $masterPaymentMode = implode(' + ', $modes);
+                } elseif (count($modes) === 1) {
+                    $masterPaymentMode = array_values($modes)[0];
+                }
+            }
+            
             $billData = [
                 'patient_id' => $input['patient_id'] ?? null,
                 'name'       => $input['name']       ?? null,
@@ -113,7 +128,7 @@ class OpdBillingController extends BaseController {
                 'discount_percentage' => $input['discount_percentage'] ?? 0,
                 'service_id'          => $input['service_id']          ?? null,
                 'item_name'           => $input['item_name']           ?? null,
-                'payment_mode'        => $input['payment']['payment_mode'] ?? 'Cash',
+                'payment_mode'        => $masterPaymentMode,
                 'tax_percentage'      => $input['tax_percentage']      ?? 18.00,
                 'notes'               => $input['notes']               ?? null,
                 'purpose'             => $input['purpose']             ?? 'OPD Service',
@@ -121,7 +136,6 @@ class OpdBillingController extends BaseController {
             ];
             
             $items = $input['items'] ?? [];
-            $payment = $input['payment'] ?? null;
             
             if (empty($billData['patient_id'])) {
                 $this->respondBadRequest('Patient ID is required');
@@ -134,13 +148,20 @@ class OpdBillingController extends BaseController {
             $billId = $this->model->createBill($billData, $items);
             
             $receiptId = null;
-            if ($payment && isset($payment['amount']) && $payment['amount'] > 0) {
-                $receiptId = $this->model->recordPayment($billId, [
-                    'amount' => $payment['amount'],
-                    'payment_mode' => $payment['payment_mode'] ?? 'Cash',
-                    'reference_no' => $payment['reference_no'] ?? null,
-                    'notes' => $payment['notes'] ?? 'Initial payment'
-                ]);
+            if (!empty($payments)) {
+                foreach ($payments as $idx => $payment) {
+                    if (isset($payment['amount']) && $payment['amount'] > 0) {
+                        $currentReceiptId = $this->model->recordPayment($billId, [
+                            'amount' => $payment['amount'],
+                            'payment_mode' => $payment['payment_mode'] ?? 'Cash',
+                            'reference_no' => $payment['reference_no'] ?? null,
+                            'notes' => $payment['notes'] ?? 'Initial payment'
+                        ]);
+                        if ($idx === 0) {
+                            $receiptId = $currentReceiptId;
+                        }
+                    }
+                }
             }
             
             $this->respondCreated([
@@ -237,6 +258,21 @@ class OpdBillingController extends BaseController {
         try {
             $input = $this->getJsonInput();
             
+            $payments = $input['payments'] ?? [];
+            if (isset($input['payment']) && empty($payments)) {
+                $payments = [$input['payment']];
+            }
+            
+            $masterPaymentMode = 'Cash';
+            if (!empty($payments)) {
+                $modes = array_unique(array_filter(array_column($payments, 'payment_mode')));
+                if (count($modes) > 1) {
+                    $masterPaymentMode = implode(' + ', $modes);
+                } elseif (count($modes) === 1) {
+                    $masterPaymentMode = array_values($modes)[0];
+                }
+            }
+
             $billData = [
                 'patient_id' => $input['patient_id'] ?? null,
                 'doctor_id' => $input['doctor_id'] ?? null,
@@ -245,7 +281,7 @@ class OpdBillingController extends BaseController {
                 'discount_percentage' => $input['discount_percentage'] ?? 0,
                 'service_id'          => $input['service_id']          ?? null,
                 'item_name'           => $input['item_name']           ?? null,
-                'payment_mode'        => $input['payment']['payment_mode'] ?? 'Cash',
+                'payment_mode'        => $masterPaymentMode,
                 'tax_percentage'      => $input['tax_percentage']      ?? 18.00,
                 'notes'               => $input['notes']               ?? null,
                 'purpose'             => $input['purpose']             ?? 'OPD Service',
@@ -264,7 +300,17 @@ class OpdBillingController extends BaseController {
             
             $this->model->updateBill($billId, $billData, $items);
             
-            $newPaymentAmount = isset($input['payment']['amount']) ? (float)$input['payment']['amount'] : null;
+            $newPaymentAmount = 0;
+            $newPaymentMode = 'Cash';
+            if (!empty($payments)) {
+                foreach ($payments as $payment) {
+                    $newPaymentAmount += isset($payment['amount']) ? (float)$payment['amount'] : 0;
+                    $newPaymentMode = $payment['payment_mode'] ?? 'Cash'; // just keep the last one for reference if multiple
+                }
+            } else {
+                $newPaymentAmount = null;
+            }
+
             if ($newPaymentAmount !== null) {
                 $currentBill = $this->model->getBillDetails($billId);
                 $currentAmountPaid = (float)($currentBill['amount_paid'] ?? 0);
@@ -273,7 +319,7 @@ class OpdBillingController extends BaseController {
                     $difference = $newPaymentAmount - $currentAmountPaid;
                     $this->model->recordPayment($billId, [
                         'amount' => $difference,
-                        'payment_mode' => $input['payment']['payment_mode'] ?? 'Cash',
+                        'payment_mode' => $masterPaymentMode,
                         'notes' => 'Payment updated during invoice edit'
                     ]);
                 } elseif ($newPaymentAmount < $currentAmountPaid) {
@@ -476,6 +522,29 @@ class OpdBillingController extends BaseController {
 
             $results = $this->model->searchSponsors($query);
             $this->respondSuccess($results);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    /**
+     * GET /api/billing/opd/analytics
+     */
+    public function getOpdAnalytics() {
+        $this->restrictMethod('GET');
+        $this->requireAuth();
+
+        try {
+            $filters = [
+                'start_date' => $_GET['start_date'] ?? date('Y-m-01'), // Default to current month
+                'end_date' => $_GET['end_date'] ?? date('Y-m-t'),
+                'receptionist' => $_GET['receptionist'] ?? null,
+                'payment_mode' => $_GET['payment_mode'] ?? null,
+                'payment_status' => $_GET['payment_status'] ?? null
+            ];
+
+            $data = $this->model->getAnalyticsData($filters);
+            $this->respondSuccess($data);
         } catch (Exception $e) {
             $this->handleException($e);
         }

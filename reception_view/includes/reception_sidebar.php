@@ -6,9 +6,9 @@ $basePath = str_repeat('../', $depth);
 ?>
 <!-- Reception Sidebar Navigation -->
 <aside
-    class="reception-sidebar fixed lg:relative z-50 h-full transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out"
+    class="reception-sidebar fixed lg:relative z-50 h-full overflow-y-auto transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out"
     id="receptionSidebar">
-    <div style="padding: 1.25rem 0.75rem; height: 100%; display: flex; flex-direction: column;">
+    <div style="padding: 1.25rem 0.75rem; min-height: 100%; display: flex; flex-direction: column;">
         <!-- Logo & Branding -->
         <div style="display: flex; align-items: center; margin-bottom: 2rem; padding: 0 0.5rem 1rem; border-bottom: 1px solid var(--gm-border);">
             <img src="/GM_HMS/assets/images/gm_logoo.png" alt="GM Logo" style="width: 38px; height: auto; margin-right: 0.6rem;">
@@ -32,7 +32,7 @@ $basePath = str_repeat('../', $depth);
 
                 <a href="<?php echo $basePath; ?>opd_management.php" class="sidebar-link" data-page="opd-management">
                     <i class="fas fa-stethoscope"></i>
-                    <span>Outpatients (OPD)</span>
+                    <span>Out - Patients</span>
                 </a>
                 <a href="<?php echo $basePath; ?>patient_registration.php" class="sidebar-link"
                     data-page="patient-registration">
@@ -42,7 +42,7 @@ $basePath = str_repeat('../', $depth);
                 <a href="<?php echo $basePath; ?>ipd_management/public/index.php" class="sidebar-link"
                     data-page="ipd-admission">
                     <i class="fas fa-bed"></i>
-                    <span>Inpatients (IPD)</span>
+                    <span>In - patients</span>
                 </a>
                 <a href="<?php echo $basePath; ?>doctor_availability.php" class="sidebar-link"
                     data-page="doctor-availability">
@@ -93,6 +93,15 @@ $basePath = str_repeat('../', $depth);
                     <span>New Patient</span>
                 </button>
             </div> -->
+
+            <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'Admin'])): ?>
+            <div style="margin-top: auto; padding: 1rem;">
+                <a href="/GM_HMS/view/admin_dashboard.php" class="sidebar-link" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; justify-content: center; border: 1px solid rgba(239, 68, 68, 0.2);">
+                    <i class="fas fa-arrow-left" style="color: #ef4444; margin-right: 5px;"></i>
+                    <span>Exit to Admin</span>
+                </a>
+            </div>
+            <?php endif; ?>
         </nav>
     </div>
 </aside>

@@ -130,57 +130,86 @@ $userName  = $_SESSION['username'] ?? 'Admin';
 
             <main class="flex-1 ipd-billing-page" id="ipdBillingPage">
                 
-                <!-- ═══════════ ZONE 1: TOP SEARCH BAR ═══════════ -->
-                <div class="billing-search-zone" id="billingSearchZone">
-                    <div class="search-zone-inner">
-                        <div class="search-zone-title">
-                            <i data-lucide="hospital" class="search-zone-icon"></i>
-                            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                                <div>
-                                    <h1>IPD Billing Terminal</h1>
-                                    <p>Search by Patient Name, UHID, Admission ID, or Mobile</p>
-                                </div>
-                                <button class="bm-btn" style="background:var(--blue-600); color:white; border:none; padding:8px 16px;" onclick="billing.openDischargeHistory()">
-                                    <i data-lucide="history"></i> Discharge History
-                                </button>
-                            </div>
+                <!-- ═══════════ ZONE 1: TOP SEARCH BAR (REDESIGNED) ═══════════ -->
+                <div class="billing-search-zone" id="billingSearchZone" style="padding: 12px 24px; display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(31,107,74,0.1); border-left: 4px solid var(--primary-color);">
+                    <!-- Left: Title -->
+                    <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+                        <div style="background: rgba(31,107,74,0.1); padding: 10px; border-radius: 8px;">
+                            <i data-lucide="hospital" style="color: var(--primary-color); width: 24px; height: 24px;"></i>
                         </div>
-                        <div class="search-zone-input-wrap">
-                            <i data-lucide="search" class="search-icon"></i>
-                            <input
-                                type="text"
-                                id="admissionSearchInput"
-                                class="admission-search-input"
-                                placeholder="Search Patient..."
-                                autocomplete="off"
-                            >
-                            <div id="admissionSearchDropdown" class="admission-search-dropdown"></div>
+                        <div>
+                            <h1 style="font-size: 1.25rem; font-weight: 700; color: var(--primary-color); margin: 0; line-height: 1.2;">IPD Billing Terminal</h1>
+                            <p style="font-size: 0.8rem; color: #64748b; margin: 0;">Search Patient / UHID / Mobile</p>
                         </div>
-                        <div class="search-zone-hint">
-                            <i data-lucide="keyboard"></i>
-                            Press <kbd>P</kbd>=Payment &nbsp; <kbd>A</kbd>=Add Charge &nbsp; <kbd>B</kbd>=Bed Rent &nbsp; <kbd>Esc</kbd>=Close
+                    </div>
+                    
+                    <!-- Middle: Search Input -->
+                    <div class="search-zone-input-wrap" style="flex-grow: 1; max-width: 500px; margin: 0; position: relative;">
+                        <i data-lucide="search" class="search-icon" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--primary-color); width: 18px; height: 18px;"></i>
+                        <input
+                            type="text"
+                            id="admissionSearchInput"
+                            class="admission-search-input"
+                            placeholder="Search admitted patient..."
+                            autocomplete="off"
+                            style="width: 100%; padding: 10px 10px 10px 42px; border-radius: 20px; border: 1px solid rgba(31,107,74,0.3); font-size: 0.95rem; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); transition: border 0.2s; outline: none;"
+                            onfocus="this.style.border='1px solid var(--primary-color)';"
+                            onblur="this.style.border='1px solid rgba(31,107,74,0.3)';"
+                        >
+                        <div id="admissionSearchDropdown" class="admission-search-dropdown" style="top: calc(100% + 5px); left: 0; right: 0;"></div>
+                    </div>
+
+                    <!-- Right: Actions & Hints -->
+                    <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
+                        <div style="font-size: 0.75rem; color: #64748b; display: flex; align-items: center; gap: 8px; border-right: 1px solid #e2e8f0; padding-right: 15px;">
+                            <i data-lucide="keyboard" style="width: 14px; height: 14px;"></i>
+                            <span style="display:flex; gap:5px;">
+                                <kbd style="background:var(--primary-color); color:white; padding: 2px 6px; border-radius: 4px; font-weight: bold;">P</kbd> Pay 
+                                <kbd style="background:var(--primary-color); color:white; padding: 2px 6px; border-radius: 4px; font-weight: bold;">A</kbd> Charge 
+                                <kbd style="background:var(--primary-color); color:white; padding: 2px 6px; border-radius: 4px; font-weight: bold;">B</kbd> Bed 
+                                <kbd style="background:var(--primary-color); color:white; padding: 2px 6px; border-radius: 4px; font-weight: bold;">Esc</kbd> Close
+                            </span>
                         </div>
+                        <button class="bm-btn" style="background: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'" onclick="billing.openDischargeHistory()">
+                            <i data-lucide="history" style="width: 16px; height: 16px;"></i> Discharge History
+                        </button>
                     </div>
                 </div>
 
-                <!-- ═══════════ ZONE 2: EMPTY STATE ═══════════ -->
-                <div class="billing-empty-state" id="billingEmptyState">
-                    <div class="empty-state-icon"><i data-lucide="receipt"></i></div>
-                    <h2>No Patient Selected</h2>
-                    <p>Search for an admitted patient above to open the billing terminal</p>
-                    <div class="empty-state-stats" id="emptyStateStats">
-                        <div class="estat-card">
-                            <div class="estat-val" id="estTotalBills">—</div>
-                            <div class="estat-label">Total Bills</div>
+                <!-- ═══════════ ZONE 2: ADMITTED PATIENTS LIST ═══════════ -->
+                <div class="billing-empty-state" id="billingEmptyState" style="padding:20px; align-items: stretch; justify-content: flex-start; height: calc(100vh - 100px); display: flex; flex-direction: column;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; flex-shrink: 0;">
+                        <h2 style="font-size: 1.5rem; color: var(--primary-color); margin: 0; text-align: left;"><i data-lucide="users" style="display:inline; vertical-align:middle; margin-right:8px;"></i> All IPD Patients</h2>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="patientStatusFilter" onchange="billing.filterPatientsTable()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--primary-color); font-size: 0.9rem; outline: none; background: white; color: var(--primary-color); cursor: pointer;">
+                                <option value="ALL" selected>All Status</option>
+                                <option value="ACTIVE">Active Admissions</option>
+                                <option value="DISCHARGED">Discharged</option>
+                            </select>
+                            <div style="position: relative;">
+                                <i data-lucide="search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--primary-color);"></i>
+                                <input type="text" id="patientTableSearch" onkeyup="billing.filterPatientsTable()" placeholder="Search in table..." style="padding: 8px 10px 8px 30px; border-radius: 6px; border: 1px solid var(--primary-color); font-size: 0.9rem; outline: none; width: 200px;">
+                            </div>
                         </div>
-                        <div class="estat-card">
-                            <div class="estat-val green" id="estTotalCollected">—</div>
-                            <div class="estat-label">Collected Today</div>
-                        </div>
-                        <div class="estat-card">
-                            <div class="estat-val amber" id="estPending">—</div>
-                            <div class="estat-label">Pending Balance</div>
-                        </div>
+                    </div>
+                    <div class="table-responsive bg-white rounded shadow-sm border border-slate-200" style="flex-grow: 1; overflow-y: auto; position: relative;">
+                        <table class="billing-items-table" style="width: 100%; text-align: left; border-collapse: separate; border-spacing: 0;">
+                            <thead style="position: sticky; top: 0; z-index: 20;">
+                                <tr>
+                                    <th style="padding: 12px; border-bottom: 2px solid var(--primary-color); cursor: pointer;" onclick="billing.sortPatientsTable('admission_id')">Admission ID <i data-lucide="chevrons-up-down" style="width:12px;height:12px;display:inline;"></i></th>
+                                    <th style="padding: 12px; border-bottom: 2px solid var(--primary-color); cursor: pointer;" onclick="billing.sortPatientsTable('patient_name')">Patient Name <i data-lucide="chevrons-up-down" style="width:12px;height:12px;display:inline;"></i></th>
+                                    <th style="padding: 12px; border-bottom: 2px solid var(--primary-color);">Age/Sex</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid var(--primary-color);">Phone</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid var(--primary-color);">Ward & Bed</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid var(--primary-color);">Doctor</th>
+                                    <th style="padding: 12px; border-bottom: 2px solid var(--primary-color); cursor: pointer;" onclick="billing.sortPatientsTable('status')">Status <i data-lucide="chevrons-up-down" style="width:12px;height:12px;display:inline;"></i></th>
+                                    <th style="padding: 12px; border-bottom: 2px solid var(--primary-color);">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admittedPatientsList">
+                                <tr><td colspan="7" style="text-align:center; padding:20px;">Loading patients...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -231,7 +260,10 @@ $userName  = $_SESSION['username'] ?? 'Admin';
                                         <i data-lucide="toggle-right"></i> Status
                                     </button>
                                     <button class="phc-btn" style="background:var(--amber-600); color:white; border-color:var(--amber-700);" onclick="billing.dischargePatient()" title="Discharge Patient">
-                                        <i data-lucide="sign-out"></i> Discharge
+                                        <i data-lucide="log-out"></i> Discharge
+                                    </button>
+                                    <button class="phc-btn" style="background:#ef4444; color:white; border-color:#dc2626; padding-left:12px; padding-right:12px; border-left: 1px solid rgba(255,255,255,0.2); margin-left: 8px;" onclick="billing.closeWorkspace()" title="Close Terminal">
+                                        <i data-lucide="x"></i> Close
                                     </button>
                                     <button class="phc-btn phc-btn-blue" id="btnInsuranceInfo" onclick="billing.openInsuranceModal()">
                                         <i data-lucide="shield"></i> Insurance
@@ -1009,7 +1041,7 @@ $userName  = $_SESSION['username'] ?? 'Admin';
     window.USER_ROLE   = '<?= htmlspecialchars($userRole) ?>';
     window.USER_NAME   = '<?= htmlspecialchars($userName) ?>';
 </script>
-<script src="assets/js/ipd_billing.js?v=1785143282"></script>
+<script src="assets/js/ipd_billing.js?v=<?= time() ?>"></script>
     <script>
         lucide.createIcons();
     </script>

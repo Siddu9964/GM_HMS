@@ -488,7 +488,7 @@ class IpdBillingMaster extends IpdBaseModel {
     public function searchActiveAdmissions(string $q): array {
         $like = "%{$q}%";
         return $this->fetchAll(
-            "SELECT ia.admission_id, ia.patient_id,
+            "SELECT ia.admission_id, ia.patient_id, ia.status, ia.discharge_date,
                     CONCAT(p.first_name,' ',p.last_name) AS patient_name,
                     p.phone, p.age, p.sex,
                     d.full_name AS doctor_name,
@@ -502,7 +502,7 @@ class IpdBillingMaster extends IpdBaseModel {
              LEFT JOIN ipd_billing_master bm ON ia.admission_id = bm.admission_id
              WHERE (p.first_name LIKE ? OR p.last_name LIKE ? OR ia.admission_id LIKE ? OR p.phone LIKE ? OR ia.patient_id LIKE ?)
              ORDER BY ia.admission_date DESC
-             LIMIT 20",
+             LIMIT 200",
             [$like, $like, $like, $like, $like]
         );
     }
@@ -591,7 +591,7 @@ class IpdBillingMaster extends IpdBaseModel {
         // Fetch Admission Details and Bed Info
         $admission = $this->fetchOne(
             "SELECT bm.patient_id, bm.admission_id, ia.admission_date, ia.admission_time, ia.discharge_date, ia.discharge_time,
-                    hb.room_name, hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.service_charge
+                    hb.room_name, hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.service_charge, hb.total_bed_amount
              FROM ipd_billing_master bm
              JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
              LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
@@ -602,22 +602,35 @@ class IpdBillingMaster extends IpdBaseModel {
         if (!$admission) return;
 
         // Combine date and time to create exact admission timestamp
-        $admissionDateTime = $admission['admission_date'] . ' ' . ($admission['admission_time'] ?: '00:00:00');
+        $admissionDateTime = trim(($admission['admission_date'] ?? '') . ' ' . ($admission['admission_time'] ?: '00:00:00'));
         $admTimestamp = strtotime($admissionDateTime);
 
+        if (!$admTimestamp || $admTimestamp < 0) {
+            $admTimestamp = time(); // fallback if invalid date
+        }
+
         // Determine current end timestamp (Discharge or Now)
-        if (!empty($admission['discharge_date'])) {
+        if (!empty($admission['discharge_date']) && $admission['discharge_date'] !== '0000-00-00') {
             $dischargeTime = !empty($admission['discharge_time']) ? $admission['discharge_time'] : '23:59:59';
             $endTimestamp = strtotime($admission['discharge_date'] . ' ' . $dischargeTime);
+            if (!$endTimestamp || $endTimestamp < 0) {
+                $endTimestamp = time();
+            }
         } else {
             $endTimestamp = time();
         }
 
         // Calculate exact hours elapsed
         $hoursElapsed = ($endTimestamp - $admTimestamp) / 3600;
+        if ($hoursElapsed < 0) $hoursElapsed = 0;
         
         // Use ceil to charge for any started 24-hour block, ensuring at least 1 day is charged.
         $totalPeriods = max(1, (int) ceil($hoursElapsed / 24));
+
+        // Sanity check to prevent loop timeouts (max 365 days)
+        if ($totalPeriods > 365) {
+            $totalPeriods = 365;
+        }
 
         // We expect $totalPeriods number of ROOM_RENT charges to exist
         // Fetch existing generated daily charges for this bill (excluding cancelled)
@@ -630,13 +643,13 @@ class IpdBillingMaster extends IpdBaseModel {
         $periodsToAdd = $totalPeriods - $existingCount;
 
         if ($periodsToAdd > 0) {
-            $roomPrice = (float)$admission['amount_per_day'];
+            $roomPrice = (float)$admission['total_bed_amount'];
             $foodPrice = 570.00; // Default fixed food charge
-            $nursingPrice = (float)$admission['nursig_charge'];
-            $doctorPrice = (float)$admission['doctor_charge'];
-            $servicePrice = (float)$admission['service_charge'];
+            $nursingPrice = 0;
+            $doctorPrice = 0;
+            $servicePrice = 0;
             
-            $totalDailyCharge = $roomPrice + $foodPrice + $nursingPrice + $doctorPrice + $servicePrice;
+            $totalDailyCharge = $roomPrice + $foodPrice;
 
             // Loop and add the missing periods
             for ($i = 0; $i < $periodsToAdd; $i++) {
@@ -655,11 +668,16 @@ class IpdBillingMaster extends IpdBaseModel {
                 if (!$dup && $totalDailyCharge > 0) {
                     $itemsJson = json_encode([
                         ['name' => 'Room Rent', 'qty' => 1, 'price' => $roomPrice, 'total' => $roomPrice],
-                        ['name' => 'Food Charges', 'qty' => 1, 'price' => $foodPrice, 'total' => $foodPrice],
-                        ['name' => 'Nursing Charges', 'qty' => 1, 'price' => $nursingPrice, 'total' => $nursingPrice],
-                        ['name' => 'Duty Doctor Charges', 'qty' => 1, 'price' => $doctorPrice, 'total' => $doctorPrice],
-                        ['name' => 'Service Charges', 'qty' => 1, 'price' => $servicePrice, 'total' => $servicePrice]
+                        ['name' => 'Food Charges', 'qty' => 1, 'price' => $foodPrice, 'total' => $foodPrice]
                     ]);
+
+                    $baseBedRent = (float)$admission['amount_per_day'];
+                    $baseNursing = (float)$admission['nursig_charge'];
+                    $baseDoctor = (float)$admission['doctor_charge'];
+                    $baseService = isset($admission['service_charge']) ? (float)$admission['service_charge'] : 0;
+                    
+                    $breakdownText = "Room Rent: ₹" . number_format($baseBedRent, 0) . " | Nursing Charges: ₹" . number_format($baseNursing, 0) . " | Duty Doctor Charges: ₹" . number_format($baseDoctor, 0) . " | Service Charges: ₹" . number_format($baseService, 0);
+                    $roomDesc = "Room Rent - " . $roomName . " - Day " . $dayNumber . "<br><small style='color: #6c757d; font-size: 0.85em;'>" . $breakdownText . "</small>";
 
                     $this->db->insert('ipd_billing_items', [
                         'bill_id'     => $billId,
@@ -667,7 +685,7 @@ class IpdBillingMaster extends IpdBaseModel {
                         'admission_id'=> $admission['admission_id'],
                         'charge_date' => $chargeDate,
                         'charge_type' => 'ROOM_RENT',
-                        'description' => 'Room Rent - ' . $roomName . ' - Day ' . $dayNumber,
+                        'description' => $roomDesc,
                         'total_amount'=> $totalDailyCharge,
                         'items_json'  => $itemsJson,
                         'status'      => 'COMPLETED',

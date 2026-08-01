@@ -297,3 +297,39 @@ RESULT: Array
 
 )
 
+DATA: Array
+(
+    [patient_id] => PID-20260715-001
+    [admitting_doctor_id] => DOC024
+    [chief_complaint] => 
+    [diagnosis] => 
+    [emergency_contact_name] => 
+    [emergency_contact_phone] => 
+    [bed_id] => 12
+    [admission_type] => Emergency
+    [admission_date] => 2026-07-29
+    [admission_time] => 17:03
+    [referral_type] => 
+    [referral_name] => 
+    [amount_per_day] => 4500
+    [nursig_charge] => 1000
+    [doctor_charge] => 1000
+    [service_charge] => 700
+    [total_bed_amount] => 7200
+    [payment_method] => CASH
+    [advance_payment] => 
+    [admission_charge] => 350
+    [mrd_charge] => 400
+    [food_charge] => 570
+)
+
+RESULT: Array
+(
+    [success] => 
+    [errors] => Array
+        (
+            [0] => Failed to create admission: Query preparation failed: Unknown column 'payment_method' in 'field list'. Query: INSERT INTO `ipd_admissions` (`admission_id`, `patient_id`, `admitting_doctor_id`, `admission_date`, `admission_time`, `admission_type`, `bed_id`, `amount_per_day`, `nursig_charge`, `doctor_charge`, `service_charge`, `total_bed_amount`, `payment_method`, `ward`, `floor_number`, `floor_name`, `ward_name`, `room_no`, `room_name`, `room_type`, `status`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        )
+
+)
+

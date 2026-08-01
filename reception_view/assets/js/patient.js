@@ -93,6 +93,7 @@ class PatientManager {
 
             if (response.success) {
                 this.showToast('Patient created successfully', 'success');
+                localStorage.removeItem('patientRegistrationDraft');
                 this.closeModal();
                 this.loadPatients(this.currentPage);
                 return response.data;
@@ -351,6 +352,47 @@ class PatientManager {
             document.getElementById('editPatientId').value = '';
             const dispId = document.getElementById('displayPatientId');
             if (dispId) dispId.value = 'PID-AUTO';
+
+            const draftStr = localStorage.getItem('patientRegistrationDraft');
+            if (draftStr) {
+                try {
+                    const draft = JSON.parse(draftStr);
+                    Object.keys(draft).forEach(key => {
+                        const input = form.querySelector(`[name="${key}"]`);
+                        if (input) {
+                            if (input.type === 'radio') {
+                                const radio = form.querySelector(`[name="${key}"][value="${draft[key]}"]`);
+                                if (radio) radio.checked = true;
+                            } else {
+                                input.value = draft[key];
+                                input.dispatchEvent(new Event('change'));
+                            }
+                        }
+                    });
+                    
+                    let discardBtn = document.getElementById('discardDraftBtn');
+                    if (!discardBtn) {
+                        discardBtn = document.createElement('button');
+                        discardBtn.id = 'discardDraftBtn';
+                        discardBtn.className = 'action-btn discard-draft-btn';
+                        discardBtn.style.cssText = 'background: #fee2e2; color: #dc2626; border: none; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-left: 15px; cursor: pointer;';
+                        discardBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Discard Draft';
+                        discardBtn.onclick = () => {
+                            localStorage.removeItem('patientRegistrationDraft');
+                            form.reset();
+                            if (dispId) dispId.value = 'PID-AUTO';
+                            discardBtn.remove();
+                            this.showToast('Draft discarded', 'success');
+                        };
+                        modalTitle.appendChild(discardBtn);
+                    }
+                } catch (e) {
+                    console.error('Error recovering draft:', e);
+                }
+            } else {
+                const discardBtn = document.getElementById('discardDraftBtn');
+                if (discardBtn) discardBtn.remove();
+            }
         }
 
         modal.classList.remove('hidden');
@@ -450,6 +492,20 @@ class PatientManager {
      * Attach event listeners
      */
     attachEventListeners() {
+        const form = document.getElementById('patientForm');
+        if (form && !this._listenersAttached) {
+            const saveDraft = () => {
+                const patientId = document.getElementById('editPatientId').value;
+                if (!patientId) { // Only auto-save for new patients
+                    const formData = new FormData(form);
+                    const data = Object.fromEntries(formData.entries());
+                    localStorage.setItem('patientRegistrationDraft', JSON.stringify(data));
+                }
+            };
+            form.addEventListener('input', saveDraft);
+            form.addEventListener('change', saveDraft);
+        }
+
         // Search input
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
@@ -484,7 +540,6 @@ class PatientManager {
         }
 
         // Form submission — only attach once to prevent double-submit on re-init
-        const form = document.getElementById('patientForm');
         if (form && !this._listenersAttached) {
             form.addEventListener('submit', (e) => this.handleFormSubmit(e));
         }

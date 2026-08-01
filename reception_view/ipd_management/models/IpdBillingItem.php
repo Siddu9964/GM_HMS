@@ -120,15 +120,20 @@ class IpdBillingItem extends BaseModel {
             return ['success' => false, 'message' => 'Bed information not found for this admission'];
         }
 
-        $bedRent      = (float)$bedInfo['amount_per_day'];
-        $nursingChg   = (float)$bedInfo['nursig_charge'];  // note the typo in column name
-        $dutyDrChg    = (float)$bedInfo['doctor_charge'];
         $totalPerDay  = (float)$bedInfo['total_bed_amount'];
-        if ($totalPerDay == 0) {
-            $totalPerDay = $bedRent + $nursingChg + $dutyDrChg;
-        }
+        $bedRent      = $totalPerDay;
+        $nursingChg   = 0;
+        $dutyDrChg    = 0;
+        
+        $baseBedRent = (float)$bedInfo['amount_per_day'];
+        $baseNursing = (float)$bedInfo['nursig_charge'];
+        $baseDoctor = (float)$bedInfo['doctor_charge'];
+        // Note: service charge is not always in bedInfo here, so we skip it if not queried or assume 0
+        $baseService = isset($bedInfo['service_charge']) ? (float)$bedInfo['service_charge'] : 0;
+        
+        $breakdownText = "Room Rent: ₹" . number_format($baseBedRent, 0) . " | Nursing Charges: ₹" . number_format($baseNursing, 0) . " | Duty Doctor Charges: ₹" . number_format($baseDoctor, 0) . " | Service Charges: ₹" . number_format($baseService, 0);
 
-        $description  = "Room Rent – {$bedInfo['ward_name']} – {$bedInfo['bed_number']}";
+        $descriptionBase  = "Room Rent – {$bedInfo['ward_name']} – {$bedInfo['bed_number']}";
 
         $addedDates   = [];
         $skippedDates = [];
@@ -157,7 +162,7 @@ class IpdBillingItem extends BaseModel {
                     'charge_date'    => $dateStr,
                     'charge_type'    => 'ROOM_RENT',
                     'department'     => $bedInfo['ward_name'],
-                    'description'    => $description . ' – ' . date('d-M-Y', $current),
+                    'description'    => $descriptionBase . ' – ' . date('d-M-Y', $current) . "<br><small style='color: #6c757d; font-size: 0.85em;'>" . $breakdownText . "</small>",
                     'quantity'       => 1,
                     'unit_price'     => $totalPerDay,
                     'discount_amt'   => 0,
@@ -224,10 +229,10 @@ class IpdBillingItem extends BaseModel {
 
         if (!$bedInfo) return ['success' => false, 'message' => 'Bed not found'];
 
-        $bedRent     = (float)$bedInfo['amount_per_day'];
-        $nursingChg  = (float)$bedInfo['nursig_charge'];
-        $dutyDrChg   = (float)$bedInfo['doctor_charge'];
-        $totalPerDay = (float)$bedInfo['total_bed_amount'] ?: ($bedRent + $nursingChg + $dutyDrChg);
+        $totalPerDay = (float)$bedInfo['total_bed_amount'];
+        $bedRent     = $totalPerDay;
+        $nursingChg  = 0;
+        $dutyDrChg   = 0;
 
         $rows    = [];
         $current = strtotime($fromDate);

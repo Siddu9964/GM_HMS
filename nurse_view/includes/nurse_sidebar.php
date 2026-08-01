@@ -122,13 +122,22 @@
             </div>
 
             <!-- Quick Actions -->
-            <div style="margin-top: auto; padding: 1rem; background: rgba(74, 144, 226, 0.1); border-radius: 0.5rem;">
+            <div style="margin-top: auto; padding: 1rem; background: rgba(74, 144, 226, 0.1); border-radius: 0.5rem; margin-bottom: 0.5rem;">
                 <button onclick="quickRecordVitals()" class="btn btn-primary"
                     style="width: 100%; justify-content: center;">
                     <i class="fas fa-heartbeat"></i>
                     <span>Quick Vitals</span>
                 </button>
             </div>
+
+            <?php if (isset($_SESSION['role']) && in_array($_SESSION['role'], ['admin', 'Admin'])): ?>
+            <div style="padding: 0 1rem 1rem 1rem;">
+                <a href="/GM_HMS/view/admin_dashboard.php" class="sidebar-link" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; justify-content: center; border: 1px solid rgba(239, 68, 68, 0.2);">
+                    <i class="fas fa-arrow-left" style="color: #ef4444; margin-right: 5px;"></i>
+                    <span>Exit to Admin</span>
+                </a>
+            </div>
+            <?php endif; ?>
         </nav>
     </div>
 </aside>

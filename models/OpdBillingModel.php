@@ -597,7 +597,7 @@ class OpdBillingModel
     {
         try {
             $sql = "
-                SELECT NULL         AS service_id,
+                SELECT service_id   AS service_id,
                        test_name    AS billing_name,
                        'Lab'        AS modality_name,
                        opd_rate     AS opd_price
@@ -664,6 +664,116 @@ class OpdBillingModel
         } catch (\Exception $e) {
             error_log("Error in searchSponsors: " . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Get comprehensive analytics data for OPD Billing Dashboard
+     */
+    public function getAnalyticsData($filters = []) {
+        try {
+            $conditions = [];
+            $params = [];
+
+            if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
+                $conditions[] = "DATE(bill_date) BETWEEN ? AND ?";
+                // Ensure dates are in YYYY-MM-DD format
+                $params[] = date('Y-m-d', strtotime(str_replace('/', '-', $filters['start_date'])));
+                $params[] = date('Y-m-d', strtotime(str_replace('/', '-', $filters['end_date'])));
+            }
+
+            if (!empty($filters['receptionist'])) {
+                $conditions[] = "created_by = ?";
+                $params[] = $filters['receptionist'];
+            }
+
+            if (!empty($filters['payment_mode'])) {
+                $conditions[] = "payment_mode = ?";
+                $params[] = $filters['payment_mode'];
+            }
+
+            if (!empty($filters['payment_status'])) {
+                $conditions[] = "payment_status = ?";
+                $params[] = $filters['payment_status'];
+            }
+
+            $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+
+            // 1. Key Metrics
+            $metricsSql = "SELECT 
+                COUNT(*) as total_bills,
+                SUM(grand_total) as total_billing_amount,
+                SUM(amount_paid) as total_collected,
+                SUM(balance_due) as total_pending,
+                SUM(discount_amount) as total_discount,
+                SUM(CASE WHEN payment_status = 'Cancelled' THEN grand_total ELSE 0 END) as total_refund,
+                COUNT(CASE WHEN payment_status = 'Cancelled' THEN 1 END) as cancelled_bills
+            FROM opd_billing_master $whereClause";
+            
+            $metrics = $this->db->fetchOne($metricsSql, $params) ?: [
+                'total_bills' => 0, 'total_billing_amount' => 0, 'total_collected' => 0, 
+                'total_pending' => 0, 'total_discount' => 0, 'total_refund' => 0, 'cancelled_bills' => 0
+            ];
+
+            // 2. Receptionist Performance
+            $receptionistSql = "SELECT 
+                created_by as receptionist,
+                COUNT(*) as bills_generated,
+                SUM(grand_total) as total_billing,
+                SUM(amount_paid) as collected,
+                SUM(balance_due) as pending
+            FROM opd_billing_master 
+            $whereClause 
+            GROUP BY created_by 
+            ORDER BY collected DESC";
+            
+            $receptionistPerformance = $this->db->fetchAll($receptionistSql, $params) ?: [];
+
+            // 3. Payment Method Breakdown
+            $paymentMethodWhere = !empty($whereClause) ? $whereClause . " AND payment_status != 'Cancelled'" : "WHERE payment_status != 'Cancelled'";
+            
+            $paymentMethodSql = "SELECT 
+                IFNULL(payment_mode, 'Unspecified') as method,
+                SUM(amount_paid) as total
+            FROM opd_billing_master 
+            $paymentMethodWhere
+            GROUP BY payment_mode
+            ORDER BY total DESC";
+            
+            $paymentMethods = $this->db->fetchAll($paymentMethodSql, $params) ?: [];
+
+            // 4. Trends (Daily/Monthly)
+            // If date range is > 31 days, group by month, else group by day
+            $groupByFormat = "%Y-%m-%d";
+            if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
+                $start = new \DateTime($filters['start_date']);
+                $end = new \DateTime($filters['end_date']);
+                if ($start->diff($end)->days > 31) {
+                    $groupByFormat = "%Y-%m";
+                }
+            }
+
+            $trendsSql = "SELECT 
+                DATE_FORMAT(bill_date, '$groupByFormat') as trend_date,
+                SUM(grand_total) as revenue,
+                SUM(amount_paid) as collections
+            FROM opd_billing_master 
+            $whereClause 
+            GROUP BY trend_date 
+            ORDER BY trend_date ASC";
+            
+            $trends = $this->db->fetchAll($trendsSql, $params) ?: [];
+
+            return [
+                'metrics' => $metrics,
+                'receptionist_performance' => $receptionistPerformance,
+                'payment_methods' => $paymentMethods,
+                'trends' => $trends
+            ];
+
+        } catch (\Exception $e) {
+            error_log("Error in getAnalyticsData: " . $e->getMessage());
+            throw $e;
         }
     }
 }

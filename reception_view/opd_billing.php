@@ -269,25 +269,19 @@ $pageTitle = 'OPD Billing';
                                         </div>
 
                                         <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:2rem; align-items: start;">
-                                            <div>
-                                                <div class="payment-modes" id="paymentModes">
-                                                    <button class="mode-btn active" data-mode="Cash"     onclick="opdBilling.setMode(this)"><i class="fas fa-money-bill-wave"></i>Cash</button>
-                                                    <button class="mode-btn"         data-mode="UPI"      onclick="opdBilling.setMode(this)"><i class="fas fa-mobile-alt"></i>UPI</button>
-                                                    <button class="mode-btn"         data-mode="Card"     onclick="opdBilling.setMode(this)"><i class="fas fa-credit-card"></i>Credit Card</button>
-                                                    <button class="mode-btn"         data-mode="Debit Card" onclick="opdBilling.setMode(this)"><i class="fas fa-credit-card"></i>Debit Card</button>
-                                                    <button class="mode-btn"         data-mode="Insurance" onclick="opdBilling.setMode(this)"><i class="fas fa-shield-alt"></i>Insurance</button>
-                                                    <button class="mode-btn"         data-mode="NetBanking" onclick="opdBilling.setMode(this)"><i class="fas fa-university"></i>NetBanking</button>
+                                            <div style="width: 100%;">
+                                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+                                                    <label style="font-weight: 600; color: var(--teal); margin: 0;">Payment Details</label>
+                                                    <button class="btn btn-secondary" onclick="opdBilling.addPaymentSplitRow()" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; height: auto;">
+                                                        <i class="fas fa-plus"></i> Add Split
+                                                    </button>
                                                 </div>
-
-                                                <div class="form-row cols-2" style="margin-top:1rem;">
-                                                    <div class="form-group">
-                                                        <label>Amount Paid (₹)</label>
-                                                        <input type="number" id="amountPaid" min="0" step="0.01" value="0" placeholder="0.00">
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label>Reference No.</label>
-                                                        <input type="text" id="refNo" placeholder="Optional">
-                                                    </div>
+                                                <div id="paymentSplitsContainer">
+                                                    <!-- Dynamic rows inserted by JS -->
+                                                </div>
+                                                <div style="margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 0.5rem 1rem; border-radius: 6px; border: 1px dashed #cbd5e1;">
+                                                    <span style="color: var(--gray-600); font-size: 0.85rem; font-weight: 600;">Total Entered: <span id="sumTotalEntered" style="color: var(--teal);">₹0.00</span></span>
+                                                    <span style="color: var(--gray-600); font-size: 0.85rem; font-weight: 600;">Balance: <span id="sumBalance" style="color: #e11d48;">₹0.00</span></span>
                                                 </div>
                                             </div>
                                             

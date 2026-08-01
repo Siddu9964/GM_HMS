@@ -358,7 +358,7 @@ include 'includes/reception_navbar.php';
                             <label>Referred By <span class="req">*</span></label>
                             <select name="referral_type" id="referred_by_select" onchange="toggleReferralSource()" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; background-color: #f9fafb;" required>
                                 <option value="Doctor" selected>Doctor</option>
-                                <option value="Self">Self</option>
+                                <option value="Self">walk-in</option>
                                 <option value="Staff">Staff</option>
                                 <option value="Online">Online</option>
                                 <option value="Others">Others</option>
@@ -407,7 +407,7 @@ include 'includes/reception_navbar.php';
 
                     <div class="ref-modal-footer">
                         <button type="button" onclick="closePatientModal()" class="ref-btn-cancel">Cancel</button>
-                        <button type="submit" class="ref-btn-submit"><i class="fas fa-save"></i> Conform Registretion </button>
+                        <button type="submit" class="ref-btn-submit"><i class="fas fa-save"></i> Complete Registration </button>
                     </div>
                 </form>
             </div>

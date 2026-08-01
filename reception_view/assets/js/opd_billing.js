@@ -7,7 +7,6 @@ class OpdBillingManager {
         this.apiBase = '/GM_HMS/api/index.php';
         this.selectedPatient = null;
         this.items = [];
-        this.paymentMode = 'Cash';
         this.services = [];
         this.doctors = [];
         this.allBills = [];
@@ -56,6 +55,12 @@ class OpdBillingManager {
                 document.getElementById('sponsorSuggestions')?.classList.remove('active');
             }
         });
+
+        // Initialize payment splits
+        const container = document.getElementById('paymentSplitsContainer');
+        if (container && container.innerHTML.trim() === '') {
+            this.addPaymentSplitRow('Cash', 0);
+        }
     }
 
     handleReferralTypeChange() {
@@ -192,6 +197,10 @@ class OpdBillingManager {
                     category: cat,
                     price: price
                 }));
+                
+                // Construct the display string showing the ID nicely
+                const idTag = s.service_id ? `<span style="color:var(--gray-500); font-size:0.7rem; background:#f1f5f9; padding:2px 4px; border-radius:4px; margin-right:6px; vertical-align:middle; border: 1px solid #cbd5e1;">${s.service_id}</span>` : '';
+                
                 html += `<div class="svc-item" data-svc="${encoded}"
                      onclick="opdBilling.pickService(this)"
                      style="padding:.55rem 1rem;cursor:pointer;font-size:.84rem;
@@ -199,7 +208,10 @@ class OpdBillingManager {
                             border-bottom:1px solid var(--gray-100);transition:background .12s;"
                      onmouseover="this.style.background='var(--teal-light)'"
                      onmouseout="this.style.background='white'">
-                    <span>${this._escape(s.billing_name)}</span>
+                    <span style="display:flex; align-items:center;">
+                        ${idTag}
+                        <span>${this._escape(s.billing_name)}</span>
+                    </span>
                     <span style="color:var(--teal);font-weight:600;font-size:.8rem;">₹${this._fmt(price)}</span>
                 </div>`;
             });
@@ -220,7 +232,8 @@ class OpdBillingManager {
         const filtered = q
             ? this.services.filter(s =>
                 (s.billing_name  || '').toLowerCase().includes(q) ||
-                (s.modality_name || '').toLowerCase().includes(q)
+                (s.modality_name || '').toLowerCase().includes(q) ||
+                (s.service_id    || '').toString().toLowerCase().includes(q)
             )
             : this.services;
         this._buildServiceList(filtered);
@@ -534,6 +547,11 @@ class OpdBillingManager {
         this.hideBillingModal();
         document.getElementById('patientSearchInput').value = '';
         this._renderNoResult('Enter at least 2 characters to search');
+        
+        const container = document.getElementById('paymentSplitsContainer');
+        if (container) container.innerHTML = '';
+        this.addPaymentSplitRow('Cash', 0);
+        
         this.recalculate();
     }
 
@@ -661,16 +679,73 @@ class OpdBillingManager {
         this._setText('sumDiscount', '₹' + this._fmt(totalDiscount));
         this._setText('sumTotal', '₹' + this._fmt(grandTotal));
 
-        // Always sync Amount Paid to Grand Total so they stay in agreement
-        const amtInput = document.getElementById('amountPaid');
-        if (amtInput) amtInput.value = grandTotal.toFixed(2);
+        // Always sync the first payment split if it's the only one
+        const splits = document.querySelectorAll('.payment-split-row');
+        if (splits.length === 1) {
+            const amtInput = splits[0].querySelector('.split-amount');
+            if (amtInput) {
+                // Keep it synced with grand total
+                amtInput.value = grandTotal.toFixed(2);
+            }
+        }
+        this.calculatePaymentSplits();
     }
 
-    // ─── Payment Mode ─────────────────────────────────────────
-    setMode(btn) {
-        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.paymentMode = btn.dataset.mode;
+    // ─── Payment Splits ───────────────────────────────────────
+    addPaymentSplitRow(mode = 'Cash', amount = 0, ref = '') {
+        const container = document.getElementById('paymentSplitsContainer');
+        if (!container) return;
+        const div = document.createElement('div');
+        div.className = 'payment-split-row form-row cols-3';
+        div.style.marginBottom = '0.5rem';
+        div.style.alignItems = 'flex-end';
+        div.innerHTML = `
+            <div class="form-group" style="margin-bottom: 0;">
+                <select class="split-mode" style="width:100%; padding: 0.4rem; border: 1.5px solid var(--gray-300); border-radius: 6px; font-size: 0.85rem;" onchange="opdBilling.calculatePaymentSplits()">
+                    ${['Cash', 'UPI', 'Credit Card', 'Debit Card', 'Insurance', 'NetBanking'].map(m => `<option value="${m}" ${m === mode ? 'selected' : ''}>${m}</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <input type="number" class="split-amount" min="0" step="0.01" value="${amount || ''}" placeholder="0.00" oninput="opdBilling.calculatePaymentSplits()" style="width:100%; padding: 0.4rem; border: 1.5px solid var(--gray-300); border-radius: 6px; font-size: 0.85rem;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0; position: relative;">
+                <input type="text" class="split-ref" value="${this._escape(ref)}" placeholder="Ref No." style="width:100%; padding: 0.4rem; padding-right: 2rem; border: 1.5px solid var(--gray-300); border-radius: 6px; font-size: 0.85rem;">
+                <button type="button" onclick="this.closest('.payment-split-row').remove(); opdBilling.calculatePaymentSplits();" style="position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 0.9rem;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(div);
+        this.calculatePaymentSplits();
+    }
+
+    calculatePaymentSplits() {
+        let total = 0;
+        document.querySelectorAll('.split-amount').forEach(inp => {
+            total += parseFloat(inp.value || 0);
+        });
+        const totalEl = document.getElementById('sumTotalEntered');
+        if (totalEl) totalEl.textContent = '₹' + this._fmt(total);
+
+        // Calculate grand total from items
+        const subtotalBase = this.items.reduce((s, i) => s + (i.qty * i.price), 0);
+        const itemDiscounts = this.items.reduce((s, i) => s + (i.discount || 0), 0);
+        const subtotalAfterItems = Math.max(0, subtotalBase - itemDiscounts);
+        const billDiscount = parseFloat(document.getElementById('billDiscount')?.value || 0);
+        const grandTotal = Math.max(0, subtotalAfterItems - billDiscount);
+        
+        const balance = grandTotal - total;
+        const balEl = document.getElementById('sumBalance');
+        if (balEl) {
+            balEl.textContent = '₹' + this._fmt(Math.abs(balance));
+            if (balance > 0.01) {
+                balEl.style.color = '#e11d48'; // red
+            } else if (balance < -0.01) {
+                balEl.style.color = '#eab308'; // yellow (overpaid)
+            } else {
+                balEl.style.color = '#10b981'; // green (paid exact)
+            }
+        }
     }
 
     // ─── Submit Bill ──────────────────────────────────────────
@@ -681,8 +756,19 @@ class OpdBillingManager {
         const discount    = parseFloat(document.getElementById('billDiscount').value || 0);
         const discountPct = parseFloat(document.getElementById('billDiscountPct').value || 0);
         const notes       = document.getElementById('billNotes').value;
-        const amountPaid  = parseFloat(document.getElementById('amountPaid').value || 0);
-        const refNo       = document.getElementById('refNo').value;
+
+        // Gather Payments
+        const payments = [];
+        let totalPaid = 0;
+        document.querySelectorAll('.payment-split-row').forEach(row => {
+            const mode = row.querySelector('.split-mode').value;
+            const amt = parseFloat(row.querySelector('.split-amount').value || 0);
+            const ref = row.querySelector('.split-ref').value;
+            if (amt > 0) {
+                payments.push({ amount: amt, payment_mode: mode, reference_no: ref });
+                totalPaid += amt;
+            }
+        });
 
         // Referral / Sponsor Data
         const referralType = document.getElementById('referralType').value;
@@ -723,11 +809,7 @@ class OpdBillingManager {
                 tax_percentage:  0,
                 discount_amount: i.discount || 0
             })),
-            payment: amountPaid > 0 ? {
-                amount:       amountPaid,
-                payment_mode: this.paymentMode,
-                reference_no: refNo
-            } : null
+            payments: payments.length > 0 ? payments : null
         };
 
         const btn = document.getElementById('btnGenerateBill');
@@ -766,8 +848,6 @@ class OpdBillingManager {
         document.getElementById('billDiscount').value = 0;
         document.getElementById('billDiscountPct').value = 0;
         document.getElementById('billNotes').value = '';
-        document.getElementById('amountPaid').value = 0;
-        document.getElementById('refNo').value = '';
         
         // Reset referral
         const refType = document.getElementById('referralType');
@@ -778,11 +858,11 @@ class OpdBillingManager {
         if (spon) spon.value = '';
         this.handleReferralTypeChange();
 
+        const container = document.getElementById('paymentSplitsContainer');
+        if (container) container.innerHTML = '';
+        this.addPaymentSplitRow('Cash', 0);
+
         this.recalculate();
-        // Reset payment mode
-        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-        document.querySelector('.mode-btn[data-mode="Cash"]')?.classList.add('active');
-        this.paymentMode = 'Cash';
     }
 
     // ─── Recent Bills ─────────────────────────────────────────
