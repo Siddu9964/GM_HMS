@@ -58,7 +58,7 @@ class OpdBillingManager {
 
         // Initialize payment splits
         const container = document.getElementById('paymentSplitsContainer');
-        if (container && container.innerHTML.trim() === '') {
+        if (container && container.children.length === 0) {
             this.addPaymentSplitRow('Cash', 0);
         }
 
