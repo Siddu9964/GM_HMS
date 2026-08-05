@@ -1,6 +1,6 @@
 <?php
 /**
- * LIS - Print Lab Result (Redesigned matching Pharmacy Module)
+ * LIS - Print Lab Result (Letterhead Design)
  */
 if (session_status() === PHP_SESSION_NONE) session_start();
 if (!isset($_SESSION['user_id'])) {
@@ -14,205 +14,140 @@ if (!$orderId) die('No Order ID provided.');
 
 // Get user name for printing meta
 $printedBy = $_SESSION['username'] ?? 'Technician';
-
-// Determine Branch Name and Address
-$branch = strtolower($_SESSION['hospital_branch'] ?? $_SESSION['branch'] ?? 'nagarabhavi');
-if ($branch === 'basaveshwaranagar') {
-    $hospitalTitle = 'GM HOSPITAL BASAVESHWARANAGAR';
-    $branchSub = '(A unit of pan NAGARABHAVI Hospitalals pvt ltd)';
-    $branchAddr = 'No. 335, 3rd Stage, 4th Block, Siddaiah Puranik Road, Basaveshwara nagar, Bengaluru 560079';
-} else {
-    $hospitalTitle = 'GM HOSPITAL NAGARABHAVI';
-    $branchSub = '(A unit of pan NAGARABHAVI Hospitalals pvt ltd)';
-    $branchAddr = 'Bengaluru';
-}
 ?>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>Lab Result - <?= htmlspecialchars($orderId) ?></title>
-    <link rel="stylesheet" href="/GM_HMS/assets/css/gm-theme.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --primary: #1f6b4a; 
-            --primary-dark: #096b6b; 
-            --text-main: #1e293b; 
-            --text-muted: #64748b; 
-            --bg-light: #f8fafc; 
-            --border: #e2e8f0; 
-        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; color: var(--text-main); font-size: 11px; line-height: 1.4; }
+        body { font-family: 'Inter', sans-serif; color: #111; font-size: 11px; line-height: 1.2; }
         
         @media screen {
             body { background: #e2e8f0; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; }
-            .invoice-wrapper { width: 100%; max-width: 850px; }
-            .action-bar { display: flex; justify-content: flex-end; margin-bottom: 20px; gap: 12px; }
-            .btn { padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-size: 12px; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease; font-family: 'Inter', sans-serif; text-decoration: none; }
-            .btn-print { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(31, 107, 74,0.25); }
-            .btn-print:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 6px 15px rgba(31, 107, 74,0.3); }
-            .btn-a5 { background: #334155; color: #fff; }
-            .btn-pdf { background: #0ea5e9; color: #fff; box-shadow: 0 4px 12px rgba(14, 165, 233,0.25); }
-            .btn-pdf:hover { background: #0284c7; transform: translateY(-1px); }
-            .btn-close { background: #fff; color: var(--text-muted); border: 1px solid var(--border); }
-            .btn-close:hover { background: #f1f5f9; color: var(--text-main); }
-            .invoice-container { background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+            .invoice-wrapper { width: 100%; max-width: 850px; background: #fff; padding: 0 40px 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+            .action-bar { display: flex; justify-content: flex-end; margin-bottom: 20px; gap: 12px; width: 100%; max-width: 850px; }
+            .btn { padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+            .btn-print { background: #1f6b4a; color: #fff; }
+            .btn-close { background: #fff; color: #64748b; border: 1px solid #e2e8f0; }
         }
         
         @media print {
-            body { background: #fff; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body { background: #fff; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; line-height: 1.15; }
             .action-bar { display: none !important; }
-            .invoice-container { padding: 0; box-shadow: none; border-radius: 0; max-width: 100%; position: relative; z-index: 1; }
-            @page { margin: 5mm; size: A4 portrait; }
-        }
-        body.is-a5 @media print {
-            @page { size: A5 landscape; }
-            .invoice-container { font-size: 10px; }
+            /* Add guaranteed 20px side padding so hardware printers NEVER clip the first letters */
+            .invoice-wrapper { padding: 0 20px; box-shadow: none; max-width: 100%; }
+            @page { margin: 10mm; size: A4 portrait; }
         }
 
-        .watermark {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-35deg);
-            font-size: 100px;
-            font-weight: 900;
-            color: rgba(31, 107, 74, 0.08);
-            z-index: 9999;
-            pointer-events: none;
-            white-space: nowrap;
-            user-select: none;
+        /* Top spacing for pre-printed letterhead */
+        .letterhead-space { height: 130px; position: relative; }
+
+        /* Patient Grid */
+        .patient-grid {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #333;
+            border-bottom: 1px solid #333;
+            padding: 8px 0;
+            margin-bottom: 15px;
+            width: 100%;
         }
-        @media print {
-            .watermark { color: rgba(31, 107, 74, 0.15) !important; }
-        }
-
-        .hdr { text-align: center; padding-bottom: 8px; border-bottom: 1px dashed var(--border); margin-bottom: 12px; }
-        .cn { font-size: 18px; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px; }
-        .hdr-sub { font-size: 11px; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
-        .hdr-addr { font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
-
-        .pt { margin-bottom: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px 15px; padding: 4px 0; }
-        .pf { display: flex; flex-direction: row; align-items: center; gap: 6px; }
-        .pl { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; width: 85px; flex-shrink: 0; }
-        .pl::after { content: ':' }
-        .pv { font-size: 11.5px; font-weight: 600; color: var(--text-main); }
-
-        .st { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--primary); margin-bottom: 8px; border-bottom: 2px solid var(--border); padding-bottom: 4px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; }
-        thead tr { background: #f1f5f9; }
-        thead th { color: #1e293b; padding: 6px 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; text-align: left; border-bottom: 1px solid #cbd5e1; }
-        tbody td { border: none; font-size: 11px; padding: 6px 4px; }
-
-        .aw { background: var(--bg-light); border: 1px dashed var(--border); border-radius: 6px; padding: 8px 12px; font-size: 11px; margin-bottom: 15px; font-weight: 500; display: flex; align-items: center; gap: 8px; color: #0284c7; }
-        .aw strong { font-size: 10px; text-transform: uppercase; color: #fff; background: #0ea5e9; padding: 2px 6px; border-radius: 4px; }
+        .pg-col { width: 48%; display: flex; flex-direction: column; gap: 3px; }
+        .pf { display: flex; align-items: flex-start; }
+        .pl { font-weight: 700; color: #111; width: 140px; flex-shrink: 0; font-size: 11px; }
+        .pl::after { content: ' :'; }
+        .pv { font-weight: 500; color: #111; flex-grow: 1; word-break: break-word; padding-left: 5px; font-size: 11px; }
         
-        .bottom-meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: var(--bg-light); border: 1px solid var(--border); border-radius: 8px; padding: 10px 15px; margin-bottom: 20px; }
-        .bottom-meta-item { display: flex; flex-direction: column; gap: 3px; }
-        .bottom-meta-label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px; }
-        .bottom-meta-value { font-size: 11.5px; font-weight: 600; color: var(--text-main); }
-
-        .ft { display: flex; justify-content: space-between; border-top: 2px dashed var(--border); padding-top: 15px; align-items: flex-end; }
-        .fn { font-size: 12px; color: var(--text-muted); font-style: italic; font-weight: 500; text-align: center; width: 100%; margin-top: 20px;}
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; border: none; }
+        thead th { border-bottom: 1px solid #333; padding: 8px 4px; font-size: 11px; font-weight: 700; color: #111; text-align: center; }
+        thead th:first-child { text-align: left; }
         
-        .sign-box { text-align: center; width: 160px; }
-        .sign-line { border-top: 1px solid var(--text-muted); padding-top: 4px; font-weight: 700; font-size: 10px; color: var(--text-main); text-transform: uppercase; margin-top: 5px; }
+        tbody td { padding: 4px 4px; font-size: 11px; text-align: center; color: #111; }
+        tbody td:first-child { text-align: left; padding-left: 0; }
 
+        .dept-header { font-size: 12px; font-weight: 700; text-decoration: underline; text-align: left !important; padding: 12px 0 2px 0; }
+        .sample-type { font-size: 11px; font-style: italic; color: #333; padding-bottom: 8px; text-align: left !important; }
+        .test-title { font-weight: 700; font-size: 11px; padding: 6px 0 4px 0; color: #111; text-align: left !important; }
+
+        .abnormal { font-weight: 800; color: #000; }
+        
+        .footer-line { text-align: center; width: 100%; padding-top: 20px; margin-top: 30px; font-size: 11px; color: #333; }
+        .sign-area { display: flex; justify-content: space-between; margin-top: 80px; align-items: flex-end;}
+        .sign-box { width: 200px; text-align: center; }
+        .sign-line { border-top: 1px solid #333; padding-top: 5px; font-weight: 700; font-size: 12px; }
+        
+        #loading { text-align: center; padding: 50px; color: #64748b; font-size: 16px; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
 
-<div class="invoice-wrapper">
-    <div class="watermark">GM HOSPITAL</div>
-    
-    <div class="action-bar">
-        <button class="btn btn-close" onclick="window.history.back()">
-            Close
-        </button>
-        <a id="btn-view-pdf" href="#" target="_blank" class="btn btn-pdf" style="display:none;">
-            View PDF Report
-        </a>
-        <button class="btn btn-a5" onclick="document.body.classList.toggle('is-a5')">
-            Toggle A5 Print
-        </button>
-        <button class="btn btn-print" onclick="window.print()">
-            Print Result
-        </button>
-    </div>
-    
-    <div id="loading" style="text-align:center;padding:50px;font-family:'Inter',sans-serif;color:#64748b;background:#fff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.05);">
-        <h2>Loading Result Data...</h2>
-    </div>
+<div class="action-bar">
+    <button class="btn btn-close" onclick="window.history.back()">Close</button>
+    <a id="btn-view-pdf" href="#" target="_blank" class="btn btn-close" style="display:none;">View PDF Report</a>
+    <button class="btn btn-print" onclick="window.print()">Print Result</button>
+</div>
 
-    <div class="invoice-container" id="slip-content" style="display:none;">
-        <div class="hdr">
-            <div class="cn"><?= htmlspecialchars($hospitalTitle) ?></div>
-            <div class="hdr-sub"><?= htmlspecialchars($branchSub) ?></div>
-            <div class="hdr-addr"><?= htmlspecialchars($branchAddr) ?></div>
-        </div>
-        
-        <div class="pt">
+<div id="loading">Loading Result Data...</div>
+
+<div class="invoice-wrapper" id="slip-content" style="display:none;">
+    
+    <div class="letterhead-space"></div>
+    
+    <div class="patient-grid">
+        <div class="pg-col">
             <div class="pf"><span class="pl">Patient Name</span><span class="pv" id="p-name">—</span></div>
-            <div class="pf"><span class="pl">Patient ID</span><span class="pv" id="p-id">—</span></div>
-            <div class="pf"><span class="pl">Age &amp; Sex</span><span class="pv" id="p-age-sex">—</span></div>
-            
-            <div class="pf"><span class="pl">Order ID</span><span class="pv" id="b-order-id">—</span></div>
-            <div class="pf"><span class="pl">Phone</span><span class="pv" id="p-phone">—</span></div>
-            <div class="pf"><span class="pl">Doctor</span><span class="pv" style="color:var(--primary);" id="p-doctor">—</span></div>
-            
-            <div class="pf"><span class="pl">Test Name</span><span class="pv" id="t-name" style="font-weight:800">—</span></div>
-            <div class="pf"><span class="pl">Order Date</span><span class="pv" id="o-date">—</span></div>
-            <div class="pf"><span class="pl">Status</span><span class="pv" id="t-status" style="text-transform:uppercase;">—</span></div>
+            <div class="pf"><span class="pl">Age / Sex</span><span class="pv" id="p-age-sex">—</span></div>
+            <div class="pf"><span class="pl">IP/Reg.No/UHID</span><span class="pv" id="p-id">—</span></div>
+            <div class="pf"><span class="pl">Lab No</span><span class="pv" id="b-order-id">—</span></div>
+            <div class="pf"><span class="pl">Referred By</span><span class="pv">HOSPITAL STAFF</span></div>
+            <div class="pf"><span class="pl">Bedcategory/Bed N</span><span class="pv">—</span></div>
+            <div class="pf"><span class="pl">Consultant</span><span class="pv" id="p-doctor">—</span></div>
+            <div class="pf"><span class="pl">Barcode No.</span><span class="pv" id="p-barcode-num">—</span></div>
         </div>
-        
-        <div class="st">Test Results</div>
-        <table id="results-table">
-            <thead>
-                <tr>
-                    <th style="width:5%;text-align:center">SL NO</th>
-                    <th style="width:40%;text-align:left">PARAMETER</th>
-                    <th style="width:20%;text-align:center">RESULT</th>
-                    <th style="width:15%;text-align:center">UNIT</th>
-                    <th style="width:20%;text-align:center">NORMAL RANGE</th>
-                </tr>
-            </thead>
-            <tbody id="results-tbody">
-                <!-- Dynamic Rows -->
-            </tbody>
-        </table>
-        
-        <div class="aw" id="pdf-notice" style="display:none;">
-            <strong>PDF Attached</strong> A scanned PDF document has been uploaded as part of this report.
-        </div>
-        
-        <div class="bottom-meta-grid">
-            <div class="bottom-meta-item">
-                <span class="bottom-meta-label">Report Date & Time</span>
-                <span class="bottom-meta-value" id="b-date">—</span>
-            </div>
-            <div class="bottom-meta-item">
-                <span class="bottom-meta-label">Processed By</span>
-                <span class="bottom-meta-value" id="b-technician"><?= htmlspecialchars($printedBy) ?></span>
-            </div>
-            <div class="bottom-meta-item">
-                <span class="bottom-meta-label">Verified By</span>
-                <span class="bottom-meta-value">Authorized Signatory</span>
-            </div>
-        </div>
-        
-        <div class="ft">
-            <div class="sign-box">
-                <div style="font-weight:700; font-size:12px; margin-bottom:5px; color:var(--primary);"><?= htmlspecialchars($printedBy) ?></div>
-                <div class="sign-line">Laboratory Technician</div>
-            </div>
-        </div>
-        
-        <div class="fn">
-            This is a computer generated report. End of Report.
+        <div class="pg-col">
+            <div class="pf"><span class="pl">Bill No</span><span class="pv" id="b-bill-no">—</span></div>
+            <div class="pf"><span class="pl">Sample Collected</span><span class="pv" id="o-date">—</span></div>
+            <div class="pf"><span class="pl">Sample Received</span><span class="pv" id="o-date-2">—</span></div>
+            <div class="pf"><span class="pl">Report On</span><span class="pv" id="b-date">—</span></div>
+            <div class="pf"><span class="pl">Bill Creation Date</span><span class="pv" id="o-date-3">—</span></div>
+            <div class="pf" style="align-items: center;"><span class="pl">Bar Code</span><span class="pv"><svg id="barcode"></svg></span></div>
+            <div class="pf"><span class="pl">Mobile No</span><span class="pv" id="p-phone">—</span></div>
         </div>
     </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th style="width:40%">Test Name</th>
+                <th style="width:20%">Results</th>
+                <th style="width:20%">Units</th>
+                <th style="width:20%">Bio. Ref. Interval</th>
+            </tr>
+        </thead>
+        <tbody id="results-tbody">
+            <!-- Dynamic Injection -->
+        </tbody>
+    </table>
+
+    <div class="footer-line">
+        --------------------End of the Report--------------------
+    </div>
+    
+    <div class="sign-area">
+        <div class="sign-box" style="visibility:hidden;">
+            <!-- Placeholder for alignment -->
+        </div>
+        <div class="sign-box">
+            <div class="sign-line">Authorised Signatory</div>
+        </div>
+    </div>
+    
 </div>
 
 <script>
@@ -233,18 +168,44 @@ async function loadOrderAndResult() {
     const resData = await resRes.json();
 
     if (!order && !resData.success) {
-      document.getElementById('loading').innerHTML = '<h2 style="color:#ef4444;">Result not found</h2><p>Invalid Order ID or results not entered yet.</p>';
+      document.getElementById('loading').innerHTML = 'Result not found';
       return;
     }
 
     const result = resData.success ? resData.data : null;
 
+    // Populate Fields
     document.getElementById('b-order-id').textContent = oid;
-    document.getElementById('b-date').textContent = result ? (result.result_date + ' ' + result.result_time.slice(0,5)) : '--';
+    document.getElementById('b-bill-no').textContent = oid;
+    
+    // Use the full Order ID (e.g., OPB-20260805-0001) for the barcode so it is uniquely scannable
+    const barcodeVal = oid;
+    document.getElementById('p-barcode-num').textContent = barcodeVal;
+    
+    // Render Barcode
+    try {
+        JsBarcode("#barcode", barcodeVal, {
+            format: "CODE128",
+            lineColor: "#000",
+            width: 1,
+            height: 35,
+            displayValue: false,
+            margin: 0
+        });
+    } catch(e) { console.error('Barcode rendering failed', e); }
+    
+    const repDate = result ? (result.result_date + ' ' + result.result_time.slice(0,5)) : '--';
+    document.getElementById('b-date').textContent = repDate;
+    
     if(order) {
-       document.getElementById('o-date').textContent = order.order_date || '--';
+       const oDate = order.order_date || order.updated_at || '--';
+       document.getElementById('o-date').textContent = oDate;
+       document.getElementById('o-date-2').textContent = oDate;
+       document.getElementById('o-date-3').textContent = oDate;
     } else {
        document.getElementById('o-date').textContent = '--';
+       document.getElementById('o-date-2').textContent = '--';
+       document.getElementById('o-date-3').textContent = '--';
     }
 
     if (order) {
@@ -257,60 +218,74 @@ async function loadOrderAndResult() {
       document.getElementById('p-doctor').textContent = dName;
       
       let ageSex = [];
-      if (order.age) ageSex.push(order.age + 'y');
+      if (order.age) ageSex.push(order.age + 'Y');
       if (order.sex) ageSex.push(order.sex);
-      document.getElementById('p-age-sex').textContent = ageSex.length ? ageSex.join(' / ') : '—';
-      
-      let displayTestName = order.test_name || '—';
-      try {
-        const parsed = JSON.parse(order.test_name);
-        if (Array.isArray(parsed)) displayTestName = parsed.join(', ');
-      } catch(e) {}
-      document.getElementById('t-name').textContent = displayTestName;
+      document.getElementById('p-age-sex').textContent = ageSex.length ? ageSex.join('/') : '—';
     } else if (result) {
       document.getElementById('p-id').textContent = result.patient_id || '—';
-      
-      let displayTestName = result.test_name || '—';
-      try {
-        const parsed = JSON.parse(result.test_name);
-        if (Array.isArray(parsed)) displayTestName = parsed.join(', ');
-      } catch(e) {}
-      document.getElementById('t-name').textContent = displayTestName;
     }
 
-    document.getElementById('t-status').textContent = result ? result.status : 'Pending';
-
+    // Results Rendering
     if (result) {
       let params = [];
       try { params = JSON.parse(result.result_data); } catch(e) {}
       
+      let displayTestName = result.test_name || (order ? order.test_name : '—');
+      try {
+        const parsed = JSON.parse(displayTestName);
+        if (Array.isArray(parsed)) displayTestName = parsed.join(', ');
+      } catch(e) {}
+      
       if (params && params.length > 0) {
         let html = '';
         
-        // Detect Radiology text-area formats
+        // Department Header (assuming General if not specified)
+        html += `<tr><td colspan="4" class="dept-header">Laboratory Report</td></tr>`;
+        html += `<tr><td colspan="4" class="sample-type">Type Of Sample : Default Sample</td></tr>`;
+        html += `<tr><td colspan="4" class="test-title">${displayTestName}</td></tr>`;
+        
         const isTextReport = params.length === 1 && !params[0].unit && !params[0].range && params[0].value.length > 30;
         
         if (isTextReport) {
-           html = `<tr>
-             <td colspan="5" style="padding:15px 10px;white-space:pre-wrap;line-height:1.6;font-size:11.5px;color:var(--text-main);"><strong style="font-size:12px;color:var(--primary);text-transform:uppercase;display:block;margin-bottom:8px;">Findings:</strong>${params[0].value}</td>
+           html += `<tr>
+             <td colspan="4" style="padding:15px 0;white-space:pre-wrap;line-height:1.6;font-size:11.5px;"><strong style="text-decoration:underline;margin-bottom:8px;display:block;">Findings:</strong><br>${params[0].value}</td>
            </tr>`;
         } else {
-           html = params.map((p, i) => `
-             <tr style="background:${i%2 ? '#f8fafc' : '#fff'}">
-               <td style="text-align:center;padding:8px 4px;color:var(--text-muted);font-weight:500;border-bottom:1px solid #e2e8f0;">${i+1}</td>
-               <td style="padding:8px 4px;font-weight:700;color:var(--text-main);border-bottom:1px solid #e2e8f0;">${p.name || ''}</td>
-               <td style="text-align:center;padding:8px 4px;font-weight:800;font-size:12px;color:var(--primary-dark);border-bottom:1px solid #e2e8f0;">${p.value ?? p.result ?? ''}</td>
-               <td style="text-align:center;padding:8px 4px;color:var(--text-muted);border-bottom:1px solid #e2e8f0;">${p.unit ?? '—'}</td>
-               <td style="text-align:center;padding:8px 4px;color:var(--text-muted);border-bottom:1px solid #e2e8f0;">${p.range ?? p.normal_range ?? '—'}</td>
-             </tr>
-           `).join('');
+           html += params.map((p, i) => {
+             let val = p.value ?? p.result ?? '';
+             let numVal = parseFloat(val);
+             let rangeStr = p.range ?? p.normal_range ?? '';
+             
+             let arrow = '';
+             let isAbnormal = false;
+             
+             // Logic to parse range e.g. "13.0 - 17.0"
+             if(!isNaN(numVal) && rangeStr.includes('-')) {
+                 const parts = rangeStr.split('-');
+                 if(parts.length === 2) {
+                     const min = parseFloat(parts[0].trim());
+                     const max = parseFloat(parts[1].trim());
+                     if(!isNaN(min) && !isNaN(max)) {
+                         if(numVal < min) { arrow = '↓ '; isAbnormal = true; }
+                         if(numVal > max) { arrow = '↑ '; isAbnormal = true; }
+                     }
+                 }
+             }
+             
+             return `
+             <tr>
+               <td>${p.name || ''}</td>
+               <td class="${isAbnormal ? 'abnormal' : ''}">${arrow}${val}</td>
+               <td>${p.unit ?? '—'}</td>
+               <td>${rangeStr || '—'}</td>
+             </tr>`;
+           }).join('');
         }
         
         document.getElementById('results-tbody').innerHTML = html;
       }
 
       if (result.report_file) {
-        document.getElementById('pdf-notice').style.display = 'flex';
         const pdfBtn = document.getElementById('btn-view-pdf');
         if(pdfBtn) {
            pdfBtn.style.display = 'inline-flex';
@@ -319,14 +294,17 @@ async function loadOrderAndResult() {
       }
       
     } else {
-        document.getElementById('results-tbody').innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:25px;font-weight:600;">No results entered yet for this order.</td></tr>`;
+        document.getElementById('results-tbody').innerHTML = `<tr><td colspan="4" style="text-align:center;padding:25px;">No results entered yet for this order.</td></tr>`;
     }
 
     document.getElementById('loading').style.display = 'none';
     document.getElementById('slip-content').style.display = 'block';
 
+    // Auto print only if user hasn't opened PDF view
+    setTimeout(() => { if(!window.openedPDF) window.print(); }, 500);
+
   } catch(e) {
-    document.getElementById('loading').innerHTML = '<h2 style="color:#ef4444;">Error loading result</h2><p>Please check your connection and try again.</p>';
+    document.getElementById('loading').innerHTML = 'Error loading result';
     console.error(e);
   }
 }

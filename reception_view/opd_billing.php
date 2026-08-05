@@ -270,16 +270,26 @@ $pageTitle = 'OPD Billing';
 
                                         <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:2rem; align-items: start;">
                                             <div style="width: 100%;">
-                                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
-                                                    <label style="font-weight: 600; color: var(--teal); margin: 0;">Payment Details</label>
-                                                    <button class="btn btn-secondary" onclick="opdBilling.addPaymentSplitRow()" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; height: auto;">
+                                                <div style="margin-bottom: 0.75rem; display: flex; gap: 1.5rem; align-items: center;">
+                                                    <label style="font-weight: 600; color: var(--teal); margin: 0;">Payment Method:</label>
+                                                    <label style="cursor:pointer; display:flex; align-items:center; gap:0.4rem; font-size: 0.9rem; font-weight: 500; color: #334155;">
+                                                        <input type="radio" name="paymentTypeMode" value="single" checked onchange="opdBilling.togglePaymentMode()" style="accent-color: var(--teal); transform: scale(1.1);"> 
+                                                        Single Payment
+                                                    </label>
+                                                    <label style="cursor:pointer; display:flex; align-items:center; gap:0.4rem; font-size: 0.9rem; font-weight: 500; color: #334155;">
+                                                        <input type="radio" name="paymentTypeMode" value="split" onchange="opdBilling.togglePaymentMode()" style="accent-color: var(--teal); transform: scale(1.1);"> 
+                                                        Split Payment
+                                                    </label>
+                                                </div>
+                                                <div style="display:flex; justify-content:flex-end; margin-bottom: 0.5rem; min-height: 28px;">
+                                                    <button class="btn btn-secondary" id="btnAddSplit" onclick="opdBilling.addPaymentSplitRow()" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; height: auto; display: none;">
                                                         <i class="fas fa-plus"></i> Add Split
                                                     </button>
                                                 </div>
                                                 <div id="paymentSplitsContainer">
                                                     <!-- Dynamic rows inserted by JS -->
                                                 </div>
-                                                <div style="margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 0.5rem 1rem; border-radius: 6px; border: 1px dashed #cbd5e1;">
+                                                <div id="paymentSummaryBox" style="margin-top: 0.5rem; display: none; justify-content: space-between; align-items: center; background: #f8fafc; padding: 0.5rem 1rem; border-radius: 6px; border: 1px dashed #cbd5e1;">
                                                     <span style="color: var(--gray-600); font-size: 0.85rem; font-weight: 600;">Total Entered: <span id="sumTotalEntered" style="color: var(--teal);">₹0.00</span></span>
                                                     <span style="color: var(--gray-600); font-size: 0.85rem; font-weight: 600;">Balance: <span id="sumBalance" style="color: #e11d48;">₹0.00</span></span>
                                                 </div>

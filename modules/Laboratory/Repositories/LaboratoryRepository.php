@@ -115,7 +115,18 @@ class LaboratoryRepository
             if (is_array($labTests)) {
                 foreach ($labTests as $lt) {
                     if (is_string($lt)) {
-                        $testNames[] = $lt;
+                        if (preg_match('/^(LAB|RDS|OTH)/i', $lt, $matches)) {
+                            $prefix = strtoupper($matches[1]);
+                            $service = $this->getServiceName($prefix, $lt);
+                            if ($service) {
+                                $name = $prefix === 'LAB' ? ($service['test_name'] ?? $lt) : ($service['billing_name'] ?? $lt);
+                                $testNames[] = $name . ' (' . $lt . ')';
+                            } else {
+                                $testNames[] = $lt;
+                            }
+                        } else {
+                            $testNames[] = $lt;
+                        }
                     } else {
                         $name = $lt['data']['name'] ?? $lt['name'] ?? 'Lab Test';
                         $id = $lt['data']['id'] ?? $lt['id'] ?? null;
@@ -130,7 +141,7 @@ class LaboratoryRepository
             
             if (empty($testNames)) continue;
 
-            $result['test_name'] = implode('|||', $testNames);
+            $result['test_name'] = json_encode($testNames);
             $result['order_id'] = 'IPD-' . $result['order_id'];
             $result['status'] = 'Ordered';
             $result['priority'] = 'Routine';
@@ -352,7 +363,7 @@ class LaboratoryRepository
                 }
             }
 
-            $testIds = array_filter(array_map('trim', explode(',', $row['test_name'])));
+            $testIds = array_filter(array_map('trim', explode('|||', $row['test_name'])));
             
             $resolvedNames = [];
             foreach ($testIds as $tId) {
@@ -519,7 +530,7 @@ class LaboratoryRepository
             }
 
             // Test name resolution
-            $testIds = array_filter(array_map('trim', explode(',', $row['test_name'])));
+            $testIds = array_filter(array_map('trim', explode('|||', $row['test_name'])));
 
             $resolvedNames = [];
             foreach ($testIds as $tId) {
@@ -611,7 +622,7 @@ class LaboratoryRepository
 
         $tests = json_decode($data['test_name'], true);
         if(!is_array($tests)) {
-            $tests = array_filter(array_map('trim', explode(',', $data['test_name'])));
+            $tests = array_filter(array_map('trim', explode('|||', $data['test_name'])));
         }
         foreach($tests as $testId) {
             $prefix = strtoupper(substr($testId, 0, 3));
@@ -752,7 +763,7 @@ class LaboratoryRepository
             }
 
             // Test name resolution
-            $testIds = array_filter(array_map('trim', explode(',', $result['test_name'])));
+            $testIds = array_filter(array_map('trim', explode('|||', $result['test_name'])));
 
             $resolvedNames = [];
             foreach ($testIds as $tId) {
@@ -795,7 +806,7 @@ class LaboratoryRepository
         
         $tests = json_decode($data['test_name'], true);
         if(!is_array($tests)) {
-            $tests = array_filter(array_map('trim', explode(',', $data['test_name'])));
+            $tests = array_filter(array_map('trim', explode('|||', $data['test_name'])));
         }
         foreach($tests as $testId) {
             $prefix = strtoupper(substr($testId, 0, 3));

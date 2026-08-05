@@ -718,6 +718,44 @@ class OpdBillingManager {
     }
 
     // ─── Payment Splits ───────────────────────────────────────
+    togglePaymentMode() {
+        const modeEl = document.querySelector('input[name="paymentTypeMode"]:checked');
+        if (!modeEl) return;
+        const mode = modeEl.value;
+        const addBtn = document.getElementById('btnAddSplit');
+        const summaryBox = document.getElementById('paymentSummaryBox');
+        const container = document.getElementById('paymentSplitsContainer');
+        if (!container) return;
+        
+        if (mode === 'single') {
+            if (addBtn) addBtn.style.display = 'none';
+            if (summaryBox) summaryBox.style.display = 'none';
+            
+            // Keep only the first row, remove the rest
+            while (container.children.length > 1) {
+                container.removeChild(container.lastChild);
+            }
+            if (container.children.length === 0) {
+                this.addPaymentSplitRow('Cash', 0);
+                return; // addPaymentSplitRow will call togglePaymentMode again
+            }
+            
+            // Hide the remove button on the single row
+            const firstRowBtn = container.children[0].querySelector('button');
+            if (firstRowBtn) firstRowBtn.style.display = 'none';
+            
+            this.recalculate();
+            
+        } else {
+            if (addBtn) addBtn.style.display = 'inline-block';
+            if (summaryBox) summaryBox.style.display = 'flex';
+            
+            // Show the remove button on the first row
+            const firstRowBtn = container.children[0].querySelector('button');
+            if (firstRowBtn) firstRowBtn.style.display = 'block';
+        }
+    }
+
     addPaymentSplitRow(mode = 'Cash', amount = 0, ref = '') {
         const container = document.getElementById('paymentSplitsContainer');
         if (!container) return;
@@ -736,12 +774,15 @@ class OpdBillingManager {
             </div>
             <div class="form-group" style="margin-bottom: 0; position: relative;">
                 <input type="text" class="split-ref" value="${this._escape(ref)}" placeholder="Ref No." style="width:100%; padding: 0.4rem; padding-right: 2rem; border: 1.5px solid var(--gray-300); border-radius: 6px; font-size: 0.85rem;">
-                <button type="button" onclick="this.closest('.payment-split-row').remove(); opdBilling.calculatePaymentSplits();" style="position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 0.9rem;">
+                <button type="button" onclick="this.closest('.payment-split-row').remove(); opdBilling.calculatePaymentSplits(); opdBilling.togglePaymentMode();" style="position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 0.9rem;">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
         `;
         container.appendChild(div);
+        
+        // Ensure UI state matches toggle
+        this.togglePaymentMode();
         this.calculatePaymentSplits();
     }
 
@@ -886,6 +927,11 @@ class OpdBillingManager {
 
         const container = document.getElementById('paymentSplitsContainer');
         if (container) container.innerHTML = '';
+        
+        // Reset toggle to single
+        const singleToggle = document.querySelector('input[name="paymentTypeMode"][value="single"]');
+        if (singleToggle) singleToggle.checked = true;
+        
         this.addPaymentSplitRow('Cash', 0);
 
         this.recalculate();

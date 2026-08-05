@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $pageTitle = 'IPD Lab Orders';
 $pageIcon  = 'fa-flask';
 $navTitle  = 'IPD Lab Orders';
@@ -897,6 +897,15 @@ require_once 'includes/lab_head.php';
   </div>
 </div>
 
+<!-- Centered Message Overlay -->
+<div id="centerOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+    <div id="centerMessageCard" style="background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); min-width: 300px; transform: translateY(-20px); transition: all 0.3s ease;">
+        <i id="centerIcon" class="fas fa-check-circle" style="font-size: 3.5rem; margin-bottom: 15px;"></i>
+        <h3 id="centerTitle" style="margin: 0 0 10px 0; color: #1e293b; font-size: 1.5rem;">Success</h3>
+        <p id="centerText" style="color: #64748b; margin: 0; font-size: 1.1rem;"></p>
+    </div>
+</div>
+
 <?php require_once 'includes/lab_foot.php'; ?>
 
 <script>
@@ -1009,7 +1018,7 @@ function renderOrders(orders) {
     try {
       const parsed = JSON.parse(rawTestName);
       if (Array.isArray(parsed)) {
-        displayTestName = parsed.join(', ');
+        displayTestName = parsed.join('|||');
       }
     } catch(e) {}
     
@@ -1018,7 +1027,7 @@ function renderOrders(orders) {
 
     let testNamesOnly = [];
     let testIdsOnly = [];
-    displayTestName.split(',').forEach(part => {
+    displayTestName.split('|||').forEach(part => {
       part = part.trim();
       const match = part.match(/(.*?)\s*\(([^)]+)\)$/);
       if (match) {
@@ -1765,10 +1774,10 @@ async function openResultModal(orderId, rawTestName, patientId = null) {
               addResultRow(p.parameter_name, p.unit, bestRange, cat);
             });
           } else {
-            document.getElementById('result-params-tbody').innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:red;">No parameters found for this laboratory test.</td></tr>`;
+            showCenterMessage(false, 'Missing Parameters', 'Test parameters are not available for ' + tName + '.');
           }
         } catch(e) {
-            document.getElementById('result-params-tbody').innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:red;">No parameters found for this laboratory test.</td></tr>`;
+            showCenterMessage(false, 'Missing Parameters', 'Test parameters are not available for ' + tName + '.');
         }
     } else {
       addResultRow(tName, '', '', cat);
@@ -1782,6 +1791,29 @@ function closeResultModal() {
   document.getElementById('resultModal').classList.remove('open');
   activeResultOrderId = null;
 }
+
+function showCenterMessage(isSuccess, title, message) {
+    const overlay = document.getElementById('centerOverlay');
+    const icon = document.getElementById('centerIcon');
+    
+    if (isSuccess) {
+        icon.className = 'fas fa-check-circle';
+        icon.style.color = '#10b981';
+    } else {
+        icon.className = 'fas fa-exclamation-circle';
+        icon.style.color = '#ef4444';
+    }
+    
+    document.getElementById('centerTitle').innerText = title;
+    document.getElementById('centerText').innerText = message;
+    
+    overlay.style.display = 'flex';
+    
+    setTimeout(() => {
+        overlay.style.display = 'none';
+    }, 3000);
+}
+
 
 function addResultRow(name = '', unit = '', range = '', category = 'lab') {
   const tbody = document.getElementById('result-params-tbody');

@@ -862,10 +862,18 @@ async function openResultModal(orderId, rawTestName, patientId = null) {
               addResultRow(p.parameter_name, p.unit, bestRange, cat);
             });
           } else {
-            document.getElementById('result-params-tbody').innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:red;">No parameters found for this laboratory test.</td></tr>`;
+            if(typeof showCenterMessage === 'function') {
+                showCenterMessage(false, 'Missing Parameters', 'Test parameters are not available for ' + tName + '.');
+            } else {
+                lisToast('Test parameters are not available for ' + tName + '.', 'warning');
+            }
           }
         } catch(e) {
-            document.getElementById('result-params-tbody').innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:red;">No parameters found for this laboratory test.</td></tr>`;
+            if(typeof showCenterMessage === 'function') {
+                showCenterMessage(false, 'Missing Parameters', 'Test parameters are not available for ' + tName + '.');
+            } else {
+                lisToast('Test parameters are not available for ' + tName + '.', 'warning');
+            }
         }
     } else {
       addResultRow(tName, '', '', cat);
@@ -879,6 +887,7 @@ function closeResultModal() {
   document.getElementById('resultModal').classList.remove('open');
   activeResultOrderId = null;
 }
+
 
 function addResultRow(name = '', unit = '', range = '', category = 'lab') {
   const tbody = document.getElementById('result-params-tbody');
