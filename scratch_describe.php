@@ -1,4 +1,5 @@
 <?php
-$response = file_get_contents('http://localhost/GM_HMS/api/doctors');
-echo "Doctors API Response:\n";
-echo substr($response, 0, 1000);
+require 'models/Database.php';
+$db = new Database();
+$db->connect();
+print_r($db->fetchAll("DESCRIBE lab_results;"));

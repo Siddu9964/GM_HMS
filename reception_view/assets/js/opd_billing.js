@@ -61,6 +61,32 @@ class OpdBillingManager {
         if (container && container.innerHTML.trim() === '') {
             this.addPaymentSplitRow('Cash', 0);
         }
+
+        // Auto-load patient if patient_id is in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const patientId = urlParams.get('patient_id');
+        if (patientId) {
+            this.autoLoadPatient(patientId);
+        }
+    }
+
+    async autoLoadPatient(patientId) {
+        try {
+            document.getElementById('patientSearchInput').value = patientId;
+            this._renderLoading();
+            const results = await this.api('GET', `/api/billing/opd/search-patients?q=${encodeURIComponent(patientId)}`);
+            this.renderPatientCards(results);
+            if (results && results.length > 0) {
+                // Auto-select the first exact match or first result
+                const exactMatch = results.find(p => p.patient_id === patientId) || results[0];
+                this.selectPatient(exactMatch);
+                // Clean URL
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+            }
+        } catch (e) {
+            this._renderNoResult('Auto-load failed: ' + e.message);
+        }
     }
 
     handleReferralTypeChange() {

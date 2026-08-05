@@ -5,9 +5,9 @@
  */
 
 // Gemini API Configuration
-define('GEMINI_API_KEY', 'AIzaSyANUrEz7lo9qllB1UVMhbItsOjR94NkrKA');
-define('GEMINI_API_ENDPOINT', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent');
-define('GEMINI_MODEL', 'gemini-2.5-flash');
+define('GEMINI_API_KEY', 'AIzaSyAsfpCuDQ8jw3MhYJH_xUminW2ptfJ8Syc');
+define('GEMINI_API_ENDPOINT', 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent');
+define('GEMINI_MODEL', 'gemini-3.5-flash');
 
 // API Settings
 define('GEMINI_TIMEOUT', 30); // seconds

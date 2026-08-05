@@ -189,7 +189,7 @@ function toggleGlobalPassword(btn) {
 
 async function updateGlobalProfile(e) {
     e.preventDefault();
-    const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+    const Toast = Swal.mixin({ toast: true, position: 'center', showConfirmButton: false, timer: 3000 });
     Toast.fire({ icon: 'info', title: 'Updating profile...' });
     
     const fd = new FormData(e.target);
@@ -227,7 +227,7 @@ async function changeGlobalPassword(e) {
         return;
     }
 
-    const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+    const Toast = Swal.mixin({ toast: true, position: 'center', showConfirmButton: false, timer: 3000 });
     Toast.fire({ icon: 'info', title: 'Updating password...' });
     
     const fd = new FormData(e.target);
@@ -282,5 +282,101 @@ function openProfileModal(mode = 'profile') {
 
 <!-- Laboratory Core Script -->
 <script src="/GM_HMS/laboratory_view/assets/js/laboratory.js?v=<?= time() ?>"></script>
+<script src="/GM_HMS/laboratory_view/assets/js/notifications.js?v=<?= time() ?>"></script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     RESPONSIVE SIDEBAR TOGGLE — Global (Green #1f6b4a + Cream #f3efe6)
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  const BREAKPOINT = 1024; // px — desktop threshold
+
+  function getSidebar()  { return document.getElementById('lis-sidebar'); }
+  function getOverlay()  { return document.getElementById('lis-sidebar-overlay'); }
+
+  // Open sidebar drawer (mobile/tablet)
+  window.lisOpenSidebar = function () {
+    const s = getSidebar(), o = getOverlay();
+    if (s) s.classList.add('sidebar-open');
+    if (o) o.classList.add('visible');
+    document.body.style.overflow = 'hidden'; // prevent body scroll
+  };
+
+  // Close sidebar drawer
+  window.lisCloseSidebar = function () {
+    const s = getSidebar(), o = getOverlay();
+    if (s) s.classList.remove('sidebar-open');
+    if (o) o.classList.remove('visible');
+    document.body.style.overflow = '';
+  };
+
+  // Toggle sidebar
+  window.lisToggleSidebar = function () {
+    const s = getSidebar();
+    if (!s) return;
+    if (s.classList.contains('sidebar-open')) {
+      lisCloseSidebar();
+    } else {
+      lisOpenSidebar();
+    }
+  };
+
+  // Auto-close on desktop resize
+  window.addEventListener('resize', function () {
+    if (window.innerWidth >= BREAKPOINT) {
+      lisCloseSidebar(); // reset drawer state; CSS shows sidebar via transform
+    }
+  });
+
+  // Auto-close sidebar when any nav item is clicked (mobile UX)
+  document.addEventListener('click', function (e) {
+    if (window.innerWidth >= BREAKPOINT) return;
+    const link = e.target.closest('.lis-nav-item');
+    if (link) {
+      setTimeout(lisCloseSidebar, 120); // tiny delay so the link registers
+    }
+  });
+
+  // ── Touch swipe-left to close sidebar ─────────────────────────────────────
+  let touchStartX = 0;
+  let touchStartY = 0;
+  document.addEventListener('touchstart', function (e) {
+    touchStartX = e.changedTouches[0].clientX;
+    touchStartY = e.changedTouches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', function (e) {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+    // Swipe left (dx < -50) and mostly horizontal (dy < 80)
+    if (dx < -50 && dy < 80) {
+      const s = getSidebar();
+      if (s && s.classList.contains('sidebar-open')) lisCloseSidebar();
+    }
+    // Swipe right from left edge — open sidebar
+    if (dx > 50 && dy < 80 && touchStartX < 30) {
+      lisOpenSidebar();
+    }
+  }, { passive: true });
+
+  // ── Hamburger icon toggle (bars ↔ times) ──────────────────────────────────
+  const sidebar = getSidebar();
+  if (sidebar) {
+    const observer = new MutationObserver(function () {
+      const btn = document.getElementById('lis-hamburger');
+      if (!btn) return;
+      const icon = btn.querySelector('i');
+      if (!icon) return;
+      if (sidebar.classList.contains('sidebar-open')) {
+        icon.className = 'fas fa-times';
+      } else {
+        icon.className = 'fas fa-bars';
+      }
+    });
+    observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+  }
+
+})();
+</script>
 </body>
 </html>
+

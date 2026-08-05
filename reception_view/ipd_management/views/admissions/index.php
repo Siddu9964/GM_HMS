@@ -1437,6 +1437,34 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             if (admId) {
                 viewAdmission(admId);
             }
+
+            const newPatientId = urlParams.get('patient_id');
+            const action = urlParams.get('action');
+            if (newPatientId && action === 'new') {
+                showAddAdmissionModal();
+                
+                // Pre-fill patient search box and fetch patient details
+                $('#patientSearchInput').val(newPatientId);
+                $('#patientSearchResults').html('<div class="p-3 text-center"><i class="fas fa-spinner fa-spin text-muted"></i></div>').show();
+                
+                IPD.ajax(`dashboard/patients?search=${encodeURIComponent(newPatientId)}&limit=1`, 'GET')
+                    .then(response => {
+                        const patients = response.data.patients;
+                        if (patients && patients.length > 0) {
+                            const exactMatch = patients.find(p => p.patient_id === newPatientId) || patients[0];
+                            selectPatient(exactMatch);
+                            
+                            // Clean URL
+                            const newUrl = window.location.pathname;
+                            window.history.replaceState({}, document.title, newUrl);
+                        } else {
+                            $('#patientSearchResults').html('<div class="p-3 text-muted small text-center">Patient not found</div>').show();
+                        }
+                    })
+                    .catch(() => {
+                        $('#patientSearchResults').hide();
+                    });
+            }
         });
 
         // ── Bed Cascading Dropdowns ──────────────────────────────────────────

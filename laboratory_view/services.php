@@ -41,7 +41,7 @@ $bsnTests = ['FBS','PPBS','RFT','LFT','AMYLASE','CAT','POU','CBC','PT','APTT','A
   </div>
 
   <!-- Stats row -->
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;" class="lis-fade-up-1">
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px;" class="lis-fade-up-1">
     <div class="lis-kpi-card" style="cursor:pointer;" onclick="switchTab('lab')">
       <div class="lis-kpi-icon teal"><i class="fas fa-flask"></i></div>
       <div class="lis-kpi-info">
@@ -49,14 +49,6 @@ $bsnTests = ['FBS','PPBS','RFT','LFT','AMYLASE','CAT','POU','CBC','PT','APTT','A
         <div class="lis-kpi-label">Lab Tests</div>
       </div>
       <i class="fas fa-flask lis-kpi-bg-icon"></i>
-    </div>
-    <div class="lis-kpi-card" style="cursor:pointer;" onclick="switchTab('radiology')">
-      <div class="lis-kpi-icon violet"><i class="fas fa-x-ray"></i></div>
-      <div class="lis-kpi-info">
-        <div class="lis-kpi-value" id="stat-radiology">—</div>
-        <div class="lis-kpi-label">Radiology</div>
-      </div>
-      <i class="fas fa-x-ray lis-kpi-bg-icon"></i>
     </div>
     <div class="lis-kpi-card" style="cursor:pointer;" onclick="switchTab('other')">
       <div class="lis-kpi-icon amber"><i class="fas fa-vial"></i></div>
@@ -74,9 +66,6 @@ $bsnTests = ['FBS','PPBS','RFT','LFT','AMYLASE','CAT','POU','CBC','PT','APTT','A
     <div style="display:flex;align-items:center;border-bottom:2px solid var(--lis-border);padding:0 20px;background:var(--lis-surface-2);">
       <button class="svc-tab active" data-tab="lab" onclick="switchTab('lab',this)">
         <i class="fas fa-flask"></i> Lab Tests
-      </button>
-      <button class="svc-tab" data-tab="radiology" onclick="switchTab('radiology',this)">
-        <i class="fas fa-x-ray"></i> Radiology
       </button>
       <button class="svc-tab" data-tab="other" onclick="switchTab('other',this)">
         <i class="fas fa-vial"></i> Other Services
@@ -116,29 +105,7 @@ $bsnTests = ['FBS','PPBS','RFT','LFT','AMYLASE','CAT','POU','CBC','PT','APTT','A
         </div>
       </div>
 
-      <!-- Radiology Table -->
-      <div id="tab-radiology" class="tab-panel" style="display:none;">
-        <div class="lis-table-wrap">
-          <table class="lis-table">
-            <thead><tr>
-              <th>#</th>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Modality</th>
-              <th style="text-align:right;">OPD</th>
-              <th style="text-align:right;">GW</th>
-              <th style="text-align:right;">SPVT</th>
-              <th style="text-align:right;">PVT/CCU</th>
-              <th style="text-align:right;">Suite</th>
-              <th style="text-align:center;">Actions</th>
-            </tr></thead>
-            <tbody id="radiology-tbody"></tbody>
-          </table>
-          <div class="lis-empty" id="radiology-empty" style="display:none;">
-            <i class="fas fa-x-ray"></i><div class="lis-empty-title">No radiology services found</div>
-          </div>
-        </div>
-      </div>
+
 
       <!-- Other Services Table -->
       <div id="tab-other" class="tab-panel" style="display:none;">
@@ -166,6 +133,38 @@ $bsnTests = ['FBS','PPBS','RFT','LFT','AMYLASE','CAT','POU','CBC','PT','APTT','A
 
 </div><!-- /.lis-content -->
 
+<!-- Parameter Modal (Compact Card View) -->
+<div class="lis-modal-overlay" id="parameterModal">
+  <div class="lis-modal" style="max-width: 95%; width: 95%; max-height: 95vh; display: flex; flex-direction: column; padding: 0;">
+    <div class="lis-modal-header" style="display: flex; justify-content: space-between; align-items: center; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 15px 20px;">
+      <h2 style="margin: 0; color: #1e293b; font-size: 1.25rem;"><i class="fas fa-list-ol"></i> Manage Test Parameters</h2>
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="lis-btn lis-btn-primary" onclick="autoFetchParameters()" style="background-color: #8b5cf6; border-color: #7c3aed;">
+          <i class="fas fa-magic"></i> Auto-Generate via AI
+        </button>
+        <button type="button" class="lis-btn lis-btn-primary" onclick="addParamRow()">
+          <i class="fas fa-plus"></i> Add Parameter
+        </button>
+        <span class="lis-modal-close" onclick="closeModal('parameterModal')" style="cursor:pointer; font-size: 1.5rem; color: #64748b;">&times;</span>
+      </div>
+    </div>
+    
+    <div class="lis-modal-body" style="flex: 1; overflow-y: auto; padding: 20px; background-color: #f1f5f9;">
+      <!-- Main container for parameter cards -->
+      <div id="param-container" style="display: flex; flex-direction: column; gap: 15px;">
+        <!-- Parameter Cards will be injected here -->
+      </div>
+    </div>
+
+    <div class="lis-modal-footer" style="background-color: #fff; padding: 15px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="lis-btn lis-btn-secondary" onclick="closeModal('parameterModal')">Cancel</button>
+      <button type="button" class="lis-btn lis-btn-primary" onclick="saveParameters()">
+        <i class="fas fa-save"></i> Save Parameters
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Create Service Modal ───────────────────────────────────────────── -->
 <div class="lis-modal-overlay" id="createModal">
   <div class="lis-modal" style="max-width:640px;">
@@ -181,7 +180,6 @@ $bsnTests = ['FBS','PPBS','RFT','LFT','AMYLASE','CAT','POU','CBC','PT','APTT','A
         <label class="lis-label">Category</label>
         <select class="lis-input lis-select" id="create-category" onchange="renderCreateFields()">
           <option value="lab">Lab Test</option>
-          <option value="radiology">Radiology</option>
           <option value="other">Other Service</option>
         </select>
       </div>
@@ -264,11 +262,9 @@ async function loadServices() {
     if (data.success) {
       allServices = data.data || { lab:[], radiology:[], other:[] };
       document.getElementById('stat-lab').textContent      = allServices.lab?.length      ?? 0;
-      document.getElementById('stat-radiology').textContent = allServices.radiology?.length ?? 0;
       document.getElementById('stat-other').textContent    = allServices.other?.length    ?? 0;
 
       renderLabTable(allServices.lab      || []);
-      renderRadiologyTable(allServices.radiology || []);
       renderOtherTable(allServices.other    || []);
 
       switchTab(currentTab);
@@ -308,24 +304,7 @@ function renderLabTable(rows) {
   </tr>`).join('');
 }
 
-function renderRadiologyTable(rows) {
-  const tbody = document.getElementById('radiology-tbody');
-  const empty = document.getElementById('radiology-empty');
-  if (!rows.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
-  empty.style.display='none';
-  tbody.innerHTML = rows.map((r,i) => `<tr class="svc-row" data-name="${escHtml(r.billing_name||'').toLowerCase()}">
-    <td style="color:var(--lis-text-muted);font-weight:700;">${i+1}</td>
-    <td><code style="font-size:0.68rem;background:#f1f5f9;padding:2px 6px;border-radius:5px;">${escHtml(r.service_id)}</code></td>
-    <td style="font-weight:700;">${escHtml(r.billing_name)}</td>
-    <td><span class="lis-badge lis-badge-radiology">${escHtml(r.modality_name||'—')}</span></td>
-    <td style="text-align:right;font-weight:600;">${fmt(r.opd_price)}</td>
-    <td style="text-align:right;font-weight:600;">${fmt(r.general_ward_price)}</td>
-    <td style="text-align:right;font-weight:600;">${fmt(r.semi_private_price)}</td>
-    <td style="text-align:right;font-weight:600;">${fmt(r.private_icu_price)}</td>
-    <td style="text-align:right;font-weight:600;">${fmt(r.suite_price)}</td>
-    <td style="text-align:center;">${actionBtns('radiology', r.service_id, JSON.stringify(r))}</td>
-  </tr>`).join('');
-}
+
 
 function renderOtherTable(rows) {
   const tbody = document.getElementById('other-tbody');
@@ -346,7 +325,16 @@ function renderOtherTable(rows) {
 
 function actionBtns(type, id, dataStr) {
   const safe = escHtml(dataStr).replace(/'/g,'&#39;');
-  return `<div style="display:flex;gap:6px;justify-content:center;">
+  let paramBtn = '';
+  if (type === 'lab') {
+    paramBtn = `
+    <button class="lis-btn lis-btn-outline lis-btn-sm lis-btn-icon" style="color:#0f172a; border-color:#cbd5e1;" title="Manage Parameters"
+            onclick='openParameterModal("${escHtml(id)}")'>
+      <i class="fas fa-list-ol"></i>
+    </button>`;
+  }
+  return `<div style="display:flex;gap:6px;justify-content:center; white-space:nowrap;">
+    ${paramBtn}
     <button class="lis-btn lis-btn-outline lis-btn-sm lis-btn-icon" title="Edit"
             onclick='openEditModal("${type}","${escHtml(id)}",${dataStr})'>
       <i class="fas fa-edit"></i>
@@ -502,6 +490,221 @@ document.querySelectorAll('.lis-modal-overlay').forEach(o => {
 
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function openParameterModal(serviceId) {
+  activeParamServiceId = serviceId;
+  const container = document.getElementById('param-container');
+  container.innerHTML = '<div style="text-align:center;padding:20px;"><div class="lis-spinner"></div> Loading...</div>';
+  
+  document.getElementById('parameterModal').classList.add('open');
+  
+  try {
+    const res = await lisApi('GET', `/api/laboratory/services/parameters/${encodeURIComponent(serviceId)}`);
+    container.innerHTML = '';
+    
+    if (res.success && res.data && res.data.length > 0) {
+      res.data.forEach(p => addParamRow(p));
+    } else {
+      addParamRow(); 
+    }
+  } catch(e) {
+    container.innerHTML = '<div style="text-align:center;color:red;padding:20px;">Failed to load parameters</div>';
+  }
+}
+
+function addParamRow(data = {}) {
+  const div = document.createElement('div');
+  div.className = 'param-card';
+  div.style.cssText = 'background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden;';
+  
+  div.innerHTML = `
+    <div style="display: flex; gap: 15px; padding: 15px; background: #fff; align-items: center; border-bottom: 1px solid #f1f5f9;">
+      <div style="flex: 2; min-width: 250px;">
+        <label style="font-size: 0.75rem; font-weight: 700; color: #475569; margin-bottom: 4px; display: block; text-transform: uppercase;">Parameter Name *</label>
+        <div style="position: relative;">
+          <i class="fas fa-flask" style="position: absolute; left: 12px; top: 10px; color: #94a3b8;"></i>
+          <input type="text" class="lis-input param-name" value="${escHtml(data.parameter_name||'')}" placeholder="e.g. Hemoglobin" style="width: 100%; padding-left: 35px; border: 1px solid #cbd5e1; border-radius: 6px;" required>
+        </div>
+      </div>
+      
+      <div style="flex: 1; min-width: 100px;">
+        <label style="font-size: 0.75rem; font-weight: 700; color: #475569; margin-bottom: 4px; display: block; text-transform: uppercase;">Unit</label>
+        <input type="text" class="lis-input param-unit" value="${escHtml(data.unit||'')}" placeholder="e.g. mg/dL" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px;">
+      </div>
+
+      <div style="flex: 1; min-width: 150px;">
+        <label style="font-size: 0.75rem; font-weight: 700; color: #475569; margin-bottom: 4px; display: block; text-transform: uppercase;">General Range</label>
+        <input type="text" class="lis-input param-normal" value="${escHtml(data.normal_range||'')}" placeholder="e.g. 12-16" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; background-color: #f8fafc;">
+      </div>
+
+      <div style="display: flex; gap: 10px; align-items: flex-end; margin-top: 20px;">
+        <button type="button" class="lis-btn" onclick="const el = this.closest('.param-card').querySelector('.advanced-ranges'); el.style.display = (el.style.display === 'none') ? 'block' : 'none';" style="background: #e0e7ff; color: #4338ca; border: none; border-radius: 6px; padding: 8px 12px;" title="Toggle Advanced Ranges">
+          <i class="fas fa-sliders-h"></i>
+        </button>
+        <button type="button" class="lis-btn lis-btn-danger" onclick="this.closest('.param-card').remove()" style="border-radius: 6px; padding: 8px 12px;" title="Remove Parameter">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+    
+    <div class="advanced-ranges" style="padding: 15px; background: #fafafa; border-top: 1px dashed #cbd5e1; display: none;">
+      <div style="display: flex; flex-wrap: wrap; gap: 15px;">
+        
+        <div style="flex: 1; min-width: 200px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px;">
+          <div style="font-size: 0.7rem; font-weight: 700; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-venus-mars"></i> Gender & Newborn
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+            <div>
+              <label style="font-size: 0.7rem; color: #991b1b; margin-bottom: 4px; display: block;">Male Range</label>
+              <input type="text" class="lis-input param-male" value="${escHtml(data.normal_range_male||'')}" style="width: 100%; border-color:#fca5a5; background:#fff; font-size: 0.8rem; padding: 4px 6px;">
+            </div>
+            <div>
+              <label style="font-size: 0.7rem; color: #991b1b; margin-bottom: 4px; display: block;">Female Range</label>
+              <input type="text" class="lis-input param-female" value="${escHtml(data.normal_range_female||'')}" style="width: 100%; border-color:#fca5a5; background:#fff; font-size: 0.8rem; padding: 4px 6px;">
+            </div>
+            <div>
+              <label style="font-size: 0.7rem; color: #991b1b; margin-bottom: 4px; display: block;">Child</label>
+              <input type="text" class="lis-input param-child" value="${escHtml(data.normal_range_child||'')}" style="width: 100%; border-color:#fca5a5; background:#fff; font-size: 0.8rem; padding: 4px 6px;">
+            </div>
+            <div>
+              <label style="font-size: 0.7rem; color: #991b1b; margin-bottom: 4px; display: block;">Newborn</label>
+              <input type="text" class="lis-input param-newborn" value="${escHtml(data.normal_range_newborn||'')}" style="width: 100%; border-color:#fca5a5; background:#fff; font-size: 0.8rem; padding: 4px 6px;">
+            </div>
+          </div>
+        </div>
+        
+        <!-- Pediatric Ranges -->
+        <div style="flex: 1; min-width: 250px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px;">
+          <div style="font-size: 0.7rem; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-baby-carriage"></i> Pediatric Ranges
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+            <div>
+              <label style="font-size: 0.7rem; color: #166534; margin-bottom: 4px; display: block;">Infant (29d–12m)</label>
+              <input type="text" class="lis-input param-infant" value="${escHtml(data['normal_range_Infant(29 days 12 months)']||'')}" style="width: 100%; border-color:#86efac; background:#fff; font-size: 0.8rem; padding: 4px 6px;">
+            </div>
+            <div>
+              <label style="font-size: 0.7rem; color: #166534; margin-bottom: 4px; display: block;">Toddler (1–3y)</label>
+              <input type="text" class="lis-input param-toddler" value="${escHtml(data['normal_range_toddler(1 & 3 years)']||'')}" style="width: 100%; border-color:#86efac; background:#fff; font-size: 0.8rem; padding: 4px 6px;">
+            </div>
+            <div>
+              <label style="font-size: 0.7rem; color: #166534; margin-bottom: 4px; display: block;">Preschool (4–5y)</label>
+              <input type="text" class="lis-input param-preschool" value="${escHtml(data['normal_range_preschool_child(4 & 5 years)']||'')}" style="width: 100%; border-color:#86efac; background:#fff; font-size: 0.8rem; padding: 4px 6px;">
+            </div>
+            <div>
+              <label style="font-size: 0.7rem; color: #166534; margin-bottom: 4px; display: block;">School (6–12y)</label>
+              <input type="text" class="lis-input param-school" value="${escHtml(data['normal_range_school_child(6 & 12 years)']||'')}" style="width: 100%; border-color:#86efac; background:#fff; font-size: 0.8rem; padding: 4px 6px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Adult Ranges -->
+        <div style="flex: 1; min-width: 250px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 12px;">
+          <div style="font-size: 0.7rem; font-weight: 700; color: #075985; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-user-tie"></i> Adult & Geriatric Ranges
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+            <div>
+              <label style="font-size: 0.7rem; color: #075985; margin-bottom: 4px; display: block;">Adolescent (13–17y)</label>
+              <input type="text" class="lis-input param-adolescent" value="${escHtml(data['normal_range_adolescent(13 & 17 years)']||'')}" style="width: 100%; border-color:#7dd3fc; background:#fff; font-size: 0.8rem; padding: 4px 6px;">
+            </div>
+            <div>
+              <label style="font-size: 0.7rem; color: #075985; margin-bottom: 4px; display: block;">Adult (18–59y)</label>
+              <input type="text" class="lis-input param-adult" value="${escHtml(data['normal_range_adult(18 & 59 years)']||'')}" style="width: 100%; border-color:#7dd3fc; background:#fff; font-size: 0.8rem; padding: 4px 6px;">
+            </div>
+            <div>
+              <label style="font-size: 0.7rem; color: #075985; margin-bottom: 4px; display: block;">Elderly (60–74y)</label>
+              <input type="text" class="lis-input param-elderly" value="${escHtml(data['normal_range_elderly(60-74 years)']||'')}" style="width: 100%; border-color:#7dd3fc; background:#fff; font-size: 0.8rem; padding: 4px 6px;">
+            </div>
+            <div>
+              <label style="font-size: 0.7rem; color: #075985; margin-bottom: 4px; display: block;">Senior (75+y)</label>
+              <input type="text" class="lis-input param-senior" value="${escHtml(data['normal_range_senior_elderly(75+ years)']||'')}" style="width: 100%; border-color:#7dd3fc; background:#fff; font-size: 0.8rem; padding: 4px 6px;">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('param-container').appendChild(div);
+}
+
+async function saveParameters() {
+  const serviceId = activeParamServiceId;
+  if (!serviceId) return;
+
+  const cards = document.querySelectorAll('.param-card');
+  const params = [];
+  let order = 1;
+
+  cards.forEach(card => {
+    const pName = card.querySelector('.param-name').value.trim();
+    if (!pName) return; 
+    
+    params.push({
+      service_id: serviceId,
+      test_name: serviceId, // Usually test name, but we can pass serviceId back
+      parameter_name: pName,
+      display_order: order++,
+      unit: card.querySelector('.param-unit').value,
+      normal_range: card.querySelector('.param-normal').value,
+      normal_range_male: card.querySelector('.param-male').value,
+      normal_range_female: card.querySelector('.param-female').value,
+      normal_range_child: card.querySelector('.param-child').value,
+      normal_range_newborn: card.querySelector('.param-newborn').value,
+      'normal_range_Infant(29 days 12 months)': card.querySelector('.param-infant').value,
+      'normal_range_toddler(1 & 3 years)': card.querySelector('.param-toddler').value,
+      'normal_range_preschool_child(4 & 5 years)': card.querySelector('.param-preschool').value,
+      'normal_range_school_child(6 & 12 years)': card.querySelector('.param-school').value,
+      'normal_range_adolescent(13 & 17 years)': card.querySelector('.param-adolescent').value,
+      'normal_range_adult(18 & 59 years)': card.querySelector('.param-adult').value,
+      'normal_range_elderly(60 & 74 years)': card.querySelector('.param-elderly').value,
+      'normal_range_senior_elderly(75+ years)': card.querySelector('.param-senior').value
+    });
+  });
+
+  try {
+    const res = await lisApi('POST', `/api/laboratory/services/parameters/${encodeURIComponent(serviceId)}`, { parameters: params });
+    if (res.success || res.message?.includes('success')) {
+      lisToast('Parameters saved successfully', 'success');
+      closeModal('parameterModal');
+    } else {
+      lisToast(res.error || 'Failed to save parameters', 'error');
+    }
+  } catch(e) { lisToast('Network error', 'error'); }
+}
+
+async function autoFetchParameters() {
+  if (!activeParamServiceId) return;
+  
+  // Find the test name from allServices based on the active ID
+  let testName = activeParamServiceId; 
+  const allServicesFlat = [...(allServices.lab || []), ...(allServices.other || [])];
+  const svc = allServicesFlat.find(s => s.service_id === activeParamServiceId);
+  if (svc && (svc.test_name || svc.billing_name)) {
+    testName = svc.test_name || svc.billing_name;
+  }
+  
+  // Show loading state on button
+  document.getElementById('param-container').innerHTML = '<div style="text-align:center;padding:40px;"><div class="lis-spinner"></div> Generating parameters via AI...</div>';
+  
+  try {
+    const res = await lisApi('POST', '/api/laboratory/services/auto-generate-parameters', { test_name: testName });
+    document.getElementById('param-container').innerHTML = '';
+    
+    if (res.success && res.data && res.data.length > 0) {
+      lisToast('AI generated ' + res.data.length + ' parameters!', 'success');
+      res.data.forEach(p => addParamRow(p));
+    } else {
+      const errMsg = res.message || res.error || 'AI could not generate parameters for this test.';
+      lisToast(errMsg, 'warning');
+      addParamRow();
+    }
+  } catch (e) {
+    document.getElementById('param-container').innerHTML = '<div style="text-align:center;color:red;padding:20px;">Failed to generate parameters</div>';
+    addParamRow();
+  }
 }
 
 // ── Initial load ──────────────────────────────────────────────────────

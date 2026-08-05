@@ -484,7 +484,32 @@ class PatientManager {
                     delete data[key];
                 }
             });
-            await this.createPatient(data);
+            const newPatient = await this.createPatient(data);
+            
+            if (newPatient) {
+                const pId = newPatient.patient_id || newPatient.id || newPatient;
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Registration Successful',
+                        text: 'What would you like to do next?',
+                        icon: 'success',
+                        showCancelButton: true,
+                        showDenyButton: true,
+                        confirmButtonColor: '#1f6b4a',
+                        denyButtonColor: '#0ea5e9',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: '<i class="fas fa-calendar-plus" style="margin-right: 5px;"></i> Appointment',
+                        denyButtonText: '<i class="fas fa-bed" style="margin-right: 5px;"></i> IP Admission',
+                        cancelButtonText: 'Close'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = `appointment_management.php?patient_id=${encodeURIComponent(pId)}&action=new&auto_billing=true`;
+                        } else if (result.isDenied) {
+                            window.location.href = `ipd_management/views/admissions/?patient_id=${encodeURIComponent(pId)}&action=new`;
+                        }
+                    });
+                }
+            }
         }
     }
 

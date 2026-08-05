@@ -31,6 +31,114 @@ class LaboratoryController extends BaseController
     }
 
     /**
+     * GET /api/laboratory/services/parameters/:serviceId
+     */
+    public function getTestParameters($serviceId)
+    {
+        $this->restrictMethod('GET');
+        $this->requireAuth();
+        try {
+            $serviceId = urldecode($serviceId);
+            $data = $this->service->getLabTestParameters($serviceId);
+            $this->respondSuccess($data);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    /**
+     * POST /api/laboratory/services/parameters/:serviceId
+     */
+    public function saveTestParameters($serviceId)
+    {
+        $this->restrictMethod('POST');
+        $this->requireAuth();
+        try {
+            $body = $this->getJsonInput();
+            if (!isset($body['parameters']) || !is_array($body['parameters'])) {
+                $this->respondError('Invalid or missing parameters array', 400);
+            }
+            $this->service->saveTestParameters($serviceId, $body['parameters']);
+            $this->respondSuccess(['message' => 'Parameters saved successfully']);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            exit;
+        }
+    }
+
+    /**
+     * POST /api/laboratory/services/auto-generate-parameters
+     */
+    public function autoGenerateParameters()
+    {
+        $this->restrictMethod('POST');
+        $this->requireAuth();
+        try {
+            $body = $this->getJsonInput();
+            $testName = $body['test_name'] ?? '';
+            
+            if (empty($testName)) {
+                $this->respondError('Test name is required', 400);
+            }
+
+            require_once __DIR__ . '/../../../config/gemini_config.php';
+            
+            $prompt = "You are a laboratory information system assistant. Given the lab test name '{$testName}', provide a comprehensive list of standard parameters for this test. Return ONLY a raw JSON array of objects without any markdown formatting or code blocks. Each object must strictly have these keys: 'parameter_name', 'unit', 'normal_range', 'normal_range_male', 'normal_range_female', 'normal_range_child', 'normal_range_newborn', 'normal_range_Infant(29 days–12 months)', 'normal_range_toddler(1–3 years)', 'normal_range_preschool_child(4–5 years)', 'normal_range_school_child(6–12 years)', 'normal_range_adolescent(13–17 years)', 'normal_range_adult(18–59 years)', 'normal_range_elderly(60–74 years)', 'normal_range_senior_elderly(75+ years)'. Leave age fields as null or empty string if not applicable.";
+            
+            $payload = [
+                'contents' => [
+                    ['parts' => [['text' => $prompt]]]
+                ]
+            ];
+            
+            $ch = curl_init(getGeminiApiUrl());
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            if ($httpCode !== 200 || !$response) {
+                $errorMsg = 'Failed to communicate with AI service.';
+                if ($response) {
+                    $errData = json_decode($response, true);
+                    if (isset($errData['error']['message'])) {
+                        $errorMsg .= ' API Error: ' . $errData['error']['message'];
+                    }
+                }
+                $this->respondError($errorMsg, 200);
+            }
+            
+            $resultData = json_decode($response, true);
+            $textResp = $resultData['candidates'][0]['content']['parts'][0]['text'] ?? '';
+            
+            // Robustly extract the JSON array part from the AI response
+            $start = strpos($textResp, '[');
+            $end = strrpos($textResp, ']');
+            if ($start !== false && $end !== false && $end > $start) {
+                $textResp = substr($textResp, $start, $end - $start + 1);
+            }
+            $textResp = trim($textResp);
+            
+            $parameters = json_decode($textResp, true);
+            
+            if (json_last_error() !== JSON_ERROR_NONE || !is_array($parameters)) {
+                $this->respondError('Failed to parse AI response as JSON', 200);
+            }
+            
+            $this->respondSuccess($parameters);
+            
+        } catch (\Throwable $e) {
+            $this->respondError($e->getMessage(), 200);
+        }
+    }
+
+    /**
      * POST /api/laboratory/services
      */
     public function createService()
@@ -243,6 +351,46 @@ class LaboratoryController extends BaseController
     }
 
     /**
+     * GET /api/laboratory/ipd-orders
+     */
+    public function getIpdOrders()
+    {
+        $this->restrictMethod('GET');
+        $this->requireAuth();
+        
+        try {
+            $all = $_GET['all'] ?? '0';
+            $date = $_GET['date'] ?? date('Y-m-d');
+            $statusFilter = $_GET['status'] ?? 'all';
+            $search = $_GET['search'] ?? '';
+            $orders = $this->service->getIpdOrders($all, $date, $statusFilter, $search);
+            $this->respondSuccess($orders);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    /**
+     * PUT /api/laboratory/ipd-orders/:id/status
+     */
+    public function updateIpdOrderStatus($orderId)
+    {
+        $this->restrictMethod('PUT');
+        $this->requireAuth();
+        
+        try {
+            $data = $this->getJsonInput();
+            if (!isset($data['status'])) {
+                $this->respondError("Status is required", 400);
+            }
+            $this->service->updateIpdOrderStatus($orderId, $data['status']);
+            $this->respondSuccess(null, "Status updated successfully");
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    /**
      * GET /api/laboratory/orders/:id/result
      */
     public function getResult($orderId)
@@ -252,6 +400,23 @@ class LaboratoryController extends BaseController
         
         try {
             $result = $this->service->getResult($orderId);
+            $this->respondSuccess($result);
+        } catch (Exception $e) {
+            $this->respondNotFound($e->getMessage());
+        }
+    }
+
+    /**
+     * GET /api/laboratory/patients/:id/previous-results
+     */
+    public function getPreviousResults($patientId)
+    {
+        $this->restrictMethod('GET');
+        $this->requireAuth();
+        
+        try {
+            $testName = $_GET['test_name'] ?? null;
+            $result = $this->service->getPatientPreviousResults($patientId, $testName);
             $this->respondSuccess($result);
         } catch (Exception $e) {
             $this->respondNotFound($e->getMessage());
@@ -280,6 +445,42 @@ class LaboratoryController extends BaseController
             
             $result = $this->service->saveResult($orderId, $data, $file);
             $this->respondSuccess($result, 'Result saved successfully');
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    public function getNotifications()
+    {
+        $this->restrictMethod('GET');
+        $this->requireAuth();
+        
+        try {
+            // Only LabTechnician should see these notifications
+            if (($_SESSION['role'] ?? '') !== 'LabTechnician') {
+                $this->respondSuccess([]);
+                return;
+            }
+            
+            // We use 'staff' as recipient_type for LabTechnician role
+            $notifications = $this->service->getUnreadNotifications('staff', 'lab_result');
+            $this->respondSuccess($notifications);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    public function markNotificationRead($id)
+    {
+        $this->restrictMethod('POST');
+        $this->requireAuth();
+        
+        try {
+            if (($_SESSION['role'] ?? '') !== 'LabTechnician') {
+                $this->respondError("Unauthorized", 403);
+            }
+            $this->service->markNotificationRead($id);
+            $this->respondSuccess([], 'Notification marked as read');
         } catch (Exception $e) {
             $this->handleException($e);
         }

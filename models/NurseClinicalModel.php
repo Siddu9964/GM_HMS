@@ -73,6 +73,18 @@ class NurseClinicalModel {
             $this->db->execute($insertSql, [$patientId, $admissionId, $today, $json]);
         }
         
+        if ($columnName === 'lab_tests') {
+            // Insert Notification for Laboratory (staff)
+            $nid = 'NOT-' . strtoupper(substr(uniqid(), -6));
+            $title = "IPD Test Updated";
+            $message = "A test has been added/updated for IPD Patient ({$patientId}).";
+            $this->db->execute(
+                "INSERT INTO notifications (notification_id, recipient_id, recipient_type, title, message, category, priority, action_url) 
+                 VALUES (?, 'staff', 'staff', ?, ?, 'lab_result', 'normal', 'ipd_test_orders.php')",
+                [$nid, $title, $message]
+            );
+        }
+
         return true;
     }
 }

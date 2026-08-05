@@ -33,6 +33,8 @@ $pageDesc   = $pageDesc   ?? 'GM Hospital Laboratory Information System';
 
   <!-- LIS CSS -->
   <link rel="stylesheet" href="/GM_HMS/laboratory_view/assets/css/laboratory.css?v=<?= time() ?>">
+  <!-- LIS Responsive CSS (Green #1f6b4a + Cream #f3efe6 theme) -->
+  <link rel="stylesheet" href="/GM_HMS/laboratory_view/assets/css/laboratory-responsive.css?v=<?= time() ?>">
 </head>
 <body>
 <script>

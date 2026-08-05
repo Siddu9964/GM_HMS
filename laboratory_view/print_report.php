@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-$orderId = $_GET['order_id'] ?? '';
+$orderId = $_POST['order_id'] ?? $_GET['order_id'] ?? '';
 if (!$orderId) die('No Order ID provided.');
 ?>
 <!DOCTYPE html>
@@ -211,46 +211,76 @@ if (!$orderId) die('No Order ID provided.');
 async function loadOrder() {
   const oid = <?= json_encode($orderId) ?>;
   try {
-    const res = await fetch('/GM_HMS/api/laboratory/orders?all=1&search=' + encodeURIComponent(oid));
+    const res = await fetch('/GM_HMS/api/laboratory/orders/' + encodeURIComponent(oid));
     const data = await res.json();
-    if (data.success && data.data && data.data.length > 0) {
-      // Assuming search by exact order_id returns the one order first
-      const o = data.data.find(x => x.order_id === oid) || data.data[0];
+    let o = null;
+    if (data.success && data.data) {
+      o = data.data;
+    }
 
-      document.getElementById('b-order-id').textContent = o.order_id;
+    const resRes = await fetch('/GM_HMS/api/laboratory/orders/' + encodeURIComponent(oid) + '/result');
+    const resData = await resRes.json();
+    let result = resData.success ? resData.data : null;
+
+    if (!o && !result) {
+        document.getElementById('loading').innerHTML = '<h2 style="color:#ef4444;">Order not found</h2><p>Invalid Order ID</p>';
+        return;
+    }
+
+    document.getElementById('b-order-id').textContent = oid;
+    
+    if (o) {
       document.getElementById('b-date').textContent = (o.order_date||'') + ' ' + (o.order_time||'').slice(0,5);
-
       document.getElementById('p-name').textContent = o.patient_name || '—';
       document.getElementById('p-id').textContent = o.patient_id || '—';
       document.getElementById('p-age-sex').textContent = (o.age||'?') + 'y / ' + (o.sex||'—');
       document.getElementById('p-phone').textContent = o.phone || '—';
-
       document.getElementById('d-name').textContent = o.doctor_name || '—';
       document.getElementById('d-spec').textContent = o.specialization || '—';
       document.getElementById('o-priority').textContent = o.priority || 'Routine';
       document.getElementById('o-status').textContent = o.status || 'Ordered';
-
-      document.getElementById('t-name').textContent = o.test_name;
+      
+      let displayTestName = o.test_name || '—';
+      try {
+        const parsed = JSON.parse(o.test_name);
+        if (Array.isArray(parsed)) displayTestName = parsed.join(', ');
+      } catch(e) {}
+      document.getElementById('t-name').textContent = displayTestName;
       document.getElementById('t-notes').textContent = o.notes || 'None provided';
-
+      
       let pCls = 'pri-routine';
       if(o.priority === 'Urgent') pCls = 'pri-urgent';
       if(o.priority === 'Stat') pCls = 'pri-stat';
       document.getElementById('t-badge').innerHTML = `<span class="priority-badge ${pCls}">${o.priority||'Routine'}</span>`;
-
-      // Branch
-      const sessBranch = sessionStorage.getItem('lis_branch') || 'Main Branch';
-      document.getElementById('b-branch').textContent = sessBranch;
-
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('slip-content').style.display = 'block';
-
-      // Auto print after a tiny delay for render
-      setTimeout(() => window.print(), 300);
-
-    } else {
-      document.getElementById('loading').innerHTML = '<h2 style="color:#ef4444;">Order not found</h2><p>Invalid Order ID</p>';
+    } else if (result) {
+      document.getElementById('b-date').textContent = (result.result_date||'') + ' ' + (result.result_time||'').slice(0,5);
+      document.getElementById('p-id').textContent = result.patient_id || '—';
+      document.getElementById('p-name').textContent = '—';
+      document.getElementById('p-age-sex').textContent = '—';
+      document.getElementById('p-phone').textContent = '—';
+      document.getElementById('d-name').textContent = '—';
+      document.getElementById('d-spec').textContent = '—';
+      document.getElementById('o-priority').textContent = 'Routine';
+      document.getElementById('o-status').textContent = result.status || 'Reported';
+      
+      let displayTestName = result.test_name || '—';
+      try {
+        const parsed = JSON.parse(result.test_name);
+        if (Array.isArray(parsed)) displayTestName = parsed.join(', ');
+      } catch(e) {}
+      document.getElementById('t-name').textContent = displayTestName;
+      document.getElementById('t-notes').textContent = '—';
+      document.getElementById('t-badge').innerHTML = `<span class="priority-badge pri-routine">Routine</span>`;
     }
+
+    const sessBranch = sessionStorage.getItem('lis_branch') || 'Main Branch';
+    document.getElementById('b-branch').textContent = sessBranch;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('slip-content').style.display = 'block';
+
+    setTimeout(() => window.print(), 300);
+
   } catch(e) {
     document.getElementById('loading').innerHTML = '<h2 style="color:#ef4444;">Error loading order</h2>';
   }

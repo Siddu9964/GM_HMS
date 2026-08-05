@@ -324,6 +324,9 @@ $router->add('POST', '#^/api/billing/ipd/payment/?$#', 'GM_HMS\Controllers\api\I
 
 // Laboratory Routes
 $router->add('GET', '#^/api/laboratory/services/?$#', 'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'getServices');
+$router->add('GET', '#^/api/laboratory/services/parameters/([^/]+)/?$#', 'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'getTestParameters');
+$router->add('POST', '#^/api/laboratory/services/parameters/([^/]+)/?$#', 'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'saveTestParameters');
+$router->add('POST', '#^/api/laboratory/services/auto-generate-parameters/?$#', 'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'autoGenerateParameters');
 $router->add('POST', '#^/api/laboratory/services/?$#', 'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'createService');
 $router->add('PUT', '#^/api/laboratory/services/([^/]+)/([^/]+)/?$#', 'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'updateService');
 $router->add('DELETE', '#^/api/laboratory/services/([^/]+)/([^/]+)/?$#', 'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'deleteService');
@@ -338,7 +341,16 @@ $router->add('DELETE','#^/api/laboratory/orders/([^/]+)/?$#',                   
 $router->add('PUT',  '#^/api/laboratory/orders/([^/]+)/status/?$#',             'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'updateOrderStatus');
 $router->add('GET',  '#^/api/laboratory/orders/([^/]+)/result/?$#',             'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'getResult');
 $router->add('POST', '#^/api/laboratory/orders/([^/]+)/result/?$#',             'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'saveResult');
+
+$router->add('GET',  '#^/api/laboratory/ipd-orders/?$#',                        'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'getIpdOrders');
+$router->add('PUT',  '#^/api/laboratory/ipd-orders/([^/]+)/status/?$#',         'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'updateIpdOrderStatus');
+$router->add('GET',  '#^/api/laboratory/ipd-orders/([^/]+)/result/?$#',         'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'getResult');
+$router->add('GET',  '#^/api/laboratory/notifications/?$#',             'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'getNotifications');
+$router->add('POST', '#^/api/laboratory/notifications/([^/]+)/read/?$#', 'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'markNotificationRead');
+$router->add('POST', '#^/api/laboratory/ipd-orders/([^/]+)/result/?$#',         'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'saveResult');
+
 $router->add('GET',  '#^/api/laboratory/prescribed-tests/?$#',                  'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'getPrescribedTests');
+$router->add('GET',  '#^/api/laboratory/patients/([^/]+)/previous-results/?$#', 'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'getPreviousResults');
 
 // Payment Module Routes
 $router->add('POST', '#^/api/payment/clinical-billing-sync/?$#',                'GM_HMS\Modules\Payment\Controllers\PaymentController', 'syncClinicalBilling');

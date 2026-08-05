@@ -1,1 +1,0 @@
-<?php $_SERVER['REQUEST_METHOD'] = 'POST'; $_SERVER['REQUEST_URI'] = '/api/ipd-billing-master'; $_POST = ['action' => 'create', 'admission_id' => 'ADM-20260731-0004', 'patient_id' => 'PID-20260731-001']; session_start(); $_SESSION['username'] = 'Shalini'; require 'api/index.php';

@@ -21,6 +21,16 @@ class LaboratoryService
         ];
     }
 
+    public function getLabTestParameters($serviceId)
+    {
+        return $this->repo->getLabTestParameters($serviceId);
+    }
+
+    public function saveTestParameters($serviceId, $parameters)
+    {
+        return $this->repo->saveTestParameters($serviceId, $parameters);
+    }
+
     public function deleteService($type, $id)
     {
         switch (strtoupper($type)) {
@@ -55,7 +65,7 @@ class LaboratoryService
     {
         $result = $this->repo->updateOrderStatus($orderId, $status);
         if (!$result) {
-            throw new Exception("Failed to update order status");
+            throw new \Exception("Failed to update order status");
         }
         return ['success' => true, 'message' => 'Status updated successfully'];
     }
@@ -69,7 +79,7 @@ class LaboratoryService
 
         $result = $this->repo->createOrder($data);
         if (!$result) {
-            throw new Exception("Failed to create lab order");
+            throw new \Exception("Failed to create lab order");
         }
         
         $insertId = $result['insert_id'] ?? null;
@@ -83,7 +93,7 @@ class LaboratoryService
     {
         $order = $this->repo->getOrderById($orderId);
         if (!$order) {
-            throw new Exception("Order not found");
+            throw new \Exception("Order not found");
         }
         return $order;
     }
@@ -206,6 +216,21 @@ class LaboratoryService
         return $this->repo->getLabResultByOrderId($orderId);
     }
 
+    public function getPatientPreviousResults($patientId, $testName)
+    {
+        return $this->repo->getPatientPreviousResults($patientId, $testName);
+    }
+
+    public function getIpdOrders($all, $date, $statusFilter = 'all', $search = '')
+    {
+        return $this->repo->getIpdOrders($all, $date, $statusFilter, $search);
+    }
+
+    public function updateIpdOrderStatus($orderId, $status)
+    {
+        return $this->repo->updateIpdOrderStatus($orderId, $status);
+    }
+
     public function saveResult($orderId, $data, $file = null)
     {
         $order = $this->repo->getOrderById($orderId);
@@ -245,5 +270,15 @@ class LaboratoryService
         $this->repo->saveLabResult($resultData);
         $this->repo->updateOrderStatus($orderId, 'Reported');
         return ['success' => true];
+    }
+
+    public function getUnreadNotifications($recipientType, $category = null)
+    {
+        return $this->repo->getUnreadNotifications($recipientType, $category);
+    }
+
+    public function markNotificationRead($id)
+    {
+        return $this->repo->markNotificationRead($id);
     }
 }

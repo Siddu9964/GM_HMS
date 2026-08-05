@@ -422,13 +422,13 @@ body.compact-mode .table th {
     <div style="display: flex; align-items: center; gap: 1rem;">
         
         <!-- New Appointment Button -->
-        <button onclick="window.location.href='appointment_management.php'" class="btn btn-primary" title="New Appointment">
+        <button onclick="window.location.href='/GM_HMS/reception_view/appointment_management.php'" class="btn btn-primary" title="New Appointment">
             <i class="fas fa-calendar-plus"></i>
             <span class="hide-mobile">New Appointment</span>
         </button>
 
-         <button onclick="window.location.href='patient_registration.php'" class="btn btn-primary" title="New Registration">
-            <i class="fas fa-calendar-plus"></i>
+         <button onclick="window.location.href='/GM_HMS/reception_view/patient_registration.php'" class="btn btn-primary" title="New Registration">
+            <i class="fas fa-user-plus"></i>
             <span class="hide-mobile">New Registration</span>
         </button>
         

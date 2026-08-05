@@ -9,6 +9,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $orderId = $_POST['order_id'] ?? $_GET['order_id'] ?? '';
+$source = $_GET['source'] ?? 'OPD';
 if (!$orderId) die('No Order ID provided.');
 
 // Get user name for printing meta
@@ -217,15 +218,18 @@ if ($branch === 'basaveshwaranagar') {
 <script>
 async function loadOrderAndResult() {
   const oid = <?= json_encode($orderId) ?>;
+  const src = <?= json_encode($source) ?>;
   try {
-    const orderRes = await fetch('/GM_HMS/api/laboratory/orders?all=1&search=' + encodeURIComponent(oid));
+    const apiBase = (src === 'IPD') ? '/GM_HMS/api/laboratory/ipd-orders/' : '/GM_HMS/api/laboratory/orders/';
+    
+    const orderRes = await fetch(apiBase + encodeURIComponent(oid));
     const orderData = await orderRes.json();
     let order = null;
-    if (orderData.success && orderData.data && orderData.data.length > 0) {
-      order = orderData.data.find(x => x.order_id === oid) || orderData.data[0];
+    if (orderData.success && orderData.data) {
+      order = orderData.data;
     }
     
-    const resRes = await fetch('/GM_HMS/api/laboratory/orders/' + encodeURIComponent(oid) + '/result');
+    const resRes = await fetch(apiBase + encodeURIComponent(oid) + '/result');
     const resData = await resRes.json();
 
     if (!order && !resData.success) {
@@ -295,9 +299,9 @@ async function loadOrderAndResult() {
              <tr style="background:${i%2 ? '#f8fafc' : '#fff'}">
                <td style="text-align:center;padding:8px 4px;color:var(--text-muted);font-weight:500;border-bottom:1px solid #e2e8f0;">${i+1}</td>
                <td style="padding:8px 4px;font-weight:700;color:var(--text-main);border-bottom:1px solid #e2e8f0;">${p.name || ''}</td>
-               <td style="text-align:center;padding:8px 4px;font-weight:800;font-size:12px;color:var(--primary-dark);border-bottom:1px solid #e2e8f0;">${p.value || ''}</td>
-               <td style="text-align:center;padding:8px 4px;color:var(--text-muted);border-bottom:1px solid #e2e8f0;">${p.unit || '—'}</td>
-               <td style="text-align:center;padding:8px 4px;color:var(--text-muted);border-bottom:1px solid #e2e8f0;">${p.range || '—'}</td>
+               <td style="text-align:center;padding:8px 4px;font-weight:800;font-size:12px;color:var(--primary-dark);border-bottom:1px solid #e2e8f0;">${p.value ?? p.result ?? ''}</td>
+               <td style="text-align:center;padding:8px 4px;color:var(--text-muted);border-bottom:1px solid #e2e8f0;">${p.unit ?? '—'}</td>
+               <td style="text-align:center;padding:8px 4px;color:var(--text-muted);border-bottom:1px solid #e2e8f0;">${p.range ?? p.normal_range ?? '—'}</td>
              </tr>
            `).join('');
         }

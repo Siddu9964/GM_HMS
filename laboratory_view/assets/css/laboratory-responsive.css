@@ -1,0 +1,818 @@
+/* ============================================================================
+   GM_HMS — Laboratory Responsive Design System
+   Theme   : Forest Green #1f6b4a  ·  Warm Cream #f3efe6  (these 2 ONLY)
+   Breakpoints:
+     Mobile  : max-width 767px
+     Tablet  : 768px – 1023px
+     Laptop  : 1024px – 1279px
+     Desktop : 1280px+ (default)
+   ============================================================================ */
+
+/* ── Override CSS Variables to enforce the 2-colour palette ─────────────────── */
+:root {
+  /* Core 2 colours */
+  --r-green      : #1f6b4a;
+  --r-cream      : #f3efe6;
+
+  /* Green tints */
+  --r-green-dk   : #144d34;       /* dark green  */
+  --r-green-md   : #1a5c3f;       /* mid green   */
+  --r-green-lt   : #2a8c62;       /* light green */
+  --r-green-05   : rgba(31,107,74,.05);
+  --r-green-08   : rgba(31,107,74,.08);
+  --r-green-10   : rgba(31,107,74,.10);
+  --r-green-15   : rgba(31,107,74,.15);
+  --r-green-20   : rgba(31,107,74,.20);
+  --r-green-30   : rgba(31,107,74,.30);
+  --r-green-tint : #d0e8dc;       /* very light green for borders */
+  --r-green-ultra: #eaf4ef;       /* ultra-light green bg */
+
+  /* Cream tints */
+  --r-cream-dk   : #ede9e0;       /* slightly darker cream */
+  --r-cream-md   : #faf8f4;       /* surface 2              */
+  --r-cream-lt   : #ffffff;       /* white surface           */
+
+  /* Text derived from green */
+  --r-txt        : #1a2e24;       /* dark green-tinted text  */
+  --r-txt-sub    : #2d4a38;
+  --r-txt-muted  : #4a7060;
+  --r-txt-light  : #7aaa90;
+
+  /* Border */
+  --r-border     : #d4cfc4;       /* warm cream border       */
+  --r-border-str : #b8b2a6;
+
+  /* Shadows — tinted green */
+  --r-sh-xs      : 0 1px 4px rgba(31,107,74,.07);
+  --r-sh-sm      : 0 2px 12px rgba(31,107,74,.09);
+  --r-sh-md      : 0 8px 32px rgba(31,107,74,.13);
+  --r-sh-lg      : 0 20px 60px rgba(31,107,74,.18);
+
+  /* Sizes */
+  --r-sidebar-w  : 220px;
+  --r-navbar-h   : 60px;
+  --r-radius     : 14px;
+  --r-radius-sm  : 9px;
+  --r-radius-lg  : 20px;
+
+  /* Transitions */
+  --r-t          : all 0.22s cubic-bezier(0.4,0,0.2,1);
+  --r-t-spring   : all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+/* ── Re-map lis- variables so existing classes auto-pick the palette ────────── */
+:root {
+  --lis-primary        : var(--r-green);
+  --lis-primary-dark   : var(--r-green-dk);
+  --lis-primary-mid    : var(--r-green-md);
+  --lis-primary-light  : var(--r-green-tint);
+  --lis-primary-ultra  : var(--r-green-ultra);
+  --lis-accent         : var(--r-green-lt);
+  --lis-accent-light   : var(--r-green-lt);
+
+  --lis-bg             : var(--r-cream);
+  --lis-bg-2           : var(--r-cream-dk);
+  --lis-surface        : var(--r-cream-lt);
+  --lis-surface-2      : var(--r-cream-md);
+  --lis-surface-3      : var(--r-cream);
+
+  --lis-border         : var(--r-border);
+  --lis-border-2       : var(--r-border-str);
+
+  --lis-text           : var(--r-txt);
+  --lis-text-2         : var(--r-txt-sub);
+  --lis-text-muted     : var(--r-txt-muted);
+  --lis-text-light     : var(--r-txt-light);
+
+  --lis-success        : var(--r-green);
+  --lis-success-bg     : var(--r-green-ultra);
+  --lis-sidebar-w      : var(--r-sidebar-w);
+  --lis-navbar-h       : var(--r-navbar-h);
+  --lis-radius         : var(--r-radius);
+  --lis-radius-sm      : var(--r-radius-sm);
+  --lis-radius-lg      : var(--r-radius-lg);
+  --lis-shadow-xs      : var(--r-sh-xs);
+  --lis-shadow         : var(--r-sh-sm);
+  --lis-shadow-md      : var(--r-sh-md);
+  --lis-shadow-lg      : var(--r-sh-lg);
+}
+
+/* ── Global touch targets (44px minimum) ────────────────────────────────────── */
+.lis-btn,
+.lis-nav-item,
+.lis-filter-chip,
+.lo-ab,
+.lb,
+button[class*="lis-"],
+button[class*="lb "],
+button[class*="lo-"] {
+  min-height: 40px;
+}
+@media (max-width: 767px) {
+  .lis-btn, button[class*="lis-"], button[class*="lb "], button[class*="lo-"] {
+    min-height: 44px;
+  }
+  input, select, textarea { font-size: 16px !important; } /* prevent iOS zoom */
+}
+
+/* ============================================================================
+   SIDEBAR — MOBILE DRAWER SYSTEM
+   ============================================================================ */
+
+/* Sidebar drawer overlay */
+#lis-sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 107, 74, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 998;
+  transition: opacity 0.3s ease;
+}
+#lis-sidebar-overlay.visible { display: block; }
+
+/* ── Mobile & Tablet — sidebar is a drawer ─────────────────────────────── */
+@media (max-width: 1023px) {
+  .lis-sidebar {
+    transform: translateX(-100%);
+    z-index: 999;
+    width: var(--r-sidebar-w) !important;
+    transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+  }
+  .lis-sidebar.sidebar-open {
+    transform: translateX(0);
+    box-shadow: 8px 0 40px rgba(31,107,74,0.35);
+  }
+  .lis-main-content {
+    margin-left: 0 !important;
+  }
+}
+
+/* ── Desktop — sidebar always visible ─────────────────────────────────── */
+@media (min-width: 1024px) {
+  .lis-sidebar {
+    transform: translateX(0) !important;
+  }
+  .lis-main-content {
+    margin-left: var(--r-sidebar-w) !important;
+  }
+  #lis-hamburger { display: none !important; }
+  #lis-sidebar-overlay { display: none !important; }
+}
+
+/* ============================================================================
+   NAVBAR — RESPONSIVE COLLAPSE
+   ============================================================================ */
+.lis-navbar {
+  padding: 0 16px;
+  gap: 8px;
+  height: var(--r-navbar-h);
+  background: var(--r-cream-lt);
+  border-bottom: 2px solid var(--r-green-tint);
+}
+
+/* Hamburger button */
+#lis-hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--r-green-ultra);
+  border: 1.5px solid var(--r-green-tint);
+  border-radius: var(--r-radius-sm);
+  color: var(--r-green);
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: var(--r-t);
+}
+#lis-hamburger:hover {
+  background: var(--r-green);
+  color: var(--r-cream);
+  border-color: var(--r-green);
+}
+
+@media (max-width: 1023px) {
+  #lis-hamburger { display: flex; }
+}
+
+/* Hide clock/date on small screens */
+@media (max-width: 767px) {
+  .lis-live-clock,
+  #lis-date-pill { display: none !important; }
+  .lis-nav-search { width: 140px; }
+  .lis-navbar-title { font-size: 0.82rem; }
+  .lis-navbar-subtitle { display: none; }
+}
+@media (max-width: 480px) {
+  .lis-nav-search { display: none !important; }
+  .lis-navbar-divider { display: none; }
+}
+
+/* ============================================================================
+   PAGE CONTENT — PADDING SCALE
+   ============================================================================ */
+@media (max-width: 1023px) {
+  .lis-content { padding: 18px 18px 32px; }
+}
+@media (max-width: 767px) {
+  .lis-content { padding: 12px 12px 28px; }
+}
+@media (max-width: 480px) {
+  .lis-content { padding: 10px 10px 24px; }
+}
+
+/* ============================================================================
+   PAGE HEADER
+   ============================================================================ */
+@media (max-width: 767px) {
+  .lis-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .lis-page-header > div:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+  .lis-page-title { font-size: 1.15rem; gap: 10px; }
+  .lis-page-title-icon { width: 38px; height: 38px; font-size: 0.95rem; border-radius: 11px; }
+}
+
+/* ============================================================================
+   KPI CARDS GRID
+   ============================================================================ */
+.lis-kpi-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 1200px) { .lis-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .lis-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 420px)  { .lis-kpi-grid { grid-template-columns: 1fr; } }
+
+.lis-kpi-card {
+  padding: 16px;
+  gap: 12px;
+}
+@media (max-width: 767px) {
+  .lis-kpi-value { font-size: 1.5rem; }
+  .lis-kpi-icon  { width: 40px; height: 40px; font-size: 1rem; }
+}
+
+/* ============================================================================
+   GRID LAYOUT OVERRIDES & RESPONSIVE COLLAPSE
+   ============================================================================ */
+/* Reduce width of 3-1 layout on desktop so the right column (Quick Actions) has more space */
+.lis-grid-3-1 { grid-template-columns: 1.2fr 1fr !important; }
+@media (max-width: 1023px) {
+  .lis-grid-2, .lis-grid-3, .lis-grid-4,
+  .lis-grid-3-1, .lis-grid-2-1, .lis-grid-1-2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ============================================================================
+   DATA TABLES — RESPONSIVE
+   ============================================================================ */
+.lis-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Column visibility helpers */
+@media (max-width: 767px) {
+  .lis-hide-mobile { display: none !important; }
+}
+@media (max-width: 1023px) {
+  .lis-hide-tablet { display: none !important; }
+}
+
+/* Compact table cells on mobile */
+@media (max-width: 767px) {
+  .lis-table thead th,
+  .lis-table tbody td {
+    padding: 9px 10px;
+    font-size: 0.75rem;
+  }
+}
+
+/* ============================================================================
+   FILTER BAR — HORIZONTAL SCROLL ON MOBILE
+   ============================================================================ */
+@media (max-width: 767px) {
+  .lis-filter-bar {
+    padding: 10px 12px;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .lis-filter-bar::-webkit-scrollbar { display: none; }
+}
+
+/* ============================================================================
+   MODAL — FULLSCREEN / BOTTOM-SHEET ON MOBILE
+   ============================================================================ */
+@media (max-width: 767px) {
+  .lis-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .lis-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: var(--r-radius-lg) var(--r-radius-lg) 0 0 !important;
+    max-height: 92vh !important;
+    transform: translateY(100%) !important;
+  }
+  .lis-modal-overlay.open .lis-modal {
+    transform: translateY(0) !important;
+  }
+  .lis-modal-header { padding: 16px 18px; }
+  .lis-modal-body   { padding: 16px 18px; }
+  .lis-modal-footer {
+    padding: 12px 18px;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .lis-modal-footer .lis-btn,
+  .lis-modal-footer button,
+  .lis-modal-footer .lb {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ============================================================================
+   FORM GRIDS — ALL COLLAPSE ON MOBILE
+   ============================================================================ */
+@media (max-width: 600px) {
+  div[style*="grid-template-columns:1fr 1fr"],
+  div[style*="grid-template-columns: 1fr 1fr"],
+  .form-row-2col {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+}
+
+/* ============================================================================
+   BUTTONS — RESPONSIVE
+   ============================================================================ */
+@media (max-width: 480px) {
+  .lis-btn-group-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+  .lis-btn-group-mobile .lis-btn { width: 100%; justify-content: center; }
+}
+
+/* ============================================================================
+   ORDER STAT BAR (test_orders / ipd_test_orders)
+   ============================================================================ */
+.lo-stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 767px) {
+  .lo-stat-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+}
+@media (max-width: 360px) {
+  .lo-stat-row { grid-template-columns: 1fr 1fr; }
+}
+
+/* ============================================================================
+   ORDER TABLE (test_orders / ipd_test_orders)
+   ============================================================================ */
+@media (max-width: 1023px) {
+  /* Hide low-priority cols on tablet */
+  .lo-col-doctor   { display: none; }
+  .lo-col-datetime { display: none; }
+}
+@media (max-width: 767px) {
+  /* Mobile: hide more, show only essentials */
+  .lo-col-testid   { display: none; }
+  .lo-col-priority { display: none; }
+  .lo-col-status   { display: none; }
+
+  /* Compact patient cell */
+  .lo-pat-cell { gap: 8px; }
+  .lo-avatar   { width: 30px; height: 30px; font-size: 0.62rem; }
+  .lo-pat-name { font-size: 0.78rem; }
+  .lo-pat-id   { font-size: 0.65rem; }
+
+  /* Action buttons stack */
+  .lo-actions { flex-direction: column; gap: 4px; }
+  .lo-ab      { width: 30px; height: 30px; }
+}
+
+/* ============================================================================
+   CREATE ORDER MODAL
+   ============================================================================ */
+.pt-toggle { flex-wrap: wrap; }
+
+@media (max-width: 600px) {
+  /* Patient search section — stacked */
+  #section-inpatient .lis-search-wrap,
+  #section-walkin { width: 100%; }
+
+  /* Walk-in fields grid */
+  #section-walkin > div[style*="grid"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+}
+
+/* ============================================================================
+   RESULT ENTRY MODAL — PREMIUM 2-COL → STACKED ON MOBILE
+   ============================================================================ */
+/* The rm-body two-column grid */
+@media (max-width: 900px) {
+  .rm-body div[style*="grid-template-columns:280px"],
+  .rm-body div[style*="grid-template-columns: 280px"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+  /* Attachment panel full width */
+  .rm-body > div > div:first-child { width: 100% !important; }
+  /* Params panel full width */
+  .rm-body > div > div:last-child  { width: 100% !important; }
+}
+
+/* Result modal on mobile */
+@media (max-width: 767px) {
+  #resultModal .lis-modal {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  /* rm-info-bar stack */
+  .rm-info-bar {
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: flex-start !important;
+  }
+  .rm-info-div { display: none !important; }
+
+  /* Params table scroll */
+  .rm-params-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Attachment grid compact */
+  .att-grid { gap: 6px; padding: 8px; }
+  .att-thumb { width: 56px; height: 56px; }
+
+  /* rm header */
+  .rm-header { flex-wrap: wrap; gap: 8px; padding: 14px 16px; }
+  .rm-header h3 { font-size: 0.9rem; }
+  .rm-header p  { font-size: 0.72rem; }
+
+  /* rm footer */
+  .rm-footer {
+    flex-direction: column !important;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+  .rm-footer .rm-cancel-btn,
+  .rm-footer .rm-save-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ============================================================================
+   DASHBOARD — RESPONSIVE GRIDS
+   ============================================================================ */
+/* Main 3:1 grid */
+.dash-main-grid {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+@media (max-width: 1100px) {
+  .dash-main-grid { grid-template-columns: 1fr; }
+}
+
+/* Quick action grid */
+.lis-quick-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 767px) {
+  .lis-quick-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Chart containers */
+@media (max-width: 767px) {
+  .lis-chart-container canvas { max-height: 200px; }
+}
+
+/* ============================================================================
+   KANBAN BOARD
+   ============================================================================ */
+.lis-kanban-board {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 12px;
+}
+@media (max-width: 767px) {
+  .lis-kanban-col { flex: 0 0 240px; min-width: 240px; }
+  .lis-kanban-card { padding: 10px 11px; }
+  .lis-kanban-card-tests { font-size: 0.75rem; }
+}
+
+/* ============================================================================
+   CRITICAL ALERTS — 2-COL → 1-COL
+   ============================================================================ */
+.alerts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 1023px) {
+  .alerts-grid { grid-template-columns: 1fr; }
+}
+
+.lis-alert-card {
+  flex-wrap: wrap;
+}
+@media (max-width: 767px) {
+  .lis-alert-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 13px 14px;
+  }
+  .lis-alert-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* ============================================================================
+   SERVICES PAGE
+   ============================================================================ */
+@media (max-width: 767px) {
+  /* Hide extra price columns on mobile — show only OPD price */
+  .svc-col-gw,
+  .svc-col-spvt,
+  .svc-col-pvt,
+  .svc-col-suite { display: none !important; }
+
+  /* Tab bar scrollable */
+  div[style*="display:flex"][style*="border-bottom"] {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .svc-tab { white-space: nowrap; padding: 10px 14px; }
+}
+
+/* ============================================================================
+   STATUS UPDATE MODAL (small, 420px) — MOBILE OK BUT ENSURE FULL-WIDTH
+   ============================================================================ */
+@media (max-width: 480px) {
+  #statusModal .lis-modal { max-width: 100% !important; }
+}
+
+/* ============================================================================
+   PRINT RESULT — RESPONSIVE ACTION BAR
+   ============================================================================ */
+@media (max-width: 600px) {
+  .action-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .action-bar .btn { flex: 1 1 120px; justify-content: center; }
+}
+
+/* ============================================================================
+   SERVICES PARAM MODAL — FULL WIDTH ON MOBILE
+   ============================================================================ */
+@media (max-width: 767px) {
+  #parameterModal .lis-modal {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  /* Parameter card rows — stack on mobile */
+  #param-container .row,
+  #param-container [style*="grid"] {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+}
+
+/* ============================================================================
+   CAMERA MODAL
+   ============================================================================ */
+@media (max-width: 600px) {
+  #cameraVideo { width: 95vw !important; border-radius: 10px; }
+  .cam-btn     { padding: 8px 18px; font-size: 0.82rem; }
+}
+
+/* ============================================================================
+   SIDEBAR SUBMENU — RESPONSIVE
+   ============================================================================ */
+@media (max-width: 1023px) {
+  /* Keep submenu compact inside drawer */
+  .lis-nav-sub-item {
+    font-size: 0.68rem !important;
+    padding: 5px 10px 5px 30px !important;
+  }
+}
+
+/* ============================================================================
+   UTILITY — RESPONSIVE SHOW/HIDE
+   ============================================================================ */
+.r-show-mobile  { display: none !important; }
+.r-show-tablet  { display: none !important; }
+.r-show-desktop { display: block; }
+
+@media (max-width: 767px)  { .r-show-mobile  { display: block !important; } }
+@media (max-width: 1023px) { .r-show-tablet  { display: block !important; } }
+@media (min-width: 1024px) { .r-show-desktop { display: block !important; } }
+@media (max-width: 767px)  { .r-hide-mobile  { display: none !important; } }
+@media (max-width: 1023px) { .r-hide-tablet  { display: none !important; } }
+
+/* ============================================================================
+   SCROLLBAR — CREAM+GREEN
+   ============================================================================ */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: var(--r-cream); }
+::-webkit-scrollbar-thumb  { background: var(--r-green-tint); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--r-green); }
+
+/* ============================================================================
+   GENERAL COLOUR OVERRIDES — ENFORCE GREEN/CREAM ONLY
+   ============================================================================ */
+
+/* Danger red → green-tinted dark for non-critical use */
+/* NOTE: Real alerts keep red for clinical safety; only UI chrome uses green */
+
+/* Badge overrides for cream+green palette */
+.lis-badge-ordered    { background: var(--r-green-ultra); color: var(--r-green-dk); border: 1px solid var(--r-green-tint); }
+.lis-badge-collected  { background: var(--r-green-08);    color: var(--r-green-dk); }
+.lis-badge-processing { background: var(--r-cream-dk);    color: var(--r-txt-sub); }
+.lis-badge-verify     { background: var(--r-green-15);    color: var(--r-green-dk); }
+.lis-badge-completed  { background: var(--r-green);       color: var(--r-cream);    }
+.lis-badge-reported   { background: var(--r-green-dk);    color: var(--r-cream);    }
+.lis-badge-delivered  { background: var(--r-green-ultra); color: var(--r-green);    }
+
+.lis-badge-routine    { background: var(--r-green-ultra); color: var(--r-green);    }
+.lis-badge-stat       { background: var(--r-cream-dk);    color: var(--r-txt-sub);  }
+.lis-badge-urgent     { background: var(--r-green-dk);    color: var(--r-cream);    font-weight: 900; }
+.lis-badge-lab        { background: var(--r-green-ultra); color: var(--r-green);    border: 1px solid var(--r-green-tint); }
+.lis-badge-radiology  { background: var(--r-cream-dk);    color: var(--r-txt-sub);  border: 1px solid var(--r-border); }
+.lis-badge-other      { background: var(--r-cream);       color: var(--r-txt-muted);border: 1px solid var(--r-border); }
+
+/* Status badges inside order tables (b-* classes) */
+.b-ordered   { background: var(--r-green-ultra) !important; color: var(--r-green-dk) !important; }
+.b-progress  { background: var(--r-cream-dk)    !important; color: var(--r-txt-sub)  !important; }
+.b-completed { background: var(--r-green)       !important; color: var(--r-cream)    !important; }
+.b-reported  { background: var(--r-green-dk)    !important; color: var(--r-cream)    !important; }
+.b-urgent    { background: var(--r-green-dk)    !important; color: var(--r-cream)    !important; }
+.b-stat      { background: var(--r-cream-dk)    !important; color: var(--r-txt-sub)  !important; }
+.b-routine   { background: var(--r-green-ultra) !important; color: var(--r-green)    !important; }
+
+/* Sidebar */
+.lis-sidebar {
+  background: linear-gradient(180deg, var(--r-green-dk) 0%, var(--r-green) 50%, var(--r-green-lt) 100%) !important;
+}
+
+/* Navbar border */
+.lis-navbar { border-bottom-color: var(--r-green-tint) !important; }
+
+/* KPI card top bar */
+.lis-kpi-card::before {
+  background: linear-gradient(90deg, var(--r-green-dk), var(--r-green-lt)) !important;
+}
+
+/* Buttons */
+.lis-btn-primary,
+.lb-primary,
+.lb.lb-primary {
+  background: linear-gradient(135deg, var(--r-green-dk), var(--r-green)) !important;
+  color: var(--r-cream) !important;
+  box-shadow: 0 4px 14px var(--r-green-20) !important;
+}
+.lis-btn-primary:hover,
+.lb-primary:hover {
+  background: linear-gradient(135deg, var(--r-green), var(--r-green-lt)) !important;
+  box-shadow: 0 6px 22px var(--r-green-30) !important;
+  color: var(--r-cream) !important;
+}
+.lis-btn-outline,
+.lb-outline,
+.lb.lb-outline {
+  background: transparent !important;
+  border: 1.5px solid var(--r-green-tint) !important;
+  color: var(--r-green) !important;
+}
+.lis-btn-outline:hover,
+.lb-outline:hover {
+  background: var(--r-green-ultra) !important;
+  border-color: var(--r-green) !important;
+  color: var(--r-green-dk) !important;
+}
+
+/* Form controls focus ring */
+.lis-input:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--r-green) !important;
+  box-shadow: 0 0 0 3px var(--r-green-10) !important;
+  outline: none !important;
+}
+
+/* Active nav items */
+.lis-nav-item.active {
+  background: rgba(255,255,255,0.18) !important;
+  box-shadow: inset 3px 0 0 var(--r-cream), 0 4px 12px rgba(0,0,0,0.15) !important;
+  color: var(--r-cream) !important;
+}
+
+/* KPI icon colours — all cream/green */
+.lis-kpi-icon        { background: var(--r-green-08)   !important; color: var(--r-green) !important; }
+.lis-kpi-icon.teal,
+.lis-kpi-icon.c-teal { background: var(--r-green-08)   !important; color: var(--r-green) !important; }
+.lis-kpi-icon.amber,
+.lis-kpi-icon.c-amber{ background: var(--r-cream-dk)   !important; color: var(--r-txt-sub) !important; }
+
+/* Chart.js grid lines — cream tinted */
+.lis-chart-container { background: transparent; }
+
+/* Notification badge — green instead of red for chrome (clinical red kept for alerts) */
+.lis-notif-badge.lab-notif-badge {
+  background: var(--r-green-dk) !important;
+}
+
+/* Alert cards — keep red for clinical critical (patient safety), green for info */
+.lis-alert-card.info {
+  border-left-color: var(--r-green) !important;
+  background: linear-gradient(135deg, var(--r-green-ultra), var(--r-cream-lt)) !important;
+}
+.lis-alert-card.info .lis-alert-icon {
+  background: var(--r-green-08) !important;
+  color: var(--r-green) !important;
+}
+
+/* ============================================================================
+   ADDITIONAL PAGE-SPECIFIC RESPONSIVE FIXES
+   ============================================================================ */
+
+/* Reports & Analytics pages */
+@media (max-width: 767px) {
+  .lis-chart-container { min-height: 200px; }
+}
+
+/* Patients page */
+@media (max-width: 767px) {
+  .lis-patient-info-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Machine status page */
+@media (max-width: 767px) {
+  .lis-machine-card { padding: 14px; }
+}
+
+/* Tab pills — horizontal scroll on mobile */
+@media (max-width: 600px) {
+  .lis-tab-pills {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .lis-tab-pills::-webkit-scrollbar { display: none; }
+  .lis-tab-pill { white-space: nowrap; }
+}
+
+/* Search wrap — full width on mobile */
+@media (max-width: 767px) {
+  .lis-nav-search { width: 100%; max-width: 200px; }
+  .lis-search-kbd { display: none; }
+}
+
+/* ============================================================================
+   RESULT ENTRY TABLE PARAMS — SCROLLABLE ON MOBILE
+   ============================================================================ */
+@media (max-width: 767px) {
+  #result-params-tbody tr td:nth-child(2) { display: none; } /* hide prev result col on mobile */
+  .rm-ptable { min-width: 420px; }
+}
+
+/* ============================================================================
+   PRINT STYLES — UNCHANGED (no mobile needed)
+   ============================================================================ */
+@media print {
+  #lis-sidebar-overlay,
+  #lis-hamburger { display: none !important; }
+}

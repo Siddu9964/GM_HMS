@@ -39,6 +39,12 @@ class AppointmentManager {
         const urlParams = new URLSearchParams(window.location.search);
         const patientId = urlParams.get('patient_id');
         const action = urlParams.get('action');
+        const autoBilling = urlParams.get('auto_billing');
+
+        if (autoBilling === 'true') {
+            this.autoBilling = true;
+            this.autoBillingPatientId = patientId;
+        }
 
         if (patientId && action === 'new') {
             console.log('Auto-opening booking modal for patient:', patientId);
@@ -455,7 +461,21 @@ class AppointmentManager {
             response = await this.apiCall('POST', '', data);
             if (response && response.success) {
                 this.closeModal();
-                this.showSuccessPopup('Appointment Scheduled!', 'The appointment has been successfully booked and registered.');
+                
+                if (this.autoBilling && this.autoBillingPatientId) {
+                    Swal.fire({
+                        title: 'Appointment Scheduled!',
+                        text: 'Redirecting to OPD Billing Terminal...',
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = `opd_billing.php?patient_id=${encodeURIComponent(this.autoBillingPatientId)}`;
+                    });
+                } else {
+                    this.showSuccessPopup('Appointment Scheduled!', 'The appointment has been successfully booked and registered.');
+                }
+                
                 this.loadAppointments();
             } else {
                 const errorMsg = response?.error || 'Failed to schedule appointment';

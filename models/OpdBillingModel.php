@@ -82,15 +82,33 @@ class OpdBillingModel
                 $receiptNo
             ]);
 
+            $hasLabItems = false;
             if (!empty($items)) {
                 foreach ($items as $item) {
                     $this->addBillingItem($billId, $item, $receiptNo);
+                    $code = strtoupper(trim($item['item_code'] ?? ''));
+                    if (strpos($code, 'LAB') === 0 || strpos($code, 'OTH') === 0) {
+                        $hasLabItems = true;
+                    }
                 }
             }
 
             $this->calculateTotals($billId);
 
             $this->logBillingAction($billId, 'Created', 'OPD bill created');
+
+            if ($hasLabItems) {
+                // Insert Notification for Laboratory (staff)
+                $nid = 'NOT-' . strtoupper(substr(uniqid(), -6));
+                $patientName = $billData['name'] ?? 'Walking Patient';
+                $title = "New OPD Test Added";
+                $message = "A new test has been added for {$patientName} ({$patientId}).";
+                $this->db->execute(
+                    "INSERT INTO notifications (notification_id, recipient_id, recipient_type, title, message, category, priority, action_url) 
+                     VALUES (?, 'staff', 'staff', ?, ?, 'lab_result', 'normal', 'test_orders.php')",
+                    [$nid, $title, $message]
+                );
+            }
 
             $this->db->commit();
             return $billId;

@@ -1,7 +1,7 @@
-<?php
-$pageTitle = 'Lab Orders';
+﻿<?php
+$pageTitle = 'IPD Lab Orders';
 $pageIcon  = 'fa-flask';
-$navTitle  = 'Lab Orders';
+$navTitle  = 'IPD Lab Orders';
 $navSub    = 'View, create and manage laboratory test orders';
 require_once 'includes/lab_head.php';
 ?>
@@ -352,114 +352,17 @@ require_once 'includes/lab_head.php';
 .row-anim{animation:rowIn .3s var(--spring) forwards}
 @keyframes rowIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
 
+/* ── Responsive ────────────────────────────────────────────── */
+@media(max-width:1100px){.lo-stats{grid-template-columns:repeat(2,1fr)}.rm-cols{grid-template-columns:1fr}}
+@media(max-width:768px){.lo-page{padding:14px}.lo-stats{grid-template-columns:1fr 1fr}.lo-header{flex-direction:column;gap:16px;align-items:flex-start}.lo-filter-top{flex-direction:column}}
+@media(max-width:480px){.lo-stats{grid-template-columns:1fr}}
+
 /* ── Fade-in animations ────────────────────────────────────── */
 .lo-fade{animation:fadeUp .5s var(--ease) both}
 .lo-fade-1{animation:fadeUp .5s .08s var(--ease) both}
 .lo-fade-2{animation:fadeUp .5s .16s var(--ease) both}
 .lo-fade-3{animation:fadeUp .5s .24s var(--ease) both}
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-
-/* ══════════════════════════════════════════════════════════════
-   RESPONSIVE — OPD Test Orders
-   Mobile <768  |  Tablet 768-1023  |  Laptop 1024-1279
-══════════════════════════════════════════════════════════════ */
-
-/* — Laptop — */
-@media(max-width:1279px){
-  .rm-cols{grid-template-columns:220px 1fr}
-}
-
-/* — Tablet — */
-@media(max-width:1023px){
-  .lo-stats{grid-template-columns:repeat(2,1fr)}
-  .rm-cols{grid-template-columns:1fr}
-  /* hide doctor + datetime cols on tablet */
-  .lo-col-doctor,.lo-col-datetime{display:none}
-}
-
-/* — Mobile — */
-@media(max-width:767px){
-  .lo-page{padding:10px}
-  .lo-stats{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-  .lo-stat{padding:14px 16px}
-  .lo-stat-val{font-size:1.5rem}
-  .lo-stat-ico{width:36px;height:36px;font-size:.95rem;margin-bottom:10px}
-
-  /* Header stacks */
-  .lo-header{flex-direction:column;gap:0}
-  .lo-header > div:first-child{
-    flex-direction:column;gap:10px;align-items:flex-start;
-    padding:16px 18px !important
-  }
-  .lo-header-left h1{font-size:1.15rem}
-  .lo-header-right{flex-wrap:wrap;gap:8px;width:100%}
-  .lo-header-right .lb{flex:1;justify-content:center;padding:9px 12px;font-size:.78rem}
-
-  /* Stats bar in header — 2 cols */
-  .lo-header > div:last-child{
-    grid-template-columns:1fr 1fr !important;
-    border-top:1px solid rgba(243,239,230,0.15)
-  }
-  .lo-header > div:last-child > div{
-    padding:14px 16px !important;
-    border-right:1px solid rgba(243,239,230,0.12)
-  }
-  .lo-header > div:last-child > div > div:first-child{
-    width:36px !important;height:36px !important;font-size:1rem !important
-  }
-  #stat-total,#stat-pending,#stat-progress,#stat-done{font-size:1.5rem !important}
-
-  /* Filters — stack vertically */
-  .lo-filter-top{flex-direction:column;gap:10px;padding:12px 14px}
-  .lo-filter-field{width:100%}
-  .lo-finput{width:100% !important;max-width:100% !important}
-  .lo-search-wrap{width:100%;min-width:unset}
-
-  /* Chip bar — horizontal scroll */
-  .lo-chip-bar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:10px 14px;gap:6px}
-  .lo-chip-bar::-webkit-scrollbar{display:none}
-  .lo-chip{white-space:nowrap}
-
-  /* Table toolbar */
-  .lo-table-toolbar{padding:12px 14px;flex-wrap:wrap;gap:8px}
-  .lo-table-toolbar > div:last-child{width:100%;display:flex;gap:6px}
-  .lo-table-toolbar .lb{flex:1;justify-content:center}
-
-  /* Hide non-essential columns on mobile */
-  .lo-col-doctor,.lo-col-datetime,.lo-col-svcid,.lo-col-priority{display:none}
-
-  /* Table cell padding */
-  .lo-table thead th,.lo-table tbody td{padding:9px 10px;font-size:.74rem}
-
-  /* Action buttons: wrap */
-  .lo-actions{flex-wrap:wrap;gap:4px;justify-content:flex-start}
-
-  /* Result modal — full screen bottom-sheet */
-  #resultModal .lis-modal{
-    max-width:100% !important;width:100% !important;
-    border-radius:18px 18px 0 0 !important;
-    max-height:95vh !important
-  }
-  .rm-cols{display:flex;flex-direction:column;gap:14px}
-  .rm-body{padding:14px}
-  .rm-header{flex-wrap:wrap;gap:10px;padding:16px 18px}
-  .rm-header-left h3{font-size:.95rem}
-  .rm-header-left p{font-size:.72rem}
-  .rm-info-bar{flex-direction:column;gap:8px;align-items:flex-start;padding:12px 14px}
-  .rm-info-div{display:none}
-  .rm-footer{flex-direction:column;gap:8px;padding:14px 18px}
-  .rm-cancel-btn,.rm-save-btn{width:100%;justify-content:center}
-
-  /* Create Order modal */
-  #createModal .lis-modal-body{padding:14px 16px}
-  #createModal .lis-modal{border-radius:18px 18px 0 0;max-height:95vh}
-}
-
-/* — Small Mobile — */
-@media(max-width:420px){
-  .lo-stats{grid-template-columns:1fr}
-  .lo-header > div:last-child{grid-template-columns:1fr !important}
-}
 </style>
 
 <div class="lis-main-content">
@@ -625,17 +528,17 @@ require_once 'includes/lab_head.php';
     </div>
 
     <!-- Table -->
-    <div id="table-wrap" style="display:none; overflow-x:auto;">
+    <div id="table-wrap" style="display:none;">
       <table class="lo-table">
         <thead>
           <tr>
             <th>#</th>
             <th>Order ID</th>
             <th>Patient</th>
-            <th class="lo-col-svcid">Service ID</th>
+            <th>Service ID</th>
             <th>Test Name</th>
-            <th class="lo-col-doctor">Doctor</th>
-            <th class="lo-col-datetime">Date / Time</th>
+            <th>Doctor</th>
+            <th>Date / Time</th>
             <th style="text-align:center;">Data Entry</th>
             <th style="text-align:center;">Actions</th>
           </tr>
@@ -1000,15 +903,15 @@ require_once 'includes/lab_head.php';
 let allOrders = [];
 let allTests  = [];
 let activeOrderId = null;
-
+let allServiceTests = [];
 let prevTotalOrders = null;
 
-// ── Load orders ──────────────────────────────────────────────
 async function loadOrders(isBackground = false) {
   if (!isBackground) {
     document.getElementById('table-loading').style.display = 'flex';
     document.getElementById('table-wrap').style.display   = 'none';
   }
+  await loadAllServiceTests();
 
   const date     = document.getElementById('filter-date').value;
   const status   = document.getElementById('filter-status').value;
@@ -1016,7 +919,7 @@ async function loadOrders(isBackground = false) {
   const search   = document.getElementById('filter-search').value;
   const allMode  = document.querySelector('.lo-chip.active')?.dataset.filter === 'all' ? '1' : '0';
 
-  let url = `/api/laboratory/orders?all=${allMode}&date=${date}&status=${encodeURIComponent(status)}&priority=${encodeURIComponent(priority)}&search=${encodeURIComponent(search)}`;
+  let url = `/api/laboratory/ipd-orders?all=${allMode}&date=${date}&status=${encodeURIComponent(status)}&priority=${encodeURIComponent(priority)}&search=${encodeURIComponent(search)}`;
 
   try {
     const data = await lisApi('GET', url);
@@ -1053,7 +956,8 @@ async function loadOrders(isBackground = false) {
     if (!isBackground) {
       document.getElementById('table-loading').style.display = 'none';
       document.getElementById('table-wrap').style.display    = 'block';
-      lisToast('Failed to load orders', 'error');
+      lisToast('Failed to load orders: ' + (e.message || e), 'error');
+      console.error(e);
       renderOrders([]);
     }
   }
@@ -1100,13 +1004,17 @@ function renderOrders(orders) {
     const tm = o.order_time ? o.order_time.slice(0,5) : '';
     const initials = (o.patient_name || 'P').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase() || 'PT';
 
-    let displayTestName = o.test_name;
+    let rawTestName = o.test_name || '';
+    let displayTestName = rawTestName.split('|||').join(', ');
     try {
-      const parsed = JSON.parse(o.test_name);
+      const parsed = JSON.parse(rawTestName);
       if (Array.isArray(parsed)) {
         displayTestName = parsed.join(', ');
       }
     } catch(e) {}
+    
+    // Safely encode raw test name for onclick handler
+    const rawTestNameB64 = btoa(unescape(encodeURIComponent(rawTestName)));
 
     let testNamesOnly = [];
     let testIdsOnly = [];
@@ -1118,10 +1026,15 @@ function renderOrders(orders) {
         testIdsOnly.push(match[2].trim());
       } else {
         testNamesOnly.push(part);
+        const found = allServiceTests.find(t => t.name.toLowerCase().startsWith(part.toLowerCase() + " ("));
+        if (found) {
+          testIdsOnly.push(found.id);
+        }
       }
     });
-    const finalTestName = [...new Set(testNamesOnly)].join(', ');
-    const finalTestId = testIdsOnly.length > 0 ? [...new Set(testIdsOnly)].join(', ') : '-';
+
+    const finalTestName = [...new Set(testNamesOnly)].join(", ");
+    const finalTestId = testIdsOnly.length > 0 ? [...new Set(testIdsOnly)].join(", ") : "-";
 
     return `<tr>
       <td style="color:var(--txt-mut);font-weight:700;font-size:.78rem;">${i+1}</td>
@@ -1132,7 +1045,7 @@ function renderOrders(orders) {
         <div class="lo-pat-cell">
           <div class="lo-avatar">${escHtml(initials)}</div>
           <div>
-            <div class="lo-pat-name">${escHtml(o.patient_name || '—')}</div>
+            <div class="lo-pat-name">${escHtml(o.patient_name || '�')}</div>
             <div class="lo-pat-id">${escHtml(o.patient_id || '')}</div>
           </div>
         </div>
@@ -1154,7 +1067,7 @@ function renderOrders(orders) {
       <td style="font-size:.75rem;color:var(--txt-mut);white-space:nowrap;">${dt} ${tm}</td>
       <td style="text-align:center; vertical-align:middle;">
         <button class="lb lb-primary" style="padding: 4px 10px; font-size: 0.75rem; width:100%; font-weight:700; gap:5px;" title="Enter Results"
-                onclick="openResultModal('${escHtml(o.order_id)}','${escHtml(displayTestName)}','${escHtml(o.patient_id)}')">
+                onclick="openResultModal('${escHtml(o.order_id)}', decodeURIComponent(escape(atob('${rawTestNameB64}'))), '${escHtml(o.patient_id)}')">
           <i class="fas fa-file-medical-alt"></i> Data Entry
         </button>
       </td>
@@ -1417,7 +1330,7 @@ async function createOrder() {
       if (storedDocId) docId = storedDocId;
     }
     
-    const oData = await lisApi('POST', '/api/laboratory/orders', {
+    const oData = await lisApi('POST', '/api/laboratory/ipd-orders', {
       patient_id: patientId,
       doctor_id:  docId, 
       test_name:  JSON.stringify(selectedTests),
@@ -1458,7 +1371,7 @@ async function saveStatus() {
   if (!activeOrderId) return;
   const status = document.getElementById('status-select').value;
   try {
-    const data = await lisApi('PUT', `/api/laboratory/orders/${encodeURIComponent(activeOrderId)}/status`, { status });
+    const data = await lisApi('PUT', `/api/laboratory/ipd-orders/${encodeURIComponent(activeOrderId)}/status`, { status });
     if (data.success) {
       lisToast('Status updated successfully', 'success');
       closeStatusModal();
@@ -1511,7 +1424,6 @@ loadOrders();
 let activeResultOrderId = null;
 let rmAttachments = [];          // { dataUrl, blob, name, source }
 let cameraStream  = null;
-let allServiceTests = [];        // populated from API
 
 // ── Load all service tests (lab + radiology + other) ─────────
 async function loadAllServiceTests() {
@@ -1519,9 +1431,9 @@ async function loadAllServiceTests() {
   try {
     const data = await lisApi('GET', '/api/laboratory/services');
     if (data.success) {
-      (data.data.lab       || []).forEach(t => allServiceTests.push({ name: `${t.test_name} (${t.service_id})`,    cat: 'lab' }));
-      (data.data.radiology || []).forEach(t => allServiceTests.push({ name: `${t.billing_name} (${t.service_id})`, cat: 'rad' }));
-      (data.data.other     || []).forEach(t => allServiceTests.push({ name: `${t.billing_name} (${t.service_id})`, cat: 'oth' }));
+      (data.data.lab       || []).forEach(t => allServiceTests.push({ name: `${t.test_name} (${t.service_id})`,    cat: 'lab', id: t.service_id }));
+      (data.data.radiology || []).forEach(t => allServiceTests.push({ name: `${t.billing_name} (${t.service_id})`, cat: 'rad', id: t.service_id }));
+      (data.data.other     || []).forEach(t => allServiceTests.push({ name: `${t.billing_name} (${t.service_id})`, cat: 'oth', id: t.service_id }));
     }
   } catch(e) { /* silent */ }
 }
@@ -1571,23 +1483,26 @@ function selectSearchTest(name) {
   document.getElementById('test-search-dd').style.display = 'none';
   // We no longer change result-test-name, to allow appending extra tests to the primary order
   
-  // Find category
+  // Find category and serviceId
   const match = allServiceTests.find(st => st.name === name);
   const cat = match ? match.cat : 'lab';
+  const serviceId = match ? match.id : null;
   
-  // Auto-detect template
-  const tn = name.toLowerCase();
-  let prefill = '';
-  if (tn.includes('cbc') || tn.includes('blood count'))  prefill = 'cbc';
-  else if (tn.includes('lft') || tn.includes('liver'))   prefill = 'lft';
-  else if (tn.includes('lipid'))                         prefill = 'lipid';
-  else if (tn.includes('kft') || tn.includes('kidney'))  prefill = 'kft';
-  else if (tn.includes('tft') || tn.includes('thyroid')) prefill = 'tft';
-  if (prefill) {
-    document.getElementById('template-select').value = prefill;
-    loadTemplate(prefill);
+  document.getElementById('template-select').value = '';
+  
+  if (serviceId && cat === 'lab') {
+    lisApi('GET', '/api/laboratory/services/parameters/' + encodeURIComponent(serviceId)).then(data => {
+      if (data.success && data.data && data.data.length > 0) {
+        data.data.forEach(p => {
+          addResultRow(p.parameter_name, p.unit, p.normal_range, cat);
+        });
+      } else {
+        addResultRow(name, '', '', cat);
+      }
+    }).catch(e => {
+      addResultRow(name, '', '', cat);
+    });
   } else {
-    document.getElementById('template-select').value = '';
     addResultRow(name, '', '', cat);
   }
 }
@@ -1728,98 +1643,51 @@ function capturePhoto() {
 }
 
 // ── Smart templates ───────────────────────────────────────────
-const testTemplates = {
-  cbc: [
-    { name: 'Hemoglobin',       unit: 'g/dL',       range: '12.0 - 16.0' },
-    { name: 'RBC Count',        unit: 'mill/cu.mm',  range: '4.5 - 5.5'   },
-    { name: 'WBC Count',        unit: '/c.mm',       range: '4000 - 11000' },
-    { name: 'Platelets',        unit: 'lakhs/c.mm',  range: '1.5 - 4.5'   },
-    { name: 'Hematocrit (PCV)', unit: '%',           range: '36 - 46'      }
-  ],
-  lft: [
-    { name: 'Total Bilirubin',      unit: 'mg/dL', range: '0.1 - 1.2'  },
-    { name: 'Direct Bilirubin',     unit: 'mg/dL', range: '0.0 - 0.3'  },
-    { name: 'SGOT (AST)',           unit: 'U/L',   range: '0 - 40'      },
-    { name: 'SGPT (ALT)',           unit: 'U/L',   range: '0 - 40'      },
-    { name: 'Alkaline Phosphatase', unit: 'U/L',   range: '40 - 129'    }
-  ],
-  lipid: [
-    { name: 'Total Cholesterol', unit: 'mg/dL', range: '< 200' },
-    { name: 'Triglycerides',     unit: 'mg/dL', range: '< 150' },
-    { name: 'HDL Cholesterol',   unit: 'mg/dL', range: '> 40'  },
-    { name: 'LDL Cholesterol',   unit: 'mg/dL', range: '< 100' },
-    { name: 'VLDL Cholesterol',  unit: 'mg/dL', range: '5 - 40'}
-  ],
-  kft: [
-    { name: 'Blood Urea',       unit: 'mg/dL',  range: '15 - 40'   },
-    { name: 'Serum Creatinine', unit: 'mg/dL',  range: '0.6 - 1.2' },
-    { name: 'Uric Acid',        unit: 'mg/dL',  range: '3.4 - 7.0' },
-    { name: 'Sodium',           unit: 'mEq/L',  range: '135 - 145' },
-    { name: 'Potassium',        unit: 'mEq/L',  range: '3.5 - 5.1' }
-  ],
-  tft: [
-    { name: 'T3 (Triiodothyronine)', unit: 'ng/dL',  range: '70 - 204'   },
-    { name: 'T4 (Thyroxine)',        unit: 'ug/dL',  range: '4.5 - 11.2' },
-    { name: 'TSH',                   unit: 'uIU/mL', range: '0.4 - 4.2'  }
-  ]
-};
-
-function loadTemplate(templateKey) {
-  if (!templateKey) return;
-  (testTemplates[templateKey] || []).forEach(f => addResultRow(f.name, f.unit, f.range));
-}
+// Hardcoded templates removed per user request
 
 let previousPatientResults = {};
+
 function getNormalRange(param, ageStr, sex) {
-  if (!ageStr) return param.normal_range || '';
-  
-  let ageInYears = 0;
-  let ageInDays = 0;
-  const val = parseFloat(ageStr);
-  if (isNaN(val)) return param.normal_range || '';
-  
-  const str = ageStr.toString().toLowerCase();
-  if (str.includes('d')) {
-      ageInDays = val;
-      ageInYears = val / 365;
-  } else if (str.includes('m')) {
-      ageInDays = val * 30;
-      ageInYears = val / 12;
-  } else {
-      ageInYears = val;
-      ageInDays = val * 365;
-  }
+    if (!ageStr) return param.normal_range || '';
+    
+    let ageInYears = 0;
+    let ageInDays = 0;
+    const val = parseFloat(ageStr);
+    if (isNaN(val)) return param.normal_range || '';
+    
+    const str = ageStr.toString().toLowerCase();
+    if (str.includes('d')) {
+        ageInDays = val;
+        ageInYears = val / 365;
+    } else if (str.includes('m')) {
+        ageInDays = val * 30;
+        ageInYears = val / 12;
+    } else {
+        ageInYears = val;
+        ageInDays = val * 365;
+    }
 
-  let range = '';
-  const sl = sex ? sex.toLowerCase() : '';
+    let range = '';
+    const s = (sex || '').toLowerCase();
 
-  if (ageInDays <= 28 && param.normal_range_newborn) {
-      range = param.normal_range_newborn;
-  } else if (ageInDays > 28 && ageInYears < 1 && param["normal_range_Infant(29 days 12 months)"]) {
-      range = param["normal_range_Infant(29 days 12 months)"];
-  } else if (ageInYears >= 1 && ageInYears <= 3 && param["normal_range_toddler(1 & 3 years)"]) {
-      range = param["normal_range_toddler(1 & 3 years)"];
-  } else if (ageInYears >= 4 && ageInYears <= 5 && param["normal_range_preschool_child(4 & 5 years)"]) {
-      range = param["normal_range_preschool_child(4 & 5 years)"];
-  } else if (ageInYears >= 6 && ageInYears <= 12 && param["normal_range_school_child(6 & 12 years)"]) {
-      range = param["normal_range_school_child(6 & 12 years)"];
-  } else if (ageInYears >= 13 && ageInYears <= 17 && param["normal_range_adolescent(13 & 17 years)"]) {
-      range = param["normal_range_adolescent(13 & 17 years)"];
-  } else if (ageInYears >= 18 && ageInYears <= 59 && param["normal_range_adult(18 & 59 years)"]) {
-      range = param["normal_range_adult(18 & 59 years)"];
-  } else if (ageInYears >= 60 && ageInYears <= 74 && param["normal_range_elderly(60 & 74 years)"]) {
-      range = param["normal_range_elderly(60 & 74 years)"];
-  } else if (ageInYears >= 75 && param["normal_range_senior_elderly(75+ years)"]) {
-      range = param["normal_range_senior_elderly(75+ years)"];
-  } else if (ageInYears < 18 && param.normal_range_child) {
-      range = param.normal_range_child;
-  }
+    if (ageInDays <= 28) range = param.normal_range_newborn;
+    else if (ageInDays > 28 && ageInYears <= 1) range = param["normal_range_Infant(29 days 12 months)"] || param["normal_range_Infant(29 days-12 months)"];
+    else if (ageInYears > 1 && ageInYears <= 3) range = param["normal_range_toddler(1 & 3 years)"] || param["normal_range_toddler(1-3 years)"];
+    else if (ageInYears > 3 && ageInYears <= 5) range = param["normal_range_preschool_child(4 & 5 years)"] || param["normal_range_preschool_child(4-5 years)"];
+    else if (ageInYears > 5 && ageInYears <= 12) range = param["normal_range_school_child(6 & 12 years)"] || param["normal_range_school_child(6-12 years)"];
+    else if (ageInYears > 12 && ageInYears <= 17) range = param["normal_range_adolescent(13 & 17 years)"] || param["normal_range_adolescent(13-17 years)"];
+    else if (ageInYears >= 60 && ageInYears <= 74) range = param["normal_range_elderly(60 & 74 years)"] || param["normal_range_elderly(60-74 years)"];
+    else if (ageInYears >= 75) range = param["normal_range_senior_elderly(75+ years)"];
+    
+    if (!range) {
+        if (s.startsWith('m') && param.normal_range_male) range = param.normal_range_male;
+        else if (s.startsWith('f') && param.normal_range_female) range = param.normal_range_female;
+        else if (ageInYears >= 18 && ageInYears <= 59 && param["normal_range_adult(18 & 59 years)"]) range = param["normal_range_adult(18 & 59 years)"];
+        else if (ageInYears >= 18 && ageInYears <= 59 && param["normal_range_adult(18-59 years)"]) range = param["normal_range_adult(18-59 years)"];
+        else range = param.normal_range;
+    }
 
-  if (!range) {
-      if (sl.startsWith('m') && param.normal_range_male) range = param.normal_range_male;
-      else if (sl.startsWith('f') && param.normal_range_female) range = param.normal_range_female;
-  }
-  return range || param.normal_range || '';
+    return range || param.normal_range || '';
 }
 
 async function openResultModal(orderId, rawTestName, patientId = null) {
@@ -1831,6 +1699,7 @@ async function openResultModal(orderId, rawTestName, patientId = null) {
   const targetOrder = allOrders.find(o => o.order_id === orderId);
   const pAge = targetOrder ? targetOrder.age : '';
   const pSex = targetOrder ? targetOrder.sex : '';
+
 
   // Attempt to parse JSON array, otherwise fallback to simple string handling
   let testArray = [];
@@ -1855,6 +1724,8 @@ async function openResultModal(orderId, rawTestName, patientId = null) {
 
   // Reset attachment grid
   renderAttachGrid();
+
+  // Patient form removed
 
   // Reset test search
   document.getElementById('test-search-input').value = '';
@@ -1914,6 +1785,15 @@ function closeResultModal() {
 
 function addResultRow(name = '', unit = '', range = '', category = 'lab') {
   const tbody = document.getElementById('result-params-tbody');
+  
+  // Prevent duplicate parameters
+  if (name) {
+    const existing = Array.from(tbody.querySelectorAll('input[name="param_name"]')).map(inp => inp.value.trim().toLowerCase());
+    if (existing.includes(name.trim().toLowerCase())) {
+      return;
+    }
+  }
+
   const tr    = document.createElement('tr');
   tr.className = 'row-anim';
   
@@ -2057,7 +1937,7 @@ async function saveResult() {
     // legacy key for compatibility
     if (rmAttachments.length) formData.append('report_file', rmAttachments[0].blob, rmAttachments[0].name);
 
-    const data = await lisApi('POST', `/api/laboratory/orders/${encodeURIComponent(activeResultOrderId)}/result`, formData);
+    const data = await lisApi('POST', `/api/laboratory/ipd-orders/${encodeURIComponent(activeResultOrderId)}/result`, formData);
 
     btn.disabled  = false;
     btn.innerHTML = '<i class="fas fa-check-circle"></i> Submit Final Results';
@@ -2090,3 +1970,4 @@ function printOrderResult(orderId) {
   form.submit();
 }
 </script>
+
