@@ -84,7 +84,7 @@ class LaboratoryController extends BaseController
 
             require_once __DIR__ . '/../../../config/gemini_config.php';
             
-            $prompt = "You are a laboratory information system assistant. Given the lab test name '{$testName}', provide a comprehensive list of standard parameters for this test. Return ONLY a raw JSON array of objects without any markdown formatting or code blocks. Each object must strictly have these keys: 'parameter_name', 'unit', 'normal_range', 'normal_range_male', 'normal_range_female', 'normal_range_child', 'normal_range_newborn', 'normal_range_Infant(29 days–12 months)', 'normal_range_toddler(1–3 years)', 'normal_range_preschool_child(4–5 years)', 'normal_range_school_child(6–12 years)', 'normal_range_adolescent(13–17 years)', 'normal_range_adult(18–59 years)', 'normal_range_elderly(60–74 years)', 'normal_range_senior_elderly(75+ years)'. Leave age fields as null or empty string if not applicable.";
+            $prompt = "You are a laboratory information system assistant. Given the lab test name '{$testName}', EXHAUSTIVELY list EVERY single standard parameter commonly associated with this test profile. For example, if it's a Complete Blood Count (CBC) or Complete Hemogram, you MUST list all 20+ parameters (RBC, WBC, Hemoglobin, Hematocrit, MCV, MCH, MCHC, Platelets, Neutrophils, Lymphocytes, Monocytes, Eosinophils, Basophils, PCV, etc.). DO NOT truncate, summarize, or skip any parameters. Provide the complete and full panel. Return ONLY a raw JSON array of objects without any markdown formatting or code blocks. Each object must strictly have these keys: 'parameter_name', 'unit', 'normal_range', 'normal_range_male', 'normal_range_female', 'normal_range_child', 'normal_range_newborn', 'normal_range_Infant(29 days–12 months)', 'normal_range_toddler(1–3 years)', 'normal_range_preschool_child(4–5 years)', 'normal_range_school_child(6–12 years)', 'normal_range_adolescent(13–17 years)', 'normal_range_adult(18–59 years)', 'normal_range_elderly(60–74 years)', 'normal_range_senior_elderly(75+ years)'. Leave age fields as null or empty string if not applicable.";
             
             $payload = [
                 'contents' => [
@@ -97,7 +97,7 @@ class LaboratoryController extends BaseController
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 90);
             
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -105,10 +105,14 @@ class LaboratoryController extends BaseController
             
             if ($httpCode !== 200 || !$response) {
                 $errorMsg = 'Failed to communicate with AI service.';
-                if ($response) {
+                if (!$response) {
+                    $errorMsg .= ' cURL Error: ' . curl_error($ch);
+                } else {
                     $errData = json_decode($response, true);
                     if (isset($errData['error']['message'])) {
                         $errorMsg .= ' API Error: ' . $errData['error']['message'];
+                    } else {
+                        $errorMsg .= ' Raw HTTP Code: ' . $httpCode;
                     }
                 }
                 $this->respondError($errorMsg, 200);
