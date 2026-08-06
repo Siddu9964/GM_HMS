@@ -1072,8 +1072,28 @@ $desigOptionsHtml .= "<option value=\"Other\">+ Add New (Other)</option>";
 
                     Object.keys(staff).forEach(key => {
                         const input = document.querySelector(`[name="${key}"]`);
-                        // Skip password, file inputs, and non-existent fields
-                        if (input && key !== 'password' && !fileFields.includes(key) && input.type !== 'file') {
+                        
+                        if (key === 'designation') {
+                            const desigSelect = document.getElementById('designationSelect');
+                            const desigManual = document.getElementById('designationManual');
+                            const desigValue = staff[key] || '';
+                            
+                            let optionExists = false;
+                            if (desigSelect) {
+                                Array.from(desigSelect.options).forEach(opt => {
+                                    if (opt.value === desigValue) optionExists = true;
+                                });
+                                
+                                if (optionExists || desigValue === '') {
+                                    desigSelect.value = desigValue;
+                                    toggleDesignationInput(desigSelect);
+                                } else {
+                                    desigSelect.value = 'Other';
+                                    toggleDesignationInput(desigSelect);
+                                    if (desigManual) desigManual.value = desigValue;
+                                }
+                            }
+                        } else if (input && key !== 'password' && !fileFields.includes(key) && input.type !== 'file') {
                             input.value = staff[key] || '';
                         }
                     });
