@@ -122,7 +122,7 @@ class OpdBillingModel
 
     private function resolveItemType($type)
     {
-        $valid = ['Consultation', 'Investigation', 'Procedure', 'Radiology', 'Scan', 'X-Ray', 'Blood Test', 'Medicine', 'Other'];
+        $valid = ['Consultation', 'Investigation', 'Procedure', 'Radiology', 'Scan', 'X-Ray', 'Blood Test', 'Medicine', 'Other', 'Follow-up Fee'];
         if (in_array($type, $valid))
             return $type;
         $t = strtolower($type ?? '');
@@ -541,14 +541,34 @@ class OpdBillingModel
 
     public function getConsultationFeeByPatient($patientId)
     {
-        $sql = "SELECT d.consultation_fee 
+        $sql = "SELECT d.consultation_fee, a.appointment_date 
                 FROM appointments a
                 JOIN doctors d ON a.doctor_id = d.doctor_id
                 WHERE a.patient_id = ?
                 ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT 1";
         $result = $this->db->fetchOne($sql, [$patientId]);
         
-        return $result ? (float)$result['consultation_fee'] : 0.00;
+        if (!$result) {
+            return ['fee' => 0.00, 'is_followup' => false];
+        }
+
+        $fee = (float)$result['consultation_fee'];
+        $lastAppointmentDate = $result['appointment_date'];
+        $isFollowup = false;
+
+        // 3-day validation rule
+        if ($lastAppointmentDate) {
+            $today = strtotime('today');
+            $lastDate = strtotime(date('Y-m-d', strtotime($lastAppointmentDate)));
+            $daysDiff = ($today - $lastDate) / 86400; // 86400 seconds in a day
+            
+            if ($daysDiff >= 0 && $daysDiff <= 3) {
+                $fee = 0.00;
+                $isFollowup = true;
+            }
+        }
+
+        return ['fee' => $fee, 'is_followup' => $isFollowup];
     }
 
     /**

@@ -433,16 +433,26 @@ class OpdBillingManager {
         try {
             const result = await this.api('GET', `/api/billing/opd/consultation-fee?patient_id=${encodeURIComponent(patientId)}&appointment_id=${encodeURIComponent(appointmentId)}`);
             if (result && result.consultation_fee !== undefined) {
-                const fee = parseFloat(result.consultation_fee) || 0;
-                const consultItem = this.items.find(i => i.type === 'Consultation');
-                if (consultItem) {
-                    this._updateItem(consultItem.id, 'price', fee);
+                const isFollowup = result.is_followup === true;
+                if (isFollowup) {
+                    // Remove Registration and Consultation rows
+                    const rowsToRemove = this.items.filter(i => i.type === 'Registration Fee' || i.type === 'Consultation');
+                    rowsToRemove.forEach(i => this.removeItemRow(i.id));
                     
-                    // Also explicitly update the input field visually
-                    const row = document.getElementById('row-' + consultItem.id);
-                    if (row) {
-                        const priceInput = row.querySelector('td:nth-child(4) input[type="number"]');
-                        if (priceInput) priceInput.value = fee;
+                    // Add Follow-up Fee row
+                    this.addItemRow('Follow-up Fee', 'Follow-up Fee', 1, 300);
+                } else {
+                    const fee = parseFloat(result.consultation_fee) || 0;
+                    const consultItem = this.items.find(i => i.type === 'Consultation');
+                    if (consultItem) {
+                        this._updateItem(consultItem.id, 'price', fee);
+                        
+                        // Also explicitly update the input field visually
+                        const row = document.getElementById('row-' + consultItem.id);
+                        if (row) {
+                            const priceInput = row.querySelector('td:nth-child(4) input[type="number"]');
+                            if (priceInput) priceInput.value = fee;
+                        }
                     }
                 }
             }
@@ -584,7 +594,7 @@ class OpdBillingManager {
     // ─── Items ────────────────────────────────────────────────
     // Valid enum values in opd_billing_items.item_type
     _validItemTypes() {
-        return ['Consultation', 'Investigation', 'Procedure', 'Radiology', 'Scan', 'X-Ray', 'Blood Test', 'Medicine', 'Other', 'Emergency', 'Registration Fee'];
+        return ['Consultation', 'Investigation', 'Procedure', 'Radiology', 'Scan', 'X-Ray', 'Blood Test', 'Medicine', 'Other', 'Emergency', 'Registration Fee', 'Follow-up Fee'];
     }
 
     _resolveItemType(type) {
@@ -615,7 +625,7 @@ class OpdBillingManager {
         tr.innerHTML = `
             <td>
                 <select onchange="opdBilling._updateItem(${id},'type',this.value)">
-                    ${['Consultation', 'Investigation', 'Procedure', 'Radiology', 'Scan', 'X-Ray', 'Blood Test', 'Medicine', 'Other', 'Emergency', 'Registration Fee']
+                    ${['Consultation', 'Investigation', 'Procedure', 'Radiology', 'Scan', 'X-Ray', 'Blood Test', 'Medicine', 'Other', 'Emergency', 'Registration Fee', 'Follow-up Fee']
                 .map(t => `<option value="${t}" ${t === resolvedType ? 'selected' : ''}>${t}</option>`).join('')}
                 </select>
             </td>
@@ -651,13 +661,24 @@ class OpdBillingManager {
             if (value === 'Consultation') autoName = 'General Consultation';
             
             // Only autofill if the current name is empty or was likely auto-filled
-            const defaultNames = ['Consultation', 'General Consultation', 'Registration Fee', 'Emergency', 'Investigation', 'Procedure', 'Radiology', 'Scan', 'X-Ray', 'Blood Test', 'Medicine', 'Other'];
+            const defaultNames = ['Consultation', 'General Consultation', 'Registration Fee', 'Emergency', 'Investigation', 'Procedure', 'Radiology', 'Scan', 'X-Ray', 'Blood Test', 'Medicine', 'Other', 'Follow-up Fee'];
             if (!item.name || defaultNames.includes(item.name)) {
                 item.name = autoName;
                 const row = document.getElementById('row-' + id);
                 if (row) {
                     const nameInput = row.querySelector('td:nth-child(2) input[type="text"]');
                     if (nameInput) nameInput.value = autoName;
+                }
+            }
+
+            if (value === 'Follow-up Fee') {
+                item.price = 300;
+                const row = document.getElementById('row-' + id);
+                if (row) {
+                    const priceInput = row.querySelector('td:nth-child(4) input[type="number"]');
+                    if (priceInput) priceInput.value = 300;
+                    const totalEl = document.getElementById('rowTotal-' + id);
+                    if (totalEl) totalEl.value = (item.qty * item.price - (item.discount || 0)).toFixed(2);
                 }
             }
         }

@@ -64,15 +64,15 @@ $printedBy = $_SESSION['username'] ?? 'Technician';
         
         /* Table */
         table { width: 100%; border-collapse: collapse; margin-bottom: 15px; border: none; }
-        thead th { border-bottom: 1px solid #333; padding: 8px 4px; font-size: 11px; font-weight: 700; color: #111; text-align: center; }
+        thead th { border-bottom: 1px solid #333; padding: 10px 6px; font-size: 13px; font-weight: 700; color: #111; text-align: center; }
         thead th:first-child { text-align: left; }
         
-        tbody td { padding: 4px 4px; font-size: 11px; text-align: center; color: #111; }
+        tbody td { padding: 8px 6px; font-size: 13px; text-align: center; color: #111; line-height: 1.4; }
         tbody td:first-child { text-align: left; padding-left: 0; }
 
-        .dept-header { font-size: 12px; font-weight: 700; text-decoration: underline; text-align: left !important; padding: 12px 0 2px 0; }
-        .sample-type { font-size: 11px; font-style: italic; color: #333; padding-bottom: 8px; text-align: left !important; }
-        .test-title { font-weight: 700; font-size: 11px; padding: 6px 0 4px 0; color: #111; text-align: left !important; }
+        .dept-header { font-size: 14px; font-weight: 700; text-decoration: underline; text-align: left !important; padding: 16px 0 4px 0; }
+        .sample-type { font-size: 13px; font-style: italic; color: #333; padding-bottom: 12px; text-align: left !important; }
+        .test-title { font-weight: 700; font-size: 13px; padding: 10px 0 6px 0; color: #111; text-align: left !important; }
 
         .abnormal { font-weight: 800; color: #000; }
         
@@ -84,6 +84,7 @@ $printedBy = $_SESSION['username'] ?? 'Technician';
         #loading { text-align: center; padding: 50px; color: #64748b; font-size: 16px; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -116,8 +117,17 @@ $printedBy = $_SESSION['username'] ?? 'Technician';
             <div class="pf"><span class="pl">Sample Received</span><span class="pv" id="o-date-2">—</span></div>
             <div class="pf"><span class="pl">Report On</span><span class="pv" id="b-date">—</span></div>
             <div class="pf"><span class="pl">Bill Creation Date</span><span class="pv" id="o-date-3">—</span></div>
-            <div class="pf" style="align-items: center;"><span class="pl">Bar Code</span><span class="pv"><svg id="barcode"></svg></span></div>
             <div class="pf"><span class="pl">Mobile No</span><span class="pv" id="p-phone">—</span></div>
+            <div class="pf" style="align-items: flex-start; margin-top: 5px;">
+                <span class="pl">Bar Code & QR</span>
+                <span class="pv" style="display: flex; flex-direction: column; gap: 4px;">
+                    <strong id="bc-patient-name" style="font-size:11px;"></strong>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <svg id="barcode"></svg>
+                        <canvas id="qrcode" title="Scan for Patient Profile"></canvas>
+                    </div>
+                </span>
+            </div>
         </div>
     </div>
     
@@ -194,6 +204,22 @@ async function loadOrderAndResult() {
         });
     } catch(e) { console.error('Barcode rendering failed', e); }
     
+    // Render QR Code for complete patient details
+    try {
+        let pId = (order && order.patient_id) ? order.patient_id : (result && result.patient_id ? result.patient_id : '');
+        if(pId) {
+            const profileUrl = window.location.origin + '/GM_HMS/reception_view/patient_profile.php?id=' + encodeURIComponent(pId);
+            QRCode.toCanvas(document.getElementById('qrcode'), profileUrl, { 
+                width: 50, 
+                margin: 0,
+                color: {
+                    dark: '#000000',
+                    light: '#ffffff'
+                }
+            });
+        }
+    } catch(e) { console.error('QR rendering failed', e); }
+    
     const repDate = result ? (result.result_date + ' ' + result.result_time.slice(0,5)) : '--';
     document.getElementById('b-date').textContent = repDate;
     
@@ -210,6 +236,8 @@ async function loadOrderAndResult() {
 
     if (order) {
       document.getElementById('p-name').textContent = order.patient_name || '—';
+      const bcPatientName = document.getElementById('bc-patient-name');
+      if (bcPatientName) bcPatientName.textContent = order.patient_name || '—';
       document.getElementById('p-id').textContent = order.patient_id || '—';
       document.getElementById('p-phone').textContent = order.phone || '—';
       

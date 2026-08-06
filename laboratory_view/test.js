@@ -148,7 +148,7 @@ function renderOrders(orders) {
           </div>
         </div>
       </td>
-      <td>
+      <td class="lo-col-svcid">
         <div style="font-size:.82rem;font-weight:700;color:var(--p);font-family:monospace;">
           ${escHtml(finalTestId)}
         </div>
@@ -158,11 +158,14 @@ function renderOrders(orders) {
           ${escHtml(finalTestName)}
         </div>
       </td>
-      <td>
+      <td class="lo-col-doctor">
         <div style="font-size:.8rem;font-weight:600;color:var(--txt);max-width:140px;white-space:normal;word-wrap:break-word;">${escHtml(o.doctor_name || '—')}</div>
         <div style="font-size:.68rem;color:var(--txt-mut);">${escHtml(o.specialization||'')}</div>
       </td>
-      <td style="font-size:.75rem;color:var(--txt-mut);white-space:nowrap;">${dt} ${tm}</td>
+      <td class="lo-col-datetime" style="font-size:.75rem;color:var(--txt-mut);white-space:nowrap;">${dt} ${tm}</td>
+      <td style="text-align:center; vertical-align:middle;">
+        <span class="lo-badge ${sCls}"><span class="lo-dot"></span>${escHtml(o.status || 'Ordered')}</span>
+      </td>
       <td style="text-align:center; vertical-align:middle;">
         <button class="lb lb-primary" style="padding: 4px 10px; font-size: 0.75rem; width:100%; font-weight:700; gap:5px;" title="Enter Results"
                 onclick="openResultModal('${escHtml(o.order_id)}', decodeURIComponent(escape(atob('${rawTestNameB64}'))), '${escHtml(o.patient_id)}')">
@@ -191,11 +194,21 @@ function quickFilter(filter, el) {
   el.classList.add('active');
   const statusEl   = document.getElementById('filter-status');
   const priorityEl = document.getElementById('filter-priority');
-  statusEl.value   = '';
-  priorityEl.value = '';
-  if (filter === 'pending')   statusEl.value   = 'Ordered';
-  if (filter === 'completed') statusEl.value   = 'Completed';
-  if (filter === 'urgent')    priorityEl.value = 'Urgent';
+  const dateEl     = document.getElementById('filter-date');
+  if (statusEl) statusEl.value = '';
+  if (priorityEl) priorityEl.value = '';
+  
+  if (filter === 'today') {
+    if (dateEl) dateEl.value = new Date().toISOString().slice(0,10);
+  } else if (filter === 'all') {
+    if (dateEl) dateEl.value = '';
+  } else if (filter === 'pending') {
+    if (statusEl) statusEl.value = 'Ordered';
+  } else if (filter === 'completed') {
+    if (statusEl) statusEl.value = 'Completed';
+  } else if (filter === 'urgent') {
+    if (priorityEl) priorityEl.value = 'Urgent';
+  }
   loadOrders();
 }
 

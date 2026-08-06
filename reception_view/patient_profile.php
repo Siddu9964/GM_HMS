@@ -528,6 +528,9 @@ $patientId = $_GET['id'] ?? '';
                     <div class="gp-tab" onclick="switchTab('bills')" id="tab-bills">
                         <i class="fas fa-file-invoice-dollar"></i> Bills <span class="gp-cnt" id="billCount">0</span>
                     </div>
+                    <div class="gp-tab" onclick="switchTab('lab')" id="tab-lab">
+                        <i class="fas fa-flask"></i> Lab Results <span class="gp-cnt" id="labCount">0</span>
+                    </div>
                     <div class="gp-tab" onclick="switchTab('timeline')" id="tab-timeline"><i class="fas fa-stream"></i> Timeline</div>
                 </div>
 
@@ -572,6 +575,25 @@ $patientId = $_GET['id'] ?? '';
                             </tr></thead>
                             <tbody>
                                 <tr><td colspan="5" style="text-align:center;padding:40px;color:#9a8f82;">Loading bills…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- LAB RESULTS TAB -->
+                <div id="lab-content" class="gp-panel">
+                    <div style="overflow-x:auto;">
+                        <table id="labTable">
+                            <thead><tr>
+                                <th>Date</th>
+                                <th>Order ID</th>
+                                <th>Test Name</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr></thead>
+                            <tbody>
+                                <tr><td colspan="6" style="text-align:center;padding:40px;color:#9a8f82;">Loading lab results…</td></tr>
                             </tbody>
                         </table>
                     </div>

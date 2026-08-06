@@ -190,6 +190,7 @@ function loadPatientProfile() {
                 // Fetch dependent data now that the hero card is rendered
                 loadAppointments();
                 loadBills();
+                loadLabResults();
             } else {
                 throw new Error(res.message || 'Patient not found');
             }
@@ -526,5 +527,70 @@ function loadBills() {
             console.error("Error loading bills:", err);
             document.querySelector('#billsTable tbody').innerHTML =
                 `<tr><td colspan="5" style="text-align:center;color:#e65100;padding:32px;font-weight:600;">Failed to load bills.</td></tr>`;
+        });
+}
+
+/* ─── LOAD LAB RESULTS ─────────────────────────────────────── */
+function loadLabResults() {
+    fetch(`/GM_HMS/api/get_patient_lab_results.php?patient_id=${patientId}`)
+        .then(res => res.json())
+        .then(res => {
+            const tbody = document.querySelector('#labTable tbody');
+            if (res.success && res.data && res.data.length > 0) {
+                const labCountEl = document.getElementById('labCount');
+                if (labCountEl) labCountEl.textContent = res.data.length;
+
+                const rowsHtml = res.data.map(lab => {
+                    let sc = 'gp-pending';
+                    let displayStatus = lab.status || 'Pending';
+                    const stStr = displayStatus.toLowerCase();
+                    if (stStr.includes('reviewed')) {
+                        sc = 'gp-done';
+                    } else if (stStr.includes('critical')) {
+                        sc = 'gp-cancel';
+                    }
+
+                    const lDate = lab.result_date 
+                        ? new Date(lab.result_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                        : '—';
+                    
+                    let testName = lab.test_name || '—';
+                    try {
+                        const parsed = JSON.parse(testName);
+                        if (Array.isArray(parsed)) testName = parsed.join(', ');
+                    } catch(e) {}
+                    
+                    let actionHtml = '—';
+                    if (lab.report_file) {
+                        actionHtml = `<a href="/GM_HMS/${lab.report_file}" target="_blank" class="gp-pill gp-done" style="text-decoration:none;"><i class="fas fa-file-pdf"></i> View Report</a>`;
+                    } else {
+                        actionHtml = `<a href="/GM_HMS/laboratory_view/print_result.php?order_id=${lab.order_id}&source=${lab.source}" target="_blank" class="gp-pill gp-sched" style="text-decoration:none;"><i class="fas fa-print"></i> Print</a>`;
+                    }
+
+                    return `<tr>
+                        <td><div class="gp-td-d1">${lDate}</div></td>
+                        <td><span class="gp-bid">${lab.order_id}</span></td>
+                        <td>${testName}</td>
+                        <td><span class="gp-badge" style="color:#5a5047; border: 1.5px solid #ede8dd; background: #faf8f4;">${lab.source}</span></td>
+                        <td><span class="gp-pill ${sc}">${displayStatus}</span></td>
+                        <td>${actionHtml}</td>
+                    </tr>`;
+                }).join('');
+
+                tbody.innerHTML = rowsHtml;
+            } else {
+                tbody.innerHTML = `
+                    <tr><td colspan="6">
+                        <div class="gp-empty">
+                            <div class="gp-empty-ico"><i class="fas fa-flask"></i></div>
+                            <p>No lab results found for this patient.</p>
+                        </div>
+                    </td></tr>`;
+            }
+        })
+        .catch(err => {
+            console.error("Error loading lab results:", err);
+            document.querySelector('#labTable tbody').innerHTML =
+                `<tr><td colspan="6" style="text-align:center;color:#e65100;padding:32px;font-weight:600;">Failed to load lab results.</td></tr>`;
         });
 }

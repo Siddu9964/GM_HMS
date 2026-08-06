@@ -1,3 +1,34 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$branch = strtolower($_SESSION['hospital_branch'] ?? $_SESSION['branch'] ?? '');
+$db_name = ($branch === 'basaveshwaranagar' || $branch === 'basaveshwranagara') ? 'hmsc_basaveshwranagara' : 'hmsci';
+
+$designationsList = [];
+$conn = new mysqli('localhost', 'root', '', $db_name);
+if (!$conn->connect_error) {
+    $res = $conn->query("SELECT DISTINCT designation FROM staff WHERE designation IS NOT NULL AND designation != '' ORDER BY designation ASC");
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            if (strtolower($row['designation']) !== 'staff') {
+                $designationsList[] = $row['designation'];
+            }
+        }
+    }
+    $conn->close();
+}
+
+$roleOptionsHtml = '<option value="">Select Access Role</option><option value="Staff">Staff</option>';
+$desigOptionsHtml = '<option value="">Select Designation</option><option value="Staff">Staff</option>';
+
+foreach ($designationsList as $d) {
+    $safe_d = htmlspecialchars($d);
+    $roleOptionsHtml .= "<option value=\"$safe_d\">$safe_d</option>";
+    $desigOptionsHtml .= "<option value=\"$safe_d\">$safe_d</option>";
+}
+$desigOptionsHtml .= "<option value=\"Other\">+ Add New (Other)</option>";
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -679,7 +710,12 @@
                     <div class="form-grid cols-4">
                         <div class="input-group">
                             <label>Designation <span class="required">*</span></label>
-                            <input type="text" name="designation" required placeholder="e.g. Senior Nurse">
+                            <div style="display: flex; gap: 8px;">
+                                <select name="designation" id="designationSelect" required onchange="toggleDesignationInput(this)" style="flex: 1;">
+                                    <?php echo $desigOptionsHtml; ?>
+                                </select>
+                                <input type="text" id="designationManual" placeholder="Type new designation..." style="display: none; flex: 1;" oninput="syncManualDesignationToRole()">
+                            </div>
                         </div>
                         <div class="input-group">
                             <label>Qualification</label>
@@ -768,7 +804,7 @@
                         <div class="input-group" style="grid-column: span 2;">
                             <label>Access Role</label>
                             <select name="role" id="accessRoleSelect">
-                                <option value="">Select Access Role</option>
+                                <?php echo $roleOptionsHtml; ?>
                             </select>
                         </div>
                         <div class="input-group">
@@ -804,31 +840,10 @@
         let isEditMode = false;
         
         window.addEventListener('DOMContentLoaded', () => {
-            loadDesignations();
             loadStaff();
         });
         
-        async function loadDesignations() {
-            try {
-                const response = await fetch('/GM_HMS/api/staff/designations');
-                const result = await response.json();
-                if (result.success) {
-                    const roleSelect = document.getElementById('accessRoleSelect');
-                    const options = ['<option value="">Select Access Role</option>'];
-                    // Default generic role fallback
-                    options.push('<option value="Staff">Staff</option>');
-                    result.data.forEach(d => {
-                        // Don't duplicate staff if it's already returned
-                        if (d.toLowerCase() !== 'staff') {
-                            options.push(`<option value="${d}">${d}</option>`);
-                        }
-                    });
-                    roleSelect.innerHTML = options.join('');
-                }
-            } catch (error) {
-                console.error('Error loading designations:', error);
-            }
-        }
+
         
         async function loadStaff() {
             try {
@@ -852,6 +867,67 @@
             document.getElementById('card-total-staff').textContent = allStaff.length;
             document.getElementById('card-active-staff').textContent = allStaff.filter(s => s.status === 'Active').length;
             document.getElementById('card-duty-staff').textContent = allStaff.filter(s => s.status === 'Active').length; // Simplified for now
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) {
+                sidebar.classList.toggle('-translate-x-full');
+            }
+        }
+        
+        function toggleDesignationInput(selectElement) {
+            const manualInput = document.getElementById('designationManual');
+            if (!manualInput) return;
+            
+            if (selectElement.value === 'Other') {
+                manualInput.style.display = 'block';
+                manualInput.name = 'designation';
+                manualInput.required = true;
+                selectElement.name = ''; // Remove name so the select isn't submitted
+                manualInput.focus();
+                syncManualDesignationToRole();
+            } else {
+                manualInput.style.display = 'none';
+                manualInput.name = ''; 
+                manualInput.required = false;
+                selectElement.name = 'designation'; // Restore name to select
+                
+                const customOption = document.getElementById('customRoleOption');
+                const roleSelect = document.getElementById('accessRoleSelect');
+                if (customOption) {
+                    if (roleSelect && roleSelect.value === customOption.value) {
+                        roleSelect.value = "";
+                    }
+                    customOption.remove();
+                }
+            }
+        }
+        
+        function syncManualDesignationToRole() {
+            const manualInput = document.getElementById('designationManual');
+            const roleSelect = document.getElementById('accessRoleSelect');
+            if (!manualInput || !roleSelect) return;
+            
+            const customVal = manualInput.value.trim();
+            let customOption = document.getElementById('customRoleOption');
+            
+            if (customVal !== '') {
+                if (!customOption) {
+                    customOption = document.createElement('option');
+                    customOption.id = 'customRoleOption';
+                    roleSelect.appendChild(customOption);
+                }
+                customOption.value = customVal;
+                customOption.textContent = customVal + ' (Custom)';
+            } else {
+                if (customOption) {
+                    if (roleSelect.value === customOption.value) {
+                        roleSelect.value = "";
+                    }
+                    customOption.remove();
+                }
+            }
         }
 
         function renderTable() {
@@ -932,6 +1008,16 @@
         function closeStaffModal() {
             document.getElementById('staffModal').classList.remove('active');
             document.getElementById('staffForm').reset();
+            
+            // Reset designation inputs to default state
+            const desigSelect = document.getElementById('designationSelect');
+            const desigManual = document.getElementById('designationManual');
+            if (desigSelect && desigManual) {
+                desigSelect.name = 'designation';
+                desigManual.name = '';
+                desigManual.style.display = 'none';
+                desigManual.required = false;
+            }
         }
         
         function calculateAge() {
@@ -974,6 +1060,16 @@
                     // File input fields that should be skipped
                     const fileFields = ['photo', 'id_proof', 'resume', 'address_proof'];
                     
+                    // Reset designation inputs to default state before populating
+                    const desigSelect = document.getElementById('designationSelect');
+                    const desigManual = document.getElementById('designationManual');
+                    if (desigSelect && desigManual) {
+                        desigSelect.name = 'designation';
+                        desigManual.name = '';
+                        desigManual.style.display = 'none';
+                        desigManual.required = false;
+                    }
+
                     Object.keys(staff).forEach(key => {
                         const input = document.querySelector(`[name="${key}"]`);
                         // Skip password, file inputs, and non-existent fields
