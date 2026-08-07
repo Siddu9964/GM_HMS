@@ -123,6 +123,12 @@ function lisSidebarActive($file, $current) {
     <span class="lis-nav-badge lab-notif-badge" id="sidebar-notif-count" style="display:none">0</span>
   </a>
 
+  <div class="lis-nav-section" style="margin-top: 1.5rem;">System</div>
+  <a href="/GM_HMS/view/admin_dashboard.php" class="lis-nav-item">
+    <i class="fas fa-home"></i>
+    <span>Exit to Admin</span>
+  </a>
+
   <!-- Sidebar Footer -->
   <div class="lis-sidebar-footer">
     <a href="/GM_HMS/login.php" onclick="return confirm('Logout from LIS?')">

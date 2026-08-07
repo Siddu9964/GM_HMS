@@ -96,6 +96,11 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
                 <span>Pharmacy View</span>
             </a>
 
+            <a href="/GM_HMS/laboratory_view/dashboard.php" class="sidebar-item <?php echo (strpos($current_path, 'laboratory_view') !== false) ? 'active' : ''; ?>">
+                <i class="fas fa-flask"></i>
+                <span>Lab View</span>
+            </a>
+
 
 
             <div class="pt-4 pb-2">
@@ -124,7 +129,7 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
 
             </a>
 
-            <a href="nurse_duty_scheduler.php"
+            <!-- <a href="nurse_duty_scheduler.php"
 
                 class="sidebar-item <?php echo isActive('nurse_duty_scheduler.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
 
@@ -132,7 +137,7 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
 
                 <span>Nurse Duty Scheduler</span>
 
-            </a>
+            </a> -->
 
             <a href="department_management.php"
 

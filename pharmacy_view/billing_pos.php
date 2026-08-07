@@ -585,9 +585,8 @@ include 'includes/ph_head.php';
                     <option value="cash">💵 Cash</option>
                     <option value="upi">📱 UPI</option>
                     <option value="card">💳 Card</option>
-                    <option value="card">💳 Affordplan</option>
-                    <option value="card">💳 DD</option>
-
+                    <option value="affordplan">💳 Affordplan</option>
+                    <option value="dd">💳 DD</option>
                   </select>
                 </div>
                 <div class="pay-input-grp">
