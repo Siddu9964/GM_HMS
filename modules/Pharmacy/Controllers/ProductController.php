@@ -64,4 +64,56 @@ class ProductController extends BaseController {
             $this->respondSuccess(null, "Product deleted.");
         } catch (Exception $e) { $this->handleException($e); }
     }
+
+    /** POST /api/pharmacy/products/autocomplete */
+    public function autoComplete(): void {
+        $this->restrictMethod('POST');
+        $this->requireAuth();
+        try {
+            $data = $this->getJsonInput();
+            if (empty($data['product_name'])) {
+                throw new Exception("Product name is required.");
+            }
+            
+            require_once __DIR__ . '/../../../config/gemini_config.php';
+            
+            $productName = $data['product_name'];
+            $prompt = "You are a medical data assistant. For the following commercial medical product name: '{$productName}', provide the full detailed generic composition (e.g. Paracetamol IP 500mg + Caffeine 50mg), strength (e.g. 500mg), formulation (e.g. Tablet, Syrup, Injection), therapeutic class (e.g. Analgesic, Antibiotic), and standard pack details (e.g. 10x10 Strips, 100ml Bottle). Return ONLY a JSON object with keys: 'content', 'strength', 'form', 'therapeutic', 'pack'. Do not wrap it in markdown or add any extra text.";
+            
+            $payload = [
+                'contents' => [
+                    ['parts' => [['text' => $prompt]]]
+                ],
+                'generationConfig' => [
+                    'temperature' => GEMINI_TEMPERATURE,
+                    'responseMimeType' => 'application/json'
+                ]
+            ];
+            
+            $ch = curl_init(getGeminiApiUrl());
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            curl_setopt($ch, CURLOPT_TIMEOUT, GEMINI_TIMEOUT);
+            
+            $response = curl_exec($ch);
+            if(curl_errno($ch)){
+                throw new Exception("Gemini API Error: " . curl_error($ch));
+            }
+            curl_close($ch);
+            
+            $result = json_decode($response, true);
+            if (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
+                $jsonStr = $result['candidates'][0]['content']['parts'][0]['text'];
+                $parsed = json_decode($jsonStr, true);
+                if ($parsed) {
+                    $this->respondSuccess($parsed, "Fetched details via AI.");
+                    return;
+                }
+            }
+            
+            throw new Exception("Could not parse AI response.");
+        } catch (Exception $e) { $this->handleException($e); }
+    }
 }

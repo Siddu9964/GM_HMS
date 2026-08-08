@@ -379,7 +379,12 @@ include 'includes/ph_head.php';
               <input type="text" class="ph-input" name="product_id" id="product_id" required readonly style="background:#E3F2EC;">
             </div>
             <div class="grid-item">
-              <label class="ph-label">Commercial Name *</label>
+              <label class="ph-label d-flex justify-content-between align-items-center">
+                <span>Commercial Name *</span>
+                <button type="button" class="btn btn-sm p-0 border-0" style="color:#D97706; font-size:0.7rem; font-weight:800;" onclick="autoFillProductDetails()" title="Auto-fill using AI">
+                  <i class="fas fa-magic me-1"></i>Auto-fill
+                </button>
+              </label>
               <input type="text" class="ph-input" name="product_name" id="product_name" required placeholder="e.g. Paracetamol 500mg">
             </div>
             <div class="grid-item">
@@ -639,5 +644,35 @@ function deleteProduct(sl_no) {
         const res = await fetch(API_BASE + 'pharmacy/products/' + sl_no, { method: 'DELETE' }).then(r => r.json());
         if (res.success) { PH.success('Removed'); loadProducts(); } else PH.error(res.message);
     });
+}
+
+async function autoFillProductDetails() {
+    const pName = document.getElementById('product_name').value.trim();
+    if (!pName) {
+        PH.error('Please enter a Commercial Name first to use AI Auto-fill.');
+        return;
+    }
+    
+    PH.loading('AI is fetching product details...');
+    try {
+        const res = await fetch(API_BASE + 'pharmacy/products/autocomplete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product_name: pName })
+        }).then(r => r.json());
+        
+        if (res.success && res.data) {
+            if (res.data.content) document.getElementById('content').value = res.data.content;
+            if (res.data.strength) document.getElementById('strength').value = res.data.strength;
+            if (res.data.form) document.getElementById('form').value = res.data.form;
+            if (res.data.therapeutic) document.getElementById('therapeutic').value = res.data.therapeutic;
+            if (res.data.pack) document.getElementById('pack').value = res.data.pack;
+            PH.success('Product details auto-filled successfully!');
+        } else {
+            PH.error(res.error || res.message || 'Could not fetch details.');
+        }
+    } catch (err) {
+        PH.error('Failed to connect to AI service.');
+    }
 }
 </script>

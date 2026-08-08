@@ -182,6 +182,7 @@ $router->add('GET',  '#^/api/pharmacy/patient-prescription/?$#',    'GM_HMS\\Con
 // ── Pharmacy: Products CRUD ───────────────────────────────────────────────────
 $router->add('GET',    '#^/api/pharmacy/products/?$#',              'GM_HMS\\Modules\\Pharmacy\\Controllers\\ProductController', 'index');
 $router->add('POST',   '#^/api/pharmacy/products/?$#',              'GM_HMS\\Modules\\Pharmacy\\Controllers\\ProductController', 'create');
+$router->add('POST',   '#^/api/pharmacy/products/autocomplete/?$#', 'GM_HMS\\Modules\\Pharmacy\\Controllers\\ProductController', 'autoComplete');
 $router->add('PUT',    '#^/api/pharmacy/products/([^/]+)/?$#',      'GM_HMS\\Modules\\Pharmacy\\Controllers\\ProductController', 'update');
 $router->add('DELETE', '#^/api/pharmacy/products/([^/]+)/?$#',      'GM_HMS\\Modules\\Pharmacy\\Controllers\\ProductController', 'delete');
 
