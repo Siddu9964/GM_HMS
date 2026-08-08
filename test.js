@@ -1,496 +1,5 @@
-<?php
-// Extend session to 8 hours for full-shift use
-ini_set('session.gc_maxlifetime', 28800);
-ini_set('session.cookie_lifetime', 28800);
-session_start();
-if (!isset($_SESSION["user_id"])) { header("Location: ../login.php"); exit; }
-require_once "includes/db.php";
-$pageTitle = "Indent Requests";
-$db = getDB();
-$threshold = (int)getSetting("low_stock_threshold", "20");
-$lowStockItems = $db->query("SELECT product_id, product_name, quantity FROM ph_product WHERE quantity <= $threshold ORDER BY quantity ASC")->fetchAll();
-$suppliers = $db->query("SELECT supplier_id, supplier_name, company_name, email FROM ph_suppliers WHERE status='active' ORDER BY company_name")->fetchAll();
-$pendingCount = (int)$db->query("SELECT COUNT(*) FROM ph_indent_requests WHERE status='pending'")->fetchColumn();
-$approvedCount = (int)$db->query("SELECT COUNT(*) FROM ph_indent_requests WHERE status='approved'")->fetchColumn();
-$urgentCount = (int)$db->query("SELECT COUNT(*) FROM ph_indent_requests WHERE priority='urgent' AND status='pending'")->fetchColumn();
-$totalCount = (int)$db->query("SELECT COUNT(*) FROM ph_indent_requests")->fetchColumn();
-include "includes/ph_head.php";
-?>
-
-<style>
-/* ==========================================
-   ADVANCED PROCUREMENT WORKSPACE (v3.0)
-   Lead UI/UX: Modern Medical SaaS Aesthetic
-   ========================================== */
-:root {
-  --proc-primary: #0EA5E9;   /* Sky 500 */
-  --proc-success: #10B981;   /* Emerald 500 */
-  --proc-warning: #F59E0B;   /* Amber 500 */
-  --proc-danger: #EF4444;    /* Red 500 */
-  --proc-slate: #0F172A;
-  --proc-bg: #F8FAFC;
-  --glass-white: rgba(255, 255, 255, 0.7);
-  --glass-border: 1px solid rgba(255, 255, 255, 0.5);
-  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.08);
-}
-
-.ph-page-body { background: var(--proc-bg); font-family: 'Plus Jakarta Sans', sans-serif; padding: 1.75rem !important; }
-
-/* ===== BENTO KPI GRID (GLASSMORPHISM) ===== */
-.bento-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-.bento-card {
-  background: var(--glass-white);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: var(--glass-border);
-  border-radius: 16px;
-  padding: 1rem 1.25rem;
-  box-shadow: var(--glass-shadow);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 1rem;
-}
-.bento-card:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); }
-.bento-card::before {
-  content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
-  transform: rotate(30deg); pointer-events: none;
-}
-
-.bento-icon {
-  width: 42px; height: 42px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.15rem; flex-shrink: 0;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-}
-.bento-val { font-size: 1.5rem; font-weight: 800; color: var(--proc-slate); letter-spacing: -1px; line-height: 1; margin-bottom: 0.15rem; }
-.bento-lbl { font-size: 0.7rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0; }
-
-/* ===== SMART SUGGESTION BANNER ===== */
-.smart-alert {
-  background: white; border-radius: 24px; padding: 1.25rem 2rem;
-  display: flex; align-items: center; gap: 2rem;
-  box-shadow: var(--glass-shadow); border: 1px solid #E2E8F0;
-  margin-bottom: 2.5rem; position: sticky; top: 1rem; z-index: 100;
-}
-.low-stock-scroll {
-  display: flex; gap: 1rem; overflow-x: auto; flex: 1; padding: 0.5rem 0;
-  scrollbar-width: none; -ms-overflow-style: none;
-}
-.low-stock-scroll::-webkit-scrollbar { display: none; }
-.stock-item-tag {
-  background: #F1F5F9; padding: 8px 16px; border-radius: 12px;
-  white-space: nowrap; font-size: 0.85rem; font-weight: 700; color: #475569;
-  border: 1px solid #E2E8F0; display: flex; align-items: center; gap: 8px;
-}
-
-/* ===== WORKSPACE TABLE (CARDS) ===== */
-#indentsTable { border-collapse: separate; border-spacing: 0 12px; }
-#indentsTable thead th { border: none; padding: 0 1.5rem 0.75rem; color: #94A3B8; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; }
-
-.indent-row {
-  background: white; border-radius: 20px; transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer;
-}
-.indent-row:hover { transform: scale(1.005); box-shadow: 0 12px 24px rgba(0,0,0,0.06); z-index: 2; }
-.indent-row td { padding: 1.5rem; border: none; vertical-align: middle; }
-.indent-row td:first-child { border-radius: 20px 0 0 20px; }
-.indent-row td:last-child { border-radius: 0 20px 20px 0; }
-
-/* Timeline Stepper */
-.stepper { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
-.step { width: 30px; height: 6px; border-radius: 10px; background: #E2E8F0; position: relative; }
-.step.active { background: var(--proc-primary); box-shadow: 0 0 10px rgba(14, 165, 233, 0.4); }
-
-/* Inline Inputs */
-.inline-qty {
-  width: 70px; border: 1px solid transparent; border-radius: 8px; padding: 4px 8px;
-  font-weight: 800; text-align: center; transition: all 0.2s;
-}
-.inline-qty:hover, .inline-qty:focus { border-color: var(--proc-primary); background: #F0F9FF; outline: none; }
-
-/* ===== GLASS DARK BULK BAR ===== */
-#bulkBar {
-  position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
-  background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px); padding: 1rem 2rem; border-radius: 24px;
-  display: flex; align-items: center; gap: 1.5rem; z-index: 1000;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
-}
-
-/* Animations */
-@keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
-.animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-</style>
-
-<div class="ph-wrap">
-<?php include "includes/pharmacy_sidebar.php"; ?>
-<div id="ph-content">
-<?php include "includes/pharmacy_navbar.php"; ?>
-<div class="ph-page-body">
-
-<!-- Page Header -->
-<div class="d-flex justify-content-between align-items-center mb-5">
-  <div>
-    <h1 class="ph-page-title" style="font-weight: 900; letter-spacing: -1px; color: var(--proc-slate);">Procurement Workspace</h1>
-    <p class="ph-page-subtitle" style="font-weight: 600; color: #64748B;">Manage internal requisitions and vendor workflows</p>
-  </div>
-  <div class="d-flex gap-3">
-    <button class="ph-btn ph-btn-outline" style="border-radius: 14px; padding: 0.75rem 1.25rem;" onclick="exportCSV()"><i class="fas fa-file-csv me-2"></i> Export Data</button>
-    <button class="ph-btn" style="background: var(--proc-primary); color: white; border-radius: 14px; padding: 0.75rem 1.5rem; font-weight: 700; box-shadow: 0 10px 20px rgba(14, 165, 233, 0.2);" onclick="openIndentModal()">
-      <i class="fas fa-plus me-2"></i> New Requisition
-    </button>
-  </div>
-</div>
-
-<!-- Bento KPI Grid -->
-<div class="bento-grid">
-  <div class="bento-card">
-    <div class="bento-icon" style="background: #E0F2FE; color: #0369A1;"><i class="fas fa-clock"></i></div>
-    <div style="flex: 1;">
-      <div class="bento-val" id="stat-pending"><?= $pendingCount ?></div>
-      <div class="bento-lbl">Pending Review</div>
-    </div>
-  </div>
-  <div class="bento-card">
-    <div class="bento-icon" style="background: #DCFCE7; color: #15803D;"><i class="fas fa-check-double"></i></div>
-    <div style="flex: 1;">
-      <div class="bento-val" id="stat-approved"><?= $approvedCount ?></div>
-      <div class="bento-lbl">Approved Requests</div>
-    </div>
-  </div>
-  <div class="bento-card">
-    <div class="bento-icon" style="background: #FEE2E2; color: #B91C1C;"><i class="fas fa-bolt"></i></div>
-    <div style="flex: 1;">
-      <div class="bento-val" id="stat-urgent"><?= $urgentCount ?></div>
-      <div class="bento-lbl">Urgent Action</div>
-    </div>
-  </div>
-  <div class="bento-card">
-    <div class="bento-icon" style="background: #F1F5F9; color: #475569;"><i class="fas fa-archive"></i></div>
-    <div style="flex: 1;">
-      <div class="bento-val" id="stat-total"><?= $totalCount ?></div>
-      <div class="bento-lbl">Total Requisitions</div>
-    </div>
-  </div>
-</div>
-
-<!-- Smart Suggestion Banner -->
-<?php if(count($lowStockItems)>0): ?>
-<div class="smart-alert">
-  <div class="d-flex align-items-center gap-3">
-    <div style="width:50px; height:50px; border-radius:14px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="fas fa-lightbulb"></i></div>
-    <div>
-      <div style="font-weight: 800; color: var(--proc-slate); font-size: 1rem;">Smart Re-stock Suggestion</div>
-      <div style="font-size: 0.8rem; color: #64748B; font-weight: 600;"><?= count($lowStockItems) ?> items below threshold</div>
-    </div>
-  </div>
-  <div class="low-stock-scroll">
-    <?php foreach($lowStockItems as $item): ?>
-      <div class="stock-item-tag">
-        <i class="fas fa-pills" style="color: var(--proc-primary)"></i>
-        <?= htmlspecialchars($item['product_name']) ?> (<?= $item['quantity'] ?> left)
-      </div>
-    <?php endforeach; ?>
-  </div>
-  <button class="ph-btn" style="background: #0F172A; color: white; border-radius: 12px; font-weight: 700;" onclick="autoGenerateIndent()">
-    <i class="fas fa-magic me-2"></i> Generate Drafts
-  </button>
-</div>
-<?php endif; ?>
-
-<!-- ===== WORKSPACE SECTION SWITCHER ===== -->
-<div style="background:white;border-radius:20px;padding:6px;display:inline-flex;gap:4px;box-shadow:var(--glass-shadow);border:1px solid #E2E8F0;margin-bottom:1.75rem;">
-  <button id="tab-btn-active" onclick="switchWorkspaceTab('active')" style="border:none;background:var(--proc-primary);color:#fff;border-radius:14px;font-weight:800;padding:0.65rem 1.75rem;font-size:0.9rem;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all 0.25s ease;">
-    <i class="fas fa-layer-group"></i> Active Workspace
-    <span id="badge-active" style="background:rgba(255,255,255,0.25);color:#fff;border-radius:20px;padding:2px 10px;font-size:0.7rem;font-weight:900;">0</span>
-  </button>
-  <button id="tab-btn-history" onclick="switchWorkspaceTab('history')" style="border:none;background:transparent;color:#64748B;border-radius:14px;font-weight:800;padding:0.65rem 1.75rem;font-size:0.9rem;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all 0.25s ease;">
-    <i class="fas fa-history"></i> Sent History
-    <span id="badge-history" style="background:#F1F5F9;color:#64748B;border-radius:20px;padding:2px 10px;font-size:0.7rem;font-weight:900;">0</span>
-  </button>
-</div>
-<div id="panel-active-workspace">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;padding:12px 16px;background:linear-gradient(135deg,#EFF6FF,#F0FDF4);border-radius:14px;border:1px solid #BFDBFE;">
-    <i class="fas fa-layer-group" style="color:var(--proc-primary);font-size:1rem;"></i>
-    <div><div style="font-weight:800;color:#1E40AF;font-size:0.85rem;">Active Procurement Workspace</div>
-    <div style="font-size:0.72rem;color:#3B82F6;font-weight:600;">Manage pending &amp; approved indent requests. Select items and use the action bar to Approve, Dispatch or Delete.</div></div>
-  </div>
-  <div class="d-flex align-items-center gap-3 mb-4">
-    <div class="flex-grow-1 position-relative">
-      <i class="fas fa-search" style="position:absolute;left:1.25rem;top:50%;transform:translateY(-50%);color:#94A3B8;"></i>
-      <input type="text" id="searchInput" class="ph-input" style="padding-left:3rem;height:54px;border-radius:16px;border-color:transparent;box-shadow:var(--glass-shadow);" placeholder="Quick search by indent no, item name, or department...">
-    </div>
-    <select class="ph-select" id="statusFilter" style="width:160px;height:54px;border-radius:16px;border-color:transparent;box-shadow:var(--glass-shadow);">
-      <option value="">All Status</option><option value="pending">Pending</option><option value="approved">Approved</option>
-    </select>
-    <button class="ph-btn ph-btn-outline" style="height:54px;width:54px;border-radius:16px;box-shadow:var(--glass-shadow);border-color:transparent;background:white;" onclick="loadIndents()"><i class="fas fa-sync-alt"></i></button>
-  </div>
-  <div class="ph-table-wrap p-0">
-    <table class="ph-table w-100" id="indentsTable">
-      <thead><tr>
-        <th style="width:50px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="width:20px;height:20px;accent-color:var(--proc-primary);"></th>
-        <th>Indent Reference</th><th>Product &amp; Source</th><th>Logistics Info</th><th>Qty &amp; Priority</th><th>Workflow State</th><th class="text-end">Actions</th>
-      </tr></thead>
-      <tbody id="indentsBody"><tr><td colspan="7" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></td></tr></tbody>
-    </table>
-  </div>
-  <div class="d-flex align-items-center justify-content-between mt-4">
-    <span id="tableInfo" style="font-weight:700;color:#94A3B8;font-size:0.85rem;"></span>
-    <div id="pager" class="ph-pagination"></div>
-  </div>
-  <div id="bulkBar" style="display:none;position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.9);backdrop-filter:blur(16px);padding:1rem 2rem;border-radius:24px;align-items:center;gap:1.5rem;z-index:1000;box-shadow:0 20px 50px rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);">
-    <span id="selectedCount" style="color:#fff;font-weight:700;"></span>
-    <div style="display:flex;gap:10px;">
-      <button class="ph-btn" style="background:#10B981;color:#fff;border-radius:12px;font-weight:700;padding:8px 18px;border:none;cursor:pointer;" onclick="bulkChangeStatus('approved')"><i class="fas fa-check me-2"></i>Approve</button>
-      <button class="ph-btn" style="background:#F59E0B;color:#fff;border-radius:12px;font-weight:700;padding:8px 18px;border:none;cursor:pointer;" onclick="bulkChangeStatus('cancelled')"><i class="fas fa-ban me-2"></i>Cancel</button>
-      <button class="ph-btn" style="background:#0EA5E9;color:#fff;border-radius:12px;font-weight:700;padding:8px 18px;border:none;cursor:pointer;" onclick="bulkSendEmail()"><i class="fas fa-paper-plane me-2"></i>Dispatch</button>
-      <button class="ph-btn" style="background:#8B5CF6;color:#fff;border-radius:12px;font-weight:700;padding:8px 18px;border:none;cursor:pointer;" onclick="exportSelectedPDF()"><i class="fas fa-file-pdf me-2"></i>Export PDF</button>
-      <button class="ph-btn" style="background:#EF4444;color:#fff;border-radius:12px;font-weight:700;padding:8px 18px;border:none;cursor:pointer;" onclick="bulkDelete()"><i class="fas fa-trash me-2"></i>Delete</button>
-    </div>
-  </div>
-</div>
-<div id="panel-sent-history" style="display:none;">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;padding:12px 16px;background:linear-gradient(135deg,#F0FDF4,#ECFDF5);border-radius:14px;border:1px solid #6EE7B7;">
-    <i class="fas fa-history" style="color:#059669;font-size:1rem;"></i>
-    <div><div style="font-weight:800;color:#065F46;font-size:0.85rem;">Sent Indent History</div>
-    <div style="font-size:0.72rem;color:#059669;font-weight:600;">Log of dispatched indents. Select and click "Un-send" to move back to Active Workspace.</div></div>
-  </div>
-  <div class="d-flex align-items-center gap-3 mb-4">
-    <div class="flex-grow-1 position-relative">
-      <i class="fas fa-search" style="position:absolute;left:1.25rem;top:50%;transform:translateY(-50%);color:#94A3B8;"></i>
-      <input type="text" id="historySearchInput" class="ph-input" style="padding-left:3rem;height:54px;border-radius:16px;border-color:transparent;box-shadow:var(--glass-shadow);" placeholder="Search by indent no, item, supplier...">
-    </div>
-    <button class="ph-btn ph-btn-outline" style="height:54px;width:54px;border-radius:16px;box-shadow:var(--glass-shadow);border-color:transparent;background:white;" onclick="loadHistory()"><i class="fas fa-sync-alt"></i></button>
-  </div>
-  <div class="ph-table-wrap p-0">
-    <table class="ph-table w-100" id="historyTable">
-      <thead><tr>
-        <th style="width:50px"><input type="checkbox" id="historySelectAll" onchange="toggleHistorySelectAll(this)" style="width:20px;height:20px;accent-color:#059669;"></th>
-        <th>Indent Ref &amp; Date</th><th>Item &amp; Qty</th><th>Supplier</th><th>Dispatch Method</th><th>Remarks</th><th class="text-end">Actions</th>
-      </tr></thead>
-      <tbody id="historyBody"><tr><td colspan="7" class="text-center py-5"><div class="spinner-border text-success" role="status"></div></td></tr></tbody>
-    </table>
-  </div>
-  <div class="d-flex align-items-center justify-content-between mt-4">
-    <span id="historyTableInfo" style="font-weight:700;color:#94A3B8;font-size:0.85rem;"></span>
-    <div id="historyPager" class="ph-pagination"></div>
-  </div>
-  <div id="historyBulkBar" style="display:none;position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:rgba(6,95,70,0.92);backdrop-filter:blur(16px);padding:1rem 2rem;border-radius:24px;align-items:center;gap:1.5rem;z-index:1000;box-shadow:0 20px 50px rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);">
-    <span id="historySelectedCount" style="color:#fff;font-weight:700;"></span>
-    <div style="display:flex;gap:10px;">
-      <button class="ph-btn" style="background:#F59E0B;color:#fff;border-radius:12px;font-weight:700;padding:8px 18px;border:none;cursor:pointer;" onclick="bulkRevertSent()"><i class="fas fa-undo me-2"></i>Un-send</button>
-    </div>
-  </div>
-</div>
-</div></div></div>
-
-<!-- Modal -->
-<style>
-  .compact-modal .ph-label { font-size: 0.65rem; font-weight: 800; color: #1F6B4A; margin-bottom: 2px; text-transform: uppercase; }
-  .compact-modal .ph-input, .compact-modal .ph-select, .compact-modal .ph-textarea { padding: 4px 8px; font-size: 0.8rem; height: 32px; border: 1px solid rgba(31,107,74,0.2); border-radius: 6px; background: #FFF; color: #1F6B4A; font-weight: 600; width: 100%; box-shadow: none; box-sizing: border-box; }
-  .compact-modal .ph-textarea { height: auto; min-height: 48px; }
-  .compact-modal .ph-input:focus, .compact-modal .ph-select:focus, .compact-modal .ph-textarea:focus { border-color: #1F6B4A; outline: none; box-shadow: 0 0 0 2px rgba(31,107,74,0.1); }
-  .compact-modal h6 { font-size: 0.8rem; margin-top: 4px; margin-bottom: 8px !important; color: #1F6B4A; font-weight: 800; border-bottom: 1px solid rgba(31,107,74,0.1); padding-bottom: 4px; }
-  .compact-modal .modal-body { padding: 12px 20px; }
-  .compact-modal .modal-header, .compact-modal .modal-footer { padding: 10px 20px; }
-  .compact-modal .grid-4-cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
-  .compact-modal .grid-3-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
-  .compact-modal .grid-2-cols { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
-  .compact-modal .grid-item { display: flex; flex-direction: column; }
-</style>
-<div class="modal fade compact-modal" id="indentModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 900px;">
-    <div class="modal-content" style="background: #F3EFE6; border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
-      <div class="modal-header" style="border-bottom: 1px solid rgba(31,107,74,0.15);">
-        <h5 class="modal-title" id="modalTitle" style="color: #1F6B4A; font-weight: 900; letter-spacing: -0.5px;">New Indent Request</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(34%) sepia(16%) saturate(1637%) hue-rotate(107deg) brightness(97%) contrast(89%); opacity: 0.8;"></button>
-      </div>
-      <form id="indentForm" onsubmit="saveIndent(event)">
-        <div class="modal-body">
-          <input type="hidden" name="id" id="id">
-          
-          <div>
-            <h6><i class="fas fa-box-open me-1"></i>Indent & Supplier Details</h6>
-            <div class="grid-4-cols">
-                <div class="grid-item">
-                  <label class="ph-label">Department / Ward</label>
-                  <input type="text" class="ph-input" name="department" id="department" value="Pharmacy Store">
-                </div>
-                <div class="grid-item">
-                  <label class="ph-label">Requested By</label>
-                  <input type="text" class="ph-input" name="requested_by" id="requested_by" value="<?= htmlspecialchars($_SESSION['username'] ?? 'Pharmacist') ?>">
-                </div>
-                <div class="grid-item" style="grid-column: span 2;">
-                  <label class="ph-label">Item Name *</label>
-                  <input type="text" class="ph-input" name="item_name" id="item_name" list="lowStockList" required autocomplete="off">
-                  <input type="hidden" name="product_id" id="product_id">
-                  <datalist id="lowStockList">
-                    <?php foreach($lowStockItems as $item): ?>
-                      <option value="<?= htmlspecialchars($item['product_name']) ?>" data-id="<?= $item['product_id'] ?>"></option>
-                    <?php endforeach; ?>
-                  </datalist>
-                </div>
-                
-                <div class="grid-item">
-                  <label class="ph-label">Quantity *</label>
-                  <input type="number" class="ph-input" name="qty" id="qty" required min="1" value="1">
-                </div>
-                <div class="grid-item">
-                  <label class="ph-label">Priority</label>
-                  <select class="ph-select" name="priority" id="priority">
-                    <option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option>
-                  </select>
-                </div>
-                <div class="grid-item">
-                  <label class="ph-label">Status</label>
-                  <select class="ph-select" name="status" id="status">
-                    <option value="pending">Pending</option><option value="approved">Approved</option><option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-                <div class="grid-item">
-                  <label class="ph-label">Supplier *</label>
-                  <select class="ph-select" name="supplier_id" id="supplier_id" required onchange="updateCompanyName(this)">
-                    <option value="">Select Supplier</option>
-                    <?php foreach($suppliers as $s): ?>
-                      <option value="<?= $s['supplier_id'] ?>" data-company="<?= htmlspecialchars($s['company_name']) ?>" data-email="<?= htmlspecialchars($s['email'] ?? '') ?>">
-                          <?= htmlspecialchars($s['supplier_name']) ?>
-                      </option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-
-                <div class="grid-item">
-                  <label class="ph-label">Company Name</label>
-                  <input type="text" class="ph-input" name="company_name" id="company_name" readonly placeholder="Auto-filled" style="background:#E3F2EC; font-weight:800; cursor:not-allowed;">
-                </div>
-                <div class="grid-item">
-                  <label class="ph-label"><i class="fas fa-envelope me-1"></i>Notify by Email (optional)</label>
-                  <input type="email" class="ph-input" name="notify_email" id="notify_email" placeholder="store@hospital.com">
-                </div>
-                <div class="grid-item" style="grid-column: span 2;">
-                  <label class="ph-label">Remarks</label>
-                  <textarea class="ph-textarea" name="remarks" id="remarks" rows="1" placeholder="e.g. Stock critically low..."></textarea>
-                </div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer" style="background: #F3EFE6; border-top: 1px solid rgba(31,107,74,0.15); border-radius: 0 0 12px 12px;">
-          <button type="button" class="btn btn-sm" data-bs-dismiss="modal" style="background: transparent; color: #1F6B4A; border: 1.5px solid rgba(31,107,74,0.2); border-radius: 8px; font-weight: 700;">Cancel</button>
-          <button type="submit" class="btn btn-sm" style="background: #1F6B4A; color: #FFFFFF; border: none; border-radius: 8px; font-weight: 700; box-shadow: 0 4px 10px rgba(31,107,74,0.2);">
-            <i class="fas fa-save me-1"></i> Save Request
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Dispatch Modal -->
-<div class="modal fade" id="dispatchModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
-    <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
-      <div class="modal-header" style="background: #F8FAFC; border-bottom: 1px solid #E2E8F0; border-radius: 16px 16px 0 0; padding: 1rem 1.5rem;">
-        <h5 class="modal-title" style="color: #0F172A; font-weight: 800;"><i class="fas fa-paper-plane me-2 text-primary"></i>Dispatch Indent</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body p-0">
-        
-        <!-- Tabs Header -->
-        <ul class="nav nav-tabs px-3 pt-3" style="border-bottom: 1px solid #E2E8F0; background: #F8FAFC;" id="dispatchTabs" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active fw-bold" id="email-tab" data-bs-toggle="tab" data-bs-target="#tab-email" type="button" role="tab" style="color: #3B82F6;"><i class="fas fa-envelope me-2"></i>Email</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link fw-bold" id="whatsapp-tab" data-bs-toggle="tab" data-bs-target="#tab-whatsapp" type="button" role="tab" style="color: #10B981;"><i class="fab fa-whatsapp me-2"></i>WhatsApp</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link fw-bold" id="phone-tab" data-bs-toggle="tab" data-bs-target="#tab-phone" type="button" role="tab" style="color: #6366F1;"><i class="fas fa-phone-alt me-2"></i>Phone</button>
-          </li>
-        </ul>
-
-        <!-- Tabs Content -->
-        <div class="tab-content p-4" id="dispatchTabsContent">
-          
-          <!-- EMAIL TAB -->
-          <div class="tab-pane fade show active" id="tab-email" role="tabpanel">
-            <div id="smartDispatchBlock" style="display:none;"></div>
-            <div class="mb-3" id="recipientBlock">
-              <label class="ph-label fw-bold text-secondary mb-1">Recipient Email *</label>
-              <select class="form-select ph-select" id="emailTo">
-                <option value="">Select a recipient...</option>
-                <?php foreach($suppliers as $s): ?>
-                  <option value="<?= htmlspecialchars($s['email'] ?? '') ?>" data-id="<?= htmlspecialchars($s['supplier_id']) ?>" data-name="<?= htmlspecialchars($s['company_name'] ?: $s['supplier_name']) ?>"><?= htmlspecialchars($s['company_name'] . " (" . ($s['email'] ?? '') . ")") ?></option>
-                <?php endforeach; ?>
-              </select>
-              <div class="small fw-bold mt-1 text-muted">Or type a custom email below:</div>
-              <input type="email" class="form-control ph-input mt-1" id="customEmail" placeholder="custom@example.com">
-            </div>
-            <div class="mb-3">
-              <label class="ph-label fw-bold text-secondary mb-1">Subject Line</label>
-              <input type="text" class="form-control ph-input" id="emailSubject" value="Pharmacy Indent Request Notification">
-            </div>
-            <div class="mb-3">
-              <label class="ph-label fw-bold text-secondary mb-1">Message Body</label>
-              <textarea class="form-control ph-textarea" id="emailBody" rows="4"></textarea>
-            </div>
-            <div class="text-end mt-4">
-                <button type="button" class="btn btn-primary fw-bold px-4" style="border-radius: 8px;" onclick="sendEmailNow()"><i class="fas fa-paper-plane me-2"></i>Send Email</button>
-            </div>
-          </div>
-
-          <!-- WHATSAPP TAB -->
-          <div class="tab-pane fade" id="tab-whatsapp" role="tabpanel">
-            <div class="alert alert-success mb-3" style="border-radius: 8px; font-size: 0.85rem;">
-                <i class="fab fa-whatsapp me-2"></i> This will open WhatsApp Web/App with the pre-filled message.
-            </div>
-            <div class="mb-3">
-              <label class="ph-label fw-bold text-secondary mb-1">WhatsApp Number * (with country code)</label>
-              <select class="form-select ph-select mb-2" id="whatsappTo">
-                <option value="">Select from suppliers...</option>
-                <?php foreach($suppliers as $s): ?>
-                  <option value="<?= htmlspecialchars($s['phone'] ?? $s['mobile'] ?? '') ?>" data-id="<?= htmlspecialchars($s['supplier_id']) ?>"><?= htmlspecialchars($s['company_name'] . " (" . ($s['phone'] ?? $s['mobile'] ?? 'No Phone') . ")") ?></option>
-                <?php endforeach; ?>
-              </select>
-              <input type="text" class="form-control ph-input" id="customWhatsapp" placeholder="e.g. +919876543210">
-            </div>
-            <div class="mb-3">
-              <label class="ph-label fw-bold text-secondary mb-1">Message</label>
-              <textarea class="form-control ph-textarea" id="whatsappBody" rows="5"></textarea>
-            </div>
-            <div class="text-end mt-4">
-                <button type="button" class="btn btn-success fw-bold px-4" style="background: #10B981; border: none; border-radius: 8px;" onclick="sendWhatsappNow()"><i class="fab fa-whatsapp me-2"></i>Open WhatsApp &amp; Mark Sent</button>
-            </div>
-          </div>
-
-          <!-- PHONE TAB -->
-          <div class="tab-pane fade" id="tab-phone" role="tabpanel">
-             <div class="alert alert-info mb-3" style="border-radius: 8px; font-size: 0.85rem;">
-                <i class="fas fa-phone-alt me-2"></i> If you have communicated the requirements over a phone call, you can mark the indent as sent to maintain the workflow history.
-            </div>
-            <div class="text-center mt-4 mb-2">
-                <button type="button" class="btn btn-primary fw-bold px-4 py-2" style="background: #6366F1; border: none; border-radius: 8px;" onclick="markPhoneSentNow()"><i class="fas fa-check-circle me-2"></i>Mark as Informed via Phone</button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<?php include "includes/ph_foot.php"; ?>
-<script>
-const SUPPLIERS = <?= json_encode($suppliers) ?>;
+﻿
+const SUPPLIERS = [];
 let allIndents=[],currentPage=1,selectedIds=new Set(),filteredData=[];
 const PER_PAGE=12;
 const modal=new bootstrap.Modal(document.getElementById('indentModal'));
@@ -566,7 +75,7 @@ function renderTable() {
                 </td>
                 <td>
                     <div style="font-weight: 700; color: #64748B; font-size: 0.85rem;">${i.company_name || 'N/A'}</div>
-                    <div style="font-size: 0.7rem; color: #94A3B8; margin-top: 4px;">ID: ${i.supplier_id || 'Î“Ã‡Ã¶'}</div>
+                    <div style="font-size: 0.7rem; color: #94A3B8; margin-top: 4px;">ID: ${i.supplier_id || 'ÃŽâ€œÃƒâ€¡ÃƒÂ¶'}</div>
                 </td>
                 <td>
                     <input type="number" class="inline-qty" value="${i.qty}" onclick="event.stopPropagation()" onchange="updateQty(${i.id}, this.value)">
@@ -700,7 +209,7 @@ async function sendEmailFor(toEmail, itemName, indentRef) {
       <div style="padding: 40px; background: white;">
         <div style="font-size: 16px; line-height: 1.6; color: #475569; margin-bottom: 30px;">${bodyText.replace(/\n/g,'<br>')}</div>
         <div style="text-align: center;">
-          <a href="${window.location.origin}/GM_HMS/vendor/vendor_view/login.php?indent_no=${indentRef}&branch=<?= urlencode($_SESSION['hospital_branch'] ?? 'nagarabhavi') ?>" 
+          <a href="${window.location.origin}/GM_HMS/vendor/vendor_view/login.php?indent_no=${indentRef}&branch=""" 
              style="background: #0F172A; color: white; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; display: inline-block;">
              ACCESS VENDOR PORTAL
           </a>
@@ -717,7 +226,7 @@ async function sendEmailFor(toEmail, itemName, indentRef) {
       credentials: 'include',
       body: JSON.stringify({ email_to: toEmail, subject, body: htmlBody })
     });
-  } catch (e) { /* Silent fail Î“Ã‡Ã¶ main save already succeeded */ }
+  } catch (e) { /* Silent fail ÃŽâ€œÃƒâ€¡ÃƒÂ¶ main save already succeeded */ }
 }
 
 function deleteIndent(id){
@@ -846,11 +355,6 @@ function bulkSendEmail(){
       document.getElementById('emailBody').value=DEFAULT_EMAIL_MSG.replace('a pharmacy indent request has', currentEmailItems.length + ' pharmacy indent requests have');
   }
 
-  // Pre-fill WhatsApp message block
-  const waVendor = (currentEmailItems[0]||{}).company_name || 'Supplier';
-  const waItemLines = currentEmailItems.map(i=>`  - ${i.item_name} | Qty: ${i.qty} | Priority: ${(i.priority||'').toUpperCase()}`).join('\n');
-  document.getElementById('whatsappBody').value = `*GM Hospital - Procurement Requisition*\n\nDear ${waVendor},\n\nKindly arrange the following items:\n\n${waItemLines}\n\nRef No: ${(currentEmailItems[0]||{}).indent_no||''}\nDate: ${new Date().toLocaleDateString()}\n\nPlease confirm receipt.\n\n– GM Hospital Pharmacy`;
-
   dispatchModal.show();
 }
 
@@ -866,7 +370,7 @@ function buildEmailTemplate(message, tableHtml, firstIndentNo) {
         <div style="font-size: 16px; line-height: 1.6; color: #475569; margin-bottom: 30px;">${message}</div>
         <div style="margin-bottom: 30px;">${tableHtml}</div>
         <div style="text-align: center;">
-          <a href="${window.location.origin}/GM_HMS/vendor/vendor_view/login.php?indent_no=${firstIndentNo}&branch=<?= urlencode($_SESSION['hospital_branch'] ?? 'nagarabhavi') ?>" 
+          <a href="${window.location.origin}/GM_HMS/vendor/vendor_view/login.php?indent_no=${firstIndentNo}&branch=""" 
              style="background: #0F172A; color: white; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; display: inline-block;">
              ACCESS VENDOR PORTAL
           </a>
@@ -1058,7 +562,7 @@ function exportPrint(){
   const w=window.open('','_blank','width=1000,height=700');w.document.write(html);w.document.close();
 }
 
-// â”€â”€ HISTORY LOAD & RENDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢â€â‚¬Ã¢â€â‚¬ HISTORY LOAD & RENDER Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 let historyIndents = [], historyCurrentPage = 1, historySelectedIds = new Set(), historyFilteredData = [];
 
 async function loadHistory(){
@@ -1100,9 +604,9 @@ function renderHistoryTable() {
                     <div style="font-size:0.7rem;color:#94A3B8;margin-top:2px;">${i.email||''}</div></td>
                 <td><span style="display:inline-flex;align-items:center;gap:5px;background:#F0FDF4;color:#059669;border-radius:20px;padding:4px 10px;font-size:0.75rem;font-weight:800;"><i class="${mIcon}"></i>${method}</span>
                     <div style="font-size:0.7rem;color:#94A3B8;margin-top:4px;">By: <strong>${sentBy}</strong></div></td>
-                <td style="font-size:0.8rem;font-weight:700;color:#475569;">${i.remarks||'â€”'}</td>
+                <td style="font-size:0.8rem;font-weight:700;color:#475569;">${i.remarks||'Ã¢â‚¬â€'}</td>
                 <td class="text-end" onclick="event.stopPropagation()">
-                    <button class="ph-btn ph-btn-sm ph-btn-outline" style="border-radius:10px;width:36px;height:36px;" onclick="viewHistoryIndent(${i.id})"><i class="fas fa-eye"></i></button>
+                    <button class="ph-btn ph-btn-sm ph-btn-outline" style="border-radius:10px;width:36px;height:36px;" onclick='viewHistoryIndent(${JSON.stringify(i).replace(/'/g,"&apos;")})'><i class="fas fa-eye"></i></button>
                 </td></tr>`;
         });
     }
@@ -1129,31 +633,18 @@ async function bulkRevertSent() {
     });
 }
 
-function viewHistoryIndent(id) {
-    const i = historyIndents.find(x => x.id == id);
-    if (!i) return;
-    Swal.fire({
-        title: 'Indent Details',
-        html: `<div style="text-align:left; font-size:14px; line-height:1.6;">
-            <strong>Indent No:</strong> ${i.indent_no}<br>
-            <strong>Item:</strong> ${i.item_name} (Qty: ${i.qty})<br>
-            <strong>Dept:</strong> ${i.department||'N/A'}<br>
-            <strong>Supplier:</strong> ${i.company_name||'N/A'}<br>
-            <strong>Sent Via:</strong> ${i.communication_method}<br>
-            <strong>Sent By:</strong> ${i.sent_by}<br>
-            <strong>Date:</strong> ${fmt.date(i.request_date)}
-        </div>`,
-        icon: 'info',
-        confirmButtonColor: '#1F6B4A'
-    });
+function viewHistoryIndent(i) {
+    PH.alert('Indent Details',`<strong>Indent No:</strong> ${i.indent_no}<br><strong>Item:</strong> ${i.item_name} (Qty: ${i.qty})<br><strong>Dept:</strong> ${i.department||'N/A'}<br><strong>Supplier:</strong> ${i.company_name||'N/A'}<br><strong>Sent Via:</strong> ${i.communication_method}<br><strong>Sent By:</strong> ${i.sent_by}<br><strong>Date:</strong> ${fmt.date(i.request_date)}`);
 }
 
-// â”€â”€ WhatsApp & Phone dispatch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢â€â‚¬Ã¢â€â‚¬ WhatsApp & Phone dispatch Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 async function sendWhatsappNow() {
     const to = (document.getElementById('whatsappTo').value.trim() || document.getElementById('customWhatsapp').value.trim()).replace(/[^0-9]/g,'');
     if(!to){PH.error('Please enter a WhatsApp number');return;}
-    const msg = document.getElementById('whatsappBody').value.trim();
-    if(!msg){PH.error('Message body cannot be empty');return;}
+    const vendor = (currentEmailItems[0]||{}).company_name || 'Supplier';
+    const itemLines = currentEmailItems.map(i=>`  - ${i.item_name} | Qty: ${i.qty} | Priority: ${(i.priority||'').toUpperCase()}`).join('\n');
+    const msg = `*GM Hospital - Procurement Requisition*\n\nDear ${vendor},\n\nKindly arrange the following items:\n\n${itemLines}\n\nRef No: ${(currentEmailItems[0]||{}).indent_no||''}\nDate: ${new Date().toLocaleDateString()}\n\nPlease confirm receipt.\n\nÃ¢â‚¬â€œ GM Hospital Pharmacy`;
+    document.getElementById('whatsappBody').value = msg;
     const url = `https://wa.me/${to}?text=${encodeURIComponent(msg)}`;
     window.open(url,'_blank');
     try{
@@ -1172,7 +663,7 @@ async function markPhoneSentNow() {
     }catch(e){PH.error('Failed to update status');}
 }
 
-// â”€â”€ PDF Export for selected indents â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢â€â‚¬Ã¢â€â‚¬ PDF Export for selected indents Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function exportSelectedPDF() {
     const data = selectedIds.size > 0 ? allIndents.filter(i=>selectedIds.has(i.id)) : filteredData.length ? filteredData : allIndents;
     if(!data.length){PH.error('No items to export');return;}
@@ -1197,7 +688,7 @@ function exportSelectedPDF() {
     const w=window.open('','_blank','width=1100,height=750');w.document.write(html);w.document.close();
 }
 
-// â”€â”€ Tab Switcher â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢â€â‚¬Ã¢â€â‚¬ Tab Switcher Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 let currentTab = 'active';
 function switchWorkspaceTab(tab) {
     currentTab = tab;
@@ -1229,5 +720,4 @@ document.addEventListener('DOMContentLoaded',()=>{
     const hsi=document.getElementById('historySearchInput');
     if(hsi)hsi.addEventListener('input',()=>{historyCurrentPage=1;renderHistoryTable();});
 });
-</script>
 

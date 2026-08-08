@@ -45,14 +45,17 @@ const PH = {
 /* AJAX Helpers                                                         */
 /* ------------------------------------------------------------------ */
 async function phFetch(url, data = {}, method = 'POST') {
-  const fd = new FormData();
-  Object.entries(data).forEach(([k, v]) => fd.append(k, v));
-  const res = await fetch(url, { method, body: method === 'POST' ? fd : undefined });
+  const options = { method };
+  if (method === 'POST') {
+      options.headers = { 'Content-Type': 'application/json' };
+      options.body = JSON.stringify(data);
+  }
+  const res = await fetch(url, options);
   return res.json();
 }
 
 async function phGet(url) {
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
   return res.json();
 }
 

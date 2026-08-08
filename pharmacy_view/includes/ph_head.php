@@ -39,13 +39,16 @@ $apiBase     = rtrim($baseUrl, '/') . '/api/';
     --ph-text: #0F172A;
     --ph-border: #E2E8F0;
     --ph-muted: #64748B;
+    --ph-danger: #ef4444;
+    --ph-success: #10b981;
+    --ph-warning: #f59e0b;
     --ph-sidebar-w: 180px;
     --ph-navbar-h: 60px;
   }
   html, body { background: #f3efe6 !important; }
   
   /* OVERRIDES for layout fixes (bypasses cached pharmacy.css) */
-  body { overflow-y: auto !important; overflow-x: hidden !important; }
+  body { overflow-y: auto !important; }
   .ph-wrap, #ph-content { height: auto !important; min-height: 100vh !important; overflow: visible !important; }
   .ph-navbar { flex-shrink: 0 !important; min-height: var(--ph-navbar-h) !important; }
 </style>

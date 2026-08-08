@@ -238,7 +238,10 @@ $router->add('DELETE', '#^/api/pharmacy/customers/([^/]+)/?$#',     'GM_HMS\\Con
 
 // ── Pharmacy: Indents ─────────────────────────────────────────────────────────
 $router->add('GET',    '#^/api/pharmacy/indents/?$#',                  'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'index');
+$router->add('GET',    '#^/api/pharmacy/indents/history/?$#',          'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'history');
 $router->add('POST',   '#^/api/pharmacy/indents/?$#',                  'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'save');
+$router->add('POST',   '#^/api/pharmacy/indents/mark-sent/?$#',        'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'bulkMarkSent');
+$router->add('POST',   '#^/api/pharmacy/indents/revert-sent/?$#',      'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'revertSent');
 $router->add('POST',   '#^/api/pharmacy/indents/auto-generate/?$#',    'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'autoGenerate');
 $router->add('POST',   '#^/api/pharmacy/indents/update-qty/?$#',       'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'updateQty');
 $router->add('POST',   '#^/api/pharmacy/indents/bulk-assign/?$#',      'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'bulkAssignVendor');

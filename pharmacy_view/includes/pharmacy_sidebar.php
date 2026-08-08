@@ -33,6 +33,18 @@ $isAssistant = ($userDesignation === 'Assistant Pharmacist');
     </div>
 
     <div class="ph-nav-section">
+      <span class="ph-nav-label">Sales</span>
+      <ul class="ph-nav-list">
+        <?= navLink('billing_pos.php','fas fa-cash-register',       'Billing / POS',    $cur) ?>
+        <?php if (!$isAssistant): ?>
+        <?= navLink('sales.php',      'fas fa-receipt',             'Sales History',    $cur) ?>
+        <?= navLink('returns.php',    'fas fa-undo-alt',            'Returns',          $cur) ?>
+        <?php endif; ?>
+        <?= navLink('opd_ipd_returns.php', 'fas fa-hand-holding-medical', 'Patient Returns', $cur) ?>
+      </ul>
+    </div>
+
+    <div class="ph-nav-section">
       <span class="ph-nav-label">Inventory</span>
       <ul class="ph-nav-list">
         <?= navLink('products.php',        'fas fa-pills',           'Products',         $cur) ?>
@@ -55,18 +67,6 @@ $isAssistant = ($userDesignation === 'Assistant Pharmacist');
       </ul>
     </div>
     <?php endif; ?>
-
-    <div class="ph-nav-section">
-      <span class="ph-nav-label">Sales</span>
-      <ul class="ph-nav-list">
-        <?= navLink('billing_pos.php','fas fa-cash-register',       'Billing / POS',    $cur) ?>
-        <?php if (!$isAssistant): ?>
-        <?= navLink('sales.php',      'fas fa-receipt',             'Sales History',    $cur) ?>
-        <?= navLink('returns.php',    'fas fa-undo-alt',            'Returns',          $cur) ?>
-        <?php endif; ?>
-        <?= navLink('opd_ipd_returns.php', 'fas fa-hand-holding-medical', 'Patient Returns', $cur) ?>
-      </ul>
-    </div>
 
     <?php if (!$isAssistant): ?>
     <div class="ph-nav-section">

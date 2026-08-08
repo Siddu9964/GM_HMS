@@ -715,11 +715,15 @@ body.is-receipt .footer          { font-size: 8px; }
     <div class="watermark">GM HOSPITAL</div>
 
     <!-- ── Header ── -->
-    <div class="hdr">
-      <div class="hdr-name">BASAVESHWAR NAGAR PHARMA</div>
-      <div class="hdr-sub">(A unit of pan NAGARABHAVI Hospitalals pvt ltd)</div>
-      <div class="hdr-addr">No. 335, 3rd Stage, 4th Block, Siddaiah Puranik Road, Basaveshwara nagar, Bengaluru 560079</div>
-      <div class="hdr-dl">D.L. No. KA20-B04-103613 &nbsp;/&nbsp; KA21-B04-103614</div>
+    <div class="hdr" style="border-bottom: none; padding-bottom: 4px; margin-bottom: 12px; margin-top: 10px;">
+      <div style="font-size: 28px; font-weight: 800; color: #1b92a6; letter-spacing: 1px; line-height: 1.1;">GM HOSPITALS</div>
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; color: #6b7280; font-size: 14px; font-weight: 500; margin-top: 2px; margin-bottom: 8px;">
+        <span style="display: inline-block; width: 35px; height: 1px; background-color: #9ca3af;"></span>
+        Nagarabhavi | Basaveshwaranagar
+        <span style="display: inline-block; width: 35px; height: 1px; background-color: #9ca3af;"></span>
+      </div>
+      <div class="hdr-addr" style="margin-bottom: 2px;">No. 335, 3rd Stage, 4th Block, Siddaiah Puranik Road, Basaveshwara nagar, Bengaluru 560079</div>
+      <div class="hdr-dl" style="margin-bottom: 4px;">D.L. No. KA20-B04-103613 &nbsp;/&nbsp; KA21-B04-103614</div>
       <div class="hdr-gst">GSTIN: 29AAFCP8756N3ZE</div>
     </div>
 

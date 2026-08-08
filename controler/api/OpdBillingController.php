@@ -189,6 +189,10 @@ class OpdBillingController extends BaseController {
             if (isset($_GET['patient_id'])) $filters['patient_id'] = $_GET['patient_id'];
             if (isset($_GET['purpose'])) $filters['purpose'] = $_GET['purpose'];
             if (isset($_GET['exclude_purpose'])) $filters['exclude_purpose'] = $_GET['exclude_purpose'];
+            if (isset($_GET['created_by'])) $filters['created_by'] = $_GET['created_by'];
+            if (isset($_GET['payment_mode'])) $filters['payment_mode'] = $_GET['payment_mode'];
+            if (isset($_GET['limit'])) $filters['limit'] = $_GET['limit'];
+            if (isset($_GET['offset'])) $filters['offset'] = $_GET['offset'];
 
             // Default: if no specific purpose is requested, exclude Registration/Appointment bills
             // (appointment_bill.php explicitly sets purpose=Registration/Appointment so it still works)

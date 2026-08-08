@@ -29,9 +29,9 @@ $userRole = $_SESSION['role']     ?? 'pharmacy';
     <!-- Notifications -->
     <div class="dropdown" style="position:relative;">
       <button class="ph-btn ph-btn-outline ph-btn-icon position-relative" id="ph-notif-btn"
-        data-bs-toggle="dropdown" aria-expanded="false" style="border-radius:10px;">
+        data-bs-toggle="dropdown" aria-expanded="false" style="border-radius:10px; overflow:visible;">
         <i class="fas fa-bell"></i>
-        <span id="ph-notif-count" style="display:none;position:absolute;top:-5px;right:-5px;background:var(--ph-danger);color:#fff;font-size:.58rem;font-weight:800;padding:2px 5px;border-radius:99px;line-height:1;">0</span>
+        <span id="ph-notif-count" class="badge-count" style="display:none;position:absolute;top:-5px;right:-5px;background:var(--ph-danger);color:#fff;font-size:.58rem;font-weight:800;padding:2px 5px;border-radius:99px;line-height:1;">0</span>
       </button>
       <div class="dropdown-menu dropdown-menu-end" style="width:320px;padding:0;border-radius:12px;box-shadow:var(--ph-shadow-lg);border:1px solid var(--ph-border);" id="ph-notif-panel">
         <div style="padding:.85rem 1rem;border-bottom:1px solid var(--ph-border);font-weight:700;font-size:.88rem;">Notifications</div>

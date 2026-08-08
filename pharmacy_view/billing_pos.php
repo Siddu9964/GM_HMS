@@ -549,7 +549,7 @@ include 'includes/ph_head.php';
               <div class="sum-row" style="align-items:center;">
                 <span style="color:var(--ph-muted);">Discount</span>
                 <div style="display:flex; align-items:center; gap:8px;">
-                  <input type="number" id="globalDiscount" class="row-input" style="width:60px; font-size:0.85rem;" value="0" min="0" oninput="recalc()">
+                  <input type="number" id="globalDiscount" class="row-input" style="width:60px; font-size:0.85rem;" placeholder="0" min="0" oninput="recalc()">
                   <span class="sum-val" id="sumDiscount" style="color:var(--ph-danger);">-₹0.00</span>
                 </div>
               </div>
@@ -698,7 +698,7 @@ include 'includes/ph_head.php';
 
     // Dropdown Arrow Navigation
     const prodDd = document.getElementById('prodDropdown');
-    if (prodDd.style.display === 'block' && ['ArrowDown', 'ArrowUp', 'Enter'].includes(e.key)) {
+    if (prodDd.style.display === 'block' && ['ArrowDown', 'ArrowUp', 'Enter', 'Tab'].includes(e.key)) {
       e.preventDefault();
       const items = prodDd.querySelectorAll('.dropdown-item');
       if (!items.length) return;
@@ -709,8 +709,12 @@ include 'includes/ph_head.php';
       } else if (e.key === 'ArrowUp') {
         activeSearchIdx = activeSearchIdx <= 0 ? items.length - 1 : activeSearchIdx - 1;
         updateDropdownHighlight(items);
-      } else if (e.key === 'Enter' && activeSearchIdx >= 0) {
-        items[activeSearchIdx].click();
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
+        if (activeSearchIdx >= 0) {
+          items[activeSearchIdx].click();
+        } else {
+          items[0].click(); // Auto-select first item
+        }
       }
     }
   });
@@ -746,7 +750,12 @@ include 'includes/ph_head.php';
     document.getElementById('btnModeWalkin').style.background = mode === 'walkin' ? 'var(--ph-primary)' : '#e2e8f0';
     document.getElementById('btnModeWalkin').style.color = mode === 'walkin' ? '#fff' : 'var(--ph-muted)';
 
-    if (mode === 'walkin') clearPatientData();
+    if (mode === 'walkin') {
+      clearPatientData();
+      document.getElementById('wiName').focus();
+    } else {
+      document.getElementById('patientSearch').focus();
+    }
   }
 
   document.getElementById('patientSearch').addEventListener('input', function() {
@@ -822,6 +831,14 @@ include 'includes/ph_head.php';
   }
 
   // --- Product Logic ---
+  document.getElementById('productSearch').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !this.value.trim()) {
+      e.preventDefault();
+      document.getElementById('globalDiscount').focus();
+      document.getElementById('globalDiscount').select();
+    }
+  });
+
   document.getElementById('productSearch').addEventListener('input', function() {
     clearTimeout(prodSearchTimeout);
     const q = this.value.trim();
@@ -1061,32 +1078,23 @@ include 'includes/ph_head.php';
 
       if (qty && disc && rate) {
         qty.addEventListener('keydown', e => {
-          if (e.key === 'Tab' && !e.shiftKey) {
+          if ((e.key === 'Tab' || e.key === 'Enter') && !e.shiftKey) {
             e.preventDefault();
             disc.focus();
             disc.select();
           }
         });
         disc.addEventListener('keydown', e => {
-          if (e.key === 'Tab' && !e.shiftKey) {
+          if ((e.key === 'Tab' || e.key === 'Enter') && !e.shiftKey) {
             e.preventDefault();
             rate.focus();
             rate.select();
           }
         });
         rate.addEventListener('keydown', e => {
-          if (e.key === 'Tab' && !e.shiftKey) {
+          if ((e.key === 'Tab' || e.key === 'Enter') && !e.shiftKey) {
             e.preventDefault();
-            if (i < rows.length - 1) {
-              const nq = rows[i + 1].querySelector('.inp-qty');
-              if (nq) {
-                nq.focus();
-                nq.select();
-              }
-            } else {
-              document.getElementById('globalDiscount').focus();
-              document.getElementById('globalDiscount').select();
-            }
+            document.getElementById('productSearch').focus();
           }
         });
       }
@@ -1184,10 +1192,14 @@ include 'includes/ph_head.php';
       if (!confirm('Clear all items?')) return;
     }
     cart = [];
-    document.getElementById('globalDiscount').value = 0;
+    document.getElementById('globalDiscount').value = '';
     document.getElementById('payReceived').value = 0;
     if (currentPatMode === 'search') clearPatient();
     renderCart();
+    setTimeout(() => {
+      const searchBox = document.getElementById('productSearch');
+      if(searchBox) searchBox.focus();
+    }, 50);
   }
 
   function holdBill() {
@@ -1217,7 +1229,7 @@ include 'includes/ph_head.php';
         if (state.cart && state.cart.length > 0) {
           if (confirm('A held bill was found. Restore it?')) {
             cart = state.cart;
-            document.getElementById('globalDiscount').value = state.disc || 0;
+            document.getElementById('globalDiscount').value = state.disc || '';
             if (state.currentPatMode === 'search' && state.g_patId) {
               setPatientMode('search');
               g_patId = state.g_patId;
@@ -1298,7 +1310,11 @@ include 'includes/ph_head.php';
       cAge = g_patAge;
       cSex = g_patSex;
     } else {
-      cName = document.getElementById('wiName').value.trim() || 'WALK-IN';
+      cName = document.getElementById('wiName').value.trim();
+      if (!cName) {
+        PH.warning('Patient Name is required.');
+        return;
+      }
       cPhone = document.getElementById('wiPhone').value.trim();
       cAge = document.getElementById('wiAge').value.trim();
       cSex = document.getElementById('wiSex').value.trim();

@@ -352,8 +352,23 @@ class OpdBillingModel
             $sql .= " AND (obm.purpose IS NULL OR obm.purpose != ?)";
             $params[] = $filters['exclude_purpose'];
         }
+        if (!empty($filters['created_by'])) {
+            $sql .= " AND obm.created_by = ?";
+            $params[] = $filters['created_by'];
+        }
+        if (!empty($filters['payment_mode'])) {
+            $sql .= " AND obm.payment_mode = ?";
+            $params[] = $filters['payment_mode'];
+        }
 
         $sql .= " ORDER BY obm.bill_date DESC, obm.bill_id DESC";
+        
+        if (isset($filters['limit'])) {
+            $limit = (int)$filters['limit'];
+            $offset = isset($filters['offset']) ? (int)$filters['offset'] : 0;
+            $sql .= " LIMIT $limit OFFSET $offset";
+        }
+        
         return $this->db->fetchAll($sql, $params);
     }
 

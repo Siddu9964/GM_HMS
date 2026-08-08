@@ -323,5 +323,78 @@ class PharmacyIndentController extends BaseController {
             $this->handleException($e);
         }
     }
+
+    public function history(): void {
+        $this->restrictMethod('GET');
+        $this->requireAuth();
+        try {
+            $rows = $this->db->fetchAll("SELECT * FROM ph_indent_requests WHERE status = 'ordered' ORDER BY id DESC");
+            $this->respondSuccess($rows);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    public function bulkMarkSent(): void {
+        $this->restrictMethod('POST');
+        $this->requireAuth();
+        $input = $this->getJsonInput();
+        
+        $rawIds = $input['ids'] ?? [];
+        if (is_string($rawIds)) {
+            $rawIds = explode(',', $rawIds);
+        }
+        $ids = array_filter(array_map('intval', (array)$rawIds), fn($v) => $v > 0);
+        
+        $method = $input['communication_method'] ?? 'Email';
+        $user = $_SESSION['username'] ?? 'Unknown User';
+        if (empty($ids)) {
+            $this->respondError('Invalid input.', 400);
+            return;
+        }
+
+        try {
+            $inStr = implode(',', array_fill(0, count($ids), '?'));
+            $params = array_merge(['ordered', $method, $user], $ids);
+            
+            $this->db->execute(
+                "UPDATE ph_indent_requests SET status = ?, communication_method = ?, sent_by = ? WHERE id IN ($inStr)",
+                $params
+            );
+            $this->respondSuccess(null, 'Indents marked as sent.');
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    public function revertSent(): void {
+        $this->restrictMethod('POST');
+        $this->requireAuth();
+        $input = $this->getJsonInput();
+        
+        $rawIds = $input['ids'] ?? [];
+        if (is_string($rawIds)) {
+            $rawIds = explode(',', $rawIds);
+        }
+        $ids = array_filter(array_map('intval', (array)$rawIds), fn($v) => $v > 0);
+        
+        if (empty($ids)) {
+            $this->respondError('Invalid input.', 400);
+            return;
+        }
+
+        try {
+            $inStr = implode(',', array_fill(0, count($ids), '?'));
+            $params = array_merge(['approved', null, null], $ids);
+            
+            $this->db->execute(
+                "UPDATE ph_indent_requests SET status = ?, communication_method = ?, sent_by = ? WHERE id IN ($inStr)",
+                $params
+            );
+            $this->respondSuccess(null, 'Indents reverted.');
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
 }
 
