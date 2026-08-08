@@ -38,6 +38,8 @@ class ProductController extends BaseController {
         $this->requireAuth();
         try {
             $data = $this->getJsonInput();
+            unset($data['action']);
+            unset($data['sl_no']);
             // TODO: Add Request Validation
             $id = $this->repository->create($data);
             $this->respondCreated(['sl_no' => $id]);
@@ -50,6 +52,8 @@ class ProductController extends BaseController {
         $this->requireAuth();
         try {
             $data = $this->getJsonInput();
+            unset($data['action']);
+            unset($data['sl_no']);
             $this->repository->update((int)$slNo, $data);
             $this->respondSuccess(null, "Product updated.");
         } catch (Exception $e) { $this->handleException($e); }
