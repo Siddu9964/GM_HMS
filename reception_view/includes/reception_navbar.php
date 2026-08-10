@@ -403,7 +403,7 @@ body.compact-mode .table th {
     <!-- Left Section: Mobile Menu + Page Title -->
     <div style="display: flex; align-items: center; gap: 1rem;">
         <!-- Mobile Menu Toggle -->
-        <button onclick="toggleSidebar()" class="btn btn-outline" id="desktop-menu-btn" style="padding: 0.5rem; display: inline-flex;">
+        <button onclick="toggleSidebar()" class="btn btn-outline" id="mobile-menu-btn" style="padding: 0.5rem; display: none;">
             <i class="fas fa-bars"></i>
         </button>
         
@@ -1009,7 +1009,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const mobileBtn = document.getElementById('mobile-menu-btn');
     if (mobileBtn) {
         // Show on mobile/tablet, hide on desktop
-        if (window.innerWidth <= 1024) {
+        if (window.innerWidth <= 768) {
             mobileBtn.style.display = 'block';
             console.log('Mobile menu button visible on mobile/tablet');
         } else {
@@ -1018,7 +1018,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Close sidebar on page load for mobile
-    if (window.innerWidth <= 1024) {
+    if (window.innerWidth <= 768) {
         closeSidebar();
         console.log('Sidebar closed on mobile page load');
     }
@@ -1037,7 +1037,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', function() {
         const mobileBtn = document.getElementById('mobile-menu-btn');
         if (mobileBtn) {
-            if (window.innerWidth <= 1024) {
+            if (window.innerWidth <= 768) {
                 mobileBtn.style.display = 'block';
             } else {
                 mobileBtn.style.display = 'none';
@@ -1163,7 +1163,7 @@ document.getElementById('change-password-form').addEventListener('submit', async
             return;
         }
         
-        const isMobile = window.innerWidth <= 1024;
+        const isMobile = window.innerWidth <= 768;
         console.log('toggleSidebar called, isMobile:', isMobile);
         
         if (isMobile) {
@@ -1217,7 +1217,7 @@ document.getElementById('change-password-form').addEventListener('submit', async
     // Initialize immediately
     const mobileBtn = document.getElementById('mobile-menu-btn');
     if (mobileBtn) {
-        if (window.innerWidth <= 1024) {
+        if (window.innerWidth <= 768) {
             mobileBtn.style.display = 'block';
             console.log('Mobile button shown immediately');
         } else {

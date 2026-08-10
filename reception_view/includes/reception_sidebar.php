@@ -6,7 +6,7 @@ $basePath = str_repeat('../', $depth);
 ?>
 <!-- Reception Sidebar Navigation -->
 <aside
-    class="reception-sidebar fixed lg:relative z-50 h-full overflow-y-auto transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out"
+    class="reception-sidebar"
     id="receptionSidebar">
     <div style="padding: 1.25rem 0.75rem; min-height: 100%; display: flex; flex-direction: column;">
         <!-- Logo & Branding -->
@@ -168,9 +168,13 @@ $basePath = str_repeat('../', $depth);
     }
 
     /* Mobile Toggle */
-    @media (max-width: 1024px) {
+    @media (max-width: 768px) {
+        .reception-main-content {
+            margin-left: 0 !important;
+        }
+        
         .reception-sidebar {
-            /* Managed by transform classes */
+            transform: translateX(-100%);
         }
         
         .reception-sidebar.mobile-open {
