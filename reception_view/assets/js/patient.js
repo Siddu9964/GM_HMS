@@ -642,18 +642,19 @@ class PatientManager {
                 try {
                     const response = await this.apiCall('GET', `/check-duplicate?${type}=${value}`);
                     if (response.success && response.data.exists) {
-                        const modal = document.getElementById('duplicateModal');
-                        const info = document.getElementById('duplicateInfo');
-                        const bookingBtn = document.getElementById('proceedToBookingBtn');
-
-                        if (modal && info && bookingBtn) {
-                            info.innerHTML = `<strong>${response.data.name}</strong> (${response.data.patient_id}) already exists in our system.<br><br>Please proceed to appointment booking for this patient.`;
-
-                            bookingBtn.onclick = () => {
+                        // Redirect directly to the appointment form instead of showing a modal
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                title: 'Patient Found',
+                                text: 'Redirecting to Appointment Booking...',
+                                icon: 'info',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
                                 window.location.href = `appointment_management.php?patient_id=${response.data.patient_id}&action=new`;
-                            };
-
-                            modal.classList.remove('hidden');
+                            });
+                        } else {
+                            window.location.href = `appointment_management.php?patient_id=${response.data.patient_id}&action=new`;
                         }
 
                         // Note: We intentionally do NOT clear the input here.

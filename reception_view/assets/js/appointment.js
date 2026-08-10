@@ -462,19 +462,16 @@ class AppointmentManager {
             if (response && response.success) {
                 this.closeModal();
                 
-                if (this.autoBilling && this.autoBillingPatientId) {
-                    Swal.fire({
-                        title: 'Appointment Scheduled!',
-                        text: 'Redirecting to OPD Billing Terminal...',
-                        icon: 'success',
-                        timer: 1500,
-                        showConfirmButton: false
-                    }).then(() => {
-                        window.location.href = `opd_billing.php?patient_id=${encodeURIComponent(this.autoBillingPatientId)}`;
-                    });
-                } else {
-                    this.showSuccessPopup('Appointment Scheduled!', 'The appointment has been successfully booked and registered.');
-                }
+                Swal.fire({
+                    title: 'Appointment Scheduled!',
+                    text: 'Redirecting to OPD Billing Terminal...',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    const redirectPatientId = this.autoBillingPatientId || data.patient_id;
+                    window.location.href = `opd_billing.php?patient_id=${encodeURIComponent(redirectPatientId)}`;
+                });
                 
                 this.loadAppointments();
             } else {

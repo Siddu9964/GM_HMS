@@ -106,9 +106,34 @@ if (!$billId && !$receiptId) { echo "No billing identifiers provided."; exit(); 
             font-size: 32px; font-weight: 900; text-transform: uppercase;
             letter-spacing: 4px; opacity: .08; transform: rotate(-20deg);
             pointer-events: none;
+            z-index: 1;
         }
         .stamp-paid    { color: #16a34a; }
         .stamp-pending { color: #dc2626; }
+
+        /* Watermark */
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-35deg);
+            font-size: 85px;
+            font-weight: 900;
+            color: rgba(22, 148, 154, 0.12); /* Increased opacity so it is visible */
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 0;
+            user-select: none;
+            letter-spacing: 6px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* Ensure content sits above watermark */
+        .bill-header, .patient-section, .section-title, table.items, .totals-section, .payment-box, .bill-footer {
+            position: relative;
+            z-index: 2;
+        }
 
         /* Loading */
         .loading { text-align: center; padding: 80px; color: #94a3b8; }
@@ -224,19 +249,26 @@ function renderBill(b) {
 
     document.getElementById('billWrapper').innerHTML = `
     <div class="print-page">
+        <div class="watermark">GM HOSPITALS</div>
         <div class="status-stamp ${stampClass}">${status}</div>
 
         <!-- Header -->
         <div class="bill-header">
             <div class="hospital-info">
                 ${(HOSPITAL_BRANCH || '').toLowerCase() === 'basaveshwaranagar' ? `
-                    <h1>GM HOSPITAL (Basaveshwar Nagar)</h1>
+                    <div style="margin-bottom: 10px;">
+                        <div style="font-size: 34px; font-weight: 800; color: #16949a; letter-spacing: 0.5px; line-height: 1.1;">GM HOSPITALS</div>
+                        <div style="font-size: 14px; color: #5a5a5a; font-weight: 500; letter-spacing: 0.3px;">&mdash; Nagarabhavi | Basaveshwaranagar &mdash;</div>
+                    </div>
                     <p>No. 335, 3rd Stage, 4th Block, Siddaiah Puranik Road,</p>
                     <p>Basaveshwara nagar, Bengaluru 560079</p>
                     <p>Tel. No 0802221160 Mob. No 9900003527</p>
                     <p>GST NO: 29AAFCP8756N3ZE</p>
                 ` : `
-                    <h1>GM Hospital</h1>
+                    <div style="margin-bottom: 10px;">
+                        <div style="font-size: 34px; font-weight: 800; color: #16949a; letter-spacing: 0.5px; line-height: 1.1;">GM HOSPITALS</div>
+                        <div style="font-size: 14px; color: #5a5a5a; font-weight: 500; letter-spacing: 0.3px;">&mdash; Nagarabhavi | Basaveshwaranagar &mdash;</div>
+                    </div>
                     <p>612, Nagarabhavi Main Rd, Vinayaka Layout,</p>
                     <p>Papreddy Palya, 2nd Stage, Naagarabhaavi,</p>
                     <p>Bengaluru, Karnataka 560072</p>
