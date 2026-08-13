@@ -333,3 +333,40 @@ RESULT: Array
 
 )
 
+DATA: Array
+(
+    [patient_id] => 
+    [admitting_doctor_id] => DOC019
+    [chief_complaint] => 
+    [diagnosis] => 
+    [emergency_contact_name] => 
+    [emergency_contact_phone] => 
+    [bed_id] => 9
+    [admission_type] => Emergency
+    [admission_date] => 2026-08-07
+    [admission_time] => 10:05
+    [referral_type] => Internal
+    [referral_name] => Dr. Bangaru Girish
+    [amount_per_day] => 1500
+    [nursig_charge] => 500
+    [doctor_charge] => 500
+    [service_charge] => 500
+    [total_bed_amount] => 3000
+    [payments[0][mode]] => CASH
+    [payments[0][amount]] => 20000
+    [advance_payment] => 20000
+    [admission_charge] => 350
+    [mrd_charge] => 400
+    [food_charge] => 570
+)
+
+RESULT: Array
+(
+    [success] => 
+    [errors] => Array
+        (
+            [0] => Patient id is required
+        )
+
+)
+

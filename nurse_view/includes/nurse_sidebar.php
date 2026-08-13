@@ -1,7 +1,5 @@
 <!-- Nurse Sidebar Navigation -->
-<aside
-    class="nurse-sidebar fixed lg:relative z-50 h-full transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out"
-    id="nurseSidebar">
+<aside class="nurse-sidebar" id="nurseSidebar">
     <div style="padding: 1.5rem; height: 100%; display: flex; flex-direction: column;">
         <!-- Logo & Branding -->
         <div style="display: flex; align-items: center; margin-bottom: 2rem; padding: 0 0.5rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
@@ -151,7 +149,7 @@
     .nurse-sidebar {
         font-family: 'Inter', sans-serif !important;
         box-sizing: border-box;
-        width: var(--gm-sidebar-w, 220px);
+        width: var(--gm-sidebar-w, 185px);
         background: #1f6b4a !important; /* Medical Teal */
         position: fixed;
         top: 0;
@@ -163,6 +161,7 @@
         border-right: 1px solid rgba(255,255,255,0.1);
         display: flex;
         flex-direction: column;
+        transition: transform 0.3s ease-in-out;
     }
 
     .nurse-sidebar *:not(i) {
@@ -183,7 +182,6 @@
         transition: all .22s cubic-bezier(.4, 0, .2, 1);
         margin-bottom: 2px;
     }
-
 
     .sidebar-link span:not(.badge) {
         flex: 1;
@@ -231,17 +229,30 @@
     .badge-warning { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
     .badge-danger { background: rgba(248, 113, 113, 0.2); color: #f87171; }
 
-    @media (max-width: 1024px) {
+    /* Desktop layout adjustments */
+    @media (min-width: 1024px) {
         .nurse-sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
+            transform: translateX(0) !important;
+        }
+        
+        /* Push content wrapper to the right globally for nurse pages */
+        body .content-wrapper {
+            margin-left: var(--gm-sidebar-w, 185px);
+            width: calc(100% - var(--gm-sidebar-w, 185px));
+        }
+    }
+
+    /* Mobile layout adjustments */
+    @media (max-width: 1023px) {
+        .nurse-sidebar {
             transform: translateX(-100%);
-            transition: transform 0.3s ease-in-out;
         }
         .nurse-sidebar.open {
             transform: translateX(0) !important;
-            left: 0 !important;
+        }
+        body .content-wrapper {
+            margin-left: 0;
+            width: 100%;
         }
     }
 </style>

@@ -53,11 +53,20 @@ class PharmacyNotificationsController extends BaseController {
             $low_stock = $this->db->fetchOne("SELECT COUNT(*) as count FROM ph_product WHERE quantity <= ?", [$threshold]);
             $expiry = $this->db->fetchOne("SELECT COUNT(*) as count FROM ph_product WHERE expiry_date IS NOT NULL AND expiry_date <= DATE_ADD(CURDATE(), INTERVAL ? DAY) AND expiry_date >= CURDATE()", [$expiryDays]);
             $pending_indents = $this->db->fetchOne("SELECT COUNT(*) as count FROM ph_indent_requests WHERE status='pending'");
+            $active_ip = $this->db->fetchOne("
+                SELECT COUNT(*) as count 
+                FROM ipd_clinical_records 
+                WHERE pharmacy_orders IS NOT NULL 
+                AND pharmacy_orders != '' 
+                AND pharmacy_orders != '[]'
+                AND pharmacy_orders LIKE '%\"status\":\"Active\"%'
+            ");
 
             $this->respondSuccess([
-                'low_stock'       => (int)($low_stock['count'] ?? 0),
-                'expiry'          => (int)($expiry['count'] ?? 0),
-                'pending_indents' => (int)($pending_indents['count'] ?? 0),
+                'low_stock'         => (int)($low_stock['count'] ?? 0),
+                'expiry'            => (int)($expiry['count'] ?? 0),
+                'pending_indents'   => (int)($pending_indents['count'] ?? 0),
+                'pending_ip_orders' => (int)($active_ip['count'] ?? 0),
             ]);
         } catch (Exception $e) { $this->handleException($e); }
     }

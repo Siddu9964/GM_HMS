@@ -280,6 +280,33 @@ function openProfileModal(mode = 'profile') {
     const modal = new bootstrap.Modal(document.getElementById('profileModal'));
     modal.show();
 }
+
+// Global polling for sidebar notifications
+document.addEventListener('DOMContentLoaded', () => {
+    function updateSidebarBadges() {
+        if (!document.getElementById('ipd-returns-badge')) return;
+        
+        fetch('api/get_ipd_return_requests.php?status=PENDING')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const badge = document.getElementById('ipd-returns-badge');
+                    if (data.data.length > 0) {
+                        badge.innerText = data.data.length;
+                        badge.style.display = 'inline-block';
+                        badge.style.background = '#ef4444';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            })
+            .catch(e => console.error('Error fetching global notifications', e));
+    }
+    
+    // Initial fetch and set interval
+    updateSidebarBadges();
+    setInterval(updateSidebarBadges, 15000);
+});
 </script>
 
 </body>

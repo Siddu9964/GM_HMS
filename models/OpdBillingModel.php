@@ -554,32 +554,76 @@ class OpdBillingModel
         }
     }
 
-    public function getConsultationFeeByPatient($patientId)
+    public function getConsultationFeeByPatient($patientId, $currentAppointmentId = '')
     {
-        $sql = "SELECT d.consultation_fee, a.appointment_date 
-                FROM appointments a
-                JOIN doctors d ON a.doctor_id = d.doctor_id
-                WHERE a.patient_id = ?
-                ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT 1";
-        $result = $this->db->fetchOne($sql, [$patientId]);
-        
-        if (!$result) {
-            return ['fee' => 0.00, 'is_followup' => false];
-        }
-
-        $fee = (float)$result['consultation_fee'];
-        $lastAppointmentDate = $result['appointment_date'];
+        $fee = 0.00;
         $isFollowup = false;
 
-        // 3-day validation rule
-        if ($lastAppointmentDate) {
-            $today = strtotime('today');
-            $lastDate = strtotime(date('Y-m-d', strtotime($lastAppointmentDate)));
-            $daysDiff = ($today - $lastDate) / 86400; // 86400 seconds in a day
+        if (!empty($currentAppointmentId)) {
+            // We have a specific appointment context
+            $sqlCurrent = "SELECT d.consultation_fee, a.appointment_date 
+                           FROM appointments a
+                           JOIN doctors d ON a.doctor_id = d.doctor_id
+                           WHERE a.appointment_id = ?";
+            $currentApt = $this->db->fetchOne($sqlCurrent, [$currentAppointmentId]);
             
-            if ($daysDiff >= 0 && $daysDiff <= 3) {
-                $fee = 0.00;
-                $isFollowup = true;
+            if ($currentApt) {
+                $fee = (float)$currentApt['consultation_fee'];
+                $currentDate = $currentApt['appointment_date'];
+                
+                // Find the most recent appointment BEFORE this one
+                $sqlPrev = "SELECT appointment_date 
+                            FROM appointments 
+                            WHERE patient_id = ? AND appointment_id != ? AND appointment_date <= ?
+                            ORDER BY appointment_date DESC, appointment_time DESC LIMIT 1";
+                $prevApt = $this->db->fetchOne($sqlPrev, [$patientId, $currentAppointmentId, $currentDate]);
+                
+                if ($prevApt) {
+                    $targetTime = strtotime($currentDate);
+                    $prevTime = strtotime($prevApt['appointment_date']);
+                    $daysDiff = ($targetTime - $prevTime) / 86400;
+                    
+                    if ($daysDiff >= 0 && $daysDiff <= 3) {
+                        $fee = 0.00;
+                        $isFollowup = true;
+                    }
+                }
+            }
+        } else {
+            // No specific appointment context (e.g. walk-in billing)
+            $sqlLatest = "SELECT d.consultation_fee, a.appointment_date 
+                          FROM appointments a
+                          JOIN doctors d ON a.doctor_id = d.doctor_id
+                          WHERE a.patient_id = ?
+                          ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT 1";
+            $latestApt = $this->db->fetchOne($sqlLatest, [$patientId]);
+            
+            if ($latestApt) {
+                $fee = (float)$latestApt['consultation_fee'];
+                $today = strtotime('today');
+                $latestTime = strtotime($latestApt['appointment_date']);
+                $daysDiff = ($today - $latestTime) / 86400;
+                
+                if ($daysDiff == 0) {
+                    // Latest appointment is today. Check if there is an older appointment for follow-up calculation
+                    $sqlPrev = "SELECT appointment_date 
+                                FROM appointments 
+                                WHERE patient_id = ? AND appointment_date < ?
+                                ORDER BY appointment_date DESC, appointment_time DESC LIMIT 1";
+                    $prevApt = $this->db->fetchOne($sqlPrev, [$patientId, $latestApt['appointment_date']]);
+                    if ($prevApt) {
+                        $prevTime = strtotime($prevApt['appointment_date']);
+                        $diff = ($today - $prevTime) / 86400;
+                        if ($diff >= 0 && $diff <= 3) {
+                            $fee = 0.00;
+                            $isFollowup = true;
+                        }
+                    }
+                } else if ($daysDiff > 0 && $daysDiff <= 3) {
+                    // Latest appointment was 1-3 days ago. They walked in today for a follow-up.
+                    $fee = 0.00;
+                    $isFollowup = true;
+                }
             }
         }
 

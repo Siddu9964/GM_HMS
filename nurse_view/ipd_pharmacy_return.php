@@ -15,15 +15,8 @@ if (!isset($_SESSION['user_id'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg-cream, #F3EFE6); margin: 0; color: #333; overflow-x: hidden; display: flex; }
-        .main-layout { display: flex; width: 100%; }
-        .content-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 100vh; padding: 20px; }
-        
-        @media (min-width: 1024px) {
-            .content-wrapper { margin-left: 185px; }
-        }
+
         @media (max-width: 1023px) {
-            .content-wrapper { margin-left: 0; padding: 10px; }
             .patient-card { flex-direction: column; gap: 10px; }
         }
 
@@ -69,10 +62,11 @@ if (!isset($_SESSION['user_id'])) {
         include 'includes/nurse_navbar.php'; 
         ?>
         
-        <div class="glass-card">
-            <div class="search-container">
+        <div class="main-content">
+            <div class="glass-card">
+                <div class="search-container">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" id="searchInput" class="search-box" placeholder="Search bill by Invoice No, Patient Name or Phone..." autocomplete="off">
+                <input type="text" id="searchInput" class="search-box" placeholder="Search admitted patient by ID, Name, or Phone..." autocomplete="off">
                 <div id="suggestions" class="suggestions-dropdown"></div>
             </div>
         </div>
@@ -82,16 +76,14 @@ if (!isset($_SESSION['user_id'])) {
                 <!-- Populated dynamically -->
             </div>
 
-            <h3 style="margin-top: 0; color: #444;">Return Items</h3>
+            <h3 style="margin-top: 0; color: #444;">Billed Pharmacy Items</h3>
             <table class="cart-table" id="cartTable">
                 <thead>
                     <tr>
                         <th>Medicine</th>
                         <th>Batch</th>
                         <th>Purchased Qty</th>
-                        <th>Rate (₹)</th>
                         <th>Return Qty</th>
-                        <th>Return Amount (₹)</th>
                     </tr>
                 </thead>
                 <tbody id="cartBody">
@@ -100,19 +92,34 @@ if (!isset($_SESSION['user_id'])) {
             </table>
             
             <div class="cart-footer">
-                <div>
-                    <span style="font-size: 1.1rem; color: #555; margin-right: 15px;">Total Refund Amount:</span>
-                    <span class="total-amount" id="grandTotal">₹0.00</span>
-                </div>
+                <button onclick="submitReturnRequest()" style="background:#1F6B4A; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:600;">Submit Return Request</button>
             </div>
+
+            <h3 style="margin-top: 30px; color: #444;">Past Return Requests</h3>
+            <table class="cart-table" id="pastReturnsTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Medicine</th>
+                        <th>Qty</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="pastReturnsBody">
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
         </div>
+        </div> <!-- End of main-content -->
     </div>
 
     </div>
     </div>
     
     <script>
-        let currentBill = null;
+        let currentAdmission = null;
+        let currentCharges = [];
         
         const searchInput = document.getElementById('searchInput');
         const suggestionsBox = document.getElementById('suggestions');
@@ -129,13 +136,13 @@ if (!isset($_SESSION['user_id'])) {
             }
             
             timeout = setTimeout(() => {
-                fetch(`api/search_ph_bill.php?q=${encodeURIComponent(query)}`)
+                fetch(`api/search_ipd_patient.php?q=${encodeURIComponent(query)}`)
                     .then(res => res.json())
                     .then(data => {
                         if (data.success && data.data.length > 0) {
                             renderSuggestions(data.data);
                         } else {
-                            suggestionsBox.innerHTML = '<div style="padding:15px; color:#888;">No bills found.</div>';
+                            suggestionsBox.innerHTML = '<div style="padding:15px; color:#888;">No patients found in your ward.</div>';
                             suggestionsBox.style.display = 'block';
                         }
                     })
@@ -143,22 +150,21 @@ if (!isset($_SESSION['user_id'])) {
             }, 300);
         });
         
-        function renderSuggestions(bills) {
+        function renderSuggestions(patients) {
             suggestionsBox.innerHTML = '';
-            bills.forEach(bill => {
+            patients.forEach(patient => {
                 const div = document.createElement('div');
                 div.className = 'suggestion-item';
                 div.innerHTML = `
                     <div class="suggestion-details">
-                        <strong>Invoice: ${bill.invoice_no}</strong>
-                        <span>Patient: ${bill.customer_name || 'N/A'} | Phone: ${bill.customer_phone || 'N/A'}</span>
+                        <strong>${patient.first_name} ${patient.last_name || ''}</strong>
+                        <span>Adm ID: ${patient.admission_id} | Phone: ${patient.phone || 'N/A'}</span>
                     </div>
                     <div style="text-align: right;">
-                        <span style="font-size:12px; color:#666;">${bill.invoice_date}</span><br>
-                        <strong style="color:#1F6B4A;">₹${parseFloat(bill.grand_total).toFixed(2)}</strong>
+                        <span style="font-size:12px; color:#666;">Bed: ${patient.bed_id}</span>
                     </div>
                 `;
-                div.onclick = () => loadBill(bill);
+                div.onclick = () => loadPatient(patient);
                 suggestionsBox.appendChild(div);
             });
             suggestionsBox.style.display = 'block';
@@ -170,45 +176,86 @@ if (!isset($_SESSION['user_id'])) {
             }
         });
         
-        function loadBill(bill) {
+        function loadPatient(patient) {
             suggestionsBox.style.display = 'none';
             searchInput.value = '';
-            
-            // Add return_qty to each item, initialized to 0
-            if (bill.items) {
-                bill.items = bill.items.map(item => ({
-                    ...item,
-                    return_qty: 0,
-                    purchased_qty: parseInt(item.purchased_qty) || 0,
-                    rate: parseFloat(item.rate) || 0
-                }));
-            }
-            
-            currentBill = bill;
+            currentAdmission = patient;
             
             document.getElementById('billInfo').innerHTML = `
-                <div><span>Invoice No</span><strong>${bill.invoice_no}</strong></div>
-                <div><span>Date</span><strong>${bill.invoice_date}</strong></div>
-                <div><span>Patient Name</span><strong>${bill.customer_name || 'N/A'}</strong></div>
-                <div><span>Phone</span><strong>${bill.customer_phone || 'N/A'}</strong></div>
-                <div><span>Bill Total</span><strong style="color:#1F6B4A;">₹${parseFloat(bill.grand_total).toFixed(2)}</strong></div>
+                <div><span>Patient Name</span><strong>${patient.first_name} ${patient.last_name || ''}</strong></div>
+                <div><span>Admission ID</span><strong>${patient.admission_id}</strong></div>
+                <div><span>Ward/Bed</span><strong>${patient.ward} / ${patient.bed_id}</strong></div>
+                <div><span>Phone</span><strong>${patient.phone || 'N/A'}</strong></div>
             `;
             
             document.getElementById('billSection').style.display = 'block';
-            renderCart();
+            
+            fetchCharges(patient.admission_id);
+            fetchPastReturns(patient.admission_id);
+        }
+
+        function fetchCharges(admissionId) {
+            fetch(`api/get_pharmacy_charges.php?admission_id=${admissionId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        currentAdmission.patient_id = data.patient_id;
+                        currentAdmission.bill_id = data.bill_id;
+                        currentCharges = data.data.map(item => ({
+                            ...item,
+                            return_qty: '',
+                            available_qty: item.quantity - item.returned_qty
+                        }));
+                        renderCart();
+                    }
+                });
+        }
+
+        function fetchPastReturns(admissionId) {
+            fetch(`api/get_pharmacy_return_requests.php?admission_id=${admissionId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const tbody = document.getElementById('pastReturnsBody');
+                        tbody.innerHTML = '';
+                        if (data.data.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:15px;">No past return requests</td></tr>';
+                            return;
+                        }
+                        data.data.forEach(req => {
+                            let statusColor = '#888';
+                            if (req.status === 'ACCEPTED') statusColor = '#1F6B4A';
+                            if (req.status === 'REJECTED') statusColor = '#ef4444';
+                            if (req.status === 'PENDING') statusColor = '#f59e0b';
+                            
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td>${req.requested_at}</td>
+                                    <td><strong>${req.medicine_name}</strong><br><small>${req.batch_no || 'N/A'}</small></td>
+                                    <td>${req.return_qty}</td>
+                                    <td>₹${parseFloat(req.return_amount).toFixed(2)}</td>
+                                    <td><span style="color:${statusColor}; font-weight:bold;">${req.status}</span></td>
+                                </tr>
+                            `;
+                        });
+                    }
+                });
         }
         
-        function updateReturnQty(productId, batch, qty) {
-            if (!currentBill) return;
-            const item = currentBill.items.find(x => x.product_id === productId && x.batch_no === batch);
+        function updateReturnQty(itemId, qty) {
+            const item = currentCharges.find(x => x.item_id == itemId);
             if (item) {
-                let newQty = parseInt(qty) || 0;
-                if (newQty < 0) newQty = 0;
-                if (newQty > item.purchased_qty) {
-                    alert('Cannot return more than purchased quantity (' + item.purchased_qty + ')');
-                    newQty = item.purchased_qty;
+                if (qty === '') {
+                    item.return_qty = '';
+                } else {
+                    let newQty = parseFloat(qty) || 0;
+                    if (newQty < 0) newQty = 0;
+                    if (newQty > item.available_qty) {
+                        alert('Cannot return more than available quantity (' + item.available_qty + ')');
+                        newQty = item.available_qty;
+                    }
+                    item.return_qty = newQty;
                 }
-                item.return_qty = newQty;
                 renderCart();
             }
         }
@@ -216,28 +263,62 @@ if (!isset($_SESSION['user_id'])) {
         function renderCart() {
             const tbody = document.getElementById('cartBody');
             tbody.innerHTML = '';
-            let grandTotal = 0;
             
-            currentBill.items.forEach(item => {
-                const refundAmount = item.rate * item.return_qty;
-                grandTotal += refundAmount;
-                
+            if (currentCharges.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:15px;">No pharmacy items billed for this patient.</td></tr>';
+                return;
+            }
+
+            currentCharges.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><strong>${item.product_name}</strong><br><small style="color:#888;">ID: ${item.product_id}</small></td>
-                    <td><span style="color:#555;">${item.batch_no || 'N/A'}</span></td>
-                    <td style="font-weight:600;">${item.purchased_qty}</td>
-                    <td>₹${item.rate.toFixed(2)}</td>
+                    <td><strong>${item.product_name}</strong><br><small style="color:#888;">Batch: ${item.batch_no || 'N/A'}</small></td>
+                    <td><span style="color:#555;">₹${item.unit_price.toFixed(2)}</span></td>
+                    <td style="font-weight:600;">${item.available_qty} <small style="color:#888;">(Total: ${item.quantity})</small></td>
                     <td>
-                        <input type="number" class="qty-input" value="${item.return_qty}" min="0" max="${item.purchased_qty}" 
-                            onchange="updateReturnQty('${item.product_id}', '${item.batch_no}', this.value)">
+                        <input type="number" class="qty-input" value="${item.return_qty}" placeholder="0" min="0" max="${item.available_qty}" 
+                            onchange="updateReturnQty('${item.item_id}', this.value)">
                     </td>
-                    <td style="font-weight:600; color:#ef4444;">₹${refundAmount.toFixed(2)}</td>
                 `;
                 tbody.appendChild(tr);
             });
-            
-            document.getElementById('grandTotal').innerText = '₹' + grandTotal.toFixed(2);
+        }
+
+        function submitReturnRequest() {
+            const returns = currentCharges.filter(x => x.return_qty > 0).map(x => ({
+                item_id: x.item_id,
+                return_qty: x.return_qty
+            }));
+
+            if (returns.length === 0) {
+                alert('Please enter a return quantity for at least one item.');
+                return;
+            }
+
+            fetch('api/submit_pharmacy_return.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    patient_id: currentAdmission.patient_id,
+                    admission_id: currentAdmission.admission_id,
+                    bill_id: currentAdmission.bill_id,
+                    returns: returns
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Return request submitted for pharmacy verification!');
+                    fetchCharges(currentAdmission.admission_id);
+                    fetchPastReturns(currentAdmission.admission_id);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('An error occurred while submitting the request.');
+            });
         }
     </script>
 </body>

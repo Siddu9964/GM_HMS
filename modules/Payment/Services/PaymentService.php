@@ -31,7 +31,6 @@ class PaymentService
         $this->syncCategory($billId, $admissionId, $patientId, $recordDate, 'LAB', $clinical['lab_tests'], $roomType, $updatedBy);
         $this->syncCategory($billId, $admissionId, $patientId, $recordDate, 'RADIOLOGY', $clinical['radiology_tests'], $roomType, $updatedBy);
         $this->syncCategory($billId, $admissionId, $patientId, $recordDate, 'MISC', $clinical['other_tests'], $roomType, $updatedBy);
-        $this->syncCategory($billId, $admissionId, $patientId, $recordDate, 'PHARMACY', $clinical['pharmacy_orders'], $roomType, $updatedBy);
 
         // Finally, recalculate master
         $this->repo->recalculateMasterTotals($billId, $updatedBy);

@@ -158,6 +158,8 @@ $router->add('POST', '#^/api/vendor/quotations/?$#',          'GM_HMS\\Controlle
 
 // ── Pharmacy: Dashboard / Alerts / Prescriptions ────────────────────────────
 $router->add('GET',  '#^/api/pharmacy/dashboard/?$#',             'GM_HMS\\Modules\\Pharmacy\\Controllers\\DashboardController', 'index');
+$router->add('GET',  '#^/api/pharmacy/ip-orders/?$#',             'GM_HMS\\Modules\\Pharmacy\\Controllers\\IPOrdersController', 'index');
+$router->add('POST', '#^/api/pharmacy/ip-orders/complete/?$#',    'GM_HMS\\Modules\\Pharmacy\\Controllers\\IPOrdersController', 'complete');
 $router->add('POST', '#^/api/pharmacy/billing/checkout/?$#',      'GM_HMS\\Modules\\Pharmacy\\Controllers\\BillingController', 'checkout');
 $router->add('GET',  '#^/api/pharmacy/billing/print/?$#',         'GM_HMS\\Modules\\Pharmacy\\Controllers\\BillingController', 'printInvoice');
 $router->add('GET',  '#^/api/pharmacy/billing/patients/?$#',      'GM_HMS\\Modules\\Pharmacy\\Controllers\\BillingController', 'searchPatients');
@@ -241,6 +243,7 @@ $router->add('DELETE', '#^/api/pharmacy/customers/([^/]+)/?$#',     'GM_HMS\\Con
 $router->add('GET',    '#^/api/pharmacy/indents/?$#',                  'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'index');
 $router->add('GET',    '#^/api/pharmacy/indents/history/?$#',          'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'history');
 $router->add('POST',   '#^/api/pharmacy/indents/?$#',                  'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'save');
+$router->add('POST',   '#^/api/pharmacy/indents/dispatch-drafts/?$#',  'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'dispatchDrafts');
 $router->add('POST',   '#^/api/pharmacy/indents/mark-sent/?$#',        'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'bulkMarkSent');
 $router->add('POST',   '#^/api/pharmacy/indents/revert-sent/?$#',      'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'revertSent');
 $router->add('POST',   '#^/api/pharmacy/indents/auto-generate/?$#',    'GM_HMS\\Controllers\\api\\PharmacyIndentController', 'autoGenerate');

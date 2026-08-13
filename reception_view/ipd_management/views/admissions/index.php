@@ -843,21 +843,17 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                                         <option value="">Select Doctor...</option>
                                     </select>
                                 </div>
-                                <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
-                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Chief Complaint</label>
-                                    <input type="text" name="chief_complaint" placeholder="Brief complaint..." style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
-                                </div>
-                                <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
-                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Diagnosis</label>
-                                    <input type="text" name="diagnosis" placeholder="Diagnosis..." style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
-                                </div>
+
                                 <div class="form-group" style="margin-bottom: 0; grid-column: span 3;">
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Emergency Contact Name</label>
                                     <input type="text" name="emergency_contact_name" placeholder="Contact Name" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
                                 </div>
                                 <div class="form-group" style="margin-bottom: 0; grid-column: span 3;">
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Emergency Contact Phone</label>
-                                    <input type="text" name="emergency_contact_phone" placeholder="Phone Number" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                    <input type="text" id="emergencyContactPhone" name="emergency_contact_phone" placeholder="Phone Number" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;" autocomplete="off">
+                                    <span id="emergencyPhoneError" style="display:none; color:#dc2626; font-size:0.68rem; font-weight:700; margin-top:3px; display:none;">
+                                        <i class="fas fa-exclamation-circle me-1"></i>This number matches the patient's registered phone. Please enter a different Emergency Contact Number.
+                                    </span>
                                 </div>
 
                                 <!-- SECTION 2: BED ALLOCATION -->
@@ -1306,6 +1302,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
 
             // ── Custom Appointment-based Selection Logic ──────────────────────
             let patientSearchTimeout;
+            let selectedPatientPhone = ''; // Stores registered phone of selected patient
 
             $('#patientSearchInput').on('input', function () {
                 $('#patientSelect').val(''); // Clear the selected ID if they type
@@ -1357,12 +1354,50 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 $('#patientSearchInput').val(pat.name + ' (' + pat.patient_id + ')');
                 $('#patientSearchResults').hide();
 
+                // Store the patient's registered phone for emergency contact validation
+                selectedPatientPhone = (pat.contact || '').trim().replace(/\s+/g, '');
+
+                // Reset emergency phone field state when patient changes
+                $('#emergencyContactPhone').css('border-color', 'var(--gray-300)');
+                $('#emergencyPhoneError').hide();
+
                 // Clear out doctor select until we fetch the latest one
                 $('#doctorSelect').empty().append('<option value="">-- Fetching doctor... --</option>');
                 
                 // Fetch the latest doctor for this patient
                 fetchLatestDoctor(pat.patient_id);
             };
+
+            // ── Emergency Contact Phone Validation ────────────────────────────
+            function validateEmergencyPhone() {
+                if (!selectedPatientPhone) return true; // No patient selected yet, skip
+                const enteredPhone = ($('#emergencyContactPhone').val() || '').trim().replace(/\s+/g, '');
+                if (!enteredPhone) return true; // Field is empty, skip (not required)
+
+                if (enteredPhone === selectedPatientPhone) {
+                    $('#emergencyContactPhone').css('border-color', '#dc2626');
+                    $('#emergencyPhoneError').css('display', 'block');
+                    return false;
+                } else {
+                    $('#emergencyContactPhone').css('border-color', '#16a34a');
+                    $('#emergencyPhoneError').hide();
+                    return true;
+                }
+            }
+
+            // Validate on blur (when user leaves the field)
+            $(document).on('blur', '#emergencyContactPhone', function() {
+                validateEmergencyPhone();
+            });
+
+            // Re-validate on input (reset error as user types)
+            $(document).on('input', '#emergencyContactPhone', function() {
+                const enteredPhone = ($(this).val() || '').trim().replace(/\s+/g, '');
+                if (!enteredPhone || enteredPhone !== selectedPatientPhone) {
+                    $(this).css('border-color', 'var(--gray-300)');
+                    $('#emergencyPhoneError').hide();
+                }
+            });
 
             // Hide results on click outside
             $(document).on('click', function (e) {
@@ -1846,6 +1881,30 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
         function saveAdmission() {
             const form = document.getElementById('addAdmissionForm');
             if (!form.reportValidity()) {
+                return;
+            }
+
+            // ── Emergency Contact Phone Duplicate Check ───────────────────────
+            if (!validateEmergencyPhone()) {
+                // Scroll to and focus the emergency phone field
+                const phoneField = document.getElementById('emergencyContactPhone');
+                if (phoneField) {
+                    phoneField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    phoneField.focus();
+                }
+                Toastify({
+                    text: "⚠️ Emergency Contact Phone cannot be the same as the patient's registered phone number. Please enter a different number.",
+                    duration: 5000,
+                    gravity: 'top',
+                    position: 'center',
+                    style: {
+                        background: '#dc2626',
+                        borderRadius: '8px',
+                        fontWeight: '600',
+                        fontSize: '0.85rem',
+                        maxWidth: '520px'
+                    }
+                }).showToast();
                 return;
             }
 

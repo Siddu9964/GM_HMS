@@ -8,13 +8,12 @@
         </button>
 
         <!-- Page Title -->
-        <div>
-            <h2 id="page-title" style="font-size: 1.5rem; font-weight: 700; color: var(--gray-900); margin: 0;">
+        <div style="min-width: 0; flex-shrink: 1;">
+            <h2 id="page-title" style="font-size: 1.25rem; font-weight: 700; color: var(--gray-900); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                 <?php echo $pageTitle ?? 'Dashboard'; ?>
             </h2>
-            <p id="page-subtitle" style="font-size: 0.875rem; color: var(--gray-500); margin: 0;">
-                Welcome back,
-                <?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Nurse'); ?>
+            <p id="page-subtitle" style="font-size: 0.85rem; color: var(--gray-500); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                Welcome back, <?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Nurse'); ?>
             </p>
         </div>
     </div>
@@ -657,4 +656,127 @@
             toggleSettingsModal();
         }
     }
+
+    // --- Notification Polling & Popup Logic ---
+    let knownNotifs = new Set();
+    let isFirstLoad = true;
+    
+    function showNotificationToast(title, message) {
+        const toast = document.createElement('div');
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.right = '20px';
+        toast.style.backgroundColor = '#1f6b4a';
+        toast.style.color = 'white';
+        toast.style.padding = '15px 20px';
+        toast.style.borderRadius = '8px';
+        toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        toast.style.zIndex = '99999';
+        toast.style.display = 'flex';
+        toast.style.flexDirection = 'column';
+        toast.style.gap = '5px';
+        toast.style.minWidth = '300px';
+        toast.style.transform = 'translateY(100px)';
+        toast.style.opacity = '0';
+        toast.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+        
+        toast.innerHTML = `
+            <div style="font-weight: bold; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-bell"></i> ${title}
+            </div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">${message}</div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.transform = 'translateY(0)';
+            toast.style.opacity = '1';
+        }, 100);
+        
+        setTimeout(() => {
+            toast.style.transform = 'translateY(100px)';
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+    
+    async function fetchNurseNotifications() {
+        try {
+            const res = await fetch('/GM_HMS/api/notifications?unread_only=1');
+            const response = await res.json();
+            const data = response.data;
+            
+            if (data && Array.isArray(data)) {
+                const count = data.length;
+                
+                // Update badge
+                const badge = document.getElementById('navbar-notification-badge');
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+                
+                // Show popup ONLY for genuinely new notifications, and never on first load
+                const currentIds = new Set(data.map(n => n.notification_id));
+                
+                if (!isFirstLoad) {
+                    const newNotifs = data.filter(n => !knownNotifs.has(n.notification_id));
+                    newNotifs.forEach((n, index) => {
+                        setTimeout(() => {
+                            showNotificationToast(n.title || 'New Notification', n.message || '');
+                        }, index * 800); // stagger them slightly if multiple arrive
+                    });
+                }
+                
+                knownNotifs = currentIds;
+                isFirstLoad = false;
+                
+                // Update dropdown list
+                const listEl = document.getElementById('notifications-list');
+                if (count === 0) {
+                    listEl.innerHTML = `
+                        <div style="padding: 2rem; text-align: center; color: var(--gray-400);">
+                            <i class="fas fa-bell-slash" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                            <p>No new notifications</p>
+                        </div>
+                    `;
+                } else {
+                    let html = '';
+                    data.forEach(n => {
+                        html += `
+                            <div style="padding: 1rem; border-bottom: 1px solid #e2e8f0; cursor: pointer;" onclick="markNotifRead('${n.notification_id}')">
+                                <div style="font-weight: 600; font-size: 0.9rem; color: #1e293b; margin-bottom: 4px;">${n.title}</div>
+                                <div style="font-size: 0.8rem; color: #64748b;">${n.message}</div>
+                                <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 6px;">${new Date(n.created_at).toLocaleString()}</div>
+                            </div>
+                        `;
+                    });
+                    listEl.innerHTML = html;
+                }
+            }
+        } catch (e) {
+            console.error('Failed to fetch notifications', e);
+        }
+    }
+    
+    async function markNotifRead(id) {
+        try {
+            await fetch('/GM_HMS/api/notifications/mark-read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notification_ids: [id] })
+            });
+            fetchNurseNotifications();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+    
+    // Poll every 10 seconds
+    setInterval(fetchNurseNotifications, 10000);
+    // Initial fetch
+    document.addEventListener('DOMContentLoaded', fetchNurseNotifications);
 </script>

@@ -36,6 +36,8 @@ $isAssistant = ($userDesignation === 'Assistant Pharmacist');
       <span class="ph-nav-label">Sales</span>
       <ul class="ph-nav-list">
         <?= navLink('billing_pos.php','fas fa-cash-register',       'Billing / POS',    $cur) ?>
+        <?= navLink('ip_orders.php',  'fas fa-bed',                 'IP Orders',        $cur, 'ip-orders-badge') ?>
+        <?= navLink('ipd_returns_verification.php', 'fas fa-check-double', 'IPD Returns Verif.', $cur, 'ipd-returns-badge') ?>
         <?php if (!$isAssistant): ?>
         <?= navLink('sales.php',      'fas fa-receipt',             'Sales History',    $cur) ?>
         <?= navLink('returns.php',    'fas fa-undo-alt',            'Returns',          $cur) ?>

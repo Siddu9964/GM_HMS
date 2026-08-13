@@ -76,53 +76,66 @@ class PharmacyIndentController extends BaseController {
             $id           = !empty($d['id']) ? (int)$d['id'] : null;
             $department   = trim($d['department']   ?? '');
             $requested_by = trim($d['requested_by'] ?? '');
-            $product_id   = trim($d['product_id']   ?? '');
-            $item_name    = trim($d['item_name']    ?? '');
-            $qty          = (int)($d['qty']         ?? 1);
             $priority     = in_array($d['priority'] ?? '', ['low','medium','high','urgent'])
                                 ? $d['priority'] : 'medium';
             $status       = in_array($d['status']   ?? '', ['pending','approved','ordered','cancelled'])
                                 ? $d['status'] : 'pending';
             $remarks      = trim($d['remarks']      ?? '');
-            $supplier_id  = trim($d['supplier_id']  ?? '');
-            $company_name = trim($d['company_name'] ?? '');
-            $email        = trim($d['email']        ?? '');
+            
+            $items = $d['items'] ?? [];
 
-            if (empty($item_name) || $qty < 1) {
-                $this->respondBadRequest('Item name and quantity (>0) are required.');
+            if (empty($id) && empty($items)) {
+                $this->respondBadRequest('Items are required.');
                 return;
             }
 
-            if (empty($id)) {
-                // Auto-generate IND-XXXXX
-                $row = $this->db->fetchOne(
-                    "SELECT MAX(CAST(SUBSTRING(indent_no, 5) AS UNSIGNED)) AS max_id
-                     FROM ph_indent_requests"
-                );
-                $indent_no = 'IND-' . str_pad(($row['max_id'] ?? 0) + 1, 5, '0', STR_PAD_LEFT);
-
-                $this->db->execute(
-                    "INSERT INTO ph_indent_requests
-                        (indent_no, request_date, request_time, requested_by, department,
-                         product_id, item_name, qty, priority, remarks, status,
-                         supplier_id, company_name, email)
-                     VALUES (?, CURDATE(), CURTIME(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [$indent_no, $requested_by, $department, $product_id, $item_name,
-                     $qty, $priority, $remarks, $status, $supplier_id, $company_name, $email]
-                );
-                $this->respondCreated(['indent_no' => $indent_no]);
-            } else {
+            if (!empty($id)) {
+                if (empty($items) || count($items) === 0) {
+                     $this->respondBadRequest('Item data is required for update.');
+                     return;
+                }
+                $item = $items[0];
                 $this->db->execute(
                     "UPDATE ph_indent_requests
                      SET requested_by=?, department=?, product_id=?, item_name=?,
                          qty=?, priority=?, status=?, remarks=?,
                          supplier_id=?, company_name=?, email=?
                      WHERE id=?",
-                    [$requested_by, $department, $product_id, $item_name,
-                     $qty, $priority, $status, $remarks,
-                     $supplier_id, $company_name, $email, $id]
+                    [$requested_by, $department, trim($item['product_id'] ?? ''), trim($item['item_name'] ?? ''),
+                     (int)($item['qty'] ?? 1), $priority, $status, $remarks,
+                     trim($item['supplier_id'] ?? ''), trim($item['company_name'] ?? ''), trim($item['email'] ?? ''), $id]
                 );
                 $this->respondSuccess(null, 'Indent request updated successfully.');
+            } else {
+                $row = $this->db->fetchOne(
+                    "SELECT MAX(CAST(SUBSTRING(indent_no, 5) AS UNSIGNED)) AS max_id
+                     FROM ph_indent_requests"
+                );
+                $indent_no = 'IND-' . str_pad(($row['max_id'] ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+
+                $this->db->beginTransaction();
+                try {
+                    foreach($items as $item) {
+                        $item_name = trim($item['item_name'] ?? '');
+                        $qty = (int)($item['qty'] ?? 1);
+                        if(empty($item_name) || $qty < 1) continue;
+                        
+                        $this->db->execute(
+                            "INSERT INTO ph_indent_requests
+                                (indent_no, request_date, request_time, requested_by, department,
+                                 product_id, item_name, qty, priority, remarks, status,
+                                 supplier_id, company_name, email)
+                             VALUES (?, CURDATE(), CURTIME(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            [$indent_no, $requested_by, $department, trim($item['product_id'] ?? ''), $item_name,
+                             $qty, $priority, $remarks, $status, trim($item['supplier_id'] ?? ''), trim($item['company_name'] ?? ''), trim($item['email'] ?? '')]
+                        );
+                    }
+                    $this->db->commit();
+                    $this->respondCreated(['indent_no' => $indent_no], 'Indent created successfully.');
+                } catch (Exception $inner) {
+                    $this->db->rollback();
+                    throw $inner;
+                }
             }
         } catch (Exception $e) {
             $this->handleException($e);
@@ -290,13 +303,25 @@ class PharmacyIndentController extends BaseController {
             foreach ($items as $item) {
                 // Order qty: enough to reach 50, minimum 10
                 $orderQty  = max(50 - (int)$item['total_qty'], 10);
+                
+                // Attempt to find the last supplier used for this product
+                $lastSupp = $this->db->fetchOne(
+                    "SELECT supplier_id, company_name, email FROM ph_indent_requests 
+                     WHERE product_id = ? AND supplier_id != '' AND supplier_id IS NOT NULL 
+                     ORDER BY id DESC LIMIT 1",
+                    [$item['product_id']]
+                );
+                
+                $supplier_id = $lastSupp['supplier_id'] ?? '';
+                $company_name = $lastSupp['company_name'] ?? '';
+                $email = $lastSupp['email'] ?? '';
 
                 $this->db->execute(
                     "INSERT INTO ph_indent_requests
                         (indent_no, request_date, request_time, requested_by, department,
                          product_id, item_name, qty, priority, remarks, status, supplier_id, company_name, email)
-                     VALUES (?, CURDATE(), CURTIME(), 'System Auto', 'Pharmacy Store', ?, ?, ?, 'high', 'Auto-generated: low stock', 'pending', '', '', '')",
-                    [$indent_no, $item['product_id'], $item['product_name'], $orderQty]
+                     VALUES (?, CURDATE(), CURTIME(), 'System Auto', 'Pharmacy Store', ?, ?, ?, 'high', 'Auto-generated: low stock', 'pending', ?, ?, ?)",
+                    [$indent_no, $item['product_id'], $item['product_name'], $orderQty, $supplier_id, $company_name, $email]
                 );
                 $count++;
             }
@@ -354,15 +379,75 @@ class PharmacyIndentController extends BaseController {
         }
 
         try {
+            $this->db->beginTransaction();
+
+            $row_m = $this->db->fetchOne("SELECT MAX(CAST(SUBSTRING(indent_no, 5) AS UNSIGNED)) AS max_id FROM ph_indent_requests");
+            $new_indent_no = 'IND-' . str_pad(($row_m['max_id'] ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+
             $inStr = implode(',', array_fill(0, count($ids), '?'));
-            $params = array_merge(['ordered', $method, $user], $ids);
+            $params = array_merge(['ordered', $method, $user, $new_indent_no], $ids);
             
             $this->db->execute(
-                "UPDATE ph_indent_requests SET status = ?, communication_method = ?, sent_by = ? WHERE id IN ($inStr)",
+                "UPDATE ph_indent_requests SET status = ?, communication_method = ?, sent_by = ?, indent_no = ? WHERE id IN ($inStr)",
                 $params
             );
+
+            $this->db->commit();
             $this->respondSuccess(null, 'Indents marked as sent.');
         } catch (Exception $e) {
+            try { $this->db->rollback(); } catch (Exception $re) {}
+            $this->handleException($e);
+        }
+    }
+
+    public function dispatchDrafts(): void {
+        $this->restrictMethod('POST');
+        $this->requireAuth();
+        $input = $this->getJsonInput();
+        
+        $items = $input['items'] ?? [];
+        $method = $input['communication_method'] ?? 'Email';
+        $user = $_SESSION['username'] ?? 'Unknown User';
+        
+        if (empty($items)) {
+            $this->respondError('No items provided.', 400);
+            return;
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            $row_m = $this->db->fetchOne("SELECT MAX(CAST(SUBSTRING(indent_no, 5) AS UNSIGNED)) AS max_id FROM ph_indent_requests");
+            $new_indent_no = 'IND-' . str_pad(($row_m['max_id'] ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+
+            foreach ($items as $item) {
+                $item_name = trim($item['item_name'] ?? '');
+                $qty = (int)($item['qty'] ?? 1);
+                if(empty($item_name) || $qty < 1) continue;
+                
+                $priority = $item['priority'] ?? 'medium';
+                $department = $item['department'] ?? '';
+                $requested_by = $item['requested_by'] ?? '';
+                $remarks = $item['remarks'] ?? '';
+                $supplier_id = $item['supplier_id'] ?? '';
+                $company_name = $item['company_name'] ?? '';
+                $email = $item['email'] ?? '';
+                
+                $this->db->execute(
+                    "INSERT INTO ph_indent_requests
+                        (indent_no, request_date, request_time, requested_by, department,
+                         product_id, item_name, qty, priority, remarks, status,
+                         supplier_id, company_name, email, communication_method, sent_by)
+                     VALUES (?, CURDATE(), CURTIME(), ?, ?, ?, ?, ?, ?, ?, 'ordered', ?, ?, ?, ?, ?)",
+                    [$new_indent_no, $requested_by, $department, trim($item['product_id'] ?? ''), $item_name,
+                     $qty, $priority, $remarks, $supplier_id, $company_name, $email, $method, $user]
+                );
+            }
+
+            $this->db->commit();
+            $this->respondSuccess(null, 'Drafts dispatched successfully.');
+        } catch (Exception $e) {
+            try { $this->db->rollback(); } catch (Exception $re) {}
             $this->handleException($e);
         }
     }

@@ -393,6 +393,13 @@ const billing = (function () {
                                     return `${n}: ₹${parseFloat(t).toLocaleString('en-IN')}`;
                                 }).join(' <span style="color: #cbd5e1;">|</span> ') + 
                                 '</div>';
+                        } else if (typeof subItems === 'object' && subItems !== null) {
+                            if (parseFloat(subItems.returned_qty) > 0) {
+                                subDesc = `<div class="item-sub" style="color: #dc2626; font-size: 12px; margin-top: 4px; line-height: 1.4;">
+                                    <i data-lucide="undo-2" style="width:12px; height:12px; display:inline-block; margin-right:2px; vertical-align:text-bottom;"></i>
+                                    Returned: ${subItems.returned_qty} (Refund: ₹${parseFloat(subItems.returned_amount || 0).toLocaleString('en-IN', {minimumFractionDigits:2})})
+                                </div>`;
+                            }
                         }
                     } catch (e) {}
                 } else if (item.charge_type === 'ROOM_RENT') {

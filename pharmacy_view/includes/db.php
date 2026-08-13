@@ -114,6 +114,18 @@ class DBWrapper {
     public function getConnection(): mixed {
         return $this->db->getConnection();
     }
+
+    public function beginTransaction(): void {
+        $this->db->beginTransaction();
+    }
+
+    public function commit(): void {
+        $this->db->commit();
+    }
+
+    public function rollback(): void {
+        $this->db->rollback();
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

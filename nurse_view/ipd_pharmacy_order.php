@@ -354,16 +354,6 @@ if (!isset($_SESSION['user_id'])) {
                     showCenterMessage(true, 'Order Saved', 'Pharmacy order saved successfully!');
                     cart = [];
                     renderCart();
-                    
-                    // TRIGGER BILLING SYNC (REST API)
-                    fetch('/GM_HMS/api/payment/clinical-billing-sync', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            admission_id: currentPatient.admission_id,
-                            record_date: new Date().toISOString().split('T')[0]
-                        })
-                    }).catch(e => console.error('Billing sync failed:', e));
                 } else {
                     showCenterMessage(false, 'Error', data.message || 'Error saving order.');
                 }

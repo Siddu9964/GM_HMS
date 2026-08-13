@@ -100,7 +100,7 @@ include 'includes/ph_head.php';
 <style>
   .compact-modal .ph-label { font-size: 0.65rem; font-weight: 800; color: #1F6B4A; margin-bottom: 2px; text-transform: uppercase; }
   .compact-modal h6 { font-size: 0.8rem; margin-top: 4px; margin-bottom: 8px !important; color: #1F6B4A; font-weight: 800; border-bottom: 1px solid rgba(31,107,74,0.1); padding-bottom: 4px; }
-  .compact-modal .modal-body { padding: 12px 20px; }
+  .compact-modal .modal-body { padding: 0; overflow: hidden; }
   .compact-modal .modal-header, .compact-modal .modal-footer { padding: 10px 20px; }
   .compact-modal .grid-3-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
   .compact-modal .grid-2-cols { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
@@ -109,14 +109,14 @@ include 'includes/ph_head.php';
   .compact-modal .grid-item-full { grid-column: 1 / -1; display: flex; flex-direction: column; }
 </style>
 <div class="modal fade compact-modal" id="detailModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 900px;">
-    <div class="modal-content" style="background: #F3EFE6; border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
-      <div class="modal-header" style="border-bottom: 1px solid rgba(31,107,74,0.15);">
-        <h5 class="modal-title" id="detailTitle" style="color: #1F6B4A; font-weight: 900; letter-spacing: -0.5px;">Invoice Details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="filter: invert(34%) sepia(16%) saturate(1637%) hue-rotate(107deg) brightness(97%) contrast(89%); opacity: 0.8;"></button>
+  <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 500px;">
+    <div class="modal-content" style="background: #ffffff; border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+        <h5 class="modal-title" id="detailTitle" style="color: #1e293b; font-weight: 900; letter-spacing: -0.5px;">Invoice Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body" id="detailBody">Loading...</div>
-      <div class="modal-footer" style="background: #F3EFE6; border-top: 1px solid rgba(31,107,74,0.15); border-radius: 0 0 12px 12px;">
+      <div class="modal-footer" style="background: #ffffff; border-top: 1px solid rgba(0,0,0,0.05); border-radius: 0 0 12px 12px;">
         <button class="btn btn-sm" data-bs-dismiss="modal" style="background: transparent; color: #1F6B4A; border: 1.5px solid rgba(31,107,74,0.2); border-radius: 8px; font-weight: 700;">Close</button>
         <button class="btn btn-sm" onclick="reprintInvoice()" style="background: #1F6B4A; color: #FFFFFF; border: none; border-radius: 8px; font-weight: 700; box-shadow: 0 4px 10px rgba(31,107,74,0.2);">
           <i class="fas fa-print me-1"></i> Reprint
@@ -235,72 +235,54 @@ function render() {
 
 async function viewSale(id) {
     currentSaleId = id;
-    document.getElementById('detailBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>';
+    document.getElementById('detailBody').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><div class="mt-2 text-muted fw-bold">Loading Invoice...</div></div>';
+    document.getElementById('detailTitle').innerHTML = `<i class="fas fa-file-invoice me-2"></i>Invoice Preview`;
     detailModal.show();
-    const res = await phGet(API_BASE + 'pharmacy/sales/' + id);
-    if (!res.success) { document.getElementById('detailBody').innerHTML = '<p class="text-danger">Error loading details</p>'; return; }
-    const s = res.data.sale, items = res.data.items;
-    document.getElementById('detailTitle').innerHTML = `<i class="fas fa-file-invoice me-2"></i>Invoice &mdash; ${s.invoice_no}`;
-    let itemsHtml = items.map(i => `<tr style="border-bottom: 1px solid rgba(31,107,74,0.1);">
-        <td style="color:#1F6B4A; font-weight:600;">${i.product_name}</td>
-        <td style="color:#1F6B4A;">${i.batch_no||'—'}</td>
-        <td style="color:#1F6B4A;">${i.qty}</td>
-        <td style="color:#1F6B4A;">${fmt.currency(i.rate)}</td>
-        <td style="color:#1F6B4A;">${i.discount_percent}%</td>
-        <td style="color:#1F6B4A;">${i.tax_percent}%</td>
-        <td style="color:#1F6B4A; font-weight:700;">${fmt.currency(i.subtotal)}</td></tr>`).join('');
-    document.getElementById('detailBody').innerHTML = `
-        <div class="mb-3">
-            <div class="p-3" style="background:#FFFFFF; border:1px solid rgba(31,107,74,0.15); border-radius:12px;">
-                <div class="grid-3-cols" style="margin-bottom:0;">
-                    <div class="grid-item"><div style="font-size:0.7rem; font-weight:700; color:#1F6B4A; text-transform:uppercase; margin-bottom:4px;">Invoice No</div><strong style="color:#1F6B4A; font-size:1.1rem;">${s.invoice_no}</strong></div>
-                    <div class="grid-item"><div style="font-size:0.7rem; font-weight:700; color:#1F6B4A; text-transform:uppercase; margin-bottom:4px;">Date</div><span style="color:#1F6B4A; font-weight:600;">${fmt.date(s.invoice_date)}</span></div>
-                    <div class="grid-item"><div style="font-size:0.7rem; font-weight:700; color:#1F6B4A; text-transform:uppercase; margin-bottom:4px;">Customer</div><span style="color:#1F6B4A; font-weight:600;">${s.customer_name}</span></div>
-                    <div class="grid-item"><div style="font-size:0.7rem; font-weight:700; color:#1F6B4A; text-transform:uppercase; margin-bottom:4px;">Phone</div><span style="color:#1F6B4A; font-weight:600;">${s.customer_phone||'—'}</span></div>
-                    <div class="grid-item"><div style="font-size:0.7rem; font-weight:700; color:#1F6B4A; text-transform:uppercase; margin-bottom:4px;">Payment</div><span style="color:#1F6B4A; font-weight:600;">${s.payment_method === 'split' ? '<span style="color:#1F6B4A;font-weight:800;">SPLIT</span>' : s.payment_method}</span></div>
-                    <div class="grid-item"><div style="font-size:0.7rem; font-weight:700; color:#1F6B4A; text-transform:uppercase; margin-bottom:4px;">Status</div>${statusBadge(s.status)}</div>
-                </div>
-            </div>
-        </div>
-        <div class="table-responsive mb-4" style="background:#FFFFFF; border-radius:12px; border:1px solid rgba(31,107,74,0.15); overflow:hidden;">
-            <table class="table mb-0">
-                <thead style="background:rgba(31,107,74,0.05);">
-                    <tr>
-                        <th style="color:#1F6B4A; font-size:0.75rem; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(31,107,74,0.1);">Product</th>
-                        <th style="color:#1F6B4A; font-size:0.75rem; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(31,107,74,0.1);">Batch</th>
-                        <th style="color:#1F6B4A; font-size:0.75rem; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(31,107,74,0.1);">Qty</th>
-                        <th style="color:#1F6B4A; font-size:0.75rem; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(31,107,74,0.1);">Rate</th>
-                        <th style="color:#1F6B4A; font-size:0.75rem; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(31,107,74,0.1);">Disc%</th>
-                        <th style="color:#1F6B4A; font-size:0.75rem; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(31,107,74,0.1);">Tax%</th>
-                        <th style="color:#1F6B4A; font-size:0.75rem; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(31,107,74,0.1);">Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody>${itemsHtml}</tbody>
-            </table>
-        </div>
-        <div class="grid-split mt-2">
-            <div class="grid-item">
-                ${s.payment_method === 'split' && s.split_payments ? `
-                    <div class="p-3" style="background:#FFFFFF; border-radius:12px; border:1px solid rgba(31,107,74,0.2);">
-                        <div style="font-weight:800; font-size:0.85rem; text-transform:uppercase; color:#1F6B4A; margin-bottom:12px; border-bottom:1px solid rgba(31,107,74,0.1); padding-bottom:6px;">Split Breakdown</div>
-                        ${s.split_payments.map(p => `
-                            <div style="display:flex; justify-content:space-between; font-size:0.95rem; padding:6px 0; border-bottom:1px dashed rgba(31,107,74,0.1);">
-                                <span style="text-transform:capitalize; font-weight:700; color:#1F6B4A;">${p.payment_method}</span>
-                                <span style="font-weight:800; color:#1F6B4A;">${fmt.currency(p.amount)}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                ` : ''}
-            </div>
-            <div class="grid-item">
-                <div class="p-3" style="background:#1F6B4A; border-radius:12px; color:#F3EFE6;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-weight:600;"><span>Subtotal</span><span>${fmt.currency(s.subtotal)}</span></div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-weight:600;"><span style="color:#FFCDCD;">Discount</span><span style="color:#FFCDCD;">-${fmt.currency(s.discount_amount)}</span></div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:12px; font-weight:600; border-bottom:1px solid rgba(243,239,230,0.2); padding-bottom:12px;"><span>Tax</span><span>${fmt.currency(s.tax_total)}</span></div>
-                    <div style="display:flex; justify-content:space-between; font-size:1.3rem; font-weight:900;"><span>Grand Total</span><span>${fmt.currency(s.grand_total)}</span></div>
-                </div>
-            </div>
-        </div>`;
+    
+    try {
+        const res = await phGet(API_BASE + `pharmacy/sales/${id}/reprint`);
+        if (!res.success) {
+            document.getElementById('detailBody').innerHTML = '<div class="p-4 text-center text-danger fw-bold"><i class="fas fa-exclamation-circle fa-2x mb-2"></i><br>Error loading invoice preview</div>';
+            return;
+        }
+        
+        // Use srcdoc to safely inject the complete HTML document into the iframe
+        // Remove the auto-print script and inject custom CSS to scale it down and fit without scrolling
+        let customCss = `
+        <style>
+            @media screen {
+                body { padding: 15px !important; background: transparent !important; }
+                ::-webkit-scrollbar { width: 0px; background: transparent; }
+                .action-bar { display: none !important; }
+                .invoice-wrapper { 
+                    zoom: 0.75; 
+                    max-width: 100% !important;
+                    margin: 0 auto !important; 
+                }
+                .invoice-container {
+                    box-shadow: none !important;
+                    border-radius: 0 !important;
+                    padding: 0 !important;
+                }
+            }
+        </style>`;
+        
+        let previewHtml = res.data.html.replace('setTimeout(function() { window.print(); }, 1200);', '') + customCss;
+        
+        const iframe = document.createElement('iframe');
+        iframe.style.width = '100%';
+        iframe.style.height = '75vh';
+        iframe.style.border = 'none';
+        iframe.style.display = 'block';
+        iframe.srcdoc = previewHtml;
+        
+        const container = document.getElementById('detailBody');
+        container.innerHTML = '';
+        container.appendChild(iframe);
+        
+    } catch(e) {
+        document.getElementById('detailBody').innerHTML = '<div class="p-4 text-center text-danger fw-bold"><i class="fas fa-exclamation-circle fa-2x mb-2"></i><br>Network error</div>';
+    }
 }
 
 async function printSale(id) {

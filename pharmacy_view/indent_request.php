@@ -130,6 +130,18 @@ include "includes/ph_head.php";
 /* Animations */
 @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
 .animate-slide-up { animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .bento-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+}
+@media (max-width: 768px) {
+  .bento-grid { grid-template-columns: 1fr; }
+  .smart-alert { flex-direction: column; align-items: flex-start; }
+  .ph-page-title { font-size: 1.5rem !important; }
+  .ph-page-subtitle { font-size: 0.85rem !important; }
+  .d-flex.justify-content-between.align-items-center.mb-5 { flex-direction: column; align-items: flex-start !important; gap: 1rem; }
+}
 </style>
 
 <div class="ph-wrap">
@@ -235,13 +247,17 @@ include "includes/ph_head.php";
     </select>
     <button class="ph-btn ph-btn-outline" style="height:54px;width:54px;border-radius:16px;box-shadow:var(--glass-shadow);border-color:transparent;background:white;" onclick="loadIndents()"><i class="fas fa-sync-alt"></i></button>
   </div>
-  <div class="ph-table-wrap p-0">
-    <table class="ph-table w-100" id="indentsTable">
+  <div class="ph-table-wrap p-0" style="overflow-x: auto;">
+    <table class="ph-table w-100" id="indentsTable" style="min-width: 900px;">
       <thead><tr>
-        <th style="width:50px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="width:20px;height:20px;accent-color:var(--proc-primary);"></th>
-        <th>Indent Reference</th><th>Product &amp; Source</th><th>Logistics Info</th><th>Qty &amp; Priority</th><th>Workflow State</th><th class="text-end">Actions</th>
+        <th style="width:40px; text-align:center;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="width:18px;height:18px;accent-color:var(--proc-primary);"></th>
+        <th style="width:25%">Product &amp; Source</th>
+        <th style="width:20%">Logistics Info</th>
+        <th style="width:15%">Qty &amp; Priority</th>
+        <th style="width:15%">Workflow State</th>
+        <th style="width:15%" class="text-end">Actions</th>
       </tr></thead>
-      <tbody id="indentsBody"><tr><td colspan="7" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></td></tr></tbody>
+      <tbody id="indentsBody"><tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-primary" role="status"></div></td></tr></tbody>
     </table>
   </div>
   <div class="d-flex align-items-center justify-content-between mt-4">
@@ -272,13 +288,17 @@ include "includes/ph_head.php";
     </div>
     <button class="ph-btn ph-btn-outline" style="height:54px;width:54px;border-radius:16px;box-shadow:var(--glass-shadow);border-color:transparent;background:white;" onclick="loadHistory()"><i class="fas fa-sync-alt"></i></button>
   </div>
-  <div class="ph-table-wrap p-0">
-    <table class="ph-table w-100" id="historyTable">
+  <div class="ph-table-wrap p-0" style="overflow-x: auto;">
+    <table class="ph-table w-100" id="historyTable" style="min-width: 900px;">
       <thead><tr>
-        <th style="width:50px"><input type="checkbox" id="historySelectAll" onchange="toggleHistorySelectAll(this)" style="width:20px;height:20px;accent-color:#059669;"></th>
-        <th>Indent Ref &amp; Date</th><th>Item &amp; Qty</th><th>Supplier</th><th>Dispatch Method</th><th>Remarks</th><th class="text-end">Actions</th>
+        <th style="width:40px; text-align:center;"><input type="checkbox" id="historySelectAll" onchange="toggleHistorySelectAll(this)" style="width:18px;height:18px;accent-color:#059669;"></th>
+        <th style="width:25%">Indent No &amp; Date</th>
+        <th style="width:20%">Items Count</th>
+        <th style="width:25%">Supplier(s)</th>
+        <th style="width:15%">Dispatch Method</th>
+        <th style="width:15%" class="text-end">Actions</th>
       </tr></thead>
-      <tbody id="historyBody"><tr><td colspan="7" class="text-center py-5"><div class="spinner-border text-success" role="status"></div></td></tr></tbody>
+      <tbody id="historyBody"><tr><td colspan="6" class="text-center py-5"><div class="spinner-border text-success" role="status"></div></td></tr></tbody>
     </table>
   </div>
   <div class="d-flex align-items-center justify-content-between mt-4">
@@ -307,6 +327,10 @@ include "includes/ph_head.php";
   .compact-modal .grid-3-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
   .compact-modal .grid-2-cols { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
   .compact-modal .grid-item { display: flex; flex-direction: column; }
+  #cartScrollArea::-webkit-scrollbar { width: 6px; }
+  #cartScrollArea::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+  #cartScrollArea::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  #cartScrollArea::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 </style>
 <div class="modal fade compact-modal" id="indentModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 900px;">
@@ -320,7 +344,7 @@ include "includes/ph_head.php";
           <input type="hidden" name="id" id="id">
           
           <div>
-            <h6><i class="fas fa-box-open me-1"></i>Indent & Supplier Details</h6>
+            <h6><i class="fas fa-info-circle me-1"></i>General Details</h6>
             <div class="grid-4-cols">
                 <div class="grid-item">
                   <label class="ph-label">Department / Ward</label>
@@ -329,21 +353,6 @@ include "includes/ph_head.php";
                 <div class="grid-item">
                   <label class="ph-label">Requested By</label>
                   <input type="text" class="ph-input" name="requested_by" id="requested_by" value="<?= htmlspecialchars($_SESSION['username'] ?? 'Pharmacist') ?>">
-                </div>
-                <div class="grid-item" style="grid-column: span 2;">
-                  <label class="ph-label">Item Name *</label>
-                  <input type="text" class="ph-input" name="item_name" id="item_name" list="lowStockList" required autocomplete="off">
-                  <input type="hidden" name="product_id" id="product_id">
-                  <datalist id="lowStockList">
-                    <?php foreach($lowStockItems as $item): ?>
-                      <option value="<?= htmlspecialchars($item['product_name']) ?>" data-id="<?= $item['product_id'] ?>"></option>
-                    <?php endforeach; ?>
-                  </datalist>
-                </div>
-                
-                <div class="grid-item">
-                  <label class="ph-label">Quantity *</label>
-                  <input type="number" class="ph-input" name="qty" id="qty" required min="1" value="1">
                 </div>
                 <div class="grid-item">
                   <label class="ph-label">Priority</label>
@@ -357,23 +366,7 @@ include "includes/ph_head.php";
                     <option value="pending">Pending</option><option value="approved">Approved</option><option value="cancelled">Cancelled</option>
                   </select>
                 </div>
-                <div class="grid-item">
-                  <label class="ph-label">Supplier *</label>
-                  <select class="ph-select" name="supplier_id" id="supplier_id" required onchange="updateCompanyName(this)">
-                    <option value="">Select Supplier</option>
-                    <?php foreach($suppliers as $s): ?>
-                      <option value="<?= $s['supplier_id'] ?>" data-company="<?= htmlspecialchars($s['company_name']) ?>" data-email="<?= htmlspecialchars($s['email'] ?? '') ?>">
-                          <?= htmlspecialchars($s['supplier_name']) ?>
-                      </option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-
-                <div class="grid-item">
-                  <label class="ph-label">Company Name</label>
-                  <input type="text" class="ph-input" name="company_name" id="company_name" readonly placeholder="Auto-filled" style="background:#E3F2EC; font-weight:800; cursor:not-allowed;">
-                </div>
-                <div class="grid-item">
+                <div class="grid-item" style="grid-column: span 2;">
                   <label class="ph-label"><i class="fas fa-envelope me-1"></i>Notify by Email (optional)</label>
                   <input type="email" class="ph-input" name="notify_email" id="notify_email" placeholder="store@hospital.com">
                 </div>
@@ -382,6 +375,61 @@ include "includes/ph_head.php";
                   <textarea class="ph-textarea" name="remarks" id="remarks" rows="1" placeholder="e.g. Stock critically low..."></textarea>
                 </div>
             </div>
+            
+            <div class="d-flex justify-content-between align-items-center mt-3 mb-2">
+              <h6 class="mb-0"><i class="fas fa-shopping-cart me-1"></i>Items Cart</h6>
+              <div class="d-flex gap-2 align-items-center">
+                <select class="ph-select" style="width:180px; height: 32px; font-size: 0.75rem;" id="bulkSupplier" onchange="applyBulkSupplier(this.value)">
+                  <option value="">Bulk Set Supplier...</option>
+                  <?php foreach($suppliers as $s): ?>
+                    <option value="<?= $s['supplier_id'] ?>"><?= htmlspecialchars($s['company_name'] ?: $s['supplier_name']) ?></option>
+                  <?php endforeach; ?>
+                </select>
+                <button type="button" class="btn btn-sm" style="background:#FEE2E2; color:#B91C1C; font-weight:700; border-radius:6px; padding: 4px 10px;" onclick="quickAddLowStock()">
+                  <i class="fas fa-bolt me-1"></i> Low-Stock
+                </button>
+                <button type="button" class="btn btn-sm" style="background:#E0F2FE; color:#0369A1; font-weight:700; border-radius:6px; padding: 4px 10px;" onclick="addCartRow()">
+                  <i class="fas fa-plus me-1"></i> Add Item
+                </button>
+              </div>
+            </div>
+            
+            <div style="border: 1px solid rgba(31,107,74,0.15); border-radius: 8px; overflow: hidden; background: white; max-height: 40vh; overflow-y: auto; position: relative;" id="cartScrollArea">
+                <table class="table table-borderless mb-0" id="cartTable" style="margin-bottom:0; width: 100%;">
+                  <thead style="background:#F1F5F9; position: sticky; top: 0; z-index: 10;">
+                    <tr>
+                      <th style="width:5%; text-align:center; padding:8px 12px; vertical-align: middle; border-bottom: 1px solid #E2E8F0;">
+                        <input type="checkbox" id="cartSelectAll" onclick="toggleCartAll(this)" style="width:16px;height:16px;accent-color:var(--proc-primary); margin:0;">
+                      </th>
+                      <th style="font-size:0.75rem; color:#64748B; width:40%; font-weight:800; padding:8px 12px; vertical-align: middle; border-bottom: 1px solid #E2E8F0;">Item Name *</th>
+                      <th style="font-size:0.75rem; color:#64748B; width:15%; font-weight:800; padding:8px 12px; vertical-align: middle; border-bottom: 1px solid #E2E8F0;">Qty *</th>
+                      <th style="font-size:0.75rem; color:#64748B; width:35%; font-weight:800; padding:8px 12px; vertical-align: middle; border-bottom: 1px solid #E2E8F0;">Supplier</th>
+                      <th style="font-size:0.75rem; color:#64748B; width:5%; text-align:center; font-weight:800; padding:8px 12px; vertical-align: middle; border-bottom: 1px solid #E2E8F0;">Del</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cartBody">
+                    <!-- Dynamic rows go here -->
+                  </tbody>
+                </table>
+                <div id="emptyCartMsg" class="text-center py-5 text-muted" style="font-weight:600; font-size:0.85rem; display:none;">
+                  <i class="fas fa-box-open mb-2" style="font-size: 1.5rem; color:#CBD5E1; display:block;"></i>
+                  Cart is empty. Add an item or generate low-stock.
+                </div>
+            </div>
+            
+            <datalist id="lowStockList">
+              <?php foreach($lowStockItems as $item): ?>
+                <option value="<?= htmlspecialchars($item['product_name']) ?>" data-id="<?= $item['product_id'] ?>" data-qty="<?= $item['quantity'] ?>"></option>
+              <?php endforeach; ?>
+            </datalist>
+            <select id="supplierTemplate" style="display:none;">
+              <option value="">Select Supplier</option>
+              <?php foreach($suppliers as $s): ?>
+                <option value="<?= $s['supplier_id'] ?>" data-company="<?= htmlspecialchars($s['company_name']) ?>" data-email="<?= htmlspecialchars($s['email'] ?? '') ?>">
+                    <?= htmlspecialchars($s['supplier_name']) ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
           </div>
         </div>
         <div class="modal-footer" style="background: #F3EFE6; border-top: 1px solid rgba(31,107,74,0.15); border-radius: 0 0 12px 12px;">
@@ -503,11 +551,19 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 async function loadIndents(){
-  try{
-    const res=await phGet(API_BASE+'pharmacy/indents');
-    if(res.success){allIndents=res.data;renderTable();updateActiveBadge();}
-    else PH.error(res.message);
-  }catch(e){PH.error('Network error');}
+    try {
+        const res = await phGet(API_BASE + 'pharmacy/indents?_t=' + Date.now());
+        if (res.success) {
+            allIndents = res.data || [];
+            renderTable();
+            updateActiveBadge();
+        } else {
+            PH.error(res.message);
+        }
+    } catch(e) {
+        console.error(e);
+        PH.error('Failed to load indents');
+    }
 }
 
 function updateCompanyName(selectElement) {
@@ -535,12 +591,12 @@ function renderTable() {
         return true;
     });
 
-    const pager = phPaginate(filteredData, currentPage, PER_PAGE);
+    const pager = phPaginate(filteredData, currentPage, 10);
     document.getElementById('tableInfo').textContent = `Showing ${pager.items.length} of ${filteredData.length} records`;
     
     let html = '';
     if (!pager.items.length) {
-        html = `<tr><td colspan="7" class="text-center py-5 text-muted">No records found matching your filters.</td></tr>`;
+        html = `<tr><td colspan="6" class="text-center py-5 text-muted">No records found matching your filters.</td></tr>`;
     } else {
         pager.items.forEach(i => {
             const isSelected = selectedIds.has(i.id);
@@ -557,16 +613,12 @@ function renderTable() {
             <tr class="indent-row ${isSelected ? 'selected' : ''}" onclick="toggleRow(${i.id}, !selectedIds.has(${i.id}))">
                 <td><input type="checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleRow(${i.id}, this.checked)" style="width:20px; height:20px; accent-color: var(--proc-primary);"></td>
                 <td>
-                    <div style="font-weight: 800; color: var(--proc-slate); font-size: 0.95rem;">${i.indent_no}</div>
-                    <div style="font-size: 0.75rem; color: #94A3B8; font-weight: 600; margin-top: 4px;"><i class="far fa-calendar-alt me-1"></i>${fmt.date(i.request_date)}</div>
-                </td>
-                <td>
                     <div style="font-weight: 700; color: #475569;">${i.item_name}</div>
                     <div style="font-size: 0.75rem; color: var(--proc-primary); font-weight: 700; margin-top: 4px;">Dept: ${i.department || 'Pharmacy'}</div>
                 </td>
                 <td>
                     <div style="font-weight: 700; color: #64748B; font-size: 0.85rem;">${i.company_name || 'N/A'}</div>
-                    <div style="font-size: 0.7rem; color: #94A3B8; margin-top: 4px;">ID: ${i.supplier_id || 'Î“Ã‡Ã¶'}</div>
+                    <div style="font-size: 0.7rem; color: #94A3B8; margin-top: 4px;">ID: ${i.supplier_id || 'N/A'}</div>
                 </td>
                 <td>
                     <input type="number" class="inline-qty" value="${i.qty}" onclick="event.stopPropagation()" onchange="updateQty(${i.id}, this.value)">
@@ -619,29 +671,143 @@ function updateBulkBar() {
 async function updateQty(id, qty) {
     try {
         const res = await phPost(API_BASE + 'pharmacy/indents/update-qty', { id: id, qty: qty });
-        if (res.success) { PH.success('Quantity updated'); loadIndents(); }
-        else PH.error(res.message);
-    } catch (e) { PH.error('Sync failed'); }
+        if (res.success) {
+            PH.success('Quantity updated');
+            loadIndents();
+        } else {
+            PH.error(res.message);
+        }
+    } catch (e) {
+        PH.error('Failed to update quantity');
+    }
 }
 
 async function bulkChangeStatus(status) {
     if (!selectedIds.size) return;
     try {
         const res = await phPost(API_BASE + 'pharmacy/indents/bulk-status', { ids: Array.from(selectedIds), status: status });
-        if (res.success) { PH.success('Batch updated'); selectedIds.clear(); loadIndents(); }
-        else PH.error(res.message);
-    } catch (e) { PH.error('Sync failed'); }
+        if (res.success) {
+            PH.success('Batch updated');
+            selectedIds.clear();
+            loadIndents();
+        } else {
+            PH.error(res.message);
+        }
+    } catch (e) {
+        PH.error('Failed to update status');
+    }
 }
 
 async function bulkDelete() {
     if (!selectedIds.size) return;
-    PH.confirm('Delete Selected?', `Permanently remove ${selectedIds.size} requisitions?`, async () => {
+    PH.confirm('Remove Selected?', `Remove ${selectedIds.size} requisitions from Active Workspace?`, async () => {
         try {
             const res = await phPost(API_BASE + 'pharmacy/indents/bulk-delete', { ids: Array.from(selectedIds) });
-            if (res.success) { PH.success('Deleted'); selectedIds.clear(); loadIndents(); }
-            else PH.error(res.message);
-        } catch (e) { PH.error('Delete failed'); }
+            if (res.success) {
+                PH.success('Removed');
+                selectedIds.clear();
+                loadIndents();
+            } else {
+                PH.error(res.message);
+            }
+        } catch (e) {
+            PH.error('Failed to delete');
+        }
     });
+}
+
+let cartRowIndex = 0;
+const LOW_STOCK_ITEMS = <?= json_encode($lowStockItems) ?>;
+
+function toggleCartAll(cb) {
+    const checkboxes = document.querySelectorAll('.item-select');
+    checkboxes.forEach(c => c.checked = cb.checked);
+}
+
+function applyBulkSupplier(supplierId) {
+    if (!supplierId) return;
+    const selects = document.querySelectorAll('.item-supplier');
+    let applied = 0;
+    selects.forEach(sel => {
+        sel.value = supplierId;
+        applied++;
+    });
+    if (applied > 0) {
+        PH.success(`Supplier applied to ${applied} item(s)`);
+    }
+    document.getElementById('bulkSupplier').value = '';
+}
+
+function addCartRow(item = null, isChecked = true) {
+  const tbody = document.getElementById('cartBody');
+  document.getElementById('emptyCartMsg').style.display = 'none';
+  
+  const tr = document.createElement('tr');
+  tr.id = 'cartRow_' + cartRowIndex;
+  tr.style.borderBottom = '1px solid #F1F5F9';
+  
+  const itemName = item ? item.product_name : '';
+  const itemQty = item ? (item.orderQty || 1) : 1;
+  const itemProductId = item ? item.product_id : '';
+  const checkedAttr = isChecked ? 'checked' : '';
+  
+  tr.innerHTML = `
+    <td style="padding:8px 12px; text-align:center;">
+        <input type="checkbox" class="item-select" style="width:18px;height:18px;accent-color:var(--proc-primary);" ${checkedAttr}>
+    </td>
+    <td style="padding:8px 12px;">
+      <input type="text" class="ph-input item-name" list="lowStockList" placeholder="Search item..." required autocomplete="off" value="${itemName}" onchange="updateProductId(this, ${cartRowIndex})">
+      <input type="hidden" class="product-id" id="prod_id_${cartRowIndex}" value="${itemProductId}">
+    </td>
+    <td style="padding:8px 12px;">
+      <input type="number" class="ph-input item-qty" min="1" value="${itemQty}" required>
+    </td>
+    <td style="padding:8px 12px;">
+      <select class="ph-select item-supplier">
+        ${document.getElementById('supplierTemplate').innerHTML}
+      </select>
+    </td>
+    <td style="padding:8px 12px; text-align:center;">
+      <button type="button" class="btn btn-sm" style="color:#EF4444; background:transparent; border:none; padding:4px;" onclick="removeCartRow(${cartRowIndex})"><i class="fas fa-trash"></i></button>
+    </td>
+  `;
+  tbody.appendChild(tr);
+  cartRowIndex++;
+  return tr;
+}
+
+function removeCartRow(index) {
+  const row = document.getElementById('cartRow_' + index);
+  if (row) row.remove();
+  if (document.getElementById('cartBody').children.length === 0) {
+    document.getElementById('emptyCartMsg').style.display = 'block';
+  }
+}
+
+function quickAddLowStock() {
+  const currentItems = Array.from(document.querySelectorAll('.item-name')).map(el => el.value);
+  let added = 0;
+  LOW_STOCK_ITEMS.forEach(item => {
+    if (!currentItems.includes(item.product_name)) {
+      item.orderQty = Math.max(50 - parseInt(item.quantity || 0), 10);
+      addCartRow(item, true);
+      added++;
+    }
+  });
+  if(added > 0) PH.success(`Added ${added} low-stock items to cart.`);
+  else PH.info('All low-stock items are already in the cart.');
+}
+
+function updateProductId(input, index) {
+    const list = document.getElementById('lowStockList');
+    const hidden = document.getElementById('prod_id_' + index);
+    hidden.value = '';
+    for(let option of list.options) {
+        if(option.value === input.value) {
+            hidden.value = option.getAttribute('data-id');
+            break;
+        }
+    }
 }
 
 function openIndentModal(){
@@ -650,6 +816,20 @@ function openIndentModal(){
   document.getElementById('modalTitle').textContent='New Indent Request';
   document.getElementById('department').value='Pharmacy Store';
   document.getElementById('status').value='pending';
+  document.getElementById('cartBody').innerHTML = '';
+  cartRowIndex = 0;
+  
+  // Pre-fill with low stock items unchecked by default
+  if(LOW_STOCK_ITEMS.length > 0) {
+      LOW_STOCK_ITEMS.forEach(item => {
+          item.orderQty = Math.max(50 - parseInt(item.quantity || 0), 10);
+          addCartRow(item, false);
+      });
+  } else {
+      document.getElementById('emptyCartMsg').style.display = 'block';
+  }
+  
+  document.getElementById('cartSelectAll').checked = false;
   modal.show();
 }
 
@@ -657,33 +837,95 @@ function editIndent(i){
   document.getElementById('indentForm').reset();
   document.getElementById('id').value=i.id;
   document.getElementById('modalTitle').textContent='Edit Indent';
-  ['department','requested_by','product_id','item_name','qty','priority','status','remarks', 'supplier_id', 'company_name'].forEach(f=>{if(document.getElementById(f))document.getElementById(f).value=i[f]||'';});
+  ['department','requested_by','priority','status','remarks', 'notify_email'].forEach(f=>{
+      if(document.getElementById(f)) document.getElementById(f).value=i[f]||'';
+  });
+  
+  document.getElementById('cartBody').innerHTML = '';
+  cartRowIndex = 0;
+  const row = addCartRow({ product_name: i.item_name, product_id: i.product_id, orderQty: i.qty });
+  
+  setTimeout(() => {
+      const supplierSelect = row.querySelector('.item-supplier');
+      if(supplierSelect) supplierSelect.value = i.supplier_id || '';
+  }, 50);
+  
   modal.show();
 }
 
 async function saveIndent(e) {
   e.preventDefault();
-  const data = Object.fromEntries(new FormData(e.target).entries());
-  PH.loading('Saving...');
-  try {
-    const res = await fetch(API_BASE + 'pharmacy/indents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    }).then(r => r.json());
-    if (res.success) {
-      // If notify email provided, send it after saving
-      if (data.notify_email && data.notify_email.trim() !== '') {
-        await sendEmailFor(data.notify_email, data.item_name, res.indent_no || data.id || '');
+  
+  const idVal = document.getElementById('id').value;
+  const formData = new FormData(e.target);
+  const baseData = Object.fromEntries(formData.entries());
+  
+  const rows = document.getElementById('cartBody').children;
+  if(rows.length === 0) {
+      PH.error('Please add at least one item to the cart.');
+      return;
+  }
+  
+  const items = [];
+  let valid = true;
+  for(let i=0; i<rows.length; i++) {
+      const row = rows[i];
+      const isSelected = row.querySelector('.item-select').checked;
+      if (!isSelected) continue; // Skip unchecked items
+      
+      const itemName = row.querySelector('.item-name').value;
+      const qty = row.querySelector('.item-qty').value;
+      const supplierSelect = row.querySelector('.item-supplier');
+      const supplierId = supplierSelect.value;
+      const productId = row.querySelector('.product-id').value;
+      
+      let companyName = '';
+      let email = '';
+      if(supplierId && supplierSelect.selectedIndex > 0) {
+          const opt = supplierSelect.options[supplierSelect.selectedIndex];
+          companyName = opt.getAttribute('data-company');
+          email = opt.getAttribute('data-email');
       }
-      PH.success(res.message);
-      modal.hide();
-      loadIndents();
-    } else {
-      PH.error(res.message);
-    }
-  } catch (err) {
-    PH.error('Failed to save. Please try again.');
+      
+      if(!itemName || !qty) valid = false;
+      
+      items.push({
+          item_name: itemName,
+          product_id: productId,
+          qty: qty,
+          supplier_id: supplierId,
+          company_name: companyName,
+          email: email
+      });
+  }
+  
+  if (items.length === 0) {
+      PH.error('Please select at least one item using the checkboxes.');
+      return;
+  }
+  
+  if(!valid) {
+      PH.error('Please fill all required fields for the selected items.');
+      return;
+  }
+  
+  baseData.items = items;
+
+  try {
+      const res = await phPost(API_BASE + 'pharmacy/indents', baseData);
+      if (res.success) {
+          if (baseData.notify_email && baseData.notify_email.trim() !== '') {
+              const indentRef = (res.data && res.data.indent_no) ? res.data.indent_no : 'DRAFT';
+              await sendEmailFor(baseData.notify_email, items.map(i=>i.item_name).join(', '), indentRef);
+          }
+          PH.success('Saved to Workspace');
+          modal.hide();
+          loadIndents();
+      } else {
+          PH.error(res.message);
+      }
+  } catch(e) {
+      PH.error('Failed to save indent');
   }
 }
 
@@ -717,38 +959,37 @@ async function sendEmailFor(toEmail, itemName, indentRef) {
       credentials: 'include',
       body: JSON.stringify({ email_to: toEmail, subject, body: htmlBody })
     });
-  } catch (e) { /* Silent fail Î“Ã‡Ã¶ main save already succeeded */ }
+  } catch (e) { /* Silent fail */ }
 }
 
 function deleteIndent(id){
-  PH.confirm('Delete Indent Request?','This cannot be undone.',async()=>{
-    const res=await fetch(API_BASE+'pharmacy/indents/'+id,{method:'DELETE'}).then(r=>r.json());
-    if(res.success){PH.success('Deleted');loadIndents();}else PH.error(res.message);
+  PH.confirm('Delete Indent Request?','This cannot be undone.',async ()=>{
+    try {
+        const res = await phPost(API_BASE + 'pharmacy/indents/bulk-delete', { ids: [id] });
+        if (res.success) {
+            PH.success('Deleted');
+            loadIndents();
+        } else {
+            PH.error(res.message);
+        }
+    } catch(e) {
+        PH.error('Failed to delete');
+    }
   });
 }
 
-function autoGenerateIndent() {
-  PH.confirm(
-    'Auto-Generate Indents?',
-    'Draft indent requests will be created for all low-stock items without existing pending/approved indents.',
-    async () => {
-      PH.loading('Generating drafts...');
-      try {
-        const r   = await fetch(API_BASE + 'pharmacy/indents/auto-generate', { method: 'POST' });
-        const res = await r.json();
-        const msg = res.message || res.error || 'Unknown response';
+async function autoGenerateIndent() {
+    try {
+        const res = await phPost(API_BASE + 'pharmacy/indents/auto-generate', {});
         if (res.success) {
-          PH.success(msg);
-          loadIndents();
+            PH.success(res.message || 'Draft indents generated for low-stock items.');
+            loadIndents();
         } else {
-          PH.error(msg);
+            PH.error(res.message);
         }
-      } catch (e) {
-        PH.error('Network error. Could not reach the server.');
-      }
-    },
-    'Yes, Generate'
-  );
+    } catch (e) {
+        PH.error('Failed to auto-generate indents');
+    }
 }
 
 // -- EMAIL ----------------------------------------------------------
@@ -756,12 +997,12 @@ function generateHtmlTable(items){
   const rows = items.map(i => {
     return `
     <tr>
-      <td style="border:1px solid #e2e8f0; padding:12px; font-family: sans-serif; font-size: 14px; color: #475569;">${i.indent_no}</td>
+      <td style="border:1px solid #e2e8f0; padding:12px; font-family: sans-serif; font-size: 14px; color: #475569;">${i.indent_no || 'DRAFT'}</td>
       <td style="border:1px solid #e2e8f0; padding:12px; font-family: sans-serif; font-size: 14px; color: #1e293b;">${i.item_name}</td>
       <td style="border:1px solid #e2e8f0; padding:12px; font-family: sans-serif; font-size: 14px; text-align:center; color: #475569;">${i.qty}</td>
       <td style="border:1px solid #e2e8f0; padding:12px; font-family: sans-serif; font-size: 12px; text-align:center;">
         <span style="background-color: ${i.priority==='high'||i.priority==='urgent'?'#fee2e2':'#f1f5f9'}; color: ${i.priority==='high'||i.priority==='urgent'?'#991b1b':'#475569'}; padding: 4px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">
-          ${i.priority}
+          ${i.priority || 'normal'}
         </span>
       </td>
       <td style="border:1px solid #e2e8f0; padding:12px; font-family: sans-serif; font-size: 14px; color: #475569;">${i.company_name || 'N/A'}</td>
@@ -794,7 +1035,7 @@ function quickEmail(id){
   if(!item)return;
   currentEmailItems = [item];
   document.getElementById('emailTo').value='';
-  document.getElementById('emailSubject').value=`[APPROVAL REQUIRED] Pharmacy Indent Request: ${item.indent_no}`; 
+  document.getElementById('emailSubject').value=`[APPROVAL REQUIRED] Pharmacy Indent Request: ${item.indent_no || 'DRAFT'}`; 
   document.getElementById('emailBody').value=DEFAULT_EMAIL_MSG;
   dispatchModal.show();
 }
@@ -812,7 +1053,6 @@ function bulkSendEmail(){
   document.getElementById('customEmail').value = '';
 
   if (uniqueSuppliers.length > 1) {
-      // Smart Dispatch Mode
       dispatchModalEl.dataset.smartMode = "true";
       recipientBlock.style.display = 'none';
       smartDispatchBlock.style.display = 'block';
@@ -830,7 +1070,6 @@ function bulkSendEmail(){
       document.getElementById('emailSubject').value = `[APPROVAL REQUIRED] Pharmacy Indent Requests`;
       document.getElementById('emailBody').value = `Dear Partner,\n\nPlease find attached the pharmacy indent requests assigned to your company.\nKindly review the requirements and submit your quotation through our digital portal.\n\nBest Regards,\nPharmacy Department\nGM Hospital`;
   } else {
-      // Normal Mode (0 or 1 supplier)
       dispatchModalEl.dataset.smartMode = "false";
       recipientBlock.style.display = 'block';
       smartDispatchBlock.style.display = 'none';
@@ -846,7 +1085,6 @@ function bulkSendEmail(){
       document.getElementById('emailBody').value=DEFAULT_EMAIL_MSG.replace('a pharmacy indent request has', currentEmailItems.length + ' pharmacy indent requests have');
   }
 
-  // Pre-fill WhatsApp message block
   const waVendor = (currentEmailItems[0]||{}).company_name || 'Supplier';
   const waItemLines = currentEmailItems.map(i=>`  - ${i.item_name} | Qty: ${i.qty} | Priority: ${(i.priority||'').toUpperCase()}`).join('\n');
   document.getElementById('whatsappBody').value = `*GM Hospital - Procurement Requisition*\n\nDear ${waVendor},\n\nKindly arrange the following items:\n\n${waItemLines}\n\nRef No: ${(currentEmailItems[0]||{}).indent_no||''}\nDate: ${new Date().toLocaleDateString()}\n\nPlease confirm receipt.\n\n– GM Hospital Pharmacy`;
@@ -854,7 +1092,6 @@ function bulkSendEmail(){
   dispatchModal.show();
 }
 
-// Reusable email template builder
 function buildEmailTemplate(message, tableHtml, firstIndentNo) {
     return `
     <div style="font-family: 'Segoe UI', sans-serif; color: #334155; max-width: 800px; margin: 20px auto; border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
@@ -886,8 +1123,6 @@ async function sendEmailNow(){
   
   if (isSmartMode) {
       PH.loading('Dispatching multiple emails...');
-      
-      // Group items by supplier_id
       const groups = {};
       currentEmailItems.forEach(item => {
           const sid = item.supplier_id || 'unassigned';
@@ -896,86 +1131,39 @@ async function sendEmailNow(){
       });
       
       let successCount = 0;
-      let failCount = 0;
-      
       for (const [sid, items] of Object.entries(groups)) {
-          if (sid === 'unassigned') continue; // Skip unassigned items in smart mode
-          
+          if (sid === 'unassigned') continue;
           const vendor = SUPPLIERS.find(s => s.supplier_id == sid);
-          if (!vendor || !vendor.email) {
-              failCount++;
-              continue;
+          if (!vendor || !vendor.email) continue;
+          
+          const fullHtmlBody = buildEmailTemplate(message, generateHtmlTable(items), items[0].indent_no || 'DISPATCHED');
+          const res = await fetch('send_email.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email_to: vendor.email, subject: subject, body: fullHtmlBody }) }).then(r => r.json());
+          if (res.success) { 
+              successCount++; 
+              const ids = items.map(i=>i.id);
+              await phPost(API_BASE + 'pharmacy/indents/mark-sent', { ids: ids, communication_method: 'Email' });
+              const idSet = new Set(ids);
+              allIndents = allIndents.filter(i => !idSet.has(i.id)); 
           }
-          
-          const tableHtml = generateHtmlTable(items);
-          const fullHtmlBody = buildEmailTemplate(message, tableHtml, items[0].indent_no);
-          
-          try {
-              const res = await fetch('send_email.php', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  credentials: 'include',
-                  body: JSON.stringify({ email_to: vendor.email, subject: subject, body: fullHtmlBody })
-              }).then(r => r.json());
-              
-              if (res.success) {
-                  successCount++;
-                  try {
-                      await fetch(API_BASE + 'pharmacy/indents/bulk-status', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ ids: items.map(i => i.id), status: 'ordered' })
-                      });
-                  } catch(e) {}
-              }
-              else failCount++;
-          } catch(e) { failCount++; }
       }
-      
       dispatchModal.hide();
-      if (failCount === 0) PH.success(`Successfully dispatched ${successCount} emails.`);
-      else if (successCount > 0) PH.success(`Sent ${successCount} emails. (${failCount} failed or missing vendor emails).`);
-      else PH.error('Failed to send emails. Ensure selected vendors have valid email addresses.');
-      
-      if (successCount > 0) loadIndents();
+      PH.success(`Sent ${successCount} emails.`);
+      selectedIds.clear();
+      loadIndents();
+      loadHistory();
       
   } else {
-      // Normal Single-Email Mode
       const selectEl = document.getElementById('emailTo');
       const customTo = document.getElementById('customEmail').value.trim();
       const to = customTo || selectEl.value;
-      
       if(!to){PH.error('Please select or enter a recipient email'); return;}
       
-      let newSupplierId = '';
-      let newCompanyName = '';
       if (!customTo && selectEl.selectedIndex > 0) {
           const opt = selectEl.options[selectEl.selectedIndex];
-          newSupplierId = opt.getAttribute('data-id');
-          newCompanyName = opt.getAttribute('data-name');
-      }
-
-      // Automatically assign this vendor to these indents in the database
-      if (newSupplierId) {
-          try {
-              await fetch(API_BASE + 'pharmacy/indents/bulk-assign', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                      ids: currentEmailItems.map(i => i.id),
-                      supplier_id: newSupplierId,
-                      company_name: newCompanyName,
-                      email: to
-                  })
-              });
-              // Update local state so UI doesn't require refresh
-              currentEmailItems.forEach(i => {
-                  i.supplier_id = newSupplierId;
-                  i.company_name = newCompanyName;
-              });
-          } catch (e) {
-              console.warn("Failed to auto-assign vendor", e);
-          }
+          currentEmailItems.forEach(i => {
+              i.supplier_id = opt.getAttribute('data-id');
+              i.company_name = opt.getAttribute('data-name');
+          });
       }
       
       const tableHtml = generateHtmlTable(currentEmailItems);
@@ -994,13 +1182,32 @@ async function sendEmailNow(){
           PH.success('Notification sent to ' + to);
           dispatchModal.hide();
           try {
-              await fetch(API_BASE + 'pharmacy/indents/bulk-status', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ ids: currentEmailItems.map(i => i.id), status: 'ordered' })
+              const idsToMark = currentEmailItems.map(i=>i.id);
+              if (!customTo && selectEl.selectedIndex > 0) {
+                  const opt = selectEl.options[selectEl.selectedIndex];
+                  const resAssign = await phPost(API_BASE + 'pharmacy/indents/bulk-assign', {
+                      ids: idsToMark,
+                      supplier_id: opt.getAttribute('data-id'),
+                      company_name: opt.getAttribute('data-name'),
+                      email: opt.value
+                  });
+                  if(!resAssign.success) { PH.error('Assign Error: ' + resAssign.message); }
+              }
+              const resMark = await phPost(API_BASE + 'pharmacy/indents/mark-sent', {
+                  ids: idsToMark,
+                  communication_method: 'Email'
               });
-          } catch(e) {}
+              
+              if (resMark.success) {
+                  const dispatchedIds = new Set(idsToMark);
+                  allIndents = allIndents.filter(i => !dispatchedIds.has(i.id));
+                  selectedIds.clear();
+              } else {
+                  PH.error('Mark Sent Error: ' + resMark.message);
+              }
+          } catch(e) { console.error(e); }
           loadIndents();
+          loadHistory();
         } else PH.error(res.message);
       } catch(e) { PH.error('Dispatch failed'); }
   }
@@ -1010,8 +1217,8 @@ function sendToVendor(id) {
     const item = allIndents.find(i => i.id === id);
     if (!item) return;
     
-    // Group all items that share the exact same indent_no
-    currentEmailItems = allIndents.filter(i => i.indent_no === item.indent_no);
+    // Only send this specific item since we reassign indent_no upon dispatch
+    currentEmailItems = [item];
     
     // Auto-fill logic
     document.getElementById('emailTo').value = '';
@@ -1063,10 +1270,10 @@ let historyIndents = [], historyCurrentPage = 1, historySelectedIds = new Set(),
 
 async function loadHistory(){
   try{
-    const res=await phGet(API_BASE+'pharmacy/indents/history');
+    const res=await phGet(API_BASE+'pharmacy/indents/history?_t=' + Date.now());
     if(res.success){historyIndents=res.data;renderHistoryTable();updateHistoryBadge();}
     else PH.error(res.message);
-  }catch(e){PH.error('Network error');}
+  }catch(e){PH.error('JS Error: ' + e.message); console.error(e);}
 }
 
 function renderHistoryTable() {
@@ -1075,34 +1282,49 @@ function renderHistoryTable() {
         if (q && !((ind.indent_no||'').toLowerCase().includes(q)||(ind.item_name||'').toLowerCase().includes(q)||(ind.department||'').toLowerCase().includes(q)||(ind.company_name||'').toLowerCase().includes(q))) return false;
         return true;
     });
-    const pager = phPaginate(historyFilteredData, historyCurrentPage, PER_PAGE);
-    document.getElementById('historyTableInfo').textContent = `Showing ${pager.items.length} of ${historyFilteredData.length} records`;
+    
+    const groupMap = {};
+    const groupedList = [];
+    historyFilteredData.forEach(ind => {
+        if(!groupMap[ind.indent_no]) {
+            groupMap[ind.indent_no] = { 
+                indent_no: ind.indent_no, 
+                request_date: ind.request_date,
+                communication_method: ind.communication_method,
+                sent_by: ind.sent_by,
+                suppliers: new Set(),
+                items: [] 
+            };
+            groupedList.push(groupMap[ind.indent_no]);
+        }
+        if (ind.company_name) groupMap[ind.indent_no].suppliers.add(ind.company_name);
+        groupMap[ind.indent_no].items.push(ind);
+    });
+
+    const pager = phPaginate(groupedList, historyCurrentPage, 10);
+    document.getElementById('historyTableInfo').textContent = `Showing ${pager.items.length} Indent(s) (${historyFilteredData.length} records total)`;
+    
     let html = '';
     if (!pager.items.length) {
-        html = `<tr><td colspan="7" class="text-center py-5 text-muted"><i class="fas fa-history" style="font-size:2rem;color:#CBD5E1;display:block;margin-bottom:10px;"></i>No dispatched indents yet.</td></tr>`;
+        html = `<tr><td colspan="6" class="text-center py-5 text-muted"><i class="fas fa-history" style="font-size:2rem;color:#CBD5E1;display:block;margin-bottom:10px;"></i>No dispatched indents yet.</td></tr>`;
     } else {
-        pager.items.forEach(i => {
-            const isSel = historySelectedIds.has(i.id);
-            const method = i.communication_method || 'Manual';
-            const sentBy = i.sent_by || 'Unknown';
-            const pri = (i.priority||'').toLowerCase();
-            const pColor = pri==='urgent'?'#EF4444':pri==='high'?'#F59E0B':pri==='medium'?'#0EA5E9':'#10B981';
+        pager.items.forEach(group => {
+            const allSelected = group.items.every(i => historySelectedIds.has(i.id));
+            const method = group.communication_method || 'Manual';
+            const sentBy = group.sent_by || 'Unknown';
             const mIcon = method==='WhatsApp'?'fab fa-whatsapp':method==='Phone'?'fas fa-phone-alt':'fas fa-envelope';
-            html += `<tr class="indent-row ${isSel?'selected':''}" onclick="toggleHistoryRow(${i.id},!historySelectedIds.has(${i.id}))">
-                <td><input type="checkbox" ${isSel?'checked':''} onclick="event.stopPropagation();toggleHistoryRow(${i.id},this.checked)" style="width:20px;height:20px;accent-color:#059669;"></td>
-                <td><div style="font-weight:800;color:var(--proc-slate);font-size:0.9rem;">${i.indent_no}</div>
-                    <div style="font-size:0.7rem;color:#94A3B8;font-weight:600;margin-top:3px;"><i class="far fa-calendar-alt me-1"></i>${fmt.date(i.request_date)}</div>
-                    <div style="font-size:0.7rem;color:#94A3B8;margin-top:2px;"><i class="fas fa-building me-1"></i>${i.department||'N/A'}</div></td>
-                <td><div style="font-weight:700;color:#1E293B;">${i.item_name}</div>
-                    <div style="font-size:0.75rem;font-weight:700;margin-top:3px;"><span style="color:var(--proc-primary);">Qty: ${i.qty}</span> &nbsp;&middot;&nbsp; <span style="color:${pColor};text-transform:uppercase;font-size:0.65rem;">${i.priority||'N/A'}</span></div>
-                    <div style="font-size:0.7rem;color:#94A3B8;margin-top:2px;">By: ${i.requested_by||'N/A'}</div></td>
-                <td><div style="font-weight:700;color:#334155;font-size:0.85rem;">${i.company_name||'<span style="color:#CBD5E1;">Unassigned</span>'}</div>
-                    <div style="font-size:0.7rem;color:#94A3B8;margin-top:2px;">${i.email||''}</div></td>
+            const suppliers = Array.from(group.suppliers).join(', ') || '<span style="color:#CBD5E1;">Unassigned</span>';
+            
+            html += `<tr class="indent-row ${allSelected?'selected':''}" onclick="toggleHistoryRow('${group.indent_no}', !${allSelected})">
+                <td><input type="checkbox" ${allSelected?'checked':''} onclick="event.stopPropagation();toggleHistoryRow('${group.indent_no}',this.checked)" style="width:20px;height:20px;accent-color:#059669;"></td>
+                <td><div style="font-weight:800;color:#059669;font-size:0.95rem;">${group.indent_no}</div>
+                    <div style="font-size:0.75rem;color:#94A3B8;font-weight:600;margin-top:3px;"><i class="far fa-calendar-alt me-1"></i>${fmt.date(group.request_date)}</div></td>
+                <td><div style="font-weight:800;color:var(--proc-slate);font-size:1rem;">${group.items.length} Items</div></td>
+                <td><div style="font-weight:700;color:#334155;font-size:0.85rem;">${suppliers}</div></td>
                 <td><span style="display:inline-flex;align-items:center;gap:5px;background:#F0FDF4;color:#059669;border-radius:20px;padding:4px 10px;font-size:0.75rem;font-weight:800;"><i class="${mIcon}"></i>${method}</span>
                     <div style="font-size:0.7rem;color:#94A3B8;margin-top:4px;">By: <strong>${sentBy}</strong></div></td>
-                <td style="font-size:0.8rem;font-weight:700;color:#475569;">${i.remarks||'â€”'}</td>
                 <td class="text-end" onclick="event.stopPropagation()">
-                    <button class="ph-btn ph-btn-sm ph-btn-outline" style="border-radius:10px;width:36px;height:36px;" onclick="viewHistoryIndent(${i.id})"><i class="fas fa-eye"></i></button>
+                    <button class="ph-btn ph-btn-sm" style="background: #0F172A; color: white; border-radius:10px; padding: 6px 12px; font-weight: 700;" onclick="viewHistoryIndent('${group.indent_no}')"><i class="fas fa-eye me-2"></i>View Items</button>
                 </td></tr>`;
         });
     }
@@ -1111,64 +1333,135 @@ function renderHistoryTable() {
     updateHistoryBulkBar();
 }
 
-function toggleHistoryRow(id, checked) { if(checked) historySelectedIds.add(id); else historySelectedIds.delete(id); renderHistoryTable(); }
+function toggleHistoryRow(indent_no, checked) {
+    const items = historyIndents.filter(x => x.indent_no === indent_no);
+    items.forEach(i => {
+        if(checked) historySelectedIds.add(i.id); 
+        else historySelectedIds.delete(i.id); 
+    });
+    renderHistoryTable(); 
+}
 function toggleHistorySelectAll(cb) { historyFilteredData.forEach(i => cb.checked ? historySelectedIds.add(i.id) : historySelectedIds.delete(i.id)); renderHistoryTable(); }
 
 function updateHistoryBulkBar() {
     const bar = document.getElementById('historyBulkBar'); if(!bar) return;
-    if(historySelectedIds.size>0){bar.style.display='flex';document.getElementById('historySelectedCount').innerHTML=`<i class="fas fa-check-circle me-2" style="color:#10B981"></i> ${historySelectedIds.size} Selected`;}
+    if(historySelectedIds.size>0){bar.style.display='flex';document.getElementById('historySelectedCount').innerHTML=`<i class="fas fa-check-circle me-2" style="color:#10B981"></i> ${historySelectedIds.size} Items Selected`;}
     else bar.style.display='none';
 }
 
 async function bulkRevertSent() {
     if(!historySelectedIds.size) return;
-    PH.confirm('Un-send Selected?',`Revert ${historySelectedIds.size} indent(s) back to Active Workspace?`,async()=>{
+    PH.confirm('Un-send Selected?',`Revert ${historySelectedIds.size} item(s) back to Active Workspace?`,async()=>{
         const res = await phPost(API_BASE+'pharmacy/indents/revert-sent',{ids:Array.from(historySelectedIds)});
         if(res.success){PH.success('Reverted successfully');historySelectedIds.clear();loadHistory();loadIndents();}
         else PH.error(res.message);
     });
 }
 
-function viewHistoryIndent(id) {
-    const i = historyIndents.find(x => x.id == id);
-    if (!i) return;
+function viewHistoryIndent(indent_no) {
+    const items = historyIndents.filter(x => x.indent_no === indent_no);
+    if (!items.length) return;
+    
+    let tableHtml = `
+    <table style="width:100%; border-collapse: collapse; text-align: left; font-size: 13px; margin-top: 15px;">
+      <thead>
+        <tr style="background:#f1f5f9; border-bottom:2px solid #e2e8f0;">
+          <th style="padding:10px; color:#475569; font-weight:800;">Item Name</th>
+          <th style="padding:10px; color:#475569; font-weight:800;">Supplier</th>
+          <th style="padding:10px; text-align:center; color:#475569; font-weight:800;">Qty</th>
+          <th style="padding:10px; color:#475569; font-weight:800;">Priority</th>
+        </tr>
+      </thead>
+      <tbody>
+    `;
+    items.forEach(i => {
+        tableHtml += `
+        <tr style="border-bottom:1px solid #e2e8f0;">
+          <td style="padding:10px; font-weight:700; color:#1e293b;">${i.item_name}</td>
+          <td style="padding:10px; font-weight:600; color:#475569;">${i.company_name || 'N/A'}</td>
+          <td style="padding:10px; text-align:center; font-weight:800; color:var(--proc-primary);">${i.qty}</td>
+          <td style="padding:10px; text-transform:uppercase; font-size:11px; font-weight:700; color:#64748b;">${i.priority || 'Medium'}</td>
+        </tr>`;
+    });
+    tableHtml += `</tbody></table>`;
+
     Swal.fire({
-        title: 'Indent Details',
-        html: `<div style="text-align:left; font-size:14px; line-height:1.6;">
-            <strong>Indent No:</strong> ${i.indent_no}<br>
-            <strong>Item:</strong> ${i.item_name} (Qty: ${i.qty})<br>
-            <strong>Dept:</strong> ${i.department||'N/A'}<br>
-            <strong>Supplier:</strong> ${i.company_name||'N/A'}<br>
-            <strong>Sent Via:</strong> ${i.communication_method}<br>
-            <strong>Sent By:</strong> ${i.sent_by}<br>
-            <strong>Date:</strong> ${fmt.date(i.request_date)}
-        </div>`,
-        icon: 'info',
-        confirmButtonColor: '#1F6B4A'
+        title: `Indent Items <span style="font-size:0.9rem; color:#64748B; margin-left:10px;">${indent_no}</span>`,
+        html: tableHtml,
+        width: 700,
+        confirmButtonColor: '#059669',
+        confirmButtonText: 'Close'
     });
 }
 
 // â”€â”€ WhatsApp & Phone dispatch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function sendWhatsappNow() {
-    const to = (document.getElementById('whatsappTo').value.trim() || document.getElementById('customWhatsapp').value.trim()).replace(/[^0-9]/g,'');
+    const selectEl = document.getElementById('whatsappTo');
+    const customTo = document.getElementById('customWhatsapp').value.trim();
+    const to = (customTo || selectEl.value).replace(/[^0-9]/g,'');
     if(!to){PH.error('Please enter a WhatsApp number');return;}
+    
+    if (!customTo && selectEl.selectedIndex > 0) {
+        const opt = selectEl.options[selectEl.selectedIndex];
+        const nameStr = opt.textContent || '';
+        const companyMatch = nameStr.split(' (')[0].trim();
+        currentEmailItems.forEach(i => {
+            i.supplier_id = opt.getAttribute('data-id');
+            i.company_name = companyMatch;
+        });
+    }
+
     const msg = document.getElementById('whatsappBody').value.trim();
     if(!msg){PH.error('Message body cannot be empty');return;}
     const url = `https://wa.me/${to}?text=${encodeURIComponent(msg)}`;
     window.open(url,'_blank');
     try{
-        const res=await phPost(API_BASE+'pharmacy/indents/mark-sent',{ids:currentEmailItems.map(i=>i.id),communication_method:'WhatsApp'});
-        if(res.success){PH.success('Marked as sent via WhatsApp');dispatchModal.hide();loadIndents();loadHistory();}
-        else PH.error(res.message);
+        const idsToMark = currentEmailItems.map(i=>i.id);
+        if (!customTo && selectEl.selectedIndex > 0) {
+            const opt = selectEl.options[selectEl.selectedIndex];
+            const nameStr = opt.textContent || '';
+            const companyMatch = nameStr.split(' (')[0].trim();
+            await phPost(API_BASE + 'pharmacy/indents/bulk-assign', {
+                ids: idsToMark,
+                supplier_id: opt.getAttribute('data-id'),
+                company_name: companyMatch,
+                email: ''
+            });
+        }
+        
+        const res = await phPost(API_BASE+'pharmacy/indents/mark-sent', {
+            ids: idsToMark,
+            communication_method: 'WhatsApp'
+        });
+        if(res.success){
+            PH.success('Marked as sent via WhatsApp');
+            const dispatchedIds = new Set(idsToMark);
+            allIndents = allIndents.filter(i => !dispatchedIds.has(i.id));
+            selectedIds.clear();
+            dispatchModal.hide();
+            loadIndents();
+            loadHistory();
+        } else PH.error(res.message);
     }catch(e){PH.error('Failed to update status');}
 }
 
 async function markPhoneSentNow() {
     PH.loading('Marking as sent via Phone...');
     try{
-        const res=await phPost(API_BASE+'pharmacy/indents/mark-sent',{ids:currentEmailItems.map(i=>i.id),communication_method:'Phone'});
-        if(res.success){PH.success('Marked as informed by Phone');dispatchModal.hide();loadIndents();loadHistory();}
-        else PH.error(res.message);
+        const idsToMark = currentEmailItems.map(i=>i.id);
+        const res = await phPost(API_BASE+'pharmacy/indents/mark-sent', {
+            ids: idsToMark,
+            communication_method: 'Phone'
+        });
+        if(res.success){
+            PH.success('Marked as informed by Phone');
+            const dispatchedIds = new Set(idsToMark);
+            allIndents = allIndents.filter(i => !dispatchedIds.has(i.id));
+            selectedIds.clear();
+            dispatchModal.hide();
+            loadIndents();
+            loadHistory();
+        } else PH.error(res.message);
     }catch(e){PH.error('Failed to update status');}
 }
 
@@ -1223,7 +1516,13 @@ function switchWorkspaceTab(tab) {
     }
 }
 function updateActiveBadge(){const b=document.getElementById('badge-active');if(b)b.textContent=allIndents.length;}
-function updateHistoryBadge(){const b=document.getElementById('badge-history');if(b)b.textContent=historyIndents.length;}
+function updateHistoryBadge(){
+    const b=document.getElementById('badge-history');
+    if(b) {
+        const uniqueCount = new Set(historyIndents.map(i => i.indent_no)).size;
+        b.textContent = uniqueCount;
+    }
+}
 
 document.addEventListener('DOMContentLoaded',()=>{
     const hsi=document.getElementById('historySearchInput');

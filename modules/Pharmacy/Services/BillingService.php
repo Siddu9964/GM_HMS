@@ -46,8 +46,9 @@ class BillingService {
         }
 
         // 2. Calculate Totals (Server-side validation)
-        $subtotal = 0;
+        $subtotal = 0; // Will be sum of gross (rate * qty)
         $taxTotal = 0;
+        $taxableTotal = 0; // Sum of taxable (gross - line discount)
         $discountTotal = (float)($data['discount_amount'] ?? 0);
         
         foreach ($data['items'] as &$item) {
@@ -57,13 +58,18 @@ class BillingService {
             $lineTax = $taxable - ($taxable / (1 + ((float)($item['tax_percent'] ?? 12) / 100)));
             
             $item['tax_amount'] = round($lineTax, 2);
-            $item['subtotal']   = round($taxable, 2);
+            $item['subtotal']   = round($taxable, 2); // 'subtotal' column in items table is actually the net line amount
             
             $subtotal += $lineSub;
+            $taxableTotal += $taxable;
             $taxTotal += $lineTax;
         }
 
-        $grandTotal = round($subtotal - $discountTotal, 2);
+        // Subtotal in master table is conventionally the sum of gross.
+        // But Net Payable (grandTotal) should be TaxableTotal - Global Discount
+        $grandTotal = round($taxableTotal - $discountTotal, 2);
+        if ($grandTotal < 0) $grandTotal = 0;
+
         $paidAmount = (float)($data['paid_amount'] ?? $grandTotal);
         $balance    = round($paidAmount - $grandTotal, 2);
 

@@ -95,18 +95,22 @@ async function loadNotifCount() {
     if (!r.success) return;
     const d = r.data;
     const el = document.getElementById('ph-notif-count');
-    const total = (d.low_stock || 0) + (d.expiry || 0) + (d.pending_indents || 0);
-    if (el && total > 0) { el.textContent = total; el.style.display = 'inline-flex'; }
+    const total = (d.low_stock || 0) + (d.expiry || 0) + (d.pending_indents || 0) + (d.pending_ip_orders || 0);
+    if (el && total > 0) { el.textContent = total; el.style.display = 'inline-flex'; } else if (el) { el.style.display = 'none'; }
     // Update sidebar badges
-    ['low-stock-badge', 'expiry-badge', 'indent-badge'].forEach((id, i) => {
+    ['low-stock-badge', 'expiry-badge', 'indent-badge', 'ip-orders-badge'].forEach((id, i) => {
       const b = document.getElementById(id);
-      const v = [d.low_stock, d.expiry, d.pending_indents][i];
-      if (b && v > 0) { b.textContent = v; b.style.display = 'inline'; }
+      const v = [d.low_stock, d.expiry, d.pending_indents, d.pending_ip_orders][i];
+      if (b && v > 0) { b.textContent = v; b.style.display = 'inline'; } else if (b) { b.style.display = 'none'; }
     });
   } catch (e) { }
 }
 
-document.addEventListener('DOMContentLoaded', loadNotifCount);
+document.addEventListener('DOMContentLoaded', () => {
+    loadNotifCount();
+    // Poll the sidebar counts every 15 seconds
+    setInterval(loadNotifCount, 15000);
+});
 
 /* ------------------------------------------------------------------ */
 /* Pagination Helper                                                     */

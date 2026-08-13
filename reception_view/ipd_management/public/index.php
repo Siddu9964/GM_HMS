@@ -184,6 +184,141 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             font-size: 12px;
             font-weight: 600;
         }
+
+        /* ── Modern Bento Grid Styles ── */
+        .bento-overview-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .bento-stat-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 1rem 1.25rem;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.03);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            min-height: 85px;
+            z-index: 1;
+        }
+
+        .bento-stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+        }
+
+
+
+        .bento-stat-icon {
+            font-size: 1.1rem;
+            color: #1f6b4a;
+            background: #eaf1ec;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            flex-shrink: 0;
+            transition: transform 0.3s;
+        }
+
+        .bento-stat-card:hover .bento-stat-icon {
+            transform: scale(1.1) rotate(-5deg);
+        }
+
+        .bento-stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1;
+            margin-bottom: 0.2rem;
+            letter-spacing: -0.02em;
+        }
+
+        .bento-stat-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Quick Actions Bento ── */
+        .bento-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .bento-action-tile {
+            background: #ffffff;
+            border: 1.5px solid rgba(31, 107, 74, 0.1);
+            border-radius: 16px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            position: relative;
+            overflow: hidden;
+            min-height: 65px;
+        }
+
+        .bento-action-tile::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #1f6b4a 0%, #11422d 100%);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 0;
+        }
+
+        .bento-action-tile:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(31, 107, 74, 0.15);
+            border-color: transparent;
+        }
+        
+        .bento-action-tile:hover::before {
+            opacity: 1;
+        }
+
+        .bento-action-tile:hover * {
+            color: white !important;
+            position: relative;
+            z-index: 1;
+        }
+
+        .bento-action-icon {
+            font-size: 1.25rem;
+            color: #1f6b4a;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .bento-action-tile:hover .bento-action-icon {
+            transform: scale(1.15);
+        }
+
+        .bento-action-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #334155;
+            position: relative;
+            z-index: 1;
+        }
     </style>
 </head>
 
@@ -211,71 +346,77 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     </p>
                 </div>
 
-                <!-- Dashboard Top Section: KPIs + Quick Actions Side by Side -->
-                <div class="dashboard-top-section" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
+                <!-- Dashboard Top Section: KPIs + Quick Actions -->
+                <div class="dashboard-top-section" style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem;">
                     
-                    <!-- Left: Stats Cards -->
+                    <!-- Top: Bento Stats Overview (Horizontal) -->
                     <div>
-                        <h2 class="section-heading" style="font-size: 1.1rem; color: #64748b; margin-bottom: 1rem;"><i class="fas fa-chart-pie"></i> Overview</h2>
-                        <div class="stats-grid" id="statsGrid">
+                        <h2 style="font-size: 1rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem; letter-spacing: 0.5px;">
+                            <i class="fas fa-chart-pie me-2 text-primary" style="color: #1f6b4a !important;"></i>Overview
+                        </h2>
+                        <div class="bento-overview-grid" id="statsGrid">
+                            
                             <!-- Active Admissions -->
-                            <div class="stat-card">
-                                <div class="stat-icon"><i class="fas fa-bed"></i></div>
-                                <div class="stat-info">
-                                    <h3 id="activeAdmissions">-</h3>
-                                    <p>Active Admissions</p>
+                            <div class="bento-stat-card">
+                                <div class="bento-stat-icon" style="color:#10b981; background:#d1fae5;"><i class="fas fa-bed"></i></div>
+                                <div>
+                                    <div class="bento-stat-value" id="activeAdmissions">-</div>
+                                    <div class="bento-stat-label">Active Admissions</div>
                                 </div>
                             </div>
                             
                             <!-- Bed Occupancy -->
-                            <div class="stat-card">
-                                <div class="stat-icon"><i class="fas fa-procedures"></i></div>
-                                <div class="stat-info">
-                                    <h3 id="bedOccupancy">-</h3>
-                                    <p>Bed Occupancy</p>
+                            <div class="bento-stat-card">
+                                <div class="bento-stat-icon" style="color:#ef4444; background:#fee2e2;"><i class="fas fa-procedures"></i></div>
+                                <div>
+                                    <div class="bento-stat-value" id="bedOccupancy">-</div>
+                                    <div class="bento-stat-label">Bed Occupancy</div>
                                 </div>
                             </div>
                             
                             <!-- Admissions Today -->
-                            <div class="stat-card">
-                                <div class="stat-icon"><i class="fas fa-user-plus"></i></div>
-                                <div class="stat-info">
-                                    <h3 id="admissionsToday">-</h3>
-                                    <p>Admissions Today</p>
+                            <div class="bento-stat-card">
+                                <div class="bento-stat-icon" style="color:#0ea5e9; background:#e0f2fe;"><i class="fas fa-user-plus"></i></div>
+                                <div>
+                                    <div class="bento-stat-value" id="admissionsToday">-</div>
+                                    <div class="bento-stat-label">Admissions Today</div>
                                 </div>
                             </div>
                             
                             <!-- Payments Today -->
-                            <div class="stat-card">
-                                <div class="stat-icon"><i class="fas fa-rupee-sign"></i></div>
-                                <div class="stat-info">
-                                    <h3 id="paymentsToday">-</h3>
-                                    <p>Payments Today</p>
+                            <div class="bento-stat-card">
+                                <div class="bento-stat-icon" style="color:#f59e0b; background:#fef3c7;"><i class="fas fa-rupee-sign"></i></div>
+                                <div>
+                                    <div class="bento-stat-value" id="paymentsToday">-</div>
+                                    <div class="bento-stat-label">Payments Today</div>
                                 </div>
                             </div>
+                            
                         </div>
                     </div>
 
-                    <!-- Right: Quick Actions -->
+                    <!-- Bottom: Quick Actions Bento (Horizontal) -->
                     <div>
-                        <h2 class="section-heading" style="font-size: 1.1rem; color: #64748b; margin-bottom: 1rem;"><i class="fas fa-bolt"></i> Quick Actions</h2>
-                        <div class="adv-actions-grid" style="display: flex; flex-direction: column; gap: 0.75rem;">
-                            <button class="adv-action-btn" onclick="window.location.href='../views/admissions/'" style="width: 100%;">
-                                <div class="adv-action-icon"><i class="fas fa-user-plus"></i></div>
-                                <span>New Admission</span>
-                            </button>
-                            <button class="adv-action-btn" onclick="window.location.href='../views/beds/'" style="width: 100%;">
-                                <div class="adv-action-icon"><i class="fas fa-bed"></i></div>
-                                <span>Manage Beds</span>
-                            </button>
-                            <button class="adv-action-btn" onclick="window.location.href='../views/payments/'" style="width: 100%;">
-                                <div class="adv-action-icon"><i class="fas fa-money-bill-wave"></i></div>
-                                <span>Record Payment</span>
-                            </button>
-                            <button class="adv-action-btn" onclick="window.location.href='../views/discharge/'" style="width: 100%;">
-                                <div class="adv-action-icon"><i class="fas fa-sign-out-alt"></i></div>
-                                <span>Discharge Patient</span>
-                            </button>
+                        <h2 style="font-size: 1rem; font-weight: 700; color: #475569; margin-bottom: 0.75rem; letter-spacing: 0.5px;">
+                            <i class="fas fa-bolt me-2 text-warning" style="color: #f59e0b !important;"></i>Quick Actions
+                        </h2>
+                        <div class="bento-actions-grid">
+                            <div class="bento-action-tile" onclick="window.location.href='../views/admissions/'">
+                                <div class="bento-action-icon"><i class="fas fa-user-plus"></i></div>
+                                <div class="bento-action-label">New Admission</div>
+                            </div>
+                            <div class="bento-action-tile" onclick="window.location.href='../views/beds/'">
+                                <div class="bento-action-icon"><i class="fas fa-bed"></i></div>
+                                <div class="bento-action-label">Manage Beds</div>
+                            </div>
+                            <div class="bento-action-tile" onclick="window.location.href='../views/payments/'">
+                                <div class="bento-action-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                                <div class="bento-action-label">Payments</div>
+                            </div>
+                            <div class="bento-action-tile" onclick="window.location.href='../views/discharge/'">
+                                <div class="bento-action-icon"><i class="fas fa-sign-out-alt"></i></div>
+                                <div class="bento-action-label">Discharge</div>
+                            </div>
                         </div>
                     </div>
                 </div>
