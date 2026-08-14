@@ -318,12 +318,8 @@ include 'includes/reception_navbar.php';
                         </div>
 
                         <div class="ref-field ref-col-1">
-                            <label>City / Taluk</label>
-                            <div style="position: relative;">
-                                <input type="text" name="city" id="patientCity" list="cityDatalist" placeholder="City" autocomplete="off" style="padding-right: 24px !important;">
-                                <i class="fas fa-chevron-down" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #144d34; font-size: 0.75rem;"></i>
-                            </div>
-                            <datalist id="cityDatalist"></datalist>
+                            <label>Division</label>
+                            <input type="text" name="division" id="patientDivision" placeholder="Division">
                         </div>
 
                         <div class="ref-field ref-col-1">
@@ -332,8 +328,12 @@ include 'includes/reception_navbar.php';
                         </div>
 
                         <div class="ref-field ref-col-1">
-                            <label>Division</label>
-                            <input type="text" name="division" id="patientDivision" placeholder="Division">
+                            <label>City / Taluk</label>
+                            <div style="position: relative;">
+                                <input type="text" name="city" id="patientCity" list="cityDatalist" placeholder="City" autocomplete="off" style="padding-right: 24px !important;">
+                                <i class="fas fa-chevron-down" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #144d34; font-size: 0.75rem;"></i>
+                            </div>
+                            <datalist id="cityDatalist"></datalist>
                         </div>
 
                         <div class="ref-field ref-col-1" style="position:relative;">
