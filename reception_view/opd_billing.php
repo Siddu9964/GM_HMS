@@ -184,6 +184,9 @@ $pageTitle = 'OPD Billing';
                                                 <div class="input-with-icon-inside suggestion-wrapper">
                                                     <input type="text" id="sponsorName" placeholder="Enter sponsor name" autocomplete="off">
                                                     <div id="sponsorSuggestions" class="suggestion-list"></div>
+                                                    <button type="button" class="btn-inside-action" style="display: flex; width: auto; padding: 0 0.5rem; border-radius: 6px; right: 4px; font-size: 0.75rem; font-weight: 600; background: var(--teal-light);" onclick="opdBilling.showSponsorModal()" title="Add New Sponsor">
+                                                        <i class="fas fa-plus-circle"></i><span style="margin-left: 0.2rem;">Add</span>
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -368,6 +371,29 @@ $pageTitle = 'OPD Billing';
             <div style="margin-top:1.5rem;">
                 <button class="btn btn-primary" onclick="opdBilling.saveNewReferral()" style="width:100%; justify-content:center;">
                     <i class="fas fa-save"></i> Save Referral
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sponsor Modal -->
+<div class="modal-overlay sponsor-modal" id="sponsorModalOverlay">
+    <div class="modal-card small">
+        <div class="modal-head">
+            <h3><i class="fas fa-building"></i> Add New Sponsor</h3>
+            <button class="btn-close-modal" onclick="opdBilling.hideSponsorModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group mb-4">
+                <label>Sponsor Name</label>
+                <input type="text" id="newSponsorName" placeholder="Enter sponsor name">
+            </div>
+            <div style="margin-top:1.5rem;">
+                <button class="btn btn-primary" onclick="opdBilling.saveNewSponsor()" style="width:100%; justify-content:center;">
+                    <i class="fas fa-save"></i> Save Sponsor
                 </button>
             </div>
         </div>

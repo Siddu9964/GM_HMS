@@ -497,6 +497,34 @@ class OpdBillingController extends BaseController {
     }
 
     /**
+     * POST /api/billing/opd/sponsor
+     * Save new sponsor data
+     */
+    public function saveSponsor() {
+        $this->restrictMethod('POST');
+        $this->requireAuth();
+
+        try {
+            $input = $this->getJsonInput();
+            $name = trim($input['name'] ?? '');
+
+            if (empty($name)) {
+                $this->respondBadRequest('Sponsor name is required');
+            }
+
+            $success = $this->model->saveSponsor($name);
+
+            if ($success) {
+                $this->respondSuccess(null, 'Sponsor data saved successfully');
+            } else {
+                $this->respondServerError('Failed to save sponsor data');
+            }
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    /**
      * GET /api/billing/opd/referral/search
      * Search for referral suggestions
      */

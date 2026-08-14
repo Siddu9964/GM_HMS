@@ -736,6 +736,23 @@ class OpdBillingModel
             return false;
         }
     }
+
+    public function saveSponsor($name) {
+        try {
+            // Check if the sponsor already exists to prevent duplicate entries
+            $existing = $this->db->fetchOne("SELECT sponsor_name FROM sponsors_data WHERE sponsor_name = ?", [$name]);
+            if ($existing) {
+                // If it already exists, we return true so the UI can proceed and just use the existing one
+                return true; 
+            }
+
+            $sql = "INSERT INTO sponsors_data (sponsor_name) VALUES (?)";
+            return $this->db->execute($sql, [$name]);
+        } catch (\Exception $e) {
+            error_log("Error in saveSponsor: " . $e->getMessage());
+            return false;
+        }
+    }
     public function searchReferrals($query) {
         try {
             // Search dedicated referral_data table

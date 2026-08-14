@@ -316,6 +316,7 @@ $router->add('POST', '#^/api/billing/opd/?$#', 'GM_HMS\Controllers\api\OpdBillin
 $router->add('POST', '#^/api/billing/create/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'createBill');
 $router->add('POST', '#^/api/billing/opd/payment/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'recordPayment');
 $router->add('POST', '#^/api/billing/opd/referral/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'saveReferral');
+$router->add('POST', '#^/api/billing/opd/sponsor/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'saveSponsor');
 $router->add('GET', '#^/api/billing/opd/referral/search/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'searchReferrals');
 $router->add('GET', '#^/api/billing/opd/sponsor/search/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'searchSponsors');
 

@@ -1731,6 +1731,61 @@ class OpdBillingManager {
         }
     }
 
+    // ─── Sponsor Modal ───────────────────────────────────────
+    showSponsorModal() {
+        const overlay = document.getElementById('sponsorModalOverlay');
+        if (overlay) overlay.classList.add('active');
+        // Clear previous values
+        const nameInp = document.getElementById('newSponsorName');
+        if (nameInp) nameInp.value = '';
+    }
+
+    hideSponsorModal() {
+        const overlay = document.getElementById('sponsorModalOverlay');
+        if (overlay) overlay.classList.remove('active');
+    }
+
+    async saveNewSponsor() {
+        const nameInput = document.getElementById('newSponsorName');
+        const name = nameInput?.value.trim();
+
+        if (!name) {
+            this.toast('Please enter the sponsor name', 'error');
+            return;
+        }
+
+        const btn = document.querySelector('#sponsorModalOverlay .btn-primary');
+        const originalText = btn ? btn.innerHTML : '';
+
+        try {
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            }
+
+            // Save to permanent sponsors_data table
+            await this.api('POST', '/api/billing/opd/sponsor', { 
+                name: name
+            });
+
+            // Update main form field
+            const mainSponsor = document.getElementById('sponsorName');
+            if (mainSponsor) {
+                mainSponsor.value = name;
+            }
+            
+            this.hideSponsorModal();
+            this.showSuccessOverlay('Sponsor saved to database successfully');
+        } catch (e) {
+            this.toast('Failed to save sponsor: ' + e.message, 'error');
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+    }
+
     /**
      * Show a professional centered success overlay
      */

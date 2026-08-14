@@ -1369,7 +1369,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             };
 
             // ── Emergency Contact Phone Validation ────────────────────────────
-            function validateEmergencyPhone() {
+            window.validateEmergencyPhone = function() {
                 if (!selectedPatientPhone) return true; // No patient selected yet, skip
                 const enteredPhone = ($('#emergencyContactPhone').val() || '').trim().replace(/\s+/g, '');
                 if (!enteredPhone) return true; // Field is empty, skip (not required)
@@ -1383,7 +1383,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     $('#emergencyPhoneError').hide();
                     return true;
                 }
-            }
+            };
 
             // Validate on blur (when user leaves the field)
             $(document).on('blur', '#emergencyContactPhone', function() {
@@ -1880,51 +1880,98 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
 
         function saveAdmission() {
             const form = document.getElementById('addAdmissionForm');
-            if (!form.reportValidity()) {
+
+            // ── Step 1: Validate Patient Selection (hidden field, browser `required` is unreliable) ──
+            const patientId = document.getElementById('patientSelect').value;
+            if (!patientId) {
+                IPD.toast('⚠️ Please select a patient before admitting.', 'warning');
+                document.getElementById('patientSearchInput').focus();
+                document.getElementById('patientSearchInput').style.borderColor = '#dc2626';
+                setTimeout(() => { document.getElementById('patientSearchInput').style.borderColor = ''; }, 3000);
                 return;
             }
 
-            // ── Emergency Contact Phone Duplicate Check ───────────────────────
+            // ── Step 2: Validate Bed Selection ──────────────────────────────────
+            const bedId = document.getElementById('bedSelect').value;
+            if (!bedId) {
+                IPD.toast('⚠️ Please select a bed before admitting.', 'warning');
+                return;
+            }
+
+            // ── Step 3: Validate standard HTML5 form fields ────────────────────
+            if (!form.reportValidity()) return;
+
+            // ── Step 4: Emergency Contact Phone Duplicate Check ────────────────
             if (!validateEmergencyPhone()) {
-                // Scroll to and focus the emergency phone field
                 const phoneField = document.getElementById('emergencyContactPhone');
                 if (phoneField) {
                     phoneField.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     phoneField.focus();
                 }
                 Toastify({
-                    text: "⚠️ Emergency Contact Phone cannot be the same as the patient's registered phone number. Please enter a different number.",
+                    text: "⚠️ Emergency Contact Phone cannot be the same as the patient's registered phone number.",
                     duration: 5000,
                     gravity: 'top',
                     position: 'center',
-                    style: {
-                        background: '#dc2626',
-                        borderRadius: '8px',
-                        fontWeight: '600',
-                        fontSize: '0.85rem',
-                        maxWidth: '520px'
-                    }
+                    style: { background: '#dc2626', borderRadius: '8px', fontWeight: '600', fontSize: '0.85rem', maxWidth: '520px' }
                 }).showToast();
                 return;
             }
 
+            // ── Step 5: Build formData properly ────────────────────────────────
             const formData = {};
+
+            // Serialize all flat fields
             $('#addAdmissionForm').serializeArray().forEach(field => {
-                formData[field.name] = field.value;
+                // Skip payment split fields — we'll handle them separately below
+                if (!field.name.startsWith('payments[')) {
+                    formData[field.name] = field.value;
+                }
             });
+
+            // Rebuild payment splits as a proper nested array
+            const paymentRows = document.querySelectorAll('.payment-split-row');
+            const payments = [];
+            paymentRows.forEach(row => {
+                const modeEl   = row.querySelector('select[name*="[mode]"]');
+                const amountEl = row.querySelector('input[name*="[amount]"]');
+                if (modeEl && amountEl) {
+                    const amt = parseFloat(amountEl.value) || 0;
+                    if (amt > 0) {
+                        payments.push({ mode: modeEl.value, amount: amt });
+                    }
+                }
+            });
+            if (payments.length > 0) {
+                formData['payments'] = payments;
+            }
+
+            // ── Step 6: Submit with loading state ──────────────────────────────
+            const btn = document.querySelector('#addAdmissionForm ~ div button.btn-success') 
+                     || document.querySelector('button[onclick="saveAdmission()"]');
+            const origHtml = btn ? btn.innerHTML : null;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Admitting...';
+            }
 
             IPD.ajax('admissions', 'POST', formData)
                 .then(response => {
-                    IPD.toast('Admission created successfully!', 'success');
+                    IPD.toast('✅ Patient admitted successfully!', 'success');
                     closeAddAdmissionModal();
                     form.reset();
                     clearPatientSelection();
                     admissionsTable.ajax.reload();
                 })
                 .catch(error => {
-                    IPD.showError(error);
+                    // Show detailed error from server
+                    const msg = error.message || 'Failed to create admission';
+                    const details = (error.details || error.data?.errors || []).join('\n');
+                    IPD.toast('❌ ' + msg + (details ? ': ' + details : ''), 'error');
+                    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
                 });
         }
+
 
         function viewAdmission(id) {
             IPD.ajax(`admissions?id=${id}`, 'GET')
