@@ -370,3 +370,69 @@ RESULT: Array
 
 )
 
+DATA: Array
+(
+    [patient_id] => PID-20260814-001
+    [admitting_doctor_id] => DOC018
+    [emergency_contact_name] => sdfd
+    [emergency_contact_phone] => 9965412360
+    [bed_id] => 9
+    [admission_type] => Emergency
+    [admission_date] => 2026-08-14
+    [admission_time] => 14:53
+    [referral_type] => External
+    [referral_name] => Geerish
+    [amount_per_day] => 1500
+    [nursig_charge] => 500
+    [doctor_charge] => 500
+    [service_charge] => 500
+    [total_bed_amount] => 3000
+    [advance_payment] => 0
+    [admission_charge] => 350
+    [mrd_charge] => 400
+    [food_charge] => 570
+)
+
+RESULT: Array
+(
+    [success] => 
+    [errors] => Array
+        (
+            [0] => Failed to create admission: Query preparation failed: Unknown column 'ward_type' in 'field list'. Query: INSERT INTO `ipd_admissions` (`admission_id`, `patient_id`, `admitting_doctor_id`, `admission_date`, `admission_time`, `admission_type`, `bed_id`, `emergency_contact_name`, `emergency_contact_phone`, `referral_type`, `referral_name`, `ward`, `floor_number`, `floor_name`, `ward_name`, `room_no`, `room_name`, `ward_type`, `status`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        )
+
+)
+
+DATA: Array
+(
+    [patient_id] => PID-20260814-001
+    [admitting_doctor_id] => DOC018
+    [emergency_contact_name] => sdfd
+    [emergency_contact_phone] => 9965412360
+    [bed_id] => 9
+    [admission_type] => Emergency
+    [admission_date] => 2026-08-14
+    [admission_time] => 14:53
+    [referral_type] => External
+    [referral_name] => Geerish
+    [amount_per_day] => 1500
+    [nursig_charge] => 500
+    [doctor_charge] => 500
+    [service_charge] => 500
+    [total_bed_amount] => 3000
+    [advance_payment] => 0
+    [admission_charge] => 350
+    [mrd_charge] => 400
+    [food_charge] => 570
+)
+
+RESULT: Array
+(
+    [success] => 
+    [errors] => Array
+        (
+            [0] => Failed to create admission: Query preparation failed: Unknown column 'ward_type' in 'field list'. Query: INSERT INTO `ipd_admissions` (`admission_id`, `patient_id`, `admitting_doctor_id`, `admission_date`, `admission_time`, `admission_type`, `bed_id`, `emergency_contact_name`, `emergency_contact_phone`, `referral_type`, `referral_name`, `ward`, `floor_number`, `floor_name`, `ward_name`, `room_no`, `room_name`, `ward_type`, `status`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        )
+
+)
+

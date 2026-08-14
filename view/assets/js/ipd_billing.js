@@ -88,8 +88,10 @@ const billing = (function () {
     }
 
     async function loadAdmission(admissionId, patientId) {
-        document.getElementById('admissionSearchDropdown').classList.remove('open');
-        document.getElementById('admissionSearchInput').value = '';
+        const dropdown = document.getElementById('admissionSearchDropdown');
+        if (dropdown) dropdown.classList.remove('open');
+        const searchInput = document.getElementById('admissionSearchInput');
+        if (searchInput) searchInput.value = '';
 
         currentAdmissionId = admissionId;
         currentPatientId = patientId;
@@ -125,9 +127,10 @@ const billing = (function () {
                 };
 
                 // Hide empty state, show workspace
-                document.getElementById('billingEmptyState').style.display = 'none';
-                document.getElementById('billingSearchZone').style.display = 'none';
-                document.getElementById('billingWorkspace').style.display = 'block';
+        document.getElementById('billingEmptyState').style.display = 'none';
+        const searchZone = document.getElementById('billingSearchZone');
+        if (searchZone) searchZone.style.display = 'none';
+        document.getElementById('billingWorkspace').style.display = 'block';
 
                 if (json.message === 'Billing master created') {
                     showToast('New billing record created', 'success');
@@ -170,9 +173,34 @@ const billing = (function () {
         document.getElementById('phcDays').textContent = `${m.total_days} Days`;
 
         const bal = parseFloat(m.balance_due);
-        
 
+        const extraInfoEl = document.getElementById('phcExtraInfo');
+        let extraParts = [];
         
+        if (m.referral_type && m.referral_name) {
+            extraParts.push(`<i data-lucide="user-plus" style="width:14px;height:14px;margin-right:4px;"></i> Referral: ${m.referral_type} - ${m.referral_name}`);
+        }
+        if (m.insurance_company_name || m.tpa_name) {
+            let insStr = m.insurance_company_name || '';
+            if (m.tpa_name) insStr += (insStr ? ` (TPA: ${m.tpa_name})` : `TPA: ${m.tpa_name}`);
+            extraParts.push(`<i data-lucide="shield" style="width:14px;height:14px;margin-right:4px;"></i> Insurance: ${insStr}`);
+        }
+        
+        if (m.sponsor) {
+            let spText = m.sponsor;
+            if (m.credit_type) {
+                spText += ` - ${m.credit_type}`;
+            }
+            extraParts.push(`<span style="background:#fffbeb; color:#d97706; padding:4px 8px; border-radius:6px; font-weight:600; display:inline-flex; align-items:center; border:1px solid #fde68a;"><i data-lucide="building" style="width:14px;height:14px;margin-right:4px;"></i> Sponsor: ${spText}</span>`);
+        }
+        
+        if (extraParts.length > 0) {
+            extraInfoEl.innerHTML = extraParts.join(' <span class="phc-dot" style="margin: 0 8px;">·</span> ');
+            extraInfoEl.style.display = 'flex';
+            if(window.lucide) lucide.createIcons();
+        } else {
+            extraInfoEl.style.display = 'none';
+        }
 
         document.getElementById('phcBillNo').textContent = m.bill_id;
         const bStatus = document.getElementById('phcBillingStatus');
@@ -1609,7 +1637,7 @@ const billing = (function () {
         toggleInsFields();
 
         // Reset fields
-        document.getElementById('insCompanyName').value = currentMaster.insurance_company_id || '';
+        document.getElementById('insCompanyName').value = currentMaster.sponsor || currentMaster.insurance_company_name || currentMaster.insurance_company_id || '';
         document.getElementById('insTpaName').value = '';
         document.getElementById('insPolicyNo').value = currentMaster.policy_number || '';
         document.getElementById('insClaimNo').value = '';
@@ -1821,7 +1849,8 @@ const billing = (function () {
     function closeWorkspace() {
         document.getElementById('billingWorkspace').style.display = 'none';
         document.getElementById('billingEmptyState').style.display = 'flex';
-        document.getElementById('billingSearchZone').style.display = 'flex';
+        const searchZone = document.getElementById('billingSearchZone');
+        if (searchZone) searchZone.style.display = 'flex';
         
         currentMaster = null;
         currentBillId = null;

@@ -361,6 +361,7 @@ if (empty($initials)) $initials = 'PT';
                             </div>
                         </div>
                         <button class="btn-action" style="margin-top: 15px;"><i class="fas fa-save"></i> Update Record</button>
+                        <button type="button" class="btn-action" style="margin-top: 15px; background: var(--warning); color: #000; border: 1px solid var(--warning);" onclick="sendDischargeNotification()"><i class="fas fa-bell"></i> Send Discharge Notification</button>
                     </div>
 
                 </div>
@@ -454,6 +455,32 @@ if (empty($initials)) $initials = 'PT';
                                 <thead><tr><th>Date</th><th>Time</th><th>Medicine</th><th>Route</th><th>Frequency</th><th>Remarks</th><th>Action</th></tr></thead>
                                 <tbody id="nebu-tbody">
                                     <tr><td colspan="7" style="text-align:center;">No records</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="glass-card" style="margin-top: 20px;">
+                        <div class="section-header" style="border:none; padding:0; margin-bottom:15px;">
+                            <h3 style="margin:0; font-size:18px; color:var(--primary);">BP Check Up Chart</h3>
+                            <button class="btn-action" onclick="toggleForm('bp-form')"><i class="fas fa-plus"></i> Add BP Record</button>
+                        </div>
+                        <div id="bp-form" class="entry-form-card active">
+                            <div class="form-grid">
+                                <div class="form-group"><label>Date</label><input type="date" class="form-control" name="bp_date"></div>
+                                <div class="form-group"><label>Time</label><input type="time" class="form-control" name="bp_time"></div>
+                                <div class="form-group"><label>BP Systolic (mmHg)</label><input type="number" class="form-control" name="bp_systolic" placeholder="e.g. 120"></div>
+                                <div class="form-group"><label>BP Diastolic (mmHg)</label><input type="number" class="form-control" name="bp_diastolic" placeholder="e.g. 80"></div>
+                                <div class="form-group"><label>Pulse Rate (bpm)</label><input type="number" class="form-control" name="bp_pulse" placeholder="e.g. 72"></div>
+                                <div class="form-group"><label>Nurse Name</label><input type="text" class="form-control" name="bp_nurse"></div>
+                            </div>
+                            <button class="btn-action" data-chart-type="bp_chart" style="margin-top:10px;"><i class="fas fa-save"></i> Save BP Record</button>
+                        </div>
+                        <div class="data-table-wrapper">
+                            <table class="data-table">
+                                <thead><tr><th>Date</th><th>Time</th><th>Blood Pressure</th><th>Pulse</th><th>Nurse</th><th>Action</th></tr></thead>
+                                <tbody id="bp-tbody">
+                                    <tr><td colspan="6" style="text-align:center;">No records</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -656,48 +683,7 @@ if (empty($initials)) $initials = 'PT';
                     </div>
                 </div>
             </div> <!-- End of content-panels -->
-
-
-
         </div> <!-- End of workspace-grid -->
-            </div> <!-- end medication-content -->
-        </div> <!-- end medication-layout -->
-
-
-            </div> <!-- end medication-content -->
-        </div> <!-- end medication-layout -->
- 
-            </div> <!-- end medication-content -->
-        </div> <!-- end medication-layout -->
- 
-            </div> <!-- end medication-content -->
-        </div> <!-- end medication-layout -->
- 
-            </div> <!-- end medication-content -->
-        </div> <!-- end medication-layout -->
- 
-            </div> <!-- end medication-content -->
-        </div> <!-- end medication-layout -->
-
-
-            </div> <!-- end medication-content -->
-        </div> <!-- end medication-layout -->
- 
-            </div> <!-- end medication-content -->
-        </div> <!-- end medication-layout -->
- 
-            </div> <!-- end medication-content -->
-        </div> <!-- end medication-layout -->
- 
-            </div> <!-- end medication-content -->
-        </div> <!-- end medication-layout -->
- 
-            </div> <!-- end medication-content -->
-        </div> <!-- end medication-layout -->
-            </div> <!-- end medication-content -->
-        </div> <!-- end medication-layout -->
-
-
             </div> <!-- end medication-content -->
         </div> <!-- end medication-layout -->
 <?php else: ?>
@@ -893,6 +879,8 @@ if (empty($initials)) $initials = 'PT';
                     populateLogTable('grbs_chart', 'grbs-tbody', 'grbs-form', r => `<td>${r.grbs_date || ''}</td><td>${r.grbs_time || ''}</td><td>${r.grbs_value || ''}</td><td>${r.grbs_nurse || ''}</td>`);
                     
                     populateLogTable('nebulization_chart', 'nebu-tbody', 'nebu-form', r => `<td>${r.nebu_date || ''}</td><td>${r.nebu_time || ''}</td><td>${r.nebu_drug || ''}</td><td>${r.nebu_route || ''}</td><td>${r.nebu_freq || ''}</td><td>${r.nebu_remarks || ''}</td>`);
+                    
+                    populateLogTable('bp_chart', 'bp-tbody', 'bp-form', r => `<td>${r.bp_date || ''}</td><td>${r.bp_time || ''}</td><td><strong>${r.bp_systolic || ''}/${r.bp_diastolic || ''} mmHg</strong></td><td>${r.bp_pulse || ''} bpm</td><td>${r.bp_nurse || ''}</td>`);
                     
                     populateLogTable('dialysis_chart', 'dialysis-tbody', 'dialysis-form', r => `<td>${r.dia_date || ''}</td><td>${r.dia_start || ''}</td><td>${r.dia_end || ''}</td><td>${r.dia_dur || ''}</td><td>${r.dia_nurse || ''}</td>`);
                     
@@ -1272,6 +1260,68 @@ if (empty($initials)) $initials = 'PT';
                 btn.disabled = false;
             }
         });
+        function askConfirmDischarge() {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('dischargeConfirmModal');
+                const btnCancel = document.getElementById('btn-confirm-cancel');
+                const btnSend = document.getElementById('btn-confirm-send');
+                
+                modal.style.display = 'flex';
+                
+                const cleanup = (value) => {
+                    modal.style.display = 'none';
+                    btnCancel.onclick = null;
+                    btnSend.onclick = null;
+                    resolve(value);
+                };
+                
+                btnCancel.onclick = () => cleanup(false);
+                btnSend.onclick = () => cleanup(true);
+            });
+        }
+
+        async function sendDischargeNotification() {
+            const confirmed = await askConfirmDischarge();
+            if (!confirmed) return;
+            
+            const formData = new FormData();
+            formData.append('patient_id', '<?php echo $patientId; ?>');
+            formData.append('admission_id', '<?php echo $admissionId; ?>');
+            
+            try {
+                const response = await fetch('api/send_discharge_notification.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message || 'Discharge notification sent successfully!');
+                } else {
+                    showToast('Error: ' + result.message, true);
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Network Error: Could not send notification.', true);
+            }
+        }
     </script>
+    
+    <!-- Custom Discharge Confirmation Modal -->
+    <div id="dischargeConfirmModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; width: 100%; max-width: 400px; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid #e2e8f0;">
+            <div style="background: #f59e0b; color: #000; padding: 16px 20px; display: flex; align-items: center; gap: 10px; font-weight: 700;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 1.25rem;"></i>
+                <span>Confirm Notification</span>
+            </div>
+            <div style="padding: 20px; color: #1e293b; font-size: 0.95rem; line-height: 1.5; text-align: left;">
+                Are you sure you want to send a discharge notification to the Admin block?
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; padding: 16px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+                <button id="btn-confirm-cancel" class="btn" style="padding: 8px 16px; border-radius: 8px; font-weight: 600; background: white; color: #475569; border: 1px solid #cbd5e1; cursor: pointer; font-size: 0.85rem;">Cancel</button>
+                <button id="btn-confirm-send" class="btn" style="padding: 8px 16px; border-radius: 8px; font-weight: 600; background: #144d34; color: white; border: none; cursor: pointer; font-size: 0.85rem;">Yes, Send</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

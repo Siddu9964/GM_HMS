@@ -25,7 +25,9 @@ class Patient extends BaseModel {
             phone as contact,
             age,
             sex as gender,
-            blood_group
+            blood_group,
+            referral_type,
+            referral_name
         FROM patient
         WHERE (first_name LIKE ? OR last_name LIKE ? OR phone LIKE ? OR patient_id LIKE ?)
         AND (status = 'Active' OR status = 'Registered' OR status = '' OR status IS NULL)
@@ -53,5 +55,13 @@ class Patient extends BaseModel {
                   ORDER BY appointment_date DESC, appointment_time DESC 
                   LIMIT 1";
         return $this->fetchOne($query, [$patientId]);
+    }
+
+    /**
+     * Get sponsors by type from sponsors_data table
+     */
+    public function getSponsorsByType($type) {
+        $query = "SELECT DISTINCT sponsor_name FROM sponsors_data WHERE sponsor_type = ? AND sponsor_name IS NOT NULL AND sponsor_name != '' ORDER BY sponsor_name ASC";
+        return $this->fetchAll($query, [$type]);
     }
 }

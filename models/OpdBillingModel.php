@@ -737,7 +737,7 @@ class OpdBillingModel
         }
     }
 
-    public function saveSponsor($name) {
+    public function saveSponsor($name, $type = null) {
         try {
             // Check if the sponsor already exists to prevent duplicate entries
             $existing = $this->db->fetchOne("SELECT sponsor_name FROM sponsors_data WHERE sponsor_name = ?", [$name]);
@@ -746,8 +746,8 @@ class OpdBillingModel
                 return true; 
             }
 
-            $sql = "INSERT INTO sponsors_data (sponsor_name) VALUES (?)";
-            return $this->db->execute($sql, [$name]);
+            $sql = "INSERT INTO sponsors_data (sponsor_name, sponsor_type) VALUES (?, ?)";
+            return $this->db->execute($sql, [$name, $type]);
         } catch (\Exception $e) {
             error_log("Error in saveSponsor: " . $e->getMessage());
             return false;

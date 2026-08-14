@@ -507,12 +507,13 @@ class OpdBillingController extends BaseController {
         try {
             $input = $this->getJsonInput();
             $name = trim($input['name'] ?? '');
+            $type = trim($input['sponsor_type'] ?? $input['type'] ?? '');
 
             if (empty($name)) {
                 $this->respondBadRequest('Sponsor name is required');
             }
 
-            $success = $this->model->saveSponsor($name);
+            $success = $this->model->saveSponsor($name, $type);
 
             if ($success) {
                 $this->respondSuccess(null, 'Sponsor data saved successfully');

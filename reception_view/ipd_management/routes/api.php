@@ -69,7 +69,7 @@ $router->addRoute('#^api/charges/?$#', 'ChargesController');
 $router->addRoute('#^api/billing/?$#', 'IpdBillingController');
 
 // Dashboard routes (including sub-routes for patients, doctors, and appointments)
-$router->addRoute('#^api/dashboard(/patients|/doctors|/appointments)?/?$#', 'DashboardController');
+$router->addRoute('#^api/dashboard(/patients|/doctors|/appointments|/sponsors)?/?$#', 'DashboardController');
 
 // ── NEW IPD Billing Module Routes ──────────────────────────────
 // Billing Master (ONE per admission)

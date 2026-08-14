@@ -675,6 +675,9 @@ include 'includes/reception_navbar.php';
                         const select = $('#existingDoctorSelect');
                         select.empty().append(new Option('Search existing doctor...', '', true, true));
                         
+                        // Sort alphabetically by doctor_name
+                        result.data.sort((a, b) => (a.doctor_name || '').localeCompare(b.doctor_name || ''));
+
                         result.data.forEach(doc => {
                             const option = new Option(doc.doctor_name, doc.sl_no, false, false);
                             // Store extra data for later
@@ -725,7 +728,93 @@ include 'includes/reception_navbar.php';
                 })
                 .catch(err => console.error("Error fetching referred doctors:", err));
         }
+
+        // Patient Card Actions
+        window.closePatientCardModal = function() {
+            document.getElementById('patientCardModal').classList.add('hidden');
+        };
+
+        window.closePatientCardModalOnBackdrop = function(e) {
+            if (e.target.id === 'patientCardModal') {
+                closePatientCardModal();
+            }
+        };
+
+        window.printPatientCard = function() {
+            const printContent = document.getElementById('printablePatientCard').outerHTML;
+            
+            const printWindow = window.open('', '_blank', 'width=600,height=600');
+            printWindow.document.write('<html><head><title>Patient ID Card</title>');
+            printWindow.document.write('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">');
+            printWindow.document.write('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">');
+            printWindow.document.write('<style>body{margin:20px; display:flex; justify-content:center; align-items:center; font-family:"Inter", sans-serif;}</style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(printContent);
+            printWindow.document.write('<script>window.onload = function() { window.print(); setTimeout(function(){ window.close(); }, 500); }<\/script>');
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+        };
     </script>
+
+    <!-- Patient Card Modal -->
+    <div id="patientCardModal" class="ref-modal-overlay hidden" onclick="closePatientCardModalOnBackdrop(event)" style="z-index: 2000; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+        <!-- Printable Card Div -->
+        <div id="printablePatientCard" class="patient-id-card" style="width: 100%; max-width: 290px; background: white; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid #e2e8f0; overflow: hidden; font-family: \'Inter\', sans-serif;" onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div style="background: #144d34; padding: 16px; color: white; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #f59e0b;">
+                <div>
+                    <div style="font-weight: 800; font-size: 1rem; letter-spacing: 0.5px;">GM HOSPITAL</div>
+                    <div style="font-size: 0.65rem; opacity: 0.8; font-weight: 500; text-transform: uppercase; letter-spacing: 1px;"><?php echo htmlspecialchars($_SESSION['hospital_branch'] ?? $_SESSION['branch'] ?? 'Branch Name'); ?></div>
+                </div>
+                <div style="width: 36px; height: 36px; background: rgba(255,255,255,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                    <i class="fas fa-hospital-alt"></i>
+                </div>
+            </div>
+            <!-- Body -->
+            <div style="padding: 20px; display: flex; flex-direction: column; gap: 12px; color: #1e293b;">
+                <div style="display: flex; gap: 14px; align-items: center;">
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: #f0fdf4; color: #16a34a; border: 2px solid #bbf7d0; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: bold; flex-shrink: 0;" id="cardInitials">
+                        P
+                    </div>
+                    <div>
+                        <div id="cardPatientName" style="font-weight: 700; font-size: 1.05rem; color: #0f172a; line-height: 1.2;">Patient Name</div>
+                        <div id="cardPatientId" style="font-size: 0.8rem; color: #1f6b4a; font-weight: 700; margin-top: 2px;">PID-XXXX</div>
+                    </div>
+                </div>
+                
+                <div style="border-top: 1px dashed #e2e8f0; padding-top: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 0.75rem;">
+                    <div>
+                        <span style="display: block; color: #64748b; font-weight: 500; font-size: 0.65rem; text-transform: uppercase;">Date of Birth</span>
+                        <span id="cardPatientDob" style="font-weight: 600; color: #334155;">1990-01-01</span>
+                    </div>
+                    <div>
+                        <span style="display: block; color: #64748b; font-weight: 500; font-size: 0.65rem; text-transform: uppercase;">Age / Gender</span>
+                        <span id="cardPatientAgeGender" style="font-weight: 600; color: #334155;">34 yrs / Male</span>
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <span style="display: block; color: #64748b; font-weight: 500; font-size: 0.65rem; text-transform: uppercase;">Phone Number</span>
+                        <span id="cardPatientPhone" style="font-weight: 600; color: #334155;">9876543210</span>
+                    </div>
+                </div>
+
+                <!-- Barcode Area -->
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 8px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
+                    <svg id="cardBarcode" style="max-width: 100%;"></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Buttons -->
+        <div style="display: flex; gap: 12px; justify-content: center;" onclick="event.stopPropagation()">
+            <button onclick="printPatientCard()" class="btn" style="padding: 10px 20px; border-radius: 10px; font-weight: 600; background: #144d34; color: white; border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <i class="fas fa-print"></i> Print Card
+            </button>
+            <button onclick="closePatientCardModal()" class="btn" style="padding: 10px 20px; border-radius: 10px; font-weight: 600; background: white; color: #475569; border: 1px solid #d1d5db; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                Close
+            </button>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </body>
 
 </html>

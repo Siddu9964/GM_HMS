@@ -9,6 +9,18 @@ $current_path = dirname($_SERVER['PHP_SELF']);
 $request_uri = $_SERVER['REQUEST_URI'];
 
 
+// Fetch dynamic unread discharge notifications count
+try {
+    $notifConn = new mysqli('localhost', 'root', '', 'hmsc_basaveshwranagara');
+    $notifCountResult = $notifConn->query("SELECT COUNT(*) as count FROM discharge_notifications WHERE status = 'Pending'");
+    $notifCountRow = $notifCountResult->fetch_assoc();
+    $unreadNotifCount = $notifCountRow['count'] ?? 0;
+    $notifConn->close();
+} catch (Throwable $e) {
+    $unreadNotifCount = 0;
+}
+
+
 
 // Function to check if current page matches the menu item
 
@@ -86,9 +98,14 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
                 <span>Doctor View</span>
             </a>
 
-            <a href="/GM_HMS/nurse_view/dashboard.php" class="sidebar-item <?php echo (strpos($current_path, 'nurse_view') !== false) ? 'active' : ''; ?>">
-                <i class="fas fa-user-nurse"></i>
-                <span>Nurse View</span>
+            <a href="/GM_HMS/nurse_view/dashboard.php" class="sidebar-item <?php echo (strpos($current_path, 'nurse_view') !== false) ? 'active' : ''; ?>" style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-user-nurse"></i>
+                    <span>Nurse View</span>
+                </span>
+                <?php if ($unreadNotifCount > 0): ?>
+                    <span id="sidebar-notif-badge" style="background: var(--gm-danger); color: white; font-size: 0.65rem; font-weight: 700; height: 16px; min-width: 16px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 4px;"><?php echo $unreadNotifCount; ?></span>
+                <?php endif; ?>
             </a>
 
             <a href="/GM_HMS/pharmacy_view/dashboard.php" class="sidebar-item <?php echo (strpos($current_path, 'pharmacy_view') !== false) ? 'active' : ''; ?>">

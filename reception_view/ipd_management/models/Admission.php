@@ -306,39 +306,12 @@ class Admission extends BaseModel {
             $data['admission_id'] = $this->generateAdmissionId();
         }
         
-        // Filter only fields that exist in the table
-        $allowedFields = [
-            'admission_id',
-            'patient_id',
-            'admitting_doctor_id',
-            'ward',
-            'floor_number',
-            'floor_name',
-            'ward_name',
-            'room_no',
-            'room_name',
-            'room_type',
-            'admission_date',
-            'admission_time',
-            'admission_type',
-            'chief_complaint',
-            'diagnosis',
-            'discharge_date',
-            'bed_id',
-            'status',
-            'emergency_contact_name',
-            'emergency_contact_phone',
-            'amount_per_day',
-            'nursig_charge',
-            'doctor_charge',
-            'service_charge',
-            'total_bed_amount',
-            'referral_type',
-            'referral_name',
-            'payment_method',
-            'advance_amount',
-            'total_due'
-        ];
+        // Dynamically fetch valid columns for the current database schema
+        $schema = $this->db->fetchAll("DESCRIBE ipd_admissions");
+        $validColumns = [];
+        foreach ($schema as $col) {
+            $validColumns[] = $col['Field'];
+        }
         
         // Map frontend bed_id to db bed_id if provided
         if (isset($data['bed_id']) && !empty($data['bed_id'])) {
@@ -346,9 +319,10 @@ class Admission extends BaseModel {
         }
         
         $filteredData = [];
-        foreach ($allowedFields as $field) {
-            if (isset($data[$field]) && $data[$field] !== '') {
-                $filteredData[$field] = $data[$field];
+        // Only allow fields that exist in the database table
+        foreach ($data as $field => $value) {
+            if (in_array($field, $validColumns) && $value !== '') {
+                $filteredData[$field] = $value;
             }
         }
         
@@ -381,14 +355,22 @@ class Admission extends BaseModel {
         $filteredData['ward_name'] = $bedDetails['ward_name'];
         $filteredData['room_no'] = $bedDetails['room_number'];
         $filteredData['room_name'] = $bedDetails['room_name'];
-        $filteredData['room_type'] = $bedDetails['room_type'];
+        $filteredData['room_name'] = $bedDetails['room_name'];
         
-        // Auto-fill bed charges into admission record
-        $filteredData['amount_per_day'] = $bedDetails['amount_per_day'];
-        $filteredData['nursig_charge'] = $bedDetails['nursig_charge'];
-        $filteredData['doctor_charge'] = $bedDetails['doctor_charge'];
-        $filteredData['service_charge'] = $bedDetails['service_charge'];
-        // Additional fields have already been processed in the generic loop above
+        // Dynamically map room/ward type depending on which column the branch's schema has
+        if (in_array('room_type', $validColumns)) {
+            $filteredData['room_type'] = $bedDetails['room_type'];
+        }
+        if (in_array('ward_type', $validColumns)) {
+            $filteredData['ward_type'] = $bedDetails['room_type'];
+        }
+        
+        // Auto-fill bed charges into admission record only if columns exist
+        if (in_array('amount_per_day', $validColumns)) $filteredData['amount_per_day'] = $bedDetails['amount_per_day'];
+        if (in_array('nursig_charge', $validColumns)) $filteredData['nursig_charge'] = $bedDetails['nursig_charge'];
+        if (in_array('doctor_charge', $validColumns)) $filteredData['doctor_charge'] = $bedDetails['doctor_charge'];
+        if (in_array('service_charge', $validColumns)) $filteredData['service_charge'] = $bedDetails['service_charge'];
+        
         
         try {
             $this->beginTransaction();
@@ -467,6 +449,14 @@ class Admission extends BaseModel {
                     $amt = (float)($payment['amount'] ?? 0);
                     $mode = $payment['mode'] ?? 'CASH';
                     if ($amt > 0) {
+                        $remarks = null;
+                        if (strtoupper($mode) === 'CREDIT') {
+                            $creditType = $payment['credit_type'] ?? '';
+                            $sponsor = $payment['sponsor'] ?? '';
+                            if ($creditType || $sponsor) {
+                                $remarks = trim("Credit Category: {$creditType} | Provider: {$sponsor}");
+                            }
+                        }
                         $ipdPayment->recordPayment([
                             'bill_id' => $billId,
                             'admission_id' => $data['admission_id'],
@@ -474,6 +464,7 @@ class Admission extends BaseModel {
                             'payment_type' => 'ADVANCE',
                             'payment_mode' => $mode,
                             'amount' => $amt,
+                            'remarks' => $remarks,
                             'created_by' => $_SESSION['username'] ?? 'system'
                         ]);
                     }

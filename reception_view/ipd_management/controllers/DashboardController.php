@@ -32,6 +32,8 @@ class DashboardController extends BaseController
                 $action = 'doctors';
             } elseif (strpos($uri, '/appointments') !== false) {
                 $action = 'appointments';
+            } elseif (strpos($uri, '/sponsors') !== false) {
+                $action = 'sponsors';
             }
         }
 
@@ -41,6 +43,11 @@ class DashboardController extends BaseController
             $patientModel = new Patient();
             $patients = $patientModel->searchPatients($search);
             $this->success(['patients' => $patients]);
+        } elseif ($action === 'sponsors') {
+            $type = $this->getParam('type', '');
+            $patientModel = new Patient();
+            $sponsors = $patientModel->getSponsorsByType($type);
+            $this->success(['sponsors' => $sponsors]);
         } elseif ($action === 'appointments') {
             // Search appointments for dropdown
             $search = $this->getParam('search', '');

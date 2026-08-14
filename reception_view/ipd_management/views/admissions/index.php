@@ -783,25 +783,34 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             padding-bottom: 1rem; /* Extra padding at the bottom */
         }
         
-        /* Fix for Select2 in Referral Name */
-        #refNameContainer .select2-container {
+        /* Fix for Select2 in Referral Name & Credit Provider Dropdowns */
+        #refNameContainer .select2-container,
+        .credit-provider-wrapper .select2-container {
             width: 100% !important;
         }
-        #refNameContainer .select2-selection--single {
-            min-height: 25.5px !important; /* To match other fields padding+borders */
-            height: auto !important;
+        /* Increased specificity to override global 42px height for Select2 */
+        #refNameContainer .select2-container .select2-selection--single,
+        .credit-provider-wrapper .select2-container .select2-selection--single,
+        #refNameContainer .select2-container--default.select2-container--open .select2-selection--single,
+        .credit-provider-wrapper .select2-container--default.select2-container--open .select2-selection--single,
+        #refNameContainer .select2-container--default.select2-container--focus .select2-selection--single,
+        .credit-provider-wrapper .select2-container--default.select2-container--focus .select2-selection--single {
+            min-height: 26px !important;
+            height: 26px !important;
             border: 1px solid var(--gray-300) !important;
             border-radius: 4px !important;
             font-size: 0.75rem !important;
-            display: flex;
-            align-items: center;
+            display: flex !important;
+            align-items: center !important;
         }
-        #refNameContainer .select2-selection__rendered {
-            padding: 0.2rem 0.4rem !important;
-            line-height: normal !important;
+        #refNameContainer .select2-selection__rendered,
+        .credit-provider-wrapper .select2-selection__rendered {
+            padding: 0 0.4rem !important;
+            line-height: 24px !important;
             color: #333 !important;
         }
-        #refNameContainer .select2-selection__arrow {
+        #refNameContainer .select2-selection__arrow,
+        .credit-provider-wrapper .select2-selection__arrow {
             height: 100% !important;
         }
     </style>
@@ -1385,6 +1394,32 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 $('#emergencyContactPhone').css('border-color', 'var(--gray-300)');
                 $('#emergencyPhoneError').hide();
                 
+                // Auto-fetch Referral Type and Name from patient registration
+                if (pat.referral_type) {
+                    let refType = '';
+                    if (pat.referral_type === 'Doctor') {
+                        refType = 'External';
+                    } else if (pat.referral_type === 'Others' || pat.referral_type === 'External') {
+                        refType = 'External';
+                    } else if (pat.referral_type !== 'Self' && pat.referral_type !== 'walk-in') {
+                        refType = pat.referral_type;
+                    }
+                    
+                    $('#referralTypeSelect').val(refType).trigger('change');
+                    
+                    if (pat.referral_name) {
+                        if (refType === 'Internal' || refType === 'External') {
+                            const newOption = new Option(pat.referral_name, pat.referral_name, true, true);
+                            $('#refNameSelect').append(newOption).trigger('change');
+                        } else {
+                            $('#refNameText').val(pat.referral_name);
+                        }
+                    }
+                } else {
+                    $('#referralTypeSelect').val('').trigger('change');
+                    $('#refNameText').val('');
+                }
+                
                 // Fetch the latest doctor for this patient (will select in the pre-loaded dropdown)
                 fetchLatestDoctor(pat.patient_id);
             };
@@ -1957,20 +1992,36 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             });
 
             // Rebuild payment splits as a proper nested array
-            const paymentRows = document.querySelectorAll('.payment-split-row');
+            const paymentRows = document.querySelectorAll('.payment-split-row-container');
             const payments = [];
             paymentRows.forEach(row => {
                 const modeEl   = row.querySelector('select[name*="[mode]"]');
                 const amountEl = row.querySelector('input[name*="[amount]"]');
                 if (modeEl && amountEl) {
                     const amt = parseFloat(amountEl.value) || 0;
-                    if (amt > 0) {
-                        payments.push({ mode: modeEl.value, amount: amt });
+                    if (amt > 0 || modeEl.value === 'CREDIT') {
+                        const paymentObj = { mode: modeEl.value, amount: amt };
+                        if (modeEl.value === 'CREDIT') {
+                            const creditTypeEl = row.querySelector('.credit-type-select');
+                            const sponsorEl = row.querySelector('.credit-provider-select');
+                            if (creditTypeEl && creditTypeEl.value) {
+                                paymentObj.credit_type = creditTypeEl.value;
+                            }
+                            if (sponsorEl && sponsorEl.value) {
+                                paymentObj.sponsor = sponsorEl.value;
+                            }
+                        }
+                        payments.push(paymentObj);
                     }
                 }
             });
             if (payments.length > 0) {
                 formData['payments'] = payments;
+                formData['payment_method'] = payments[0].mode;
+                if (payments[0].mode === 'CREDIT') {
+                    formData['credit_type'] = payments[0].credit_type || null;
+                    formData['sponsor'] = payments[0].sponsor || null;
+                }
             }
 
             // ── Step 6: Submit with loading state ──────────────────────────────
@@ -2357,22 +2408,52 @@ window.closeViewAdmissionModalOnBackdrop = function(e) {
             if (!container) return;
             const rowId = 'split_row_' + splitPaymentCount;
             const html = `
-                <div class="d-flex gap-2 align-items-center payment-split-row" id="${rowId}" style="animation: fadeIn 0.3s ease;">
-                    <div style="flex: 1; position: relative;">
-                        <i class="fas fa-money-check-alt" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #1f6b4a; font-size: 0.8rem;"></i>
-                        <select name="payments[${splitPaymentCount}][mode]" class="form-select" style="padding: 0.3rem 0.4rem 0.3rem 2rem; font-size: 0.8rem; font-weight: 600; color: #1f6b4a; border: 1px solid #d1e0d7; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer; height: auto;">
-                            <option value="CASH">Cash</option>
-                            <option value="UPI">UPI</option>
-                            <option value="CARD">Card</option>
-                        </select>
+                <div class="d-flex flex-column gap-1 payment-split-row-container" id="${rowId}" style="animation: fadeIn 0.3s ease; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 4px; position: relative;">
+                    <div class="d-flex gap-2 align-items-center">
+                        <div style="flex: 1; position: relative;">
+                            <i class="fas fa-money-check-alt" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #1f6b4a; font-size: 0.8rem;"></i>
+                            <select name="payments[${splitPaymentCount}][mode]" class="form-select" onchange="toggleCreditDetails('${rowId}', this.value)" style="padding: 0.3rem 0.4rem 0.3rem 2rem; font-size: 0.8rem; font-weight: 600; color: #1f6b4a; border: 1px solid #d1e0d7; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); cursor: pointer; height: auto;">
+                                <option value="CASH">Cash</option>
+                                <option value="UPI">UPI</option>
+                                <option value="CARD">Card</option>
+                                <option value="CREDIT">Credit</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; position: relative;">
+                            <i class="fas fa-rupee-sign" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #1f6b4a; font-size: 0.8rem;"></i>
+                            <input type="number" name="payments[${splitPaymentCount}][amount]" class="form-control split-amount-input" placeholder="Amount" value="0" style="padding: 0.3rem 0.4rem 0.3rem 2rem; font-size: 0.8rem; font-weight: 700; color: #1f6b4a; border: 1px solid #d1e0d7; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); height: auto;" oninput="calculateTotalRent()">
+                        </div>
+                        <button type="button" class="btn btn-link text-danger p-0 ms-1" style="font-size: 1.1rem; transition: transform 0.2s; opacity: 0.7;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)';" onmouseout="this.style.opacity='0.7'; this.style.transform='scale(1)';" onclick="removePaymentSplitRow('${rowId}')" title="Remove Split">
+                            <i class="fas fa-times-circle"></i>
+                        </button>
                     </div>
-                    <div style="flex: 1; position: relative;">
-                        <i class="fas fa-rupee-sign" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #1f6b4a; font-size: 0.8rem;"></i>
-                        <input type="number" name="payments[${splitPaymentCount}][amount]" class="form-control split-amount-input" placeholder="Amount" value="0" style="padding: 0.3rem 0.4rem 0.3rem 2rem; font-size: 0.8rem; font-weight: 700; color: #1f6b4a; border: 1px solid #d1e0d7; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); height: auto;" oninput="calculateTotalRent()">
+                    
+                    <!-- Credit Details (Only shown if mode is Credit) -->
+                    <div class="credit-details-row d-none d-flex gap-2 align-items-center mt-1" style="padding-left: 2rem;">
+                        <div style="flex: 1;">
+                            <select name="payments[${splitPaymentCount}][credit_type]" class="form-select credit-type-select" onchange="toggleProviderSelect('${rowId}', this.value)" style="padding: 0.2rem 0.4rem; font-size: 0.75rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+                                <option value="">Select Credit Category...</option>
+                                <option value="TPA">TPA</option>
+                                <option value="Insurance">Insurance</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; display: none; align-items: center; gap: 4px; position: relative;" class="credit-provider-wrapper">
+                            <select name="payments[${splitPaymentCount}][sponsor]" class="form-select credit-provider-select" style="width: calc(100% - 24px);">
+                                <option value="">Select Provider...</option>
+                            </select>
+                            <i class="fas fa-plus-circle text-success" onclick="toggleAddSponsorCard('${rowId}')" style="cursor: pointer; font-size: 1.1rem; line-height: 1;" title="Add New Sponsor"></i>
+                            
+                            <!-- Inline Add Sponsor Card -->
+                            <div class="add-sponsor-inline-card d-none" style="position: absolute; right: 0; top: 100%; background: #fff; border: 1px solid var(--gray-300); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1050; padding: 0.6rem; width: 220px; margin-top: 0.3rem;">
+                                <div style="font-size: 0.7rem; font-weight: 700; color: var(--teal-dark); margin-bottom: 0.4rem;">Add New Sponsor</div>
+                                <input type="text" class="new-sponsor-inline-name form-control form-control-sm" placeholder="Sponsor Name" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.7rem; margin-bottom: 0.4rem; color: #333 !important;">
+                                <div class="d-flex gap-1 justify-content-end">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 4px;" onclick="toggleAddSponsorCard('${rowId}')">Cancel</button>
+                                    <button type="button" class="btn btn-sm btn-success" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 4px;" onclick="saveSponsorInline('${rowId}')">Save</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <button type="button" class="btn btn-link text-danger p-0 ms-1" style="font-size: 1.1rem; transition: transform 0.2s; opacity: 0.7;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)';" onmouseout="this.style.opacity='0.7'; this.style.transform='scale(1)';" onclick="removePaymentSplitRow('${rowId}')" title="Remove Split">
-                        <i class="fas fa-times-circle"></i>
-                    </button>
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
@@ -2380,9 +2461,162 @@ window.closeViewAdmissionModalOnBackdrop = function(e) {
             calculateTotalRent();
         }
 
+        function toggleCreditDetails(rowId, value) {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+            const creditDetailsRow = row.querySelector('.credit-details-row');
+            
+            if (value === 'CREDIT') {
+                creditDetailsRow.classList.remove('d-none');
+            } else {
+                creditDetailsRow.classList.add('d-none');
+                row.querySelector('.credit-type-select').value = '';
+                const provWrapper = row.querySelector('.credit-provider-wrapper');
+                provWrapper.classList.add('d-none');
+                provWrapper.classList.remove('d-flex');
+                
+                const provSelect = $(row.querySelector('.credit-provider-select'));
+                if (provSelect.data('select2')) {
+                    provSelect.select2('destroy');
+                }
+                provSelect.html('<option value="">Select Provider...</option>').val('');
+                hideAddSponsorCard(rowId);
+            }
+        }
+
+        function toggleProviderSelect(rowId, value) {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+            const provWrapper = row.querySelector('.credit-provider-wrapper');
+            const provSelect = $(row.querySelector('.credit-provider-select'));
+            
+            if (provSelect.data('select2')) {
+                provSelect.select2('destroy');
+            }
+            
+            provSelect.html('<option value="">Select Provider...</option>');
+            hideAddSponsorCard(rowId);
+            
+            if (value === 'TPA' || value === 'Insurance') {
+                provWrapper.classList.remove('d-none');
+                provWrapper.classList.add('d-flex');
+                provSelect.html('<option value="">Loading providers...</option>');
+                
+                IPD.ajax('dashboard/sponsors?type=' + value, 'GET')
+                    .then(response => {
+                        provSelect.html('<option value="">Select Provider...</option>');
+                        if (response.data && response.data.sponsors) {
+                            response.data.sponsors.forEach(s => {
+                                provSelect.append(new Option(s.sponsor_name, s.sponsor_name));
+                            });
+                        }
+                        provSelect.select2({
+                            dropdownParent: $('#addAdmissionModal'),
+                            placeholder: 'Select or type ' + value + '...',
+                            tags: true,
+                            allowClear: true
+                        });
+                    })
+                    .catch(err => {
+                        console.error('Failed to load sponsors:', err);
+                        provSelect.html('<option value="">Select or type...</option>');
+                        provSelect.select2({
+                            dropdownParent: $('#addAdmissionModal'),
+                            placeholder: 'Select or type...',
+                            tags: true,
+                            allowClear: true
+                        });
+                    });
+            } else {
+                provWrapper.classList.add('d-none');
+                provWrapper.classList.remove('d-flex');
+            }
+        }
+
+        function toggleAddSponsorCard(rowId) {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+            const card = row.querySelector('.add-sponsor-inline-card');
+            if (card) {
+                card.classList.toggle('d-none');
+                if (!card.classList.contains('d-none')) {
+                    const input = card.querySelector('.new-sponsor-inline-name');
+                    if (input) {
+                        input.value = '';
+                        input.focus();
+                    }
+                }
+            }
+        }
+
+        function hideAddSponsorCard(rowId) {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+            const card = row.querySelector('.add-sponsor-inline-card');
+            if (card) {
+                card.classList.add('d-none');
+            }
+        }
+
+        async function saveSponsorInline(rowId) {
+            const row = document.getElementById(rowId);
+            if (!row) return;
+            
+            const type = row.querySelector('.credit-type-select').value;
+            const nameInput = row.querySelector('.new-sponsor-inline-name');
+            const name = nameInput ? nameInput.value.trim() : '';
+            
+            if (!name) {
+                IPD.toast('Please enter the sponsor name', 'error');
+                return;
+            }
+            
+            const btn = row.querySelector('.add-sponsor-inline-card .btn-success');
+            const origText = btn ? btn.innerText : 'Save';
+            if (btn) { btn.disabled = true; btn.innerText = 'Saving...'; }
+            
+            try {
+                let baseUrl = '';
+                if (typeof IPD !== 'undefined' && IPD.API_BASE) {
+                    baseUrl = IPD.API_BASE.split('/reception_view/')[0];
+                } else {
+                    baseUrl = '/GM_HMS'; 
+                }
+                
+                const response = await fetch(baseUrl + '/api/billing/opd/sponsor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name, sponsor_type: type })
+                });
+                
+                if (response.ok) {
+                    IPD.toast('Sponsor saved successfully!', 'success');
+                    const provSelect = $(row.querySelector('.credit-provider-select'));
+                    
+                    // Add new option and select it
+                    const newOption = new Option(name, name, true, true);
+                    provSelect.append(newOption).trigger('change');
+                } else {
+                    IPD.toast('Failed to save sponsor data', 'error');
+                }
+            } catch (e) {
+                console.error(e);
+                IPD.toast('Error saving sponsor data', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = origText; }
+                hideAddSponsorCard(rowId);
+            }
+        }
+
         function removePaymentSplitRow(rowId) {
             const el = document.getElementById(rowId);
-            if (el) el.remove();
+            if (el) {
+                const provSelect = $(el.querySelector('.credit-provider-select'));
+                if (provSelect.data('select2')) {
+                    provSelect.select2('destroy');
+                }
+                el.remove();
+            }
             calculateTotalRent();
         }
     </script>

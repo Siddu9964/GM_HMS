@@ -130,51 +130,8 @@ $userName  = $_SESSION['username'] ?? 'Admin';
 
             <main class="flex-1 ipd-billing-page" id="ipdBillingPage">
                 
-                <!-- ═══════════ ZONE 1: TOP SEARCH BAR (REDESIGNED) ═══════════ -->
-                <div class="billing-search-zone" id="billingSearchZone" style="padding: 12px 24px; display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(31,107,74,0.1); border-left: 4px solid var(--primary-color);">
-                    <!-- Left: Title -->
-                    <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
-                        <div style="background: rgba(31,107,74,0.1); padding: 10px; border-radius: 8px;">
-                            <i data-lucide="hospital" style="color: var(--primary-color); width: 24px; height: 24px;"></i>
-                        </div>
-                        <div>
-                            <h1 style="font-size: 1.25rem; font-weight: 700; color: var(--primary-color); margin: 0; line-height: 1.2;">IPD Billing Terminal</h1>
-                            <p style="font-size: 0.8rem; color: #64748b; margin: 0;">Search Patient / UHID / Mobile</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Middle: Search Input -->
-                    <div class="search-zone-input-wrap" style="flex-grow: 1; max-width: 500px; margin: 0; position: relative;">
-                        <i data-lucide="search" class="search-icon" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--primary-color); width: 18px; height: 18px;"></i>
-                        <input
-                            type="text"
-                            id="admissionSearchInput"
-                            class="admission-search-input"
-                            placeholder="Search admitted patient..."
-                            autocomplete="off"
-                            style="width: 100%; padding: 10px 10px 10px 42px; border-radius: 20px; border: 1px solid rgba(31,107,74,0.3); font-size: 0.95rem; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); transition: border 0.2s; outline: none;"
-                            onfocus="this.style.border='1px solid var(--primary-color)';"
-                            onblur="this.style.border='1px solid rgba(31,107,74,0.3)';"
-                        >
-                        <div id="admissionSearchDropdown" class="admission-search-dropdown" style="top: calc(100% + 5px); left: 0; right: 0;"></div>
-                    </div>
-
-                    <!-- Right: Actions & Hints -->
-                    <div style="display: flex; align-items: center; gap: 15px; flex-shrink: 0;">
-                        <div style="font-size: 0.75rem; color: #64748b; display: flex; align-items: center; gap: 8px; border-right: 1px solid #e2e8f0; padding-right: 15px;">
-                            <i data-lucide="keyboard" style="width: 14px; height: 14px;"></i>
-                            <span style="display:flex; gap:5px;">
-                                <kbd style="background:var(--primary-color); color:white; padding: 2px 6px; border-radius: 4px; font-weight: bold;">P</kbd> Pay 
-                                <kbd style="background:var(--primary-color); color:white; padding: 2px 6px; border-radius: 4px; font-weight: bold;">A</kbd> Charge 
-                                <kbd style="background:var(--primary-color); color:white; padding: 2px 6px; border-radius: 4px; font-weight: bold;">B</kbd> Bed 
-                                <kbd style="background:var(--primary-color); color:white; padding: 2px 6px; border-radius: 4px; font-weight: bold;">Esc</kbd> Close
-                            </span>
-                        </div>
-                        <button class="bm-btn" style="background: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'" onclick="billing.openDischargeHistory()">
-                            <i data-lucide="history" style="width: 16px; height: 16px;"></i> Discharge History
-                        </button>
-                    </div>
-                </div>
+                <!-- ═══════════ ZONE 1: TOP SEARCH BAR (REMOVED) ═══════════ -->
+                <!-- The top search zone has been removed per user request -->
 
                 <!-- ═══════════ ZONE 2: ADMITTED PATIENTS LIST ═══════════ -->
                 <div class="billing-empty-state" id="billingEmptyState" style="padding:20px; align-items: stretch; justify-content: flex-start; height: calc(100vh - 100px); display: flex; flex-direction: column;">
@@ -190,6 +147,9 @@ $userName  = $_SESSION['username'] ?? 'Admin';
                                 <i data-lucide="search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--primary-color);"></i>
                                 <input type="text" id="patientTableSearch" onkeyup="billing.filterPatientsTable()" placeholder="Search in table..." style="padding: 8px 10px 8px 30px; border-radius: 6px; border: 1px solid var(--primary-color); font-size: 0.9rem; outline: none; width: 200px;">
                             </div>
+                            <button class="bm-btn" style="background: var(--primary-color); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'" onclick="billing.openDischargeHistory()">
+                                <i data-lucide="history" style="width: 16px; height: 16px;"></i> Discharge History
+                            </button>
                         </div>
                     </div>
                     <div class="table-responsive bg-white rounded shadow-sm border border-slate-200" style="flex-grow: 1; overflow-y: auto; position: relative;">
@@ -239,6 +199,7 @@ $userName  = $_SESSION['username'] ?? 'Admin';
                                         <span class="phc-dot">·</span>
                                         <span id="phcDays" class="phc-days-badge"></span>
                                     </div>
+                                    <div class="phc-meta" id="phcExtraInfo" style="display:none; margin-top: 6px;"></div>
                                 </div>
                             </div>
                             <div class="phc-right">

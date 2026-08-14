@@ -1748,6 +1748,8 @@ class OpdBillingManager {
     async saveNewSponsor() {
         const nameInput = document.getElementById('newSponsorName');
         const name = nameInput?.value.trim();
+        const typeInput = document.getElementById('newSponsorType');
+        const type = typeInput?.value;
 
         if (!name) {
             this.toast('Please enter the sponsor name', 'error');
@@ -1765,7 +1767,8 @@ class OpdBillingManager {
 
             // Save to permanent sponsors_data table
             await this.api('POST', '/api/billing/opd/sponsor', { 
-                name: name
+                name: name,
+                sponsor_type: type
             });
 
             // Update main form field

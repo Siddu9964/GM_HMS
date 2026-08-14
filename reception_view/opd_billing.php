@@ -391,6 +391,14 @@ $pageTitle = 'OPD Billing';
                 <label>Sponsor Name</label>
                 <input type="text" id="newSponsorName" placeholder="Enter sponsor name">
             </div>
+            <div class="form-group mb-4">
+                <label>Sponsor Type</label>
+                <select id="newSponsorType" style="height: 32px !important; width: 100% !important; padding: 0.35rem 0.7rem !important; border-radius: 8px !important; border: 1px solid rgba(31, 107, 74, 0.25) !important;">
+                    <option value="">Select Sponsor Type...</option>
+                    <option value="TPA">TPA</option>
+                    <option value="Insurance">Insurance</option>
+                </select>
+            </div>
             <div style="margin-top:1.5rem;">
                 <button class="btn btn-primary" onclick="opdBilling.saveNewSponsor()" style="width:100%; justify-content:center;">
                     <i class="fas fa-save"></i> Save Sponsor

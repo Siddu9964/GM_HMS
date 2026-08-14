@@ -177,6 +177,48 @@ class PatientManager {
     }
 
     /**
+     * Generate printable patient digital ID card
+     */
+    async generateCard(patientId) {
+        try {
+            const patient = await this.getPatientById(patientId);
+            if (!patient) return;
+
+            // Fill card fields
+            const fullName = patient.full_name || (patient.first_name + ' ' + (patient.last_name || ''));
+            document.getElementById('cardPatientName').textContent = fullName;
+            document.getElementById('cardPatientId').textContent = patient.patient_id;
+            document.getElementById('cardPatientDob').textContent = patient.birth_date || 'N/A';
+            document.getElementById('cardPatientAgeGender').textContent = `${patient.age || 'N/A'} yrs / ${patient.sex || 'N/A'}`;
+            document.getElementById('cardPatientPhone').textContent = patient.phone || 'N/A';
+            
+            // Set initials
+            document.getElementById('cardInitials').textContent = fullName.charAt(0).toUpperCase();
+
+            // Generate barcode with patient details
+            // Structured data: "ID:PID-001 | Name:John | Phone:98765"
+            // To make sure all details show on scan, we format it cleanly.
+            const barcodeData = `ID:${patient.patient_id},Name:${fullName},DOB:${patient.birth_date || ''},Age:${patient.age || ''},Phone:${patient.phone || ''}`;
+            
+            // Generate Code 128 barcode
+            JsBarcode("#cardBarcode", patient.patient_id, {
+                format: "CODE128",
+                width: 1.5,
+                height: 50,
+                displayValue: true,
+                fontSize: 12,
+                lineColor: "#0f172a"
+            });
+
+            // Show modal
+            document.getElementById('patientCardModal').classList.remove('hidden');
+        } catch (error) {
+            console.error('Generate card error:', error);
+            this.showToast('Failed to generate patient card', 'error');
+        }
+    }
+
+    /**
      * Search patients
      */
     async searchPatients(query) {
@@ -252,6 +294,9 @@ class PatientManager {
                         </button>
                         <button class="action-icon edit" onclick="patientManager.openModal('edit', '${patient.patient_id}')" title="Edit" style="color: #1f6b4a; background: #f0f9fa; border: 1px solid #b2ebf2;">
                             <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-icon print" onclick="patientManager.generateCard('${patient.patient_id}')" title="Generate Card" style="color: #4f46e5; background: #e0e7ff; border: 1px solid #c7d2fe;">
+                            <i class="fas fa-id-card"></i>
                         </button>
                         <button class="action-icon delete" onclick="patientManager.deletePatient('${patient.patient_id}')" title="Delete" style="color: #ef4444; background: #fef2f2; border: 1px solid #fecaca;">
                             <i class="fas fa-trash"></i>

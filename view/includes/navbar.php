@@ -3,6 +3,17 @@
 if (!isset($basePath)) {
     $basePath = '../';
 }
+
+// Fetch dynamic unread discharge notifications count
+try {
+    $notifConn = new mysqli('localhost', 'root', '', 'hmsc_basaveshwranagara');
+    $notifCountResult = $notifConn->query("SELECT COUNT(*) as count FROM discharge_notifications WHERE status = 'Pending'");
+    $notifCountRow = $notifCountResult->fetch_assoc();
+    $unreadNotifCount = $notifCountRow['count'] ?? 0;
+    $notifConn->close();
+} catch (Throwable $e) {
+    $unreadNotifCount = 0;
+}
 ?>
 <!-- Top Navbar -->
 <header style="background: var(--gm-bg); border-bottom: 1px solid var(--gm-glass-border); padding: 1.1rem 1.5rem; height: 80px; position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
@@ -18,11 +29,43 @@ if (!isset($basePath)) {
     </div>
     
     <div style="display: flex; align-items: center; gap: 1.5rem;">
-        <!-- Notifications -->
-        <button style="position: relative; color: var(--gm-text-light); transition: color 0.2s; background: none; border: none; cursor: pointer;" onmouseover="this.style.color='var(--gm-accent)'" onmouseout="this.style.color='var(--gm-text-light)'">
-            <i class="fas fa-bell" style="font-size: 1.25rem;"></i>
-            <span style="position: absolute; top: -4px; right: -6px; background: var(--gm-danger); color: white; font-size: 0.65rem; font-weight: 700; height: 16px; min-width: 16px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--gm-white);">5</span>
-        </button>
+        <!-- Notifications Dropdown Wrapper -->
+        <div style="position: relative; display: inline-block;" id="admin-notifications-wrapper">
+            <button onclick="toggleAdminNotifications(event)" style="position: relative; color: var(--gm-text-light); transition: color 0.2s; background: none; border: none; cursor: pointer;" onmouseover="this.style.color='var(--gm-accent)'" onmouseout="this.style.color='var(--gm-text-light)'">
+                <i class="fas fa-bell" style="font-size: 1.25rem;"></i>
+                <span id="navbar-notif-badge" style="position: absolute; top: -4px; right: -6px; background: var(--gm-danger); color: white; font-size: 0.65rem; font-weight: 700; height: 16px; min-width: 16px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--gm-white); <?php echo ($unreadNotifCount > 0) ? '' : 'display: none;'; ?>"><?php echo $unreadNotifCount; ?></span>
+            </button>
+            
+            <div id="adminNotificationsDropdown" style="display: none; position: absolute; top: 120%; right: 0; background: var(--gm-white); border-radius: var(--gm-r-md); box-shadow: var(--gm-shadow); min-width: 300px; border: 1px solid var(--gm-glass-border); overflow: hidden; z-index: 1000; padding: 12px; max-height: 350px; overflow-y: auto;">
+                <h4 style="margin: 0 0 10px 0; padding-bottom: 8px; border-bottom: 1px solid var(--gm-glass-border); font-size: 0.85rem; font-weight: 700; color: var(--gm-text);">Discharge Notifications</h4>
+                <div id="admin-notifications-list">
+                    <?php
+                    try {
+                        $notifConn = new mysqli('localhost', 'root', '', 'hmsc_basaveshwranagara');
+                        $notifListResult = $notifConn->query("SELECT * FROM discharge_notifications ORDER BY created_at DESC LIMIT 5");
+                        if ($notifListResult && $notifListResult->num_rows > 0) {
+                            while ($nRow = $notifListResult->fetch_assoc()) {
+                                $statusColor = $nRow['status'] === 'Pending' ? '#ef4444' : '#10b981';
+                                $statusBg = $nRow['status'] === 'Pending' ? '#fef2f2' : '#ecfdf5';
+                                echo "<div id='notif-item-{$nRow['id']}' style='padding: 8px; border-radius: 8px; background: {$statusBg}; margin-bottom: 8px; border: 1px solid var(--gm-glass-border); font-size: 0.75rem; text-align: left;'>";
+                                echo "<div style='display: flex; justify-content: space-between; margin-bottom: 4px;'><strong style='color: var(--gm-text);'>Admission: {$nRow['admission_id']}</strong><span style='color: {$statusColor}; font-weight: 700;'>{$nRow['status']}</span></div>";
+                                echo "<p style='margin: 0; color: var(--gm-text-light); line-height: 1.3;'>{$nRow['message']}</p>";
+                                if ($nRow['status'] === 'Pending') {
+                                    echo "<button onclick='dismissAdminNotification(event, {$nRow['id']})' style='margin-top: 6px; padding: 2px 8px; font-size: 0.65rem; border-radius: 4px; background: #e2e8f0; border: none; cursor: pointer; font-weight: 600;'>Clear</button>";
+                                }
+                                echo "</div>";
+                            }
+                        } else {
+                            echo "<p style='text-align: center; color: var(--gm-text-light); font-size: 0.75rem; padding: 10px; margin: 0;'>No notifications</p>";
+                        }
+                        $notifConn->close();
+                    } catch (Throwable $e) {
+                        echo "<p style='text-align: center; color: var(--gm-text-light); font-size: 0.75rem; margin: 0;'>Error loading alerts</p>";
+                    }
+                    ?>
+                </div>
+            </div>
+        </div>
         
         <!-- Messages -->
         <button style="position: relative; color: var(--gm-text-light); transition: color 0.2s; background: none; border: none; cursor: pointer;" onmouseover="this.style.color='var(--gm-accent)'" onmouseout="this.style.color='var(--gm-text-light)'">
@@ -209,5 +252,70 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.disabled = false;
         }
     });
+});
+
+function toggleAdminNotifications(e) {
+    e.stopPropagation();
+    var dropdown = document.getElementById('adminNotificationsDropdown');
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+
+async function dismissAdminNotification(e, id) {
+    e.stopPropagation();
+    if (!confirm('Mark notification as cleared?')) return;
+    
+    var formData = new FormData();
+    formData.append('id', id);
+    
+    try {
+        var response = await fetch('<?php echo $basePath; ?>view/api/dismiss_discharge_notification.php', {
+            method: 'POST',
+            body: formData
+        });
+        var result = await response.json();
+        if (result.success) {
+            var item = document.getElementById('notif-item-' + id);
+            if (item) {
+                item.style.opacity = '0.5';
+                item.style.background = '#f1f5f9';
+                var btn = item.querySelector('button');
+                if (btn) btn.remove();
+            }
+            // Update badge count
+            var badge = document.getElementById('navbar-notif-badge');
+            if (badge) {
+                var currentCount = parseInt(badge.textContent) || 0;
+                if (currentCount > 1) {
+                    badge.textContent = currentCount - 1;
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+            // Update sidebar badge if it exists
+            var sidebarBadge = document.getElementById('sidebar-notif-badge');
+            if (sidebarBadge) {
+                var currentCount = parseInt(sidebarBadge.textContent) || 0;
+                if (currentCount > 1) {
+                    sidebarBadge.textContent = currentCount - 1;
+                } else {
+                    sidebarBadge.style.display = 'none';
+                }
+            }
+        } else {
+            alert('Failed to clear notification: ' + result.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Network error clearing notification.');
+    }
+}
+
+// Click outside dropdown handler
+document.addEventListener('click', function(e) {
+    var wrapper = document.getElementById('admin-notifications-wrapper');
+    var dropdown = document.getElementById('adminNotificationsDropdown');
+    if (wrapper && dropdown && !wrapper.contains(e.target)) {
+        dropdown.style.display = 'none';
+    }
 });
 </script>

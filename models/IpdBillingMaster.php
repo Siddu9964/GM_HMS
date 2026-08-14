@@ -185,7 +185,8 @@ class IpdBillingMaster extends IpdBaseModel {
                     p.age, p.sex, p.phone,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
-                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount
+                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
+                    ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount
              FROM ipd_billing_master bm
              LEFT JOIN patient p ON bm.patient_id = p.patient_id
              LEFT JOIN doctors d ON bm.doctor_id = d.doctor_id
@@ -245,7 +246,8 @@ class IpdBillingMaster extends IpdBaseModel {
                     p.age, p.sex, p.phone,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
-                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount
+                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
+                    ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount
              FROM ipd_billing_master bm
              LEFT JOIN patient p ON bm.patient_id = p.patient_id
              LEFT JOIN doctors d ON bm.doctor_id = d.doctor_id
@@ -270,7 +272,7 @@ class IpdBillingMaster extends IpdBaseModel {
                     d.full_name AS doctor_name, d.specialization,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
                     hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
-                    ia.admission_id AS adm_id, ia.bed_id
+                    ia.admission_id AS adm_id, ia.bed_id, ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount
              FROM ipd_billing_master bm
              LEFT JOIN patient p ON bm.patient_id = p.patient_id
              LEFT JOIN doctors d ON bm.doctor_id = d.doctor_id
@@ -292,7 +294,8 @@ class IpdBillingMaster extends IpdBaseModel {
                     p.age, p.sex, p.phone,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
-                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount
+                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
+                    ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount
              FROM ipd_billing_master bm
              LEFT JOIN patient p ON bm.patient_id = p.patient_id
              LEFT JOIN doctors d ON bm.doctor_id = d.doctor_id

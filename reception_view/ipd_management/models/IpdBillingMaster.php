@@ -24,7 +24,8 @@ class IpdBillingMaster extends BaseModel {
                     p.age, p.sex, p.phone,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
-                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount
+                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
+                    ia.sponsor, ia.total_bed_amount AS adm_total_bed_amount
              FROM ipd_billing_master bm
              LEFT JOIN patient p ON bm.patient_id = p.patient_id
              LEFT JOIN doctors d ON bm.doctor_id = d.doctor_id
@@ -84,7 +85,8 @@ class IpdBillingMaster extends BaseModel {
                     p.age, p.sex, p.phone,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
-                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount
+                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
+                    ia.sponsor, ia.total_bed_amount AS adm_total_bed_amount
              FROM ipd_billing_master bm
              LEFT JOIN patient p ON bm.patient_id = p.patient_id
              LEFT JOIN doctors d ON bm.doctor_id = d.doctor_id
@@ -108,7 +110,7 @@ class IpdBillingMaster extends BaseModel {
                     d.full_name AS doctor_name, d.specialization,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
                     hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
-                    ia.admission_id AS adm_id, ia.bed_id
+                    ia.admission_id AS adm_id, ia.bed_id, ia.sponsor, ia.total_bed_amount AS adm_total_bed_amount
              FROM ipd_billing_master bm
              LEFT JOIN patient p ON bm.patient_id = p.patient_id
              LEFT JOIN doctors d ON bm.doctor_id = d.doctor_id
@@ -126,12 +128,15 @@ class IpdBillingMaster extends BaseModel {
                     p.age, p.sex, p.phone,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
-                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount
+                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
+                    ia.referral_type, ia.referral_name, ia.sponsor, ia.total_bed_amount AS adm_total_bed_amount,
+                    ins.company_name AS insurance_company_name, ins.tpa_name
              FROM ipd_billing_master bm
              LEFT JOIN patient p ON bm.patient_id = p.patient_id
              LEFT JOIN doctors d ON bm.doctor_id = d.doctor_id
              LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
              LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
+             LEFT JOIN ipd_insurance ins ON bm.bill_id = ins.bill_id
              WHERE bm.admission_id = ?",
             [$admissionId]
         );
