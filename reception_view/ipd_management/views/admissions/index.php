@@ -1174,8 +1174,32 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             $('#timeHour, #timeMinute, #timeAmPm').on('change', updateHiddenTime);
             initTimeDropdowns();
             
-            // Initialize Select2 for Doctor Search in Add Admission Modal
-            IPD.initDoctorSearch('#doctorSelect', '#addAdmissionModal');
+            // Load and sort doctors alphabetically helper
+            function loadDoctorsSorted(selector, dropdownParent, selectedId = null) {
+                return IPD.ajax('dashboard/doctors?limit=200', 'GET')
+                    .then(response => {
+                        const select = $(selector);
+                        select.empty().append('<option value="">Select Doctor...</option>');
+                        if (response.data && response.data.doctors) {
+                            response.data.doctors.forEach(doc => {
+                                select.append(new Option(`${doc.name} - ${doc.specialization}`, doc.doctor_id));
+                            });
+                        }
+                        if (selectedId) {
+                            select.val(selectedId).trigger('change');
+                        } else {
+                            select.val('').trigger('change');
+                        }
+                        select.select2({
+                            dropdownParent: $(dropdownParent),
+                            placeholder: 'Select Doctor...',
+                            allowClear: true
+                        });
+                    });
+            }
+
+            // Load doctors alphabetically on document ready
+            loadDoctorsSorted('#doctorSelect', '#addAdmissionModal');
 
             window.openAdvancedPatientSearch = function() {
                 IPD.toast('Advanced Patient Search modal will be implemented here.', 'info');
@@ -1246,7 +1270,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             window.clearPatientSelection = function() {
                 $('#patientSearchInput').val('');
                 $('#patientSelect').val('');
-                $('#doctorSelect').empty().append('<option value="">-- Select a patient first --</option>');
+                $('#doctorSelect').val('').trigger('change');
                 $('#patientSearchResults').hide().empty();
             };
 
@@ -1276,8 +1300,8 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 const minutes = String(now.getMinutes()).padStart(2, '0');
                 document.getElementById('admissionTime').value = `${hours}:${minutes}`;
 
-                // Reset doctor dropdown
-                $('#doctorSelect').empty().append('<option value="">-- Select a patient first --</option>');
+                // Reset doctor dropdown selection without emptying options
+                $('#doctorSelect').val('').trigger('change');
             };
 
             window.closeAddAdmissionModal = function () {
@@ -1360,11 +1384,8 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 // Reset emergency phone field state when patient changes
                 $('#emergencyContactPhone').css('border-color', 'var(--gray-300)');
                 $('#emergencyPhoneError').hide();
-
-                // Clear out doctor select until we fetch the latest one
-                $('#doctorSelect').empty().append('<option value="">-- Fetching doctor... --</option>');
                 
-                // Fetch the latest doctor for this patient
+                // Fetch the latest doctor for this patient (will select in the pre-loaded dropdown)
                 fetchLatestDoctor(pat.patient_id);
             };
 
@@ -1413,9 +1434,15 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     .then(response => {
                         if (response.data) {
                             const doctor = response.data;
-                            // Create a DOM Option and pre-select it
-                            const option = new Option(doctor.doctor_name, doctor.doctor_id, true, true);
-                            $('#doctorSelect').append(option).trigger('change');
+                            
+                            // Check if doctor option already exists in the pre-loaded dropdown, if not append it
+                            if ($('#doctorSelect option[value="' + doctor.doctor_id + '"]').length === 0) {
+                                const option = new Option(doctor.doctor_name, doctor.doctor_id, true, true);
+                                $('#doctorSelect').append(option);
+                            }
+                            
+                            // Select the doctor option
+                            $('#doctorSelect').val(doctor.doctor_id).trigger('change');
 
                             // Manually trigger the select2:select event if needed for other handlers
                             $('#doctorSelect').trigger({
@@ -2203,15 +2230,11 @@ window.closeViewAdmissionModalOnBackdrop = function(e) {
 
                     // Initialize Select2 for edit modal
                     IPD.initPatientSearch('#editPatientSelect', '#editAdmissionModal');
-                    IPD.initDoctorSearch('#editDoctorSelect', '#editAdmissionModal');
+                    loadDoctorsSorted('#editDoctorSelect', '#editAdmissionModal', admission.admitting_doctor_id);
 
                     // Pre-populate patient
                     const patientOption = new Option(admission.patient_name, admission.patient_id, true, true);
                     $('#editPatientSelect').append(patientOption).trigger('change');
-
-                    // Pre-populate doctor
-                    const doctorOption = new Option(admission.doctor_name, admission.admitting_doctor_id, true, true);
-                    $('#editDoctorSelect').append(doctorOption).trigger('change');
 
                     // Load beds (available + current bed) - pass current bed info
                     loadBedsForEdit(admission.bed_id, {

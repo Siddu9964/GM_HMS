@@ -1034,6 +1034,8 @@
                 
                 if (result.success) {
                     allDoctors = result.data;
+                    // Sort alphabetically by full_name
+                    allDoctors.sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
                     filteredDoctors = allDoctors;
                     renderTable();
                     updateKPIs();

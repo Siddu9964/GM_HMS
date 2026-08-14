@@ -141,10 +141,10 @@ class DoctorController extends BaseController
 
             // Handle availability status filter at SQL level if needed
             if (!empty($statusFilter)) {
-                $sql = "SELECT * FROM ($sql) as filtered_doctors WHERE availability = ?";
+                $sql = "SELECT * FROM ($sql) as filtered_doctors WHERE availability = ? ORDER BY full_name ASC";
                 $params[] = $statusFilter;
             } else {
-                $sql .= " ORDER BY availability DESC, d.full_name ASC LIMIT ?";
+                $sql .= " ORDER BY d.full_name ASC LIMIT ?";
                 $params[] = $limit;
             }
             
