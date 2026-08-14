@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GM_HMS — Documentation Hub</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --primary: #1a56db;
+            --primary-dark: #1e40af;
+            --primary-light: #dbeafe;
+            --secondary: #7c3aed;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --text: #111827;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --bg: #f9fafb;
+            --card-bg: #ffffff;
+            --gradient: linear-gradient(135deg, #1a56db 0%, #7c3aed 100%);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* HEADER */
+        .header {
+            background: var(--gradient);
+            color: white;
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(26,86,219,0.3);
+        }
+
+        .header-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 18px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-logo {
+            width: 42px;
+            height: 42px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .header-title h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .header-title p {
+            font-size: 12px;
+            opacity: 0.8;
+            font-weight: 400;
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 8px;
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* HERO */
+        .hero {
+            background: var(--gradient);
+            color: white;
+            padding: 60px 32px;
+            text-align: center;
+        }
+
+        .hero h2 {
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 16px;
+        }
+
+        .hero p {
+            font-size: 18px;
+            opacity: 0.85;
+            max-width: 600px;
+            margin: 0 auto 32px;
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 32px;
+        }
+
+        .hero-stat {
+            text-align: center;
+        }
+
+        .hero-stat-num {
+            font-size: 36px;
+            font-weight: 800;
+        }
+
+        .hero-stat-label {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        /* MAIN */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 32px;
+        }
+
+        /* SECTION */
+        .section {
+            margin-bottom: 48px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .icon-blue { background: #dbeafe; }
+        .icon-purple { background: #ede9fe; }
+        .icon-green { background: #d1fae5; }
+        .icon-orange { background: #fed7aa; }
+        .icon-red { background: #fee2e2; }
+        .icon-teal { background: #ccfbf1; }
+
+        .section-header h3 {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .section-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* GRID */
+        .doc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        /* CARD */
+        .doc-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .doc-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .card-blue::before { background: linear-gradient(90deg, #1a56db, #7c3aed); }
+        .card-green::before { background: linear-gradient(90deg, #059669, #10b981); }
+        .card-orange::before { background: linear-gradient(90deg, #d97706, #f59e0b); }
+        .card-purple::before { background: linear-gradient(90deg, #7c3aed, #a855f7); }
+        .card-red::before { background: linear-gradient(90deg, #dc2626, #f87171); }
+        .card-teal::before { background: linear-gradient(90deg, #0d9488, #14b8a6); }
+
+        .doc-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+            border-color: var(--primary-light);
+        }
+
+        .card-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .card-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tag {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .card-arrow {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 18px;
+            transition: transform 0.2s;
+        }
+
+        .doc-card:hover .card-arrow {
+            transform: translateY(-50%) translateX(4px);
+            color: var(--primary);
+        }
+
+        /* FILE SIZE INFO */
+        .card-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .card-size {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .card-type {
+            font-size: 11px;
+            color: var(--primary);
+            font-weight: 600;
+            background: var(--primary-light);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        /* QUICK NAV */
+        .quick-nav {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px 32px;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .quick-nav-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .quick-nav a {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 6px 14px;
+            border: 1px solid var(--primary-light);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .quick-nav a:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* ALERT */
+        .alert {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .alert-icon { font-size: 20px; }
+        .alert-text { font-size: 14px; color: #92400e; }
+        .alert-text strong { color: #78350f; }
+
+        /* FOOTER */
+        .footer {
+            background: var(--text);
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            padding: 32px;
+            margin-top: 60px;
+            font-size: 13px;
+        }
+
+        .footer strong { color: white; }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .hero-stats { gap: 20px; flex-wrap: wrap; }
+            .header-badges { display: none; }
+        }
+        @media (max-width: 768px) {
+            .header-inner { padding: 12px 16px; flex-direction: column; text-align: center; gap: 10px; }
+            .hero { padding: 40px 16px; }
+            .hero h2 { font-size: 28px; }
+            .hero p { font-size: 15px; }
+            .main { padding: 20px 16px; }
+            .doc-grid { grid-template-columns: 1fr; }
+            .quick-nav { flex-direction: column; padding: 16px; gap: 12px; align-items: stretch; text-align: center; }
+            .alert { flex-direction: column; text-align: center; align-items: center; }
+        }
+        @media (max-width: 480px) {
+            .hero-stat-num { font-size: 28px; }
+            .section { margin-bottom: 32px; }
+            .doc-card { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+    <div class="header-inner">
+        <div class="header-brand">
+            <div class="header-logo">🏥</div>
+            <div class="header-title">
+                <h1>GM_HMS Documentation Hub</h1>
+                <p>GM Hospital Management System — Complete Reference</p>
+            </div>
+        </div>
+        <div class="header-badges">
+            <span class="badge">v2.0.0</span>
+            <span class="badge">August 2026</span>
+            <span class="badge">Confidential</span>
+        </div>
+    </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+    <h2>Complete HMS Documentation</h2>
+    <p>Professional reference for Chairman, COO, Director, Manager, and Technical Teams</p>
+    <div class="hero-stats">
+        <div class="hero-stat">
+            <div class="hero-stat-num">18</div>
+            <div class="hero-stat-label">Documents</div>
+        </div>
+        <div class="hero-stat">
+            <div class="hero-stat-num">6</div>
+            <div class="hero-stat-label">User Roles</div>
+        </div>
+        <div class="hero-stat">
+            <div class="hero-stat-num">100+</div>
+            <div class="hero-stat-label">API Endpoints</div>
+        </div>
+        <div class="hero-stat">
+            <div class="hero-stat-num">35+</div>
+            <div class="hero-stat-label">DB Tables</div>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+
+    <!-- QUICK NAV -->
+    <div class="quick-nav">
+        <span class="quick-nav-label">Quick Jump:</span>
+        <a href="#core">Core Docs</a>
+        <a href="#roles">User Roles</a>
+        <a href="#modules">Modules</a>
+        <a href="#changelog">Changelog</a>
+    </div>
+
+    <!-- ALERT -->
+    <div class="alert">
+        <span class="alert-icon">⚠️</span>
+        <div class="alert-text">
+            <strong>Note:</strong> These are Markdown (.md) files. Open them in VS Code, GitHub, or any Markdown viewer for the best reading experience with formatted tables, code blocks, and diagrams.
+        </div>
+    </div>
+
+    <!-- CORE DOCUMENTS -->
+    <section class="section" id="core">
+        <div class="section-header">
+            <div class="section-icon icon-blue">📋</div>
+            <div>
+                <h3>Core Documents</h3>
+                <div class="section-subtitle">System-wide reference — read these first</div>
+            </div>
+        </div>
+        <div class="doc-grid">
+            <a href="visual_workflows.html" class="doc-card card-blue" style="border: 2px solid #3b82f6; background: #eff6ff;">
+                <div class="card-icon">📊</div>
+                <div class="card-title">Visual Workflows & Architecture</div>
+                <div class="card-desc"><strong>Highly Recommended:</strong> Presentation-quality flowcharts and system block diagrams tracing an example patient through all modules.</div>
+                <div class="card-tags">
+                    <span class="tag">Visual</span>
+                    <span class="tag">Flowcharts</span>
+                    <span class="tag">Management</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">visual_workflows.html</span>
+                    <span class="card-type">Interactive HTML</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+
+            <a href="viewer.html?file=00_PROJECT_OVERVIEW.md" class="doc-card card-blue">
+                <div class="card-icon">🏥</div>
+                <div class="card-title">Project Overview</div>
+                <div class="card-desc">Executive summary, project objectives, technology stack, system scope, application workflow, and multi-branch support. Perfect for management presentations.</div>
+                <div class="card-tags">
+                    <span class="tag">Executive</span>
+                    <span class="tag">Architecture</span>
+                    <span class="tag">Workflow</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">00_PROJECT_OVERVIEW.md</span>
+                    <span class="card-type">Executive</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+
+            <a href="viewer.html?file=01_SYSTEM_ARCHITECTURE.md" class="doc-card card-blue">
+                <div class="card-icon">🏗️</div>
+                <div class="card-title">System Architecture</div>
+                <div class="card-desc">MVC architecture, request lifecycle, core framework components, database layer, API routing, JavaScript/AJAX flow, and file organization principles.</div>
+                <div class="card-tags">
+                    <span class="tag">Technical</span>
+                    <span class="tag">Architecture</span>
+                    <span class="tag">Code Flow</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">01_SYSTEM_ARCHITECTURE.md</span>
+                    <span class="card-type">Technical</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+
+            <a href="viewer.html?file=02_AUTH_AND_SECURITY.md" class="doc-card card-blue">
+                <div class="card-icon">🔐</div>
+                <div class="card-title">Authentication & Security</div>
+                <div class="card-desc">Login flow, session management, role-based access control, password security (bcrypt), SQL injection prevention, rate limiting, CSRF, and audit logging.</div>
+                <div class="card-tags">
+                    <span class="tag">Security</span>
+                    <span class="tag">Auth</span>
+                    <span class="tag">RBAC</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">02_AUTH_AND_SECURITY.md</span>
+                    <span class="card-type">Technical</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+
+            <a href="viewer.html?file=03_API_COMPLETE_REFERENCE.md" class="doc-card card-blue">
+                <div class="card-icon">🔌</div>
+                <div class="card-title">Complete API Reference</div>
+                <div class="card-desc">All 100+ API endpoints with HTTP methods, request/response formats, authentication requirements, error codes, and example payloads for all modules.</div>
+                <div class="card-tags">
+                    <span class="tag">API</span>
+                    <span class="tag">REST</span>
+                    <span class="tag">JSON</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">03_API_COMPLETE_REFERENCE.md</span>
+                    <span class="card-type">Technical</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+
+            <a href="viewer.html?file=04_DATABASE_DOCUMENTATION.md" class="doc-card card-blue">
+                <div class="card-icon">🗄️</div>
+                <div class="card-title">Database Documentation</div>
+                <div class="card-desc">All 35+ tables with column definitions, data types, keys, relationships, ER narrative, CRUD operations per module, and multi-branch database architecture.</div>
+                <div class="card-tags">
+                    <span class="tag">Database</span>
+                    <span class="tag">MySQL</span>
+                    <span class="tag">Schema</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">04_DATABASE_DOCUMENTATION.md</span>
+                    <span class="card-type">Technical</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- ROLE DOCUMENTS -->
+    <section class="section" id="roles">
+        <div class="section-header">
+            <div class="section-icon icon-purple">👥</div>
+            <div>
+                <h3>User Role Documentation</h3>
+                <div class="section-subtitle">Dedicated guide for each hospital role — pages, workflows, permissions</div>
+            </div>
+        </div>
+        <div class="doc-grid">
+            <a href="viewer.html?file=roles/ROLE_ADMIN.md" class="doc-card card-purple">
+                <div class="card-icon">🛡️</div>
+                <div class="card-title">Administrator</div>
+                <div class="card-desc">Full system access. Dashboard KPIs, doctor/staff management, IPD/OPD billing oversight, bed configuration, nurse scheduling, discharge notifications, OT billing.</div>
+                <div class="card-tags">
+                    <span class="tag">Full Access</span>
+                    <span class="tag">Management</span>
+                    <span class="tag">Reports</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">roles/ROLE_ADMIN.md</span>
+                    <span class="card-type">Role Guide</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+
+            <a href="viewer.html?file=roles/ROLE_RECEPTION.md" class="doc-card card-purple">
+                <div class="card-icon">🗂️</div>
+                <div class="card-title">Receptionist</div>
+                <div class="card-desc">Patient registration, appointment booking, OPD queue, OPD billing, complete IPD management (admission, billing engine, payments, discharge), printing.</div>
+                <div class="card-tags">
+                    <span class="tag">Patient Reg.</span>
+                    <span class="tag">IPD</span>
+                    <span class="tag">Billing</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">roles/ROLE_RECEPTION.md</span>
+                    <span class="card-type">Role Guide</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+
+            <a href="viewer.html?file=roles/ROLE_DOCTOR.md" class="doc-card card-purple">
+                <div class="card-icon">👨‍⚕️</div>
+                <div class="card-title">Doctor</div>
+                <div class="card-desc">OPD schedule, IPD patients, SOAP consultation notes, prescription management, lab test ordering, AI symptom analysis, voice-to-text transcription.</div>
+                <div class="card-tags">
+                    <span class="tag">SOAP</span>
+                    <span class="tag">Prescription</span>
+                    <span class="tag">AI</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">roles/ROLE_DOCTOR.md</span>
+                    <span class="card-type">Role Guide</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+
+            <a href="viewer.html?file=roles/ROLE_NURSE.md" class="doc-card card-purple">
+                <div class="card-icon">👩‍⚕️</div>
+                <div class="card-title">Nurse</div>
+                <div class="card-desc">IPD patient care — vitals (K-sheet), MAR (medication administration), clinical charts (dialysis/O2/ventilation/blood), pharmacy orders, lab tests, discharge notification.</div>
+                <div class="card-tags">
+                    <span class="tag">MAR</span>
+                    <span class="tag">Vitals</span>
+                    <span class="tag">Clinical</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">roles/ROLE_NURSE.md</span>
+                    <span class="card-type">Role Guide</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+
+            <a href="viewer.html?file=roles/ROLE_PHARMACY.md" class="doc-card card-purple">
+                <div class="card-icon">💊</div>
+                <div class="card-title">Pharmacist</div>
+                <div class="card-desc">POS billing (FIFO), prescription fulfillment, GRN/stock receive, indent requests, purchase orders, quotations, supplier management, IPD orders, returns, reports.</div>
+                <div class="card-tags">
+                    <span class="tag">POS</span>
+                    <span class="tag">FIFO</span>
+                    <span class="tag">GRN</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">roles/ROLE_PHARMACY.md</span>
+                    <span class="card-type">Role Guide</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+
+            <a href="viewer.html?file=roles/ROLE_LABORATORY.md" class="doc-card card-purple">
+                <div class="card-icon">🔬</div>
+                <div class="card-title">Laboratory Technician</div>
+                <div class="card-desc">LIS — OPD/IPD test orders, result entry with normal ranges, critical value alerts, test catalog management, kanban workflow, reports, lab inventory.</div>
+                <div class="card-tags">
+                    <span class="tag">LIS</span>
+                    <span class="tag">Results</span>
+                    <span class="tag">Critical Alerts</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">roles/ROLE_LABORATORY.md</span>
+                    <span class="card-type">Role Guide</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- MODULE DOCUMENTS -->
+    <section class="section" id="modules">
+        <div class="section-header">
+            <div class="section-icon icon-green">⚙️</div>
+            <div>
+                <h3>Module Documentation</h3>
+                <div class="section-subtitle">Deep-dive into each functional module — business logic, database, flows</div>
+            </div>
+        </div>
+        <div class="doc-grid">
+            <a href="viewer.html?file=modules/MOD_OPD.md" class="doc-card card-green">
+                <div class="card-icon">🏃</div>
+                <div class="card-title">OPD Module</div>
+                <div class="card-desc">Complete outpatient workflow — appointment lifecycle, token system, vitals, SOAP consultation, AI integration, OPD billing with duplicate detection.</div>
+                <div class="card-tags">
+                    <span class="tag">Appointments</span>
+                    <span class="tag">Consultation</span>
+                    <span class="tag">Billing</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">modules/MOD_OPD.md</span>
+                    <span class="card-type">Module</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+
+            <a href="viewer.html?file=modules/MOD_IPD.md" class="doc-card card-green">
+                <div class="card-icon">🛏️</div>
+                <div class="card-title">IPD Module</div>
+                <div class="card-desc">Most complex module — admission workflow, bed management, billing engine (catchUpBedCharges, recalculateMaster), payments, insurance, discharge coordination.</div>
+                <div class="card-tags">
+                    <span class="tag">Admission</span>
+                    <span class="tag">Billing Engine</span>
+                    <span class="tag">Discharge</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">modules/MOD_IPD.md</span>
+                    <span class="card-type">Module</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- CHANGELOG -->
+    <section class="section" id="changelog">
+        <div class="section-header">
+            <div class="section-icon icon-orange">📝</div>
+            <div>
+                <h3>Changelog</h3>
+                <div class="section-subtitle">Version history and feature timeline</div>
+            </div>
+        </div>
+        <div class="doc-grid">
+            <a href="viewer.html?file=CHANGELOG.md" class="doc-card card-orange">
+                <div class="card-icon">📅</div>
+                <div class="card-title">CHANGELOG</div>
+                <div class="card-desc">Complete version history from v1.0.0 (Feb 2026) to v2.0.0 (Aug 2026). New features, improvements, bug fixes, and known issues per release.</div>
+                <div class="card-tags">
+                    <span class="tag">v2.0.0</span>
+                    <span class="tag">v1.5.0</span>
+                    <span class="tag">v1.0.0</span>
+                </div>
+                <div class="card-meta">
+                    <span class="card-size">CHANGELOG.md</span>
+                    <span class="card-type">History</span>
+                </div>
+                <span class="card-arrow">→</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- SYSTEM SUMMARY TABLE -->
+    <section class="section">
+        <div class="section-header">
+            <div class="section-icon icon-teal">📊</div>
+            <div>
+                <h3>System Summary</h3>
+                <div class="section-subtitle">Key technical facts at a glance</div>
+            </div>
+        </div>
+        <div style="background: white; border: 1px solid var(--border); border-radius: 16px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: var(--gradient); color: white;">
+                        <th style="padding: 14px 20px; text-align: left; font-weight: 600;">Category</th>
+                        <th style="padding: 14px 20px; text-align: left; font-weight: 600;">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 12px 20px; font-weight: 600; color: var(--primary);">Backend</td>
+                        <td style="padding: 12px 20px;">PHP 7.4+ · MySQL 5.7+ · MVC Pattern · PSR-4 Autoloading</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border); background: var(--bg);">
+                        <td style="padding: 12px 20px; font-weight: 600; color: var(--primary);">Frontend</td>
+                        <td style="padding: 12px 20px;">HTML5 · Bootstrap 4 · jQuery · DataTables · Select2 · Chart.js</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 12px 20px; font-weight: 600; color: var(--primary);">Database</td>
+                        <td style="padding: 12px 20px;">MySQL (MySQLi) · UTF8MB4 · Singleton Pattern · Parameterized Queries</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border); background: var(--bg);">
+                        <td style="padding: 12px 20px; font-weight: 600; color: var(--primary);">AI Features</td>
+                        <td style="padding: 12px 20px;">Google Gemini (Symptom Analysis) · Groq Whisper (Voice Transcription) · Groq LLM</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 12px 20px; font-weight: 600; color: var(--primary);">User Roles</td>
+                        <td style="padding: 12px 20px;">Admin · Doctor · Receptionist · Nurse · Pharmacist</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border); background: var(--bg);">
+                        <td style="padding: 12px 20px; font-weight: 600; color: var(--primary);">API Endpoints</td>
+                        <td style="padding: 12px 20px;">100+ REST endpoints across 43 controllers</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 12px 20px; font-weight: 600; color: var(--primary);">Database Tables</td>
+                        <td style="padding: 12px 20px;">35+ tables across 6 functional categories</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border); background: var(--bg);">
+                        <td style="padding: 12px 20px; font-weight: 600; color: var(--primary);">Branches Supported</td>
+                        <td style="padding: 12px 20px;">Basaveshwaranagar (hmsc_basaveshwranagara) · Nagarabhavi (hmsci)</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 12px 20px; font-weight: 600; color: var(--primary);">Security</td>
+                        <td style="padding: 12px 20px;">bcrypt Passwords · Session RBAC · Parameterized SQL · Rate Limiting · Audit Logs</td>
+                    </tr>
+                    <tr style="background: var(--bg);">
+                        <td style="padding: 12px 20px; font-weight: 600; color: var(--primary);">Server</td>
+                        <td style="padding: 12px 20px;">Apache (XAMPP) · PHP Sessions · IST Timezone (+05:30)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <p><strong>GM Hospital Management System</strong> — Documentation Hub</p>
+    <p style="margin-top: 8px;">Version 2.0.0 · August 2026 · Internal Use Only — Confidential</p>
+    <p style="margin-top: 8px;">Prepared for: Chairman · COO · Director · Manager · Technical Team</p>
+</footer>
+
+</body>
+</html>

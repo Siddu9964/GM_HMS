@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GM_HMS Document Viewer</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --gradient: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* HEADER */
+        .header {
+            background: var(--gradient);
+            color: white;
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(26,86,219,0.3);
+        }
+
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 18px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            color: white;
+        }
+
+        .header-logo {
+            width: 42px;
+            height: 42px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+            font-weight: 400;
+            text-transform: capitalize;
+        }
+
+        .btn-back {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .btn-back:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* MARKDOWN CONTAINER */
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 32px;
+        }
+
+        .markdown-body {
+            background: var(--card-bg);
+            padding: 50px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border: 1px solid var(--border);
+            font-size: 16px;
+            color: var(--text);
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 100px;
+            color: var(--text-light);
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        /* Error State */
+        .error {
+            text-align: center;
+            padding: 50px;
+            color: #dc2626;
+            background: #fee2e2;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        /* MARKDOWN STYLES */
+        .markdown-body h1 {
+            font-size: 2.2em;
+            margin-top: 0;
+            padding-bottom: 0.3em;
+            border-bottom: 2px solid var(--border);
+            color: var(--primary-dark);
+        }
+        .markdown-body h2 {
+            font-size: 1.7em;
+            margin-top: 1.5em;
+            padding-bottom: 0.3em;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+        .markdown-body h3 { font-size: 1.4em; color: var(--primary); margin-top: 1.5em; }
+        .markdown-body p { margin-top: 0; margin-bottom: 16px; }
+        .markdown-body a { color: var(--primary); text-decoration: none; font-weight: 500; }
+        .markdown-body a:hover { text-decoration: underline; }
+        
+        /* Lists */
+        .markdown-body ul, .markdown-body ol {
+            padding-left: 2em;
+            margin-bottom: 16px;
+        }
+        .markdown-body li {
+            margin-bottom: 0.5em;
+        }
+        .markdown-body li > input[type="checkbox"] {
+            margin-right: 8px;
+            transform: scale(1.2);
+        }
+
+        /* Tables */
+        .markdown-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 30px;
+            font-size: 15px;
+        }
+        .markdown-body th {
+            background: #f1f5f9;
+            color: #334155;
+            font-weight: 600;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+        .markdown-body td {
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            vertical-align: top;
+        }
+        .markdown-body tr:nth-child(even) { background: #f8fafc; }
+
+        /* Code & Quotes */
+        .markdown-body code {
+            background: #f1f5f9;
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #db2777;
+        }
+        .markdown-body pre {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            overflow: auto;
+            line-height: 1.45;
+        }
+        .markdown-body pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        .markdown-body blockquote {
+            margin: 0;
+            padding: 0 1em;
+            color: var(--text-light);
+            border-left: 4px solid var(--primary);
+            background: #eff6ff;
+            padding: 16px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        /* Mermaid specific */
+        .mermaid {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        
+        .mermaid svg { max-width: none !important; height: auto !important; }
+        
+        /* Connection Line Animations */
+        .mermaid path.path, .mermaid .edgePath path, .mermaid path.flowchart-link {
+            stroke-dasharray: 8 8 !important;
+            animation: flowData 1s linear infinite !important;
+        }
+        @keyframes flowData {
+            from { stroke-dashoffset: 16; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        hr {
+            height: 1px;
+            border: none;
+            background: var(--border);
+            margin: 40px 0;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .header-inner { flex-direction: column; text-align: center; gap: 10px; padding: 12px; }
+            .header-nav { width: 100%; justify-content: center; }
+            .markdown-body { padding: 20px 16px; border-radius: 0; box-shadow: none; font-size: 15px; }
+            .markdown-body table { display: block; overflow-x: auto; white-space: nowrap; }
+            .markdown-body h1 { font-size: 1.8em; }
+            .markdown-body h2 { font-size: 1.4em; }
+        }
+        @media (max-width: 480px) {
+            .markdown-body { padding: 15px 10px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-inner">
+            <a href="index.html" class="header-brand">
+                <div class="header-logo">GM</div>
+                <div>
+                    <div class="header-title">GM_HMS Documentation</div>
+                    <div class="header-subtitle" id="doc-title">Loading Document...</div>
+                </div>
+            </a>
+            <a href="index.html" class="btn-back">← Back to Hub</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="content" class="markdown-body">
+            <div class="loading">Loading documentation...</div>
+        </div>
+    </div>
+
+    <!-- Mermaid.js -->
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        
+        // Configuration for massive, beautiful charts
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'base',
+            themeVariables: {
+                fontFamily: 'Inter, sans-serif',
+                primaryColor: '#e2e8f0',
+                primaryTextColor: '#1e293b',
+                primaryBorderColor: '#94a3b8',
+                lineColor: '#2563eb',
+                secondaryColor: '#f8fafc',
+                tertiaryColor: '#fff',
+                fontSize: '26px'
+            },
+            flowchart: {
+                htmlLabels: true,
+                curve: 'basis',
+                nodeSpacing: 100,
+                rankSpacing: 100,
+                useMaxWidth: false
+            },
+            sequence: {
+                actorMargin: 100,
+                messageMargin: 80,
+                messageFontSize: 24,
+                actorFontSize: 26,
+                noteFontSize: 24
+            }
+        });
+
+        const renderer = new marked.Renderer();
+        
+        // Custom renderer for Mermaid blocks that supports latest marked.js
+        renderer.code = function(token) {
+            const lang = typeof token === 'object' ? token.lang : arguments[1];
+            const text = typeof token === 'object' ? token.text : arguments[0];
+            
+            if (lang === 'mermaid') {
+                return '<div class="mermaid">' + text + '</div>';
+            }
+            return '<pre><code>' + (text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</code></pre>';
+        };
+
+        marked.setOptions({
+            renderer: renderer,
+            gfm: true,
+            breaks: true
+        });
+
+        // Fetch and render the document
+        async function loadDocument() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const file = urlParams.get('file');
+
+            if (!file) {
+                document.getElementById('content').innerHTML = `
+                    <div class="error">
+                        <h2>No Document Specified</h2>
+                        <p>Please select a document from the <a href="index.html">Documentation Hub</a>.</p>
+                    </div>
+                `;
+                document.getElementById('doc-title').innerText = 'Error';
+                return;
+            }
+
+            try {
+                // Update title visually
+                const niceTitle = file.split('/').pop().replace('.md', '').replace(/_/g, ' ');
+                document.getElementById('doc-title').innerText = niceTitle;
+                document.title = niceTitle + " - GM_HMS Docs";
+
+                // Fetch the markdown file
+                const response = await fetch(file);
+                if (!response.ok) throw new Error('File not found');
+                
+                const markdownText = await response.text();
+                
+                // Parse markdown to HTML
+                document.getElementById('content').innerHTML = marked.parse(markdownText);
+                
+                // Render any mermaid diagrams found in the markdown
+                try {
+                    await mermaid.run({
+                        querySelector: '.mermaid'
+                    });
+                } catch (e) {
+                    console.error("Mermaid rendering error:", e);
+                }
+
+            } catch (err) {
+                document.getElementById('content').innerHTML = `
+                    <div class="error">
+                        <h2>Failed to Load Document</h2>
+                        <p>Could not load <strong>${file}</strong>. Please ensure the file exists.</p>
+                        <p>Error: ${err.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize
+        loadDocument();
+    </script>
+</body>
+</html>

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GM_HMS - Visual Workflows & Architecture</title>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#e0f2fe',
+                primaryTextColor: '#0f172a',
+                primaryBorderColor: '#0ea5e9',
+                lineColor: '#3b82f6',
+                secondaryColor: '#fef08a',
+                tertiaryColor: '#fbcfe8',
+                fontSize: '26px',
+                fontFamily: 'Inter, sans-serif'
+            },
+            flowchart: { 
+                curve: 'basis',
+                nodeSpacing: 100,
+                rankSpacing: 100,
+                useMaxWidth: false
+            },
+            sequence: {
+                actorMargin: 100,
+                messageMargin: 80,
+                messageFontSize: 24,
+                actorFontSize: 26,
+                noteFontSize: 24
+            }
+        });
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #0f172a; margin: 0; padding: 0; }
+        .header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 60px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 42px; font-weight: 800; letter-spacing: -0.5px; }
+        .header p { margin: 15px 0 0; font-size: 20px; opacity: 0.9; }
+        
+        .container { max-width: 1200px; margin: -30px auto 40px; padding: 0 20px; position: relative; z-index: 10; }
+        .nav-btn { display: inline-block; background: white; color: #1e3a8a; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s; }
+        .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        
+        .section { background: white; border-radius: 16px; padding: 50px; margin-bottom: 50px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border-top: 4px solid #3b82f6; }
+        .section h2 { margin-top: 0; color: #1e3a8a; font-size: 32px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px; }
+        .desc { font-size: 18px; color: #475569; margin-bottom: 40px; line-height: 1.7; padding: 20px; background: #f8fafc; border-left: 4px solid #38bdf8; border-radius: 0 8px 8px 0; }
+        
+        /* Make Mermaid Diagrams larger and more visible */
+        .diagram { display: flex; justify-content: center; overflow-x: auto; padding: 40px 20px; background: #ffffff; border-radius: 12px; border: 2px solid #cbd5e1; box-shadow: inset 0 0 30px rgba(0,0,0,0.02); }
+        .diagram pre { width: 100%; display: flex; justify-content: center; margin: 0; }
+        .diagram svg { width: auto !important; max-width: none !important; height: auto !important; }
+        
+        /* Connection Line Animations */
+        .mermaid path.path, .mermaid .edgePath path, .mermaid path.flowchart-link {
+            stroke-dasharray: 8 8 !important;
+            animation: flowData 1s linear infinite !important;
+        }
+        @keyframes flowData {
+            from { stroke-dashoffset: 16; }
+            to { stroke-dashoffset: 0; }
+        }
+        
+        .footer { background: #0f172a; color: #94a3b8; text-align: center; padding: 40px; font-size: 15px; }
+        
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .header { padding: 40px 16px; }
+            .header h1 { font-size: 28px; }
+            .header p { font-size: 16px; }
+            .container { padding: 0 16px; }
+            .section { padding: 24px 16px; margin-bottom: 30px; border-radius: 12px; }
+            .section h2 { font-size: 24px; }
+            .desc { font-size: 15px; padding: 16px; border-radius: 8px; border-left: none; border-top: 4px solid #38bdf8; }
+            .diagram { padding: 20px 10px; }
+            .nav-btn { width: 100%; text-align: center; margin-bottom: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>GM_HMS Visual Architecture</h1>
+    <p>Presentation-Quality System Diagrams for Management</p>
+</div>
+
+<div class="container">
+    <a href="index.html" class="nav-btn">← Back to Documentation Hub</a>
+
+    <!-- 1. System Architecture -->
+    <div class="section">
+        <h2>1. System Architecture Block Diagram</h2>
+        <p class="desc">A high-level view of how users interact with the GM_HMS system, the internal modules, and the database. Designed for management to understand the technology landscape at a glance without reading code.</p>
+        <div class="diagram">
+            <pre class="mermaid">
+                flowchart LR
+                    %% Users
+                    Staff(["👩‍⚕️ Hospital Staff\n(Admin, Doctor, Reception, Nurse, Lab, Pharmacy)"]):::user
+
+                    %% Core System
+                    Auth{"🛡️ Authentication\n& API Router"}:::core
+
+                    %% Business Modules
+                    OPD["🏃 OPD Module\n(Appointments, Vitals, Consultation)"]:::module
+                    IPD["🛏️ IPD Module\n(Admission, Bed Tracking, Billing)"]:::module
+                    PHARM["💊 Pharmacy Module\n(POS Billing, Inventory, GRN)"]:::module
+                    LAB["🔬 Laboratory Module\n(LIS, Test Orders, Reports)"]:::module
+
+                    %% Databases
+                    DB[("🗄️ Multi-Branch Database\n(Branch 1 & Branch 2)")]:::db
+
+                    %% Connections
+                    Staff -->|"Logs into Web App"| Auth
+                    
+                    Auth -->|"Accesses"| OPD
+                    Auth -->|"Accesses"| IPD
+                    Auth -->|"Accesses"| PHARM
+                    Auth -->|"Accesses"| LAB
+
+                    OPD -->|"Reads/Writes"| DB
+                    IPD -->|"Reads/Writes"| DB
+                    PHARM -->|"Reads/Writes"| DB
+                    LAB -->|"Reads/Writes"| DB
+
+                    classDef user fill:#bfdbfe,stroke:#2563eb,stroke-width:2px,color:#1e293b,font-weight:bold;
+                    classDef core fill:#fde047,stroke:#ca8a04,stroke-width:2px,color:#1e293b,font-weight:bold;
+                    classDef module fill:#bbf7d0,stroke:#16a34a,stroke-width:2px,color:#1e293b,font-weight:bold;
+                    classDef db fill:#fbcfe8,stroke:#db2777,stroke-width:2px,color:#1e293b,font-weight:bold;
+            </pre>
+        </div>
+    </div>
+
+    <!-- 2. Patient Journey -->
+    <div class="section">
+        <h2>2. Complete Patient Journey Flowchart</h2>
+        <p class="desc">Follow a single example patient, <strong>Ramesh Kumar (Patient ID: IPD000123)</strong>, through the entire hospital system from arrival to discharge. The colors indicate the department handling each step.</p>
+        <div class="diagram">
+            <pre class="mermaid">
+                flowchart TD
+                    Start(["🏥 Ramesh arrives at Hospital"]) --> Reg["📝 Reception:\nRegisters Ramesh & Books Appointment"]:::reception
+                    Reg --> Wait["⏳ Ramesh waits in OPD Queue"]
+                    Wait --> Vitals["🌡️ Nurse Station:\nRecords Vitals"]:::nurse
+                    Vitals --> DocVisit["👨‍⚕️ Doctor:\nConsults Ramesh, Enters SOAP Notes"]:::doctor
+                    DocVisit --> Decision{"🩺 Doctor's Decision"}
+                    
+                    Decision -->|"Admit to IPD"| Admit["🛏️ Reception:\nAdmits Ramesh (IPD000123) & Assigns Bed"]:::reception
+                    Decision -->|"Medicines Only"| OPDBill["💳 Reception:\nGenerates OPD Bill"]:::reception
+                    
+                    OPDBill --> OPDPay["💸 Ramesh pays OPD bill"]
+                    OPDPay --> OPDPharm["💊 Pharmacy:\nRamesh buys medicines"]:::pharmacy
+                    OPDPharm --> GoHome(["🏠 Ramesh goes home"])
+                    
+                    Admit --> Ward["🏥 Ramesh moved to Ward 101"]
+                    Ward --> NurseCare["👩‍⚕️ Nurse:\nDaily Vitals & MAR"]:::nurse
+                    NurseCare --> LabOrder["🔬 Nurse/Doctor:\nOrders Lab Tests"]:::nurse
+                    
+                    LabOrder --> LabProcess["🧪 Laboratory:\nCollects Sample & Uploads Results"]:::lab
+                    LabProcess --> DocReview["👨‍⚕️ Doctor:\nReviews Lab Results"]:::doctor
+                    
+                    NurseCare --> PharmOrder["💊 Nurse:\nOrders Medicines for Ward"]:::nurse
+                    PharmOrder --> PharmProcess["💊 Pharmacy:\nDispenses Medicines to Ward"]:::pharmacy
+                    PharmProcess --> NurseCare
+                    
+                    DocReview --> CheckDischarge{"✅ Ready for Discharge?"}
+                    CheckDischarge -->|"No"| NurseCare
+                    CheckDischarge -->|"Yes"| NurseNotify["🔔 Nurse:\nSends Discharge Notification"]:::nurse
+                    
+                    NurseNotify --> BillGen["💳 Admin:\nFinalizes IPD Bill"]:::admin
+                    BillGen --> Settle["💸 Ramesh's Family settles Bill"]
+                    Settle --> DischargeSummary["📄 Doctor:\nCompletes Discharge Summary"]:::doctor
+                    DischargeSummary --> EndNode(["🏠 Ramesh is Discharged.\nBed marked Available."])
+
+                    classDef reception fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#0f172a,font-weight:bold;
+                    classDef doctor fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#0f172a,font-weight:bold;
+                    classDef nurse fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#0f172a,font-weight:bold;
+                    classDef pharmacy fill:#fef08a,stroke:#ca8a04,stroke-width:2px,color:#0f172a,font-weight:bold;
+                    classDef lab fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#0f172a,font-weight:bold;
+                    classDef admin fill:#ffedd5,stroke:#ea580c,stroke-width:2px,color:#0f172a,font-weight:bold;
+            </pre>
+        </div>
+    </div>
+
+    <!-- OPD Module Flowchart -->
+    <div class="section">
+        <h2>Out-Patient Department (OPD) Module Flow</h2>
+        <p class="desc">Shows how Ramesh interacts exclusively with the OPD module for a standard doctor visit, including queue tokens, vitals, and billing.</p>
+        <div class="diagram">
+            <pre class="mermaid">
+                flowchart TD
+                    Arrival(["🏥 Ramesh arrives for Checkup"]) --> Reg["📝 Reception:\nSearch or Register Ramesh"]:::reception
+                    Reg --> Appt["📅 Reception:\nBook Appt & Assign Token #14"]:::reception
+                    Appt --> Wait["⏳ Ramesh waits\nin OPD Area"]
+                    
+                    Wait --> Call["📺 Display Screen:\nCalls Token #14"]
+                    Call --> Vitals["👩‍⚕️ Nurse Station:\nCheck BP, Temp, Weight"]:::nurse
+                    
+                    Vitals --> Consult["👨‍⚕️ Doctor's Cabin:\nWrites SOAP Notes"]:::doctor
+                    Consult --> Prescribe["📄 Doctor:\nIssues Digital Prescription"]:::doctor
+                    
+                    Prescribe --> Checkout["💳 Reception:\nGenerate OPD Bill"]:::reception
+                    Checkout --> Pay["💸 Ramesh pays ₹500"]
+                    Pay --> Print["🖨️ Reception:\nPrint Receipt"]:::reception
+                    
+                    Print --> Pharm["💊 Pharmacy:\nBuy prescribed medicines"]:::pharmacy
+                    Pharm --> Leave(["🏠 Ramesh leaves Hospital"])
+
+                    classDef reception fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#0f172a,font-weight:bold;
+                    classDef doctor fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#0f172a,font-weight:bold;
+                    classDef nurse fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#0f172a,font-weight:bold;
+                    classDef pharmacy fill:#fef08a,stroke:#ca8a04,stroke-width:2px,color:#0f172a,font-weight:bold;
+            </pre>
+        </div>
+    </div>
+
+    <!-- 3. IPD Admission & Billing Engine -->
+    <div class="section">
+        <h2>3. IPD Module & Automated Billing Engine</h2>
+        <p class="desc">Details how the system automatically tracks and accumulates charges for Ramesh Kumar (IPD000123) every day he stays in the hospital, ensuring zero revenue leakage.</p>
+        <div class="diagram">
+            <pre class="mermaid">
+                sequenceDiagram
+                    autonumber
+                    actor R as Receptionist
+                    participant DB as Central Database
+                    participant BE as Auto Billing Engine
+                    actor N as Nurse / Depts
+                    actor A as Admin
+
+                    R->>DB: Admit Ramesh (Bed 101, IPD000123)
+                    DB-->>R: Admission Created (Bed Status: Occupied)
+                    R->>BE: Generate Initial Bill Master
+                    BE-->>DB: Creates BILL-2026-001 (Status: OPEN)
+                    
+                    Note over BE, DB: Daily Automated Background Cycle
+                    loop Every 24 Hours
+                        BE->>DB: Check Days since Admission
+                        BE->>DB: Insert ROOM_RENT charge (Bed Charge + Food)
+                    end
+                    
+                    N->>BE: Add Lab/Pharmacy/Doctor charges for Ramesh
+                    BE->>DB: Insert Itemized Billing Charge
+                    BE->>BE: Trigger recalculateMaster()
+                    BE-->>DB: Update Bill Subtotal & Apply Taxes
+                    
+                    A->>BE: Review Final Bill for Discharge
+                    BE->>DB: Apply Corporate Discount / Insurance
+                    A->>BE: Record Final Payment Received
+                    BE->>DB: Update Bill (Status: FINALIZED)
+            </pre>
+        </div>
+    </div>
+
+    <!-- 4. Laboratory (LIS) Workflow -->
+    <div class="section">
+        <h2>4. Laboratory (LIS) Module Decision Flow</h2>
+        <p class="desc">How a blood test requested for Ramesh moves through the laboratory module, including the critical alert decision tree.</p>
+        <div class="diagram">
+            <pre class="mermaid">
+                flowchart TD
+                    Order["🩺 Doctor/Nurse:\nOrders CBC Test"]:::start --> Pending["⏳ Lab Dashboard:\nTest Appears in Pending"]:::lab
+                    Pending --> Collect["🩸 Lab Tech:\nCollects Blood Sample"]:::lab
+                    Collect --> InProgress["🔬 Status:\nChanged to In-Progress"]:::lab
+                    InProgress --> Analyze["⚙️ Lab Tech:\nAnalyzes in Machine"]:::lab
+                    Analyze --> DataEntry["⌨️ Lab Tech:\nEnter Results (Hb, WBC)"]:::lab
+                    
+                    DataEntry --> Validation{"✅ Values in\nNormal Range?"}
+                    Validation -->|"Yes"| Complete["🏁 Status:\nCompleted"]:::lab
+                    Validation -->|"No"| CheckCritical{"⚠️ Is Value\nCritical? (e.g. Hb < 7)"}
+                    
+                    CheckCritical -->|"No, just abnormal"| Complete
+                    CheckCritical -->|"Yes, Critical"| Alert["🚨 System generates\nCritical Alert (Red)"]:::alert
+                    Alert --> Notify["📞 Lab Tech:\nCalls Doctor immediately"]:::alert
+                    Notify --> Complete
+                    
+                    Complete --> Report["📄 System:\nAuto-generates PDF Report"]:::finish
+
+                    classDef start fill:#e2e8f0,stroke:#64748b,stroke-width:2px,color:#0f172a,font-weight:bold;
+                    classDef lab fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#0f172a,font-weight:bold;
+                    classDef alert fill:#fee2e2,stroke:#dc2626,stroke-width:3px,color:#991b1b,font-weight:bold;
+                    classDef finish fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#0f172a,font-weight:bold;
+            </pre>
+        </div>
+    </div>
+
+    <!-- 5. Pharmacy FIFO Inventory Flow -->
+    <div class="section">
+        <h2>5. Pharmacy Module FIFO Inventory Flow</h2>
+        <p class="desc">Shows how the pharmacy manages stock levels automatically and ensures the oldest medicines are given to Ramesh first to prevent expiry wastage.</p>
+        <div class="diagram">
+            <pre class="mermaid">
+                flowchart TD
+                    subgraph Receiving Stock
+                        Vendor["Supplier Delivers Paracetamol"] --> GRN["Pharmacist Creates Goods Receipt Note"]
+                        GRN --> BatchA["Batch A: Expires Dec 2026"]
+                        GRN --> BatchB["Batch B: Expires Jun 2027"]
+                        BatchA --> Inv[("Pharmacy Central Inventory")]
+                        BatchB --> Inv
+                    end
+                    
+                    subgraph Dispensing to Ramesh
+                        Order["Nurse orders 15 tablets for Ramesh"] --> CheckStock["System checks Inventory Levels"]
+                        CheckStock --> FIFO{"FIFO Logic Applied Automatically"}
+                        FIFO -->|Deducts first from Oldest| TakeA["Takes 10 tabs from Batch A"]
+                        FIFO -->|Deducts remaining from Next| TakeB["Takes 5 tabs from Batch B"]
+                        TakeA & TakeB --> Bill["Cost automatically added to Ramesh's IPD Bill"]
+                        Bill --> Dispense["Medicines dispatched to Ward"]
+                    end
+                    
+                    Inv --> CheckStock
+            </pre>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">
+    <p>GM Hospital Management System — Visual Documentation for Management</p>
+</div>
+
+</body>
+</html>
