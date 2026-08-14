@@ -319,7 +319,10 @@ include 'includes/reception_navbar.php';
 
                         <div class="ref-field ref-col-1">
                             <label>City / Taluk</label>
-                            <input type="text" name="city" id="patientCity" list="cityDatalist" placeholder="City" autocomplete="off">
+                            <div style="position: relative;">
+                                <input type="text" name="city" id="patientCity" list="cityDatalist" placeholder="City" autocomplete="off" style="padding-right: 24px !important;">
+                                <i class="fas fa-chevron-down" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #144d34; font-size: 0.75rem;"></i>
+                            </div>
                             <datalist id="cityDatalist"></datalist>
                         </div>
 
@@ -337,8 +340,9 @@ include 'includes/reception_navbar.php';
                             <label>Area / Post Office</label>
                             <input type="hidden" name="area" id="patientAreaValue">
                             <div style="position:relative;">
-                                <input type="text" id="patientAreaSearch" placeholder="Search Area" autocomplete="off">
-                                <span id="patientAreaClear" onclick="window._clearAreaSearch()" title="Clear" style="display:none; position:absolute; right:10px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:12px; color:#9ca3af;">✕</span>
+                                <input type="text" id="patientAreaSearch" placeholder="Search Area" autocomplete="off" style="padding-right: 28px !important;">
+                                <i class="fas fa-chevron-down" id="areaDropdownArrow" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #144d34; font-size: 0.75rem;"></i>
+                                <span id="patientAreaClear" onclick="window._clearAreaSearch()" title="Clear" style="display:none; position:absolute; right:24px; top:50%; transform:translateY(-50%); cursor:pointer; font-size:12px; color:#9ca3af;">✕</span>
                             </div>
                             <div id="patientAreaDropdown" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid #144D34; border-radius:0 0 8px 8px; max-height:160px; overflow-y:auto; z-index:999; box-shadow:0 8px 20px rgba(0,0,0,0.15);"></div>
                         </div>
