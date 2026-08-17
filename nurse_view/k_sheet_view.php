@@ -1,9 +1,9 @@
 <?php
 session_start();
 
-// Require Superintendent Nurse or Admin to view the page
-if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['Superintendent_Nurse', 'Superintendent Nurse', 'admin', 'Admin', 'Head Nurse'])) {
-    header('Location: dashboard.php');
+// Allow all nurse roles and admins to view the page
+if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['Nurse', 'Superintendent_Nurse', 'Superintendent Nurse', 'Nursing_Superintendent', 'admin', 'Admin', 'Head Nurse'])) {
+    header('Location: ../login.php');
     exit();
 }
 
