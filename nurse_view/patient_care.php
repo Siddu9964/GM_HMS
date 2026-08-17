@@ -363,7 +363,7 @@ $nurseName = $_SESSION['username'] ?? 'Nurse';
                             ${p.doctor_name ? `<div style="grid-column: 1 / -1"><span class="info-label">Doctor</span><span class="info-value"><i class="fas fa-user-md" style="color:var(--primary);margin-right:4px;"></i>${p.doctor_name}</span></div>` : ''}
                         </div>
                         <div class="card-actions">
-                            <button onclick="navigateWithPatient('medication.php', '${p.patient_id}', '${p.admission_id}')" class="btn-sm btn-primary" style="grid-column: 1 / -1;">
+                            <button onclick="navigateWithPatient('nurse_workspace.php', '${p.patient_id}', '${p.admission_id}')" class="btn-sm btn-primary" style="grid-column: 1 / -1;">
                                 <i class="fas fa-book-medical"></i> Open Medical Record
                             </button>
                         </div>

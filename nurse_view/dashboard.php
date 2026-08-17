@@ -257,8 +257,8 @@ $wardMsg = $currentWard
                         <a href="vitals.php" class="action-btn">
                             <i class="fas fa-heartbeat"></i> Record Vitals
                         </a>
-                        <a href="medication.php" class="action-btn">
-                            <i class="fas fa-pills"></i> Medications
+                        <a href="nurse_workspace.php" class="action-btn">
+                            <i class="fas fa-layer-group"></i> Nurse Workspace
                         </a>
                         <a href="nurse_notes.php" class="action-btn">
                             <i class="fas fa-notes-medical"></i> Nurse Notes

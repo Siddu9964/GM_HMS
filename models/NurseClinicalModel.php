@@ -25,9 +25,10 @@ class NurseClinicalModel {
      */
     public function appendToDailyRecord($patientId, $admissionId, $columnName, $itemData, $nurseId) {
         $validColumns = [
-            'doctor_visits', 'lab_tests', 'lab_tests_id', 'radiology_tests', 'radiology_test_id', 'other_tests', 'other_test_id',
-            'pharmacy_orders', 'pharmacy_returns', 'nursing_notes', 
-            'vitals', 'medications', 'grbs_records', 'procedures', 'billing_items'
+            'consultant_visits', 'lab_tests', 'radiology_tests', 'other_tests', 
+            'pharmacy_orders', 'pharmacy_returns', 'grbs_chart', 'nebulization_chart', 
+            'dialysis_chart', 'bp_test', 'oxygen_chart', 'ventilation_chart', 'blood_transfusion_chart', 
+            'nurses_record', 'vitals', 'nursing_notes', 'procedures', 'billing_items', 'attachments'
         ];
         
         if (!in_array($columnName, $validColumns)) {

@@ -26,11 +26,6 @@
             <span class="hide-mobile">Record Vitals</span>
         </button>
 
-        <!-- Quick Medication Button -->
-        <button onclick="window.location.href='medication.php'" class="btn btn-success" title="Medications">
-            <i class="fas fa-pills"></i>
-            <span class="hide-mobile">Medications</span>
-        </button>
 
         <!-- Notifications -->
         <div style="position: relative;">

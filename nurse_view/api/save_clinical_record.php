@@ -36,13 +36,13 @@ try {
         'consultant_visits', 'lab_tests', 'radiology_tests', 'other_tests', 
         'pharmacy_orders', 'pharmacy_returns', 'grbs_chart', 'nebulization_chart', 
         'dialysis_chart', 'oxygen_chart', 'ventilation_chart', 'blood_transfusion_chart', 
-        'nurses_record', 'vitals', 'nursing_notes', 'procedures', 'billing_items', 'attachments'
+        'nurses_record', 'vitals', 'nursing_notes', 'procedures', 'billing_items', 'attachments', 'bp_test', 'bed_trasfer'
     ];
     
     // Some legacy mappings to support the frontend out of the box
     $mapping = [
         'activity_record' => 'nurses_record',
-        'ward_transfer' => 'nursing_notes',
+        'ward_transfer' => 'bed_trasfer',
         'consultant_visit' => 'consultant_visits',
         'ot_procedure' => 'procedures',
         'lab_chart' => 'lab_tests',
@@ -50,7 +50,8 @@ try {
         'cardiac_chart' => 'other_tests',
         'blood_transfusion' => 'blood_transfusion_chart',
         'nurse_record' => 'nurses_record',
-        'support_charges' => 'billing_items'
+        'support_charges' => 'billing_items',
+        'bp_chart' => 'bp_test'
     ];
     
     $column = $mapping[$chartType] ?? $chartType;
@@ -75,51 +76,15 @@ try {
     }
 
     // Serialize Form Data
-    $isColumnar = false;
-    $rowCount = 0;
-    foreach ($chartData as $key => $val) {
-        if (is_array($val)) {
-            $isColumnar = true;
-            $rowCount = max($rowCount, count($val));
-        }
-    }
-
-    if ($isColumnar) {
-        // Zip columnar array into array of objects (Overwrites entire day's JSON)
-        $finalData = [];
-        for ($i = 0; $i < $rowCount; $i++) {
-            $entry = [
-                'entry_id' => uniqid('ent_'),
-                'created_at' => date('Y-m-d H:i:s'),
-                'created_by_name' => $nurseName
-            ];
-            $isEmpty = true;
-            foreach ($chartData as $key => $val) {
-                if (is_array($val)) {
-                    $entry[$key] = $val[$i] ?? '';
-                    if (!empty($val[$i])) $isEmpty = false;
-                } else {
-                    $entry[$key] = $val;
-                }
-            }
-            if (!$isEmpty) {
-                $finalData[] = $entry;
-            }
-        }
-    } else {
-        // Single flat object (Update or Append)
-        $incomingEntryId = $_POST['entry_id'] ?? null;
-        if ($incomingEntryId) {
-            $chartData['entry_id'] = $incomingEntryId;
-            $chartData['updated_at'] = date('Y-m-d H:i:s');
-            $chartData['updated_by_name'] = $nurseName;
-        } else {
-            $chartData['entry_id'] = uniqid('ent_');
-            $chartData['created_at'] = date('Y-m-d H:i:s');
-            $chartData['created_by_name'] = $nurseName;
-        }
-        $newEntry = $chartData;
-    }
+    // Remove control fields to get the pure data payload
+    $chartData = $_POST;
+    unset($chartData['chart_type'], $chartData['patient_id'], $chartData['admission_id']);
+    
+    $chartData['entry_id'] = uniqid('ent_');
+    $chartData['created_at'] = date('Y-m-d H:i:s');
+    $chartData['created_by_name'] = $nurseName;
+    
+    $newEntry = $chartData;
 
     // Check if row exists for today
     $checkStmt = $conn->prepare("SELECT id, `$column` FROM ipd_clinical_records WHERE admission_id = ? AND record_date = ? LIMIT 1");
@@ -132,49 +97,25 @@ try {
         $row = $res->fetch_assoc();
         $recordId = $row['id'];
         
-        if (!$isColumnar) {
-            $existingData = json_decode($row[$column], true) ?: [];
-            $incomingEntryId = $_POST['entry_id'] ?? null;
-            $action = $_POST['action'] ?? 'save';
-            $updated = false;
-            
-            if ($incomingEntryId) {
-                foreach ($existingData as $index => $item) {
-                    if (isset($item['entry_id']) && $item['entry_id'] === $incomingEntryId) {
-                        if ($action === 'delete') {
-                            unset($existingData[$index]);
-                            $existingData = array_values($existingData);
-                            $updated = true;
-                        } else {
-                            // Merge to preserve original created_at
-                            $existingData[$index] = array_merge($item, $newEntry);
-                            $updated = true;
-                        }
-                        break;
-                    }
-                }
-            }
-            
-            if (!$updated && $action !== 'delete') {
-                $existingData[] = $newEntry;
-            }
-            
-            $finalData = $existingData;
+        $existingData = json_decode($row[$column], true);
+        if (!is_array($existingData)) {
+            $existingData = [];
         }
         
-        $jsonData = json_encode($finalData);
+        $existingData[] = $newEntry;
+        $jsonData = json_encode($existingData);
         
         $updateStmt = $conn->prepare("UPDATE ipd_clinical_records SET `$column` = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-        $updateStmt->bind_param("sii", $jsonData, $nurseId, $recordId);
+        $updateStmt->bind_param("ssi", $jsonData, $nurseId, $recordId);
         $isSuccess = $updateStmt->execute();
         $updateStmt->close();
     } else {
         // Row doesn't exist -> INSERT
-        $finalData = $isColumnar ? $finalData : [$newEntry];
+        $finalData = [$newEntry];
         $jsonData = json_encode($finalData);
         
         $insertStmt = $conn->prepare("INSERT INTO ipd_clinical_records (patient_id, admission_id, record_date, `$column`, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?)");
-        $insertStmt->bind_param("ssssii", $patientId, $admissionId, $recordDate, $jsonData, $nurseId, $nurseId);
+        $insertStmt->bind_param("ssssss", $patientId, $admissionId, $recordDate, $jsonData, $nurseId, $nurseId);
         $isSuccess = $insertStmt->execute();
         $recordId = $insertStmt->insert_id;
         $insertStmt->close();

@@ -34,9 +34,9 @@
                         style="margin-left: auto; font-size: 0.65rem; padding: 2px 6px;">0</span>
                 </a>
 
-                <a href="medication.php?clear=1" class="sidebar-link" data-page="medication">
-                    <i class="fas fa-pills"></i>
-                    <span style="font-size: 0.8rem; letter-spacing: -0.2px;">Medications</span>
+                <a href="nurse_workspace.php" class="sidebar-link" data-page="nurse_workspace">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Nurse Workspace</span>
                 </a>
 
                 <!-- Tests Menu -->

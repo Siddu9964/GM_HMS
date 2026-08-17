@@ -33,7 +33,7 @@ try {
         'consultant_visits', 'lab_tests', 'radiology_tests', 'other_tests', 
         'pharmacy_orders', 'pharmacy_returns', 'grbs_chart', 'nebulization_chart', 
         'dialysis_chart', 'oxygen_chart', 'ventilation_chart', 'blood_transfusion_chart', 
-        'nurses_record', 'vitals', 'nursing_notes', 'procedures', 'billing_items', 'attachments'
+        'nurses_record', 'vitals', 'nursing_notes', 'procedures', 'billing_items', 'attachments', 'bp_test', 'bed_trasfer'
     ];
     
     // Initialize all arrays

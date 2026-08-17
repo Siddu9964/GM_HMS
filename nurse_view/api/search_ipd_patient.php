@@ -27,15 +27,6 @@ try {
     $db = SecureDatabase::getInstance();
     $conn = $db->getConnection();
     
-    // Get current ward for RBAC
-    $currentWard = getCurrentNurseWard($conn, $nurseId);
-    
-    if (!$currentWard) {
-        // If nurse is not assigned to a ward today, they cannot search for patients.
-        echo json_encode(['success' => true, 'data' => []]);
-        exit;
-    }
-    
     $q = "%{$query}%";
     
     // Search by Patient ID, Admission ID, First Name, Last Name, Phone
@@ -43,9 +34,7 @@ try {
                    p.first_name, p.last_name, p.age, p.sex, p.phone
             FROM ipd_admissions a 
             JOIN patient p ON a.patient_id = p.patient_id 
-            LEFT JOIN hospital_beds b ON a.bed_id = b.sl_no
             WHERE a.status != 'Discharged' 
-              AND b.floor_name = ? AND b.ward_name = ? AND b.room_type = ?
               AND (
                   a.admission_id LIKE ? 
                   OR a.patient_id LIKE ? 
@@ -56,9 +45,6 @@ try {
             LIMIT 10";
             
     $results = $db->fetchAll($sql, [
-        $currentWard['floor_name'], 
-        $currentWard['ward_name'], 
-        $currentWard['room_type'], 
         $q, $q, $q, $q, $q
     ]);
     
