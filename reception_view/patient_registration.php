@@ -246,7 +246,9 @@ include 'includes/reception_navbar.php';
     <script>
         // Initialize patient manager
         window.patientManager = new PatientManager();
-        window.patientManager.init();
+        document.addEventListener('DOMContentLoaded', () => {
+            window.patientManager.init();
+        });
 
         let searchTimeout;
         let selectedPatientId = null;

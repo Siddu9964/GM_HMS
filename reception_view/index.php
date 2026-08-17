@@ -799,22 +799,6 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 <!-- LEFT: Greeting + KPI Cards + Quick Actions -->
                 <div class="dashboard-left-column">
 
-                    <!-- Greeting Card -->
-                    <div class="greeting-card-compact">
-                        <div class="greeting-inner">
-                            <div>
-                                <h2 class="greeting-title-compact">
-                                    Good <span id="greeting-time">Morning</span>,
-                                    <?php echo htmlspecialchars($_SESSION['full_name']); ?>!
-                                </h2>
-                                <p class="greeting-date-compact">
-                                    Today is <span id="current-date">Loading...</span>
-                                </p>
-                            </div>
-                            <div class="greeting-emoji-badge">👋</div>
-                        </div>
-                    </div>
-
                     <!-- KPI Cards -->
                     <div class="kpi-cards-grid">
 
@@ -870,11 +854,11 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                                     <i class="fas fa-search" style="background: #1f6b4a; color: white;"></i>
                                     Old Patient Search
                                 </button>
-                                <button onclick="window.location.href='patient_registration.php'" class="quick-action-btn">
+                                <button onclick="window.location.href='patient_registration.php?action=new'" class="quick-action-btn">
                                     <i class="fas fa-user-plus"></i>
                                     Register Patient
                                 </button>
-                                <button onclick="window.location.href='appointment_management.php'" class="quick-action-btn">
+                                <button onclick="window.location.href='appointment_management.php?action=new'" class="quick-action-btn">
                                     <i class="fas fa-calendar-check"></i>
                                     Book Appointment
                                 </button>
@@ -882,7 +866,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                                     <i class="fas fa-prescription"></i>
                                     View Prescription
                                 </button>
-                                <button onclick="window.location.href='billing.php'" class="quick-action-btn">
+                                <button onclick="window.location.href='opd_billing.php'" class="quick-action-btn">
                                     <i class="fas fa-file-invoice-dollar"></i>
                                     Create Invoice
                                 </button>
