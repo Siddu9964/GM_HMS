@@ -8,19 +8,19 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
         :root {
-            --primary: #1a56db;
-            --primary-dark: #1e40af;
-            --primary-light: #dbeafe;
-            --secondary: #7c3aed;
-            --success: #059669;
-            --warning: #d97706;
-            --danger: #dc2626;
-            --text: #111827;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-            --bg: #f9fafb;
-            --card-bg: #ffffff;
-            --gradient: linear-gradient(135deg, #1a56db 0%, #7c3aed 100%);
+            --primary: #1f6b4a;
+            --primary-dark: #1f6b4a;
+            --primary-light: rgba(31, 107, 74, 0.1);
+            --secondary: #1f6b4a;
+            --success: #1f6b4a;
+            --warning: #1f6b4a;
+            --danger: #1f6b4a;
+            --text: #1f6b4a;
+            --text-muted: rgba(31, 107, 74, 0.7);
+            --border: rgba(31, 107, 74, 0.2);
+            --bg: #f3efe6;
+            --card-bg: #f3efe6;
+            --gradient: #1f6b4a;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -170,12 +170,9 @@
             font-size: 20px;
         }
 
-        .icon-blue { background: #dbeafe; }
-        .icon-purple { background: #ede9fe; }
-        .icon-green { background: #d1fae5; }
-        .icon-orange { background: #fed7aa; }
-        .icon-red { background: #fee2e2; }
-        .icon-teal { background: #ccfbf1; }
+        .icon-blue, .icon-purple, .icon-green, .icon-orange, .icon-red, .icon-teal {
+            background: rgba(31, 107, 74, 0.1);
+        }
 
         .section-header h3 {
             font-size: 22px;
@@ -218,12 +215,12 @@
             height: 3px;
         }
 
-        .card-blue::before { background: linear-gradient(90deg, #1a56db, #7c3aed); }
-        .card-green::before { background: linear-gradient(90deg, #059669, #10b981); }
-        .card-orange::before { background: linear-gradient(90deg, #d97706, #f59e0b); }
-        .card-purple::before { background: linear-gradient(90deg, #7c3aed, #a855f7); }
-        .card-red::before { background: linear-gradient(90deg, #dc2626, #f87171); }
-        .card-teal::before { background: linear-gradient(90deg, #0d9488, #14b8a6); }
+        .card-blue::before,
+        .card-green::before,
+        .card-orange::before,
+        .card-purple::before,
+        .card-red::before,
+        .card-teal::before { background: var(--primary); }
 
         .doc-card:hover {
             transform: translateY(-4px);

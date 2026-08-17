@@ -28,52 +28,69 @@
 GM_HMS follows a **hybrid MVC (Model-View-Controller)** architecture:
 
 ```mermaid
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontSize": "11px",
+    "fontFamily": "Inter, system-ui, sans-serif",
+    "primaryColor": "#f8fafc",
+    "primaryTextColor": "#0f172a",
+    "lineColor": "#94a3b8"
+  },
+  "flowchart": {
+    "nodeSpacing": 10,
+    "rankSpacing": 30,
+    "curve": "basis",
+    "htmlLabels": true
+  }
+}}%%
 flowchart TD
-    subgraph Presentation ["Presentation Layer (View)"]
-        direction LR
-        UI["HTML, Bootstrap, jQuery"]:::view
-        Views["view/, reception_view/,\ndoctors_view/, nurse_view/,\npharmacy_view/, laboratory_view/"]:::view
+    subgraph S1 [🖥️ PRESENTATION LAYER]
+        UI("<b>Client Interface</b><br/>HTML5, Bootstrap, jQuery"):::view
+        Views("<b>View Directories</b><br/>reception/, doctors/, etc."):::view
     end
 
-    subgraph Application ["Application Layer (Controller)"]
-        direction LR
-        Ctrl["PHP Controllers\n(BaseController, Route Dispatch)"]:::controller
-        CtrlDir["controler/api/ (43 files)\nipd_mgmt/controllers/ (13 files)"]:::controller
+    subgraph S2 [⚙️ APPLICATION LAYER]
+        Ctrl[["<b>API Controllers</b><br/>BaseController, Route Dispatch"]]:::controller
+        CtrlDir("<b>Directories</b><br/>controler/api/, ipd_mgmt/"):::controller
     end
 
-    subgraph Business ["Business Layer (Model)"]
-        direction LR
-        Models["Model Classes\n(IpdBaseModel, Domain Logic)"]:::model
-        ModelDir["models/ (27 files)\nipd_mgmt/models/ (15 files)"]:::model
+    subgraph S3 [🧠 BUSINESS LAYER]
+        Models[["<b>Domain Models</b><br/>Business Logic, Validation"]]:::model
+        ModelDir("<b>Directories</b><br/>models/, ipd_mgmt/models/"):::model
     end
 
-    subgraph DataAccess ["Data Access Layer (DAL)"]
-        direction LR
-        DAL["SecureDatabase\n(mysqli Singleton)"]:::dal
-        DALDir["Database/SecureDatabase.php"]:::dal
+    subgraph S4 [🛡️ DATA ACCESS LAYER]
+        DAL{{"<b>SecureDatabase</b><br/>mysqli Singleton, Builder"}}:::dal
     end
 
-    subgraph Persistence ["Persistence Layer (Database)"]
-        direction LR
-        DB["MySQL Database\n(35+ Tables)"]:::db
-        DBS["hmsc_basaveshwranagara\nhmsci (branch 2)"]:::db
+    subgraph S5 [🗄️ PERSISTENCE LAYER]
+        DB[("<b>MySQL Databases</b><br/>hmsc_basaveshwranagara, hmsci")]:::db
     end
 
-    Presentation -->|HTTP Requests / AJAX| Application
-    Application -->|Calls Methods| Business
-    Business -->|SQL Queries| DataAccess
-    DataAccess -->|Reads/Writes| Persistence
+    %% Define connections mapping layers
+    UI & Views ==>|HTTP / AJAX Requests| Ctrl
+    Ctrl & CtrlDir -->|Method Calls| Models
+    Models & ModelDir -->|Execute SQL| DAL
+    DAL ==>|Read / Write Data| DB
     
-    Persistence -.->|Result Sets| DataAccess
-    DataAccess -.->|Data Objects| Business
-    Business -.->|Business Data| Application
-    Application -.->|JSON / HTML| Presentation
+    DB -.->|Result Sets| DAL
+    DAL -.->|Data Objects| Models
+    Models -.->|Business Data| Ctrl
+    Ctrl -.->|JSON / HTML Response| UI
 
-    classDef view fill:#dbeafe,stroke:#2563eb,stroke-width:2px;
-    classDef controller fill:#fef08a,stroke:#ca8a04,stroke-width:2px;
-    classDef model fill:#bbf7d0,stroke:#16a34a,stroke-width:2px;
-    classDef dal fill:#fed7aa,stroke:#ea580c,stroke-width:2px;
-    classDef db fill:#fbcfe8,stroke:#db2777,stroke-width:2px;
+    %% Custom Styles
+    classDef view fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a,rx:6px,ry:6px;
+    classDef controller fill:#fefce8,stroke:#eab308,stroke-width:2px,color:#854d0e,rx:6px,ry:6px;
+    classDef model fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#14532d,rx:6px,ry:6px;
+    classDef dal fill:#fff7ed,stroke:#f97316,stroke-width:2px,color:#9a3412,rx:6px,ry:6px;
+    classDef db fill:#fdf2f8,stroke:#ec4899,stroke-width:2px,color:#831843,rx:6px,ry:6px;
+    
+    style S1 fill:#ffffff,stroke:#bfdbfe,stroke-width:2px,stroke-dasharray: 4 4,rx:8px
+    style S2 fill:#ffffff,stroke:#fef08a,stroke-width:2px,stroke-dasharray: 4 4,rx:8px
+    style S3 fill:#ffffff,stroke:#bbf7d0,stroke-width:2px,stroke-dasharray: 4 4,rx:8px
+    style S4 fill:#ffffff,stroke:#fed7aa,stroke-width:2px,stroke-dasharray: 4 4,rx:8px
+    style S5 fill:#ffffff,stroke:#fbcfe8,stroke-width:2px,stroke-dasharray: 4 4,rx:8px
 ```
 
 ### Design Patterns Used

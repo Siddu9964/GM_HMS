@@ -756,179 +756,8 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
         </div>
     </div>
 
-    <!-- Appointment Modal -->
-    <div id="appointmentModal" class="ref-modal-overlay hidden">
-        <div class="ref-modal-card" onclick="event.stopPropagation()" style="max-width: 900px;">
-            <div class="ref-modal-header">
-                <h2 id="modalTitle">New Appointment</h2>
-                <button onclick="appointmentManager.closeModal()" class="ref-modal-close" title="Close">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
+    <?php include 'includes/global_modals.php'; ?>
 
-            <div class="ref-modal-body">
-                <form id="appointmentForm">
-                    <input type="hidden" id="editAppointmentId" name="appointment_id">
-                    <input type="hidden" id="patientPhone" name="phone">
-                    <input type="hidden" id="appointment_time_hidden" name="appointment_time" required>
-
-                    <div class="ref-form-grid">
-                        <!-- Section 1: Patient Information -->
-                        <div class="ref-section-title">
-                            <i class="fas fa-info-circle"></i> Basic Information
-                        </div>
-
-                        <div class="ref-field ref-col-1">
-                            <label>Reference ID</label>
-                            <input type="text" id="displayAppointmentId" class="readonly-mint" value="APT-AUTO" readonly>
-                        </div>
-
-                        <div class="ref-field ref-col-3">
-                            <label>Select Patient <span class="req">*</span></label>
-                            <select id="patientSelect" name="patient_id" style="width: 100%;" tabindex="1">
-                                <option value="">Search by Patient ID, Name or Phone...</option>
-                            </select>
-                        </div>
-
-                        <div class="ref-field ref-col-4">
-                            <label>Reason for Visit</label>
-                            <input type="text" name="reason" placeholder="Main complaint or reason for consultation..." tabindex="2">
-                        </div>
-
-                        <!-- Section 2: Doctor & Department -->
-                        <div class="ref-section-title">
-                            <i class="fas fa-user-md"></i> Doctor & Department
-                        </div>
-
-                        <div class="ref-field ref-col-2">
-                            <label>Doctor <span class="req">*</span></label>
-                            <select id="doctorSelect" name="doctor_id" required style="width: 100%;" tabindex="3">
-                                <option value="">Select Doctor...</option>
-                            </select>
-                            <div id="doctorScheduleInfo" class="doctor-schedule-info hidden" style="margin-top:4px; font-size:0.78rem;"></div>
-                        </div>
-
-                        <div class="ref-field ref-col-2">
-                            <label>Department <span class="req">*</span></label>
-                            <select id="departmentSelect" name="department_id" required style="width: 100%;" tabindex="4">
-                                <option value="">Select Department...</option>
-                            </select>
-                        </div>
-
-                        <!-- Section 3: Schedule & 12-Hour Time Format -->
-                        <div class="ref-section-title" style="justify-content: space-between;">
-                            <span><i class="fas fa-clock"></i> Schedule & Time Details</span>
-                            <div id="doctorAvailabilityStatus"></div>
-                        </div>
-
-                        <div class="ref-field ref-col-2">
-                            <label>Appointment Date <span class="req">*</span></label>
-                            <input type="date" name="appointment_date" required tabindex="5">
-                        </div>
-
-                        <!-- 12-HOUR TIME PICKER WIDGET -->
-                        <div class="ref-field ref-col-2">
-                            <label>Time Slot <span class="req">*</span> <span style="font-size:0.65rem; background:#144D34; color:#fff; padding:1px 5px; border-radius:4px; margin-left:4px;">12-HOUR</span></label>
-                            <div class="time-picker-card" style="background:#fff; border:1.5px solid #DEDACF; border-radius:6px; padding:0 8px; display:flex; align-items:center; gap:6px; height:32px;">
-                                <select id="time12HourSelect" class="time-picker-select" style="height:24px; padding:0 4px; font-size:0.82rem; font-weight:700;" tabindex="6">
-                                    <option value="01">01</option>
-                                    <option value="02">02</option>
-                                    <option value="03">03</option>
-                                    <option value="04">04</option>
-                                    <option value="05">05</option>
-                                    <option value="06">06</option>
-                                    <option value="07">07</option>
-                                    <option value="08">08</option>
-                                    <option value="09" selected>09</option>
-                                    <option value="10">10</option>
-                                    <option value="11">11</option>
-                                    <option value="12">12</option>
-                                </select>
-                                <span style="font-weight:800; color:#144D34;">:</span>
-                                <select id="time12MinuteSelect" class="time-picker-select" style="height:24px; padding:0 4px; font-size:0.82rem; font-weight:700;" tabindex="7">
-                                    <option value="00" selected>00</option>
-                                    <option value="05">05</option>
-                                    <option value="10">10</option>
-                                    <option value="15">15</option>
-                                    <option value="20">20</option>
-                                    <option value="25">25</option>
-                                    <option value="30">30</option>
-                                    <option value="35">35</option>
-                                    <option value="40">40</option>
-                                    <option value="45">45</option>
-                                    <option value="50">50</option>
-                                    <option value="55">55</option>
-                                </select>
-                                <div class="ampm-segmented-toggle" style="display:flex; gap:2px;">
-                                    <button type="button" class="ampm-pill active" data-period="AM" style="padding:2px 8px; font-size:0.75rem; font-weight:700;">AM</button>
-                                    <button type="button" class="ampm-pill" data-period="PM" style="padding:2px 8px; font-size:0.75rem; font-weight:700;">PM</button>
-                                </div>
-                                <div class="time-preview-badge" style="margin-left:auto; font-size:0.75rem; font-weight:700; color:#144D34;">
-                                    <strong id="time12Preview">09:00 AM</strong>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Section 4: Notes -->
-                        <div class="ref-section-title">
-                            <i class="fas fa-comment-dots"></i> Additional Notes
-                        </div>
-
-                        <div class="ref-field ref-col-4">
-                            <textarea name="notes" rows="2" placeholder="Additional instructions or notes..." tabindex="8"></textarea>
-                        </div>
-                    </div>
-
-                    <div class="ref-modal-footer">
-                        <button type="button" onclick="appointmentManager.closeModal()" class="ref-btn-cancel" tabindex="9">Cancel</button>
-                        <button type="submit" id="btnSaveOnly" class="ref-btn-submit" tabindex="10"><i class="fas fa-save"></i> Commit Changes</button>
-                    </div>
-                </form>
-
-                <script>
-                    // Keyboard navigation and Focus Trap
-                    document.addEventListener('DOMContentLoaded', function() {
-                        const modal = document.getElementById('appointmentModal');
-                        if (modal) {
-                            modal.addEventListener('keydown', function(e) {
-                                const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-                                const elements = Array.from(modal.querySelectorAll(focusableElements)).filter(el => !el.disabled && el.offsetParent !== null);
-                                
-                                // Tab key focus trap
-                                if (e.key === 'Tab') {
-                                    if(elements.length > 0) {
-                                        const firstElement = elements[0];
-                                        const lastElement = elements[elements.length - 1];
-                                        
-                                        if (e.shiftKey) { // Shift + Tab
-                                            if (document.activeElement === firstElement) {
-                                                lastElement.focus();
-                                                e.preventDefault();
-                                            }
-                                        } else { // Tab
-                                            if (document.activeElement === lastElement) {
-                                                firstElement.focus();
-                                                e.preventDefault();
-                                            }
-                                        }
-                                    }
-                                }
-                                
-                                // Enter key acts like Tab (skip textareas and buttons)
-                                if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') {
-                                    e.preventDefault();
-                                    const index = elements.indexOf(document.activeElement);
-                                    if (index > -1 && index < elements.length - 1) {
-                                        elements[index + 1].focus();
-                                    }
-                                }
-                            });
-                        }
-                    });
-                </script>
-            </div>
-        </div>
-    </div>
 
     <script>
         window.HOSPITAL_BRANCH = '<?= addslashes($_SESSION['hospital_branch'] ?? '') ?>';
@@ -943,6 +772,19 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
 
     <!-- JavaScript -->
     <script src="assets/js/appointment.js?v=<?= time() ?>"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'new' && !urlParams.get('patient_id')) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+                setTimeout(() => {
+                    if (typeof appointmentManager !== 'undefined' && typeof appointmentManager.openModal === 'function') {
+                        appointmentManager.openModal('create');
+                    }
+                }, 300);
+            }
+        });
+    </script>
 </body>
 
 </html>

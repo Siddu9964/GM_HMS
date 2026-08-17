@@ -596,6 +596,15 @@ class LaboratoryRepository
         $clinicalNotesStr = implode(" | ", $combinedNotes);
 
         $appointmentId = 'LAB-MANUAL';
+        $patientName = '';
+        $patientMobile = 0;
+
+        if (!empty($data['patient_type']) && strpos($data['patient_type'], 'Walkin:') === 0) {
+            $parts = explode('|', substr($data['patient_type'], 7));
+            $patientName = $parts[0] ?? 'Walkin Patient';
+            $patientMobile = isset($parts[2]) ? (int)$parts[2] : 0;
+        }
+
         if (strpos($data['patient_id'], 'WLK-') !== 0) {
             $latestAppt = $this->db->fetchOne(
                 "SELECT appointment_id FROM appointments WHERE patient_id = ? ORDER BY created_at DESC LIMIT 1",
@@ -604,33 +613,76 @@ class LaboratoryRepository
             if ($latestAppt && !empty($latestAppt['appointment_id'])) {
                 $appointmentId = $latestAppt['appointment_id'];
             }
+            if (empty($patientName)) {
+                $patientInfo = $this->db->fetchOne("SELECT first_name, last_name, phone FROM patient WHERE patient_id = ?", [$data['patient_id']]);
+                if ($patientInfo) {
+                    $patientName = trim(($patientInfo['first_name'] ?? '') . ' ' . ($patientInfo['last_name'] ?? ''));
+                    $patientMobile = (int)($patientInfo['phone'] ?? 0);
+                }
+            }
         }
 
+        if (empty($patientName)) $patientName = 'Walkin Patient';
+        $createdBy = $_SESSION['user_id'] ?? $_SESSION['username'] ?? 'system';
+
         $res = $this->db->execute(
-            "INSERT INTO opd_billing_master (bill_id, patient_id, doctor_id, appointment_id, bill_date, bill_time, purpose, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO opd_billing_master (bill_id, patient_id, doctor_id, appointment_id, bill_date, bill_time, purpose, notes, name, mobile, referral_type, referred_by, sponsor, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 $billId,
                 $data['patient_id'],
-                $data['doctor_id'],
+                $data['doctor_id'] ?? '',
                 $appointmentId, // Dynamically set appointment ID
                 $data['order_date'],
                 date('H:i:s'),
                 'Lab Order',
-                $clinicalNotesStr
+                $clinicalNotesStr,
+                $patientName,
+                $patientMobile,
+                'None',
+                '',
+                '',
+                $createdBy
             ]
         );
 
-        $tests = json_decode($data['test_name'], true);
-        if(!is_array($tests)) {
-            $tests = array_filter(array_map('trim', explode('|||', $data['test_name'])));
+        if (is_array($data['test_name'])) {
+            $tests = $data['test_name'];
+        } else {
+            $decoded = json_decode($data['test_name'], true);
+            if (is_array($decoded)) {
+                $tests = $decoded;
+            } else {
+                $tests = array_filter(array_map('trim', explode('|||', $data['test_name'])));
+            }
         }
+        error_log("DEBUG TESTS: " . print_r($tests, true));
         foreach($tests as $testId) {
+            if (is_array($testId)) {
+                $itemName = $testId['name'] ?? null;
+                $testId = $testId['id'] ?? null;
+            } else {
+                $itemName = $testId;
+                if (preg_match('/\(([A-Z]{2,4}-?\d+)\)$/i', trim($testId), $matches)) {
+                    $testId = strtoupper($matches[1]);
+                    $itemName = trim(substr($itemName, 0, strrpos($itemName, '(')));
+                } elseif (strlen($testId) > 20) {
+                    // Fallback if no parentheses but it's clearly not an ID
+                    $itemName = $testId;
+                    $testId = 'MISC-1';
+                } else {
+                    $itemName = null;
+                }
+            }
+            if (!$testId) continue;
+            
             $prefix = strtoupper(substr($testId, 0, 3));
-            $nameRow = $this->getServiceName($prefix, $testId);
-            $itemName = $nameRow ? (is_array($nameRow) ? array_values($nameRow)[0] : $nameRow) : $testId;
+            if (!$itemName) {
+                $nameRow = $this->getServiceName($prefix, $testId);
+                $itemName = $nameRow ? (is_array($nameRow) ? array_values($nameRow)[0] : $nameRow) : $testId;
+            }
             
             $this->db->execute(
-                "INSERT INTO opd_billing_items (bill_id, item_code, item_name, item_type, quantity, unit_price, total_price) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO opd_billing_items (bill_id, item_code, item_name, item_type, quantity, unit_price, total_price, bill_purpose) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     $billId,
                     $testId,
@@ -638,7 +690,8 @@ class LaboratoryRepository
                     'Investigation',
                     1,
                     0,
-                    0
+                    0,
+                    'Lab Order'
                 ]
             );
         }

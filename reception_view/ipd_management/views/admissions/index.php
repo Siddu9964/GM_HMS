@@ -2619,6 +2619,20 @@ window.closeViewAdmissionModalOnBackdrop = function(e) {
             }
             calculateTotalRent();
         }
+
+        // Auto-open modal if URL parameter is present
+        $(document).ready(function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('openModal') === 'true') {
+                setTimeout(function() {
+                    if (typeof window.showAddAdmissionModal === 'function') {
+                        window.showAddAdmissionModal();
+                    } else if (typeof showAddAdmissionModal === 'function') {
+                        showAddAdmissionModal();
+                    }
+                }, 500); // 500ms delay to ensure all scripts have loaded
+            }
+        });
     </script>
 </body>
 

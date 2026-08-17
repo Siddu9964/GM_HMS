@@ -8,75 +8,131 @@
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
         mermaid.initialize({
             startOnLoad: true,
+            securityLevel: 'loose',
             theme: 'base',
             themeVariables: {
-                primaryColor: '#e0f2fe',
-                primaryTextColor: '#0f172a',
-                primaryBorderColor: '#0ea5e9',
-                lineColor: '#3b82f6',
-                secondaryColor: '#fef08a',
-                tertiaryColor: '#fbcfe8',
-                fontSize: '26px',
-                fontFamily: 'Inter, sans-serif'
+                primaryColor: 'rgba(31, 107, 74, 0.1)',
+                primaryTextColor: '#1f6b4a',
+                primaryBorderColor: '#1f6b4a',
+                lineColor: '#1f6b4a',
+                secondaryColor: '#f3efe6',
+                tertiaryColor: '#f3efe6',
+                fontSize: '14px',
+                fontFamily: 'Inter, system-ui, sans-serif',
+                edgeLabelBackground: '#f3efe6'
             },
             flowchart: { 
-                curve: 'basis',
-                nodeSpacing: 100,
-                rankSpacing: 100,
-                useMaxWidth: false
+                curve: 'cardinal',
+                nodeSpacing: 50,
+                rankSpacing: 60,
+                useMaxWidth: true,
+                htmlLabels: true,
+                padding: 15
             },
             sequence: {
-                actorMargin: 100,
-                messageMargin: 80,
-                messageFontSize: 24,
-                actorFontSize: 26,
-                noteFontSize: 24
+                actorMargin: 80,
+                messageMargin: 60,
+                messageFontSize: 14,
+                actorFontSize: 14,
+                noteFontSize: 13
             }
         });
+        window.mermaid = mermaid;
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #0f172a; margin: 0; padding: 0; }
-        .header { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 60px 20px; text-align: center; }
-        .header h1 { margin: 0; font-size: 42px; font-weight: 800; letter-spacing: -0.5px; }
-        .header p { margin: 15px 0 0; font-size: 20px; opacity: 0.9; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
-        .container { max-width: 1200px; margin: -30px auto 40px; padding: 0 20px; position: relative; z-index: 10; }
-        .nav-btn { display: inline-block; background: white; color: #1e3a8a; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s; }
-        .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f3efe6; color: #1f6b4a; margin: 0; padding: 0; }
         
-        .section { background: white; border-radius: 16px; padding: 50px; margin-bottom: 50px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border-top: 4px solid #3b82f6; }
-        .section h2 { margin-top: 0; color: #1e3a8a; font-size: 32px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px; }
-        .desc { font-size: 18px; color: #475569; margin-bottom: 40px; line-height: 1.7; padding: 20px; background: #f8fafc; border-left: 4px solid #38bdf8; border-radius: 0 8px 8px 0; }
+        .header { background: #1f6b4a; color: #f3efe6; padding: 56px 20px 70px; text-align: center; }
+        .header h1 { margin: 0; font-size: 38px; font-weight: 800; letter-spacing: -0.5px; }
+        .header p { margin: 12px 0 0; font-size: 18px; opacity: 0.85; font-weight: 300; }
         
-        /* Make Mermaid Diagrams larger and more visible */
-        .diagram { display: flex; justify-content: center; overflow-x: auto; padding: 40px 20px; background: #ffffff; border-radius: 12px; border: 2px solid #cbd5e1; box-shadow: inset 0 0 30px rgba(0,0,0,0.02); }
-        .diagram pre { width: 100%; display: flex; justify-content: center; margin: 0; }
-        .diagram svg { width: auto !important; max-width: none !important; height: auto !important; }
+        .container { max-width: 1300px; margin: -30px auto 40px; padding: 0 24px; position: relative; z-index: 10; }
+        .nav-btn { display: inline-flex; align-items: center; gap: 6px; background: #f3efe6; color: #1f6b4a; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; margin-bottom: 28px; box-shadow: 0 2px 8px rgba(31, 107, 74, 0.2); transition: all 0.2s; }
+        .nav-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(31, 107, 74, 0.3); }
         
-        /* Connection Line Animations */
-        .mermaid path.path, .mermaid .edgePath path, .mermaid path.flowchart-link {
-            stroke-dasharray: 8 8 !important;
-            animation: flowData 1s linear infinite !important;
+        .section { background: #f3efe6; border-radius: 16px; padding: 40px 44px; margin-bottom: 40px; box-shadow: 0 4px 20px -4px rgba(31, 107, 74, 0.1); border-top: 4px solid #1f6b4a; border-left: 1px solid rgba(31, 107, 74, 0.1); border-right: 1px solid rgba(31, 107, 74, 0.1); border-bottom: 1px solid rgba(31, 107, 74, 0.1); }
+        .section h2 { margin-top: 0; color: #1f6b4a; font-size: 26px; font-weight: 700; border-bottom: 1px solid rgba(31, 107, 74, 0.2); padding-bottom: 14px; margin-bottom: 18px; }
+        .desc { font-size: 15px; color: #1f6b4a; margin-bottom: 28px; line-height: 1.7; padding: 16px 20px; background: rgba(31, 107, 74, 0.05); border-left: 4px solid #1f6b4a; border-radius: 0 8px 8px 0; }
+        
+        /* Legend for clickable nodes */
+        .click-legend { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; padding: 10px 16px; background: rgba(31, 107, 74, 0.05); border: 1px solid rgba(31, 107, 74, 0.2); border-radius: 8px; font-size: 13px; color: #1f6b4a; }
+        .click-legend .legend-dot { width: 10px; height: 10px; border-radius: 50%; background: #1f6b4a; display: inline-block; }
+        .legend-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+        .legend-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: default; }
+        .chip-reception, .chip-nurse, .chip-doctor, .chip-pharmacy, .chip-lab, .chip-admin { background: rgba(31, 107, 74, 0.1); color: #1f6b4a; border: 1px solid rgba(31, 107, 74, 0.3); }
+
+        /* Journey diagram container */
+        #main-diagram-container {
+            width: 100%;
+            background: #f3efe6;
+            border-radius: 12px;
+            border: 1px solid rgba(31, 107, 74, 0.2);
+            box-shadow: 0 2px 8px rgba(31, 107, 74, 0.05);
+            padding: 24px 16px;
+            margin-top: 4px;
+            overflow-x: auto;
+            min-height: 420px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            transition: min-height 0.3s ease;
         }
-        @keyframes flowData {
-            from { stroke-dashoffset: 16; }
-            to { stroke-dashoffset: 0; }
+        #main-diagram-container svg {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
         }
+        #main-diagram-container .node rect,
+        #main-diagram-container .node circle,
+        #main-diagram-container .node polygon,
+        #main-diagram-container .node path {
+            rx: 8;
+            ry: 8;
+        }
+        /* Hover glow on clickable nodes */
+        #main-diagram-container .node[style*="pointer"] rect,
+        #main-diagram-container .node[style*="pointer"] polygon {
+            filter: drop-shadow(0 0 0 transparent);
+            transition: filter 0.2s;
+        }
+        #main-diagram-container .node[style*="pointer"]:hover rect,
+        #main-diagram-container .node[style*="pointer"]:hover polygon {
+            filter: drop-shadow(0 2px 8px rgba(59,130,246,0.35));
+        }
+
+        /* Static diagram wrapper */
+        .diagram { display: flex; justify-content: center; overflow-x: auto; padding: 20px 16px; background: #f3efe6; border-radius: 12px; border: 1px solid rgba(31, 107, 74, 0.2); }
+        .diagram pre { width: 100%; display: flex; justify-content: center; margin: 0; font-family: 'Inter', system-ui, sans-serif !important; }
+        .diagram svg { max-width: 100% !important; height: auto !important; display: block; margin: 0 auto; font-family: 'Inter', system-ui, sans-serif !important; }
+        .diagram svg text, .diagram svg .label, .diagram svg .label div { font-family: 'Inter', system-ui, sans-serif !important; }
         
-        .footer { background: #0f172a; color: #94a3b8; text-align: center; padding: 40px; font-size: 15px; }
+        /* Subtle animated connector lines */
+        #main-diagram-container .edgePath path,
+        #main-diagram-container .flowchart-link {
+            stroke-dasharray: 8 5;
+            animation: arrowFlow 1.6s linear infinite;
+        }
+        @keyframes arrowFlow {
+            from { stroke-dashoffset: 26; }
+            to   { stroke-dashoffset: 0;  }
+        }
+
+        /* Expand / Close banner - REMOVED (close button is now inside the subgraph) */
+
+        .footer { background: #1f6b4a; color: #f3efe6; text-align: center; padding: 36px; font-size: 14px; opacity: 0.9; }
         
-        /* RESPONSIVE */
         @media (max-width: 768px) {
-            .header { padding: 40px 16px; }
-            .header h1 { font-size: 28px; }
-            .header p { font-size: 16px; }
+            .header { padding: 36px 16px 56px; }
+            .header h1 { font-size: 26px; }
             .container { padding: 0 16px; }
-            .section { padding: 24px 16px; margin-bottom: 30px; border-radius: 12px; }
-            .section h2 { font-size: 24px; }
-            .desc { font-size: 15px; padding: 16px; border-radius: 8px; border-left: none; border-top: 4px solid #38bdf8; }
-            .diagram { padding: 20px 10px; }
-            .nav-btn { width: 100%; text-align: center; margin-bottom: 20px; }
+            .section { padding: 24px 18px; margin-bottom: 28px; }
+            .section h2 { font-size: 20px; }
+            .desc { font-size: 14px; padding: 14px 16px; }
+            .diagram { padding: 16px 8px; }
         }
     </style>
 </head>
@@ -98,19 +154,19 @@
             <pre class="mermaid">
                 flowchart LR
                     %% Users
-                    Staff(["👩‍⚕️ Hospital Staff\n(Admin, Doctor, Reception, Nurse, Lab, Pharmacy)"]):::user
+                    Staff(["Hospital Staff - Admin, Doctor, Reception, Nurse, Lab, Pharmacy"]):::user
 
                     %% Core System
-                    Auth{"🛡️ Authentication\n& API Router"}:::core
+                    Auth{"Authentication and API Router"}:::core
 
                     %% Business Modules
-                    OPD["🏃 OPD Module\n(Appointments, Vitals, Consultation)"]:::module
-                    IPD["🛏️ IPD Module\n(Admission, Bed Tracking, Billing)"]:::module
-                    PHARM["💊 Pharmacy Module\n(POS Billing, Inventory, GRN)"]:::module
-                    LAB["🔬 Laboratory Module\n(LIS, Test Orders, Reports)"]:::module
+                    OPD["OPD Module - Appointments, Vitals, Consultation"]:::module
+                    IPD["IPD Module - Admission, Bed Tracking, Billing"]:::module
+                    PHARM["Pharmacy Module - POS Billing, Inventory, GRN"]:::module
+                    LAB["Laboratory Module - LIS, Test Orders, Reports"]:::module
 
                     %% Databases
-                    DB[("🗄️ Multi-Branch Database\n(Branch 1 & Branch 2)")]:::db
+                    DB[("Multi-Branch Database - Branch 1 and Branch 2")]:::db
 
                     %% Connections
                     Staff -->|"Logs into Web App"| Auth
@@ -134,86 +190,465 @@
     </div>
 
     <!-- 2. Patient Journey -->
-    <div class="section">
-        <h2>2. Complete Patient Journey Flowchart</h2>
-        <p class="desc">Follow a single example patient, <strong>Ramesh Kumar (Patient ID: IPD000123)</strong>, through the entire hospital system from arrival to discharge. The colors indicate the department handling each step.</p>
-        <div class="diagram">
-            <pre class="mermaid">
-                flowchart TD
-                    Start(["🏥 Ramesh arrives at Hospital"]) --> Reg["📝 Reception:\nRegisters Ramesh & Books Appointment"]:::reception
-                    Reg --> Wait["⏳ Ramesh waits in OPD Queue"]
-                    Wait --> Vitals["🌡️ Nurse Station:\nRecords Vitals"]:::nurse
-                    Vitals --> DocVisit["👨‍⚕️ Doctor:\nConsults Ramesh, Enters SOAP Notes"]:::doctor
-                    DocVisit --> Decision{"🩺 Doctor's Decision"}
-                    
-                    Decision -->|"Admit to IPD"| Admit["🛏️ Reception:\nAdmits Ramesh (IPD000123) & Assigns Bed"]:::reception
-                    Decision -->|"Medicines Only"| OPDBill["💳 Reception:\nGenerates OPD Bill"]:::reception
-                    
-                    OPDBill --> OPDPay["💸 Ramesh pays OPD bill"]
-                    OPDPay --> OPDPharm["💊 Pharmacy:\nRamesh buys medicines"]:::pharmacy
-                    OPDPharm --> GoHome(["🏠 Ramesh goes home"])
-                    
-                    Admit --> Ward["🏥 Ramesh moved to Ward 101"]
-                    Ward --> NurseCare["👩‍⚕️ Nurse:\nDaily Vitals & MAR"]:::nurse
-                    NurseCare --> LabOrder["🔬 Nurse/Doctor:\nOrders Lab Tests"]:::nurse
-                    
-                    LabOrder --> LabProcess["🧪 Laboratory:\nCollects Sample & Uploads Results"]:::lab
-                    LabProcess --> DocReview["👨‍⚕️ Doctor:\nReviews Lab Results"]:::doctor
-                    
-                    NurseCare --> PharmOrder["💊 Nurse:\nOrders Medicines for Ward"]:::nurse
-                    PharmOrder --> PharmProcess["💊 Pharmacy:\nDispenses Medicines to Ward"]:::pharmacy
-                    PharmProcess --> NurseCare
-                    
-                    DocReview --> CheckDischarge{"✅ Ready for Discharge?"}
-                    CheckDischarge -->|"No"| NurseCare
-                    CheckDischarge -->|"Yes"| NurseNotify["🔔 Nurse:\nSends Discharge Notification"]:::nurse
-                    
-                    NurseNotify --> BillGen["💳 Admin:\nFinalizes IPD Bill"]:::admin
-                    BillGen --> Settle["💸 Ramesh's Family settles Bill"]
-                    Settle --> DischargeSummary["📄 Doctor:\nCompletes Discharge Summary"]:::doctor
-                    DischargeSummary --> EndNode(["🏠 Ramesh is Discharged.\nBed marked Available."])
+    <div class="section" id="journey-section">
+        <h2>2. Complete Patient Journey Flowchart (Interactive)</h2>
+        <p class="desc">
+            Follow <strong>Ramesh Kumar (Patient ID: IPD000123)</strong> through the complete hospital journey — from arrival to discharge.
+            <br><strong>Click any colored module box</strong> to expand its detailed workflow inline. Click again to collapse.
+        </p>
 
-                    classDef reception fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#0f172a,font-weight:bold;
-                    classDef doctor fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#0f172a,font-weight:bold;
-                    classDef nurse fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#0f172a,font-weight:bold;
-                    classDef pharmacy fill:#fef08a,stroke:#ca8a04,stroke-width:2px,color:#0f172a,font-weight:bold;
-                    classDef lab fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#0f172a,font-weight:bold;
-                    classDef admin fill:#ffedd5,stroke:#ea580c,stroke-width:2px,color:#0f172a,font-weight:bold;
-            </pre>
+        <!-- Color legend -->
+        <div class="click-legend">
+            <span class="legend-dot"></span>
+            <strong>Click to expand:</strong>
+            <div class="legend-chips">
+                <span class="legend-chip chip-reception">📝 Reception</span>
+                <span class="legend-chip chip-nurse">👩‍⚕️ Nurse</span>
+                <span class="legend-chip chip-doctor">👨‍⚕️ Doctor</span>
+                <span class="legend-chip chip-pharmacy">💊 Pharmacy</span>
+                <span class="legend-chip chip-lab">🔬 Laboratory</span>
+                <span class="legend-chip chip-admin">⚙️ Admin</span>
+            </div>
         </div>
+
+        <!-- Diagram container -->
+        <div id="main-diagram-container">
+            <!-- Dynamically populated -->
+        </div>
+
+<script>
+const flowcharts = {
+reception: `
+    subgraph Reg ["📝 Reception Detailed Workflow"]
+
+        StartRec(["Patient Desk"]) --> SearchRec["Search/Register Patient<br>(Aadhar/Phone check)"]:::rc
+        SearchRec --> ActionRec{"Patient Type?"}
+        
+        ActionRec -->|"OPD Checkup"| ApptRec["Book Appointment<br>Assign Token (APT-YYMMDD-XXX)"]:::rc
+        ApptRec --> QRec["Manage OPD Queue<br>(Arrived -> In-Progress)"]:::rc
+        QRec --> ConsultRec["Consultation Done"]:::sys
+        ConsultRec --> BillRec["Generate OPD Bill<br>(Duplicate check)"]:::rc
+        BillRec --> PayRec["Collect Payment"]:::rc
+        
+        ActionRec -->|"IPD Admission"| AdmitRec["Create Admission<br>(ADM-YYMMDD-NNN)"]:::rc
+        AdmitRec --> BedRec["Assign Bed and Bill Type<br>(SELF/INSURANCE)"]:::rc
+        BedRec --> MasterRec["System: Open Billing Master<br>(BILL-YYMMDD-NNN)"]:::sys
+        MasterRec --> IPDStayRec["Patient Stays in Ward"]:::sys
+        IPDStayRec --> ManChargeRec["Add Manual Charges<br>(Lab/Pharm/OT)"]:::rc
+        ManChargeRec --> AdvPayRec["Record Advance Payments"]:::rc
+        AdvPayRec --> DisReqRec["Discharge Requested"]:::sys
+        DisReqRec --> FinalBillRec["Review Final Bill<br>(Apply Discounts)"]:::rc
+        FinalBillRec --> FinalPayRec["Collect Final Payment"]:::rc
+        
+        PayRec --> PrintRec["Print Receipts and Documents"]:::rc
+        FinalPayRec --> PrintRec
+        PrintRec --> EndRec(["Completed"])
+    end
+`,
+doctor: `
+    subgraph Doctor ["👨‍⚕️ Doctor Detailed Workflow"]
+
+        StartDoc(["Doctor Cabin"]) --> ViewSchDoc["Review Daily Schedule<br>(OPD and IPD)"]:::dr
+        ViewSchDoc --> PickDoc{"Select Patient"}
+        
+        PickDoc -->|"OPD Patient"| ConsultDoc["Open Consultation Page<br>(Load History and Vitals)"]:::dr
+        ConsultDoc --> SOAPDoc["Enter SOAP Notes<br>(Voice-to-Text via Groq Whisper)"]:::dr
+        SOAPDoc --> AIDoc["Optional: AI Symptom Analysis<br>(Differential Diagnosis)"]:::dr
+        AIDoc --> PrescribeDoc["Issue Prescription<br>(Select Brand/Generic, Dosage)"]:::dr
+        PrescribeDoc --> OrderOPDDoc["Order Lab Tests (Optional)"]:::dr
+        OrderOPDDoc --> EndOPDDoc(["Consultation Complete"])
+        
+        PickDoc -->|"IPD Patient"| RoundDoc["Daily Ward Round<br>(Check K-Sheet & Lab Results)"]:::dr
+        RoundDoc --> ProgNoteDoc["Add Daily Progress Note"]:::dr
+        ProgNoteDoc --> UpdateTxDoc["Update Treatment Plan<br>(Order Tests/Medicines)"]:::dr
+        UpdateTxDoc --> DischargeDoc{"Ready for<br>Discharge?"}
+        DischargeDoc -->|"No"| EndIPDDoc(["Continue Care"])
+        DischargeDoc -->|"Yes"| DSDoc["Complete Discharge Summary<br>(Diagnosis and Instructions)"]:::dr
+        DSDoc --> InformDoc["Inform Nurse for Billing"]:::dr
+        InformDoc --> EndIPDDoc
+    end
+`,
+nurse: `
+    subgraph Nurse ["👩‍⚕️ Nurse Detailed Workflow"]
+
+        StartNur(["Nurse Station"]) --> ShiftNur["Shift Handover and Schedule"]:::nu
+        ShiftNur --> KSheetNur["Morning/Evening Rounds<br>Record Vitals (K-Sheet)"]:::nu
+        KSheetNur --> MARNur["Administer Medications (MAR)<br>(Tick given time slots)"]:::nu
+        
+        MARNur --> ChartsNur{"Special Care?"}
+        ChartsNur -->|"Yes"| ClinChartsNur["Update Clinical Charts<br>(Dialysis/O2/Vent/Blood)"]:::nu
+        ChartsNur -->|"No"| IPDNeedsNur{"Patient Needs?"}
+        
+        IPDNeedsNur -->|"Needs Medicine"| PharmOrderNur["Order from Pharmacy<br>(IPD Pharmacy Orders)"]:::nu
+        IPDNeedsNur -->|"Needs Tests"| LabOrderNur["Order Lab Tests<br>(Urgent/STAT/Routine)"]:::nu
+        IPDNeedsNur -->|"Unused Medicine"| PharmRetNur["Submit Medicine Return<br>(Wait for Approval)"]:::nu
+        
+        PharmOrderNur --> DailyCareNur["Continue Daily Care"]:::nu
+        LabOrderNur --> DailyCareNur
+        PharmRetNur --> DailyCareNur
+        ClinChartsNur --> DailyCareNur
+        
+        DailyCareNur --> DrClearNur{"Doctor Approves<br>Discharge?"}
+        DrClearNur -->|"No"| KSheetNur
+        DrClearNur -->|"Yes"| NotifyNur["Send Discharge Notification<br>(Alerts Admin)"]:::nu
+        NotifyNur --> EndNur(["Patient Handover"])
+    end
+`,
+pharmacy: `
+    subgraph Pharm ["💊 Pharmacy Detailed Workflow"]
+
+        StartPhar(["Pharmacy Dashboard"]) --> AlertsPhar["Check Alerts<br>(Low Stock and Expiring)"]:::ph
+        AlertsPhar --> ActionsPhar{"Action Type?"}
+        
+        ActionsPhar -->|"OPD Walk-in"| POSPhar["POS Billing Checkout"]:::ph
+        POSPhar --> FIFOPhar["System: FIFO Batch Auto-deduction<br>(Oldest First)"]:::sys
+        FIFOPhar --> PrintPhar["Print Invoice and Dispense"]:::ph
+        
+        ActionsPhar -->|"IPD Nurse Order"| IPDOrdPhar["Review Pending IPD Orders"]:::ph
+        IPDOrdPhar --> PreparePhar["Prepare Medicines and Label"]:::ph
+        PreparePhar --> DispatchPhar["Mark Complete and Dispatch<br>(Charge added to IPD Bill)"]:::ph
+        
+        ActionsPhar -->|"Stock Depleted"| IndentPhar["Generate Purchase Indent<br>(Vendor Portal)"]:::ph
+        IndentPhar --> POPhar["Approve Quotation -> Create PO"]:::ph
+        POPhar --> DeliveryPhar["Vendor Delivers Stock"]:::sys
+        DeliveryPhar --> GRNPhar["Create GRN (Stock Receive)<br>(Add Expiry and Batch info)"]:::ph
+        GRNPhar --> InvUpdatePhar["System: Inventory Updated<br>(New Batch placed at Back of FIFO)"]:::sys
+        
+        ActionsPhar -->|"Nurse Returns"| RetPhar["Verify IPD Returns"]:::ph
+        RetPhar --> ApprPhar{"Approve?"}
+        ApprPhar -->|"Yes"| RevPhar["Add back to Stock<br>Reduce IPD Bill"]:::ph
+        ApprPhar -->|"No"| RejectPhar["Reject with Reason"]:::ph
+    end
+`,
+laboratory: `
+    subgraph Lab ["🔬 Laboratory Detailed Workflow"]
+
+        StartLab(["Lab Kanban Board"]) --> OrderLab["View Pending Orders<br>(STAT / Urgent / Routine)"]:::lb
+        OrderLab --> CollectLab["Collect Sample / Receive from Ward"]:::lb
+        CollectLab --> InProgLab["Mark Status -> In Progress"]:::lb
+        InProgLab --> AnalyzeLab["Analyze Sample in Machine"]:::sys
+        AnalyzeLab --> DataEntryLab["Enter Parameter-wise Results"]:::lb
+        
+        DataEntryLab --> FlagLab{"System: Compare to<br>Reference Range"}
+        FlagLab -->|"Normal"| SignLab["Pathologist Signature"]:::lb
+        FlagLab -->|"High/Low"| SignLab
+        FlagLab -->|"Critical"| AlertLab["System: Critical Value Alert!"]:::sys
+        AlertLab --> CallLab["MANDATORY: Call Doctor/Nurse"]:::lb
+        CallLab --> AckLab["Document Call and Acknowledge Alert"]:::lb
+        AckLab --> SignLab
+        
+        SignLab --> CompleteLab["Mark Order Complete<br>(Auto-charge IPD if applicable)"]:::lb
+        CompleteLab --> PrintLab["Generate PDF Report<br>(Hospital Letterhead)"]:::lb
+        PrintLab --> EndLab(["Report Available in Doctor Panel"])
+    end
+`,
+admin: `
+    subgraph Admin ["⚙️ Admin Detailed Workflow"]
+
+        StartAdm(["Admin Dashboard"]) --> KPIsAdm["Monitor Real-time KPIs<br>(Revenue, Beds, OPD Count)"]:::ad
+        
+        KPIsAdm --> TasksAdm{"Management Task"}
+        
+        TasksAdm -->|"Manage IPD Billing"| ViewBillsAdm["View All IPD Bills"]:::ad
+        ViewBillsAdm --> VerifyAdm["Verify Itemized Charges"]:::ad
+        VerifyAdm --> DiscountAdm["Apply Corporate/Insurance Discounts"]:::ad
+        
+        TasksAdm -->|"Process Discharge"| BadgeAdm["Discharge Notification Badge Rings"]:::sys
+        BadgeAdm --> OpenBillAdm["Open Patient Final Bill"]:::ad
+        OpenBillAdm --> ClearAdm["Process Final Payment"]:::ad
+        ClearAdm --> DismissAdm["Dismiss Notification<br>(Bed -> Available)"]:::ad
+        
+        TasksAdm -->|"Staff Setup"| DoctorsAdm["Add/Edit Doctors and Roles<br>(Auto-login generation)"]:::ad
+        
+        TasksAdm -->|"Infrastructure"| BedsAdm["Configure Bed Pricing Matrix<br>(Ward/Room/Service Charges)"]:::ad
+        
+        TasksAdm -->|"Nursing"| SchedulerAdm["Weekly Nurse Duty Scheduler<br>(Conflict Detection)"]:::ad
+    end
+`
+};
+
+let currentlyExpanded = null;
+let currentRenderId = 0;
+
+// Node-to-module mapping for click detection
+const nodeModuleMap = {
+    'Reg': 'reception',
+    'Nurse': 'nurse',
+    'Doctor': 'doctor',
+    'OPDBill': 'reception',
+    'Pharm': 'pharmacy',
+    'IPDAdm': 'reception',
+    'DischargeReq': 'nurse',
+    'Admin': 'admin',
+    'Lab': 'laboratory'
+};
+
+function buildDiagramString() {
+    let s = 'flowchart TD\n';
+
+    // Helper: inject a native close-button node inside the subgraph string
+    function withCloseBtn(chartStr) {
+        var closeNode = '        ClosePanelBtn(["\u2715 Click here to CLOSE and return to Main Flow"]):::closebtn\n';
+        // Insert just before the closing "    end" of the subgraph
+        return chartStr.replace(/    end\n?$/, closeNode + '    end\n');
+    }
+
+    // ── NODES FIRST ──────────────────────────────────────────
+    s += '    Arrival(["\ud83c\udfe5 PATIENT ARRIVES at Hospital"])\n';
+
+    // Step 1: Reception
+    if (currentlyExpanded === 'reception') s += withCloseBtn(flowcharts['reception']);
+    else s += '    Reg["\ud83d\udcdd STEP 1 \u00b7 RECEPTION<br/>Register Patient \u00b7 Book Token<br/>Assign Queue Number"]:::reception\n';
+
+    // Step 2: Nurse
+    if (currentlyExpanded === 'nurse') s += withCloseBtn(flowcharts['nurse']);
+    else s += '    Nurse["\ud83d\udc69\u200d\u2695\ufe0f STEP 2 \u00b7 NURSE STATION<br/>Record BP \u00b7 Temp \u00b7 Weight<br/>Prepare Patient for Doctor"]:::nurse\n';
+
+    // Step 3: Doctor
+    if (currentlyExpanded === 'doctor') s += withCloseBtn(flowcharts['doctor']);
+    else s += '    Doctor["\ud83d\udc68\u200d\u2695\ufe0f STEP 3 \u00b7 DOCTOR<br/>Examine Patient<br/>Diagnose and Prescribe"]:::doctor\n';
+
+    // Decision diamond
+    s += '    Decision{"\ud83d\udd00 Doctor Decides<br/>Treatment Type"}\n';
+
+    // ── OPD PATH (same-day visit) ──
+    s += '    OPDBill["\ud83d\udcb3 RECEPTION \u00b7 OPD BILL<br/>Collect Consultation Fee<br/>(Click Reception to expand)"]:::reception\n';
+
+    if (currentlyExpanded === 'pharmacy') s += withCloseBtn(flowcharts['pharmacy']);
+    else s += '    Pharm["\ud83d\udc8a PHARMACY<br/>Dispense Prescribed Medicines<br/>(Click to expand details)"]:::pharmacy\n';
+
+    s += '    Leave(["\u2705 PATIENT GOES HOME<br/>OPD Visit Complete"])\n';
+
+    // ── IPD PATH (admitted) ──
+    s += '    IPDAdm["\ud83d\udecf\ufe0f RECEPTION \u00b7 ADMISSION<br/>Assign Bed and Ward<br/>Open IPD Billing Account"]:::reception\n';
+    s += '    IPDCare["\ud83d\udd04 DAILY HOSPITAL CARE<br/>Nurse Rounds Every Morning<br/>Medicines Administered Daily"]:::system\n';
+
+    if (currentlyExpanded === 'laboratory') s += withCloseBtn(flowcharts['laboratory']);
+    else s += '    Lab["\ud83d\udd2c LABORATORY<br/>Blood Tests and Scans<br/>Reports Sent to Doctor"]:::lab\n';
+
+    s += '    DischargeReq["\ud83d\udd14 DISCHARGE INITIATED<br/>Doctor Approves Discharge<br/>Nurse Notifies Admin Team"]:::nurse\n';
+
+    if (currentlyExpanded === 'admin') s += withCloseBtn(flowcharts['admin']);
+    else s += '    Admin["\u2699\ufe0f ADMIN \u00b7 FINAL BILLING<br/>Review All Charges<br/>Collect Final Payment"]:::admin\n';
+
+    s += '    IPDLeave(["\u2705 PATIENT DISCHARGED<br/>Bed Released \u00b7 IPD Closed"])\n';
+
+    // ── EDGES (all patients journey) ─────────────────────────
+    s += `
+    %% ── Common Path: Every Patient Goes Through These Steps ──
+    Arrival -->|"Walks into hospital"| Reg
+    Reg -->|"Registered and token issued"| Nurse
+    Nurse -->|"Vitals recorded, ready for doctor"| Doctor
+    Doctor -->|"Consultation complete"| Decision
+
+    %% ── Path A: OPD (Outpatient — Goes Home Same Day) ────────
+    Decision -->|"🏠 OPD Visit — Goes Home Today"| OPDBill
+    OPDBill -->|"Bill paid at reception counter"| Pharm
+    Pharm -->|"Medicines collected"| Leave
+
+    %% ── Path B: IPD (Inpatient — Admitted to Hospital) ───────
+    Decision -->|"🏥 Needs Admission — Hospital Stay"| IPDAdm
+    IPDAdm -->|"Shifted to ward bed"| IPDCare
+    IPDCare -->|"Doctor orders blood tests"| Lab
+    Lab -->|"Reports reviewed by doctor"| DischargeReq
+    IPDCare -->|"Doctor clears patient for discharge"| DischargeReq
+    DischargeReq -->|"Admin receives discharge alert"| Admin
+    Admin -->|"Payment done, bed freed"| IPDLeave
+
+    classDef reception fill:#dbeafe,stroke:#2563eb,stroke-width:1.5px,color:#1e40af,font-weight:600;
+    classDef doctor    fill:#fce7f3,stroke:#db2777,stroke-width:1.5px,color:#9d174d,font-weight:600;
+    classDef nurse     fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#166534,font-weight:600;
+    classDef pharmacy  fill:#fef9c3,stroke:#ca8a04,stroke-width:1.5px,color:#854d0e,font-weight:600;
+    classDef lab       fill:#ede9fe,stroke:#7c3aed,stroke-width:1.5px,color:#5b21b6,font-weight:600;
+    classDef admin     fill:#ffedd5,stroke:#ea580c,stroke-width:1.5px,color:#9a3412,font-weight:600;
+    classDef system    fill:#e0f2fe,stroke:#0369a1,stroke-width:1.5px,color:#0369a1,font-weight:600;
+    classDef closebtn  fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#dc2626,font-weight:700;
+
+    classDef rc  fill:#eff6ff,stroke:#2563eb,stroke-width:1px,color:#1e40af;
+    classDef sys fill:#f8fafc,stroke:#94a3b8,stroke-width:1px,color:#64748b;
+    classDef dr  fill:#fdf2f8,stroke:#db2777,stroke-width:1px,color:#9d174d;
+    classDef nu  fill:#f0fdf4,stroke:#16a34a,stroke-width:1px,color:#166534;
+    classDef ph  fill:#fefce8,stroke:#ca8a04,stroke-width:1px,color:#854d0e;
+    classDef lb  fill:#faf5ff,stroke:#7c3aed,stroke-width:1px,color:#5b21b6;
+    classDef ad  fill:#fff7ed,stroke:#ea580c,stroke-width:1px,color:#9a3412;
+`;
+    return s;
+}
+
+function attachClickHandlers(container) {
+    const svgEl = container.querySelector('svg');
+    if (!svgEl) return;
+
+    // ── Close button: capturing listener on container so it fires BEFORE
+    //    any SVG / Mermaid internal handlers (stops the event from bubbling
+    //    up to the subgraph which would trigger flowchart navigation)
+    container.addEventListener('click', function closeCaptureHandler(e) {
+        // Walk up from the clicked element until we hit a .node group
+        let el = e.target;
+        while (el && el !== container) {
+            if (el.classList && el.classList.contains('node') &&
+                el.id && /flowchart-ClosePanelBtn-/i.test(el.id)) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                // Remove this handler so re-renders start fresh
+                container.removeEventListener('click', closeCaptureHandler, true);
+                currentlyExpanded = null;
+                renderMainDiagram();
+                return;
+            }
+            el = el.parentElement;
+        }
+    }, true); // <-- capture phase: runs before any bubbling handlers
+
+    // ── Module nodes: expand on click ──────────────────────────
+    const nodes = svgEl.querySelectorAll('.node');
+    nodes.forEach(function(node) {
+        const nodeId = node.id;
+        const match = nodeId.match(/flowchart-([A-Za-z]+)-/);
+        const baseName = match ? match[1] : nodeId;
+
+        // Skip the close button — handled above
+        if (baseName === 'ClosePanelBtn') {
+            node.style.cursor = 'pointer';
+            return;
+        }
+
+        if (nodeModuleMap[baseName]) {
+            const moduleKey = nodeModuleMap[baseName];
+            node.style.cursor = 'pointer';
+            node.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                showModule(moduleKey);
+            });
+        }
+    });
+}
+
+function animateArrows(container) {
+    const svg = container.querySelector('svg');
+    if (!svg) return;
+    const paths = svg.querySelectorAll('.edgePath path, .flowchart-link');
+    paths.forEach(function(path, i) {
+        path.style.strokeDasharray = '8 5';
+        path.style.strokeDashoffset = String(26 - (i % 5) * 5);
+        path.style.animation = 'arrowFlow 1.6s linear infinite';
+    });
+}
+
+async function renderMainDiagram() {
+    currentRenderId++;
+    const targetId = 'mermaid-main-dyn-' + currentRenderId;
+    const s = buildDiagramString();
+
+    const container = document.getElementById('main-diagram-container');
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:#64748b;">Loading flowchart...</div>';
+    
+    if (window.mermaid) {
+        try {
+            const result = await mermaid.render(targetId, s);
+            container.innerHTML = result.svg;
+            if (result.bindFunctions) result.bindFunctions(container);
+            attachClickHandlers(container);
+            animateArrows(container);
+        } catch(e) {
+            console.error('Mermaid Render Error:', e);
+            container.innerHTML = '<div style="padding:20px;color:#dc2626;background:#fee2e2;border-radius:8px;">Render error: ' + e.message + '</div>';
+        }
+    }
+}
+
+function showModule(key) {
+    currentlyExpanded = (currentlyExpanded === key) ? null : key;
+    renderMainDiagram();
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+    // Poll until mermaid is available on window
+    var attempts = 0;
+    var interval = setInterval(function() {
+        attempts++;
+        if (window.mermaid) {
+            clearInterval(interval);
+            renderMainDiagram();
+        } else if (attempts > 40) {
+            clearInterval(interval);
+            document.getElementById('main-diagram-container').innerHTML = '<div style="padding:20px;color:#dc2626;">Could not load Mermaid library.</div>';
+        }
+    }, 250);
+});
+</script>
+
     </div>
 
     <!-- OPD Module Flowchart -->
-    <div class="section">
+    <div class="section" id="opd-section">
         <h2>Out-Patient Department (OPD) Module Flow</h2>
-        <p class="desc">Shows how Ramesh interacts exclusively with the OPD module for a standard doctor visit, including queue tokens, vitals, and billing.</p>
+        <p class="desc">
+            Follow <strong>Ramesh Kumar</strong> through a standard OPD (same-day) visit &mdash; from walking in to collecting medicines and going home.
+            Each colored box shows which department handles that step.
+        </p>
+
+        <div class="click-legend" style="margin-bottom:14px;">
+            <span class="legend-dot" style="background:#2563eb;"></span>
+            <strong>Department colors:</strong>
+            <div class="legend-chips">
+                <span class="legend-chip chip-reception">📝 Reception</span>
+                <span class="legend-chip chip-nurse">👩‍⚕️ Nurse</span>
+                <span class="legend-chip chip-doctor">👨‍⚕️ Doctor</span>
+                <span class="legend-chip chip-pharmacy">💊 Pharmacy</span>
+                <span class="legend-chip" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;">⏳ Waiting</span>
+            </div>
+        </div>
+
         <div class="diagram">
             <pre class="mermaid">
-                flowchart TD
-                    Arrival(["🏥 Ramesh arrives for Checkup"]) --> Reg["📝 Reception:\nSearch or Register Ramesh"]:::reception
-                    Reg --> Appt["📅 Reception:\nBook Appt & Assign Token #14"]:::reception
-                    Appt --> Wait["⏳ Ramesh waits\nin OPD Area"]
-                    
-                    Wait --> Call["📺 Display Screen:\nCalls Token #14"]
-                    Call --> Vitals["👩‍⚕️ Nurse Station:\nCheck BP, Temp, Weight"]:::nurse
-                    
-                    Vitals --> Consult["👨‍⚕️ Doctor's Cabin:\nWrites SOAP Notes"]:::doctor
-                    Consult --> Prescribe["📄 Doctor:\nIssues Digital Prescription"]:::doctor
-                    
-                    Prescribe --> Checkout["💳 Reception:\nGenerate OPD Bill"]:::reception
-                    Checkout --> Pay["💸 Ramesh pays ₹500"]
-                    Pay --> Print["🖨️ Reception:\nPrint Receipt"]:::reception
-                    
-                    Print --> Pharm["💊 Pharmacy:\nBuy prescribed medicines"]:::pharmacy
-                    Pharm --> Leave(["🏠 Ramesh leaves Hospital"])
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontSize": "11px",
+    "fontFamily": "Inter, system-ui, sans-serif",
+    "primaryColor": "#e0f2fe",
+    "primaryTextColor": "#0f172a",
+    "lineColor": "#94a3b8"
+  },
+  "flowchart": {
+    "nodeSpacing": 15,
+    "rankSpacing": 20,
+    "useMaxWidth": false,
+    "curve": "linear",
+    "htmlLabels": true
+  }
+}}%%
+flowchart TD
+    S1["🏥 <b>STEP 1 · RECEPTION</b><br/>Search, register, book<br/>appt & assign Token #14"]:::reception
+    
+    S2["⏳ <b>STEP 2 · WAITING</b><br/>Ramesh waits in OPD area<br/>until Token #14 called"]:::waiting
+    
+    S3["👩‍⚕️ <b>STEP 3 · NURSE</b><br/>Nurse records vitals:<br/>BP, Temp, Weight"]:::nurse
+    
+    S4["👨‍⚕️ <b>STEP 4 · DOCTOR</b><br/>Review vitals, write SOAP<br/>issue digital prescription"]:::doctor
+    
+    S5["💳 <b>STEP 5 · BILLING</b><br/>Generate OPD bill (Rs.500),<br/>Ramesh pays, gets receipt"]:::reception
+    
+    S6["💊 <b>STEP 6 · PHARMACY</b><br/>Collect prescribed medicines<br/>and leave hospital"]:::pharmacy
 
-                    classDef reception fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#0f172a,font-weight:bold;
-                    classDef doctor fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#0f172a,font-weight:bold;
-                    classDef nurse fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#0f172a,font-weight:bold;
-                    classDef pharmacy fill:#fef08a,stroke:#ca8a04,stroke-width:2px,color:#0f172a,font-weight:bold;
+    S1 -->|"Proceeds to wait"| S2
+    S2 -->|"Token called"| S3
+    S3 -->|"Enters cabin"| S4
+    S4 -->|"Consultation done"| S5
+    S5 -->|"Bill settled"| S6
+
+    classDef reception fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e40af,font-weight:500,rx:6px,ry:6px;
+    classDef doctor    fill:#fce7f3,stroke:#db2777,stroke-width:2px,color:#9d174d,font-weight:500,rx:6px,ry:6px;
+    classDef nurse     fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534,font-weight:500,rx:6px,ry:6px;
+    classDef pharmacy  fill:#fef9c3,stroke:#ca8a04,stroke-width:2px,color:#854d0e,font-weight:500,rx:6px,ry:6px;
+    classDef waiting   fill:#f1f5f9,stroke:#94a3b8,stroke-width:2px,color:#475569,font-weight:500,rx:6px,ry:6px;
             </pre>
         </div>
     </div>
+
+
 
     <!-- 3. IPD Admission & Billing Engine -->
     <div class="section">
@@ -243,7 +678,7 @@
                     N->>BE: Add Lab/Pharmacy/Doctor charges for Ramesh
                     BE->>DB: Insert Itemized Billing Charge
                     BE->>BE: Trigger recalculateMaster()
-                    BE-->>DB: Update Bill Subtotal & Apply Taxes
+                    BE-->>DB: Update Bill Subtotal and Apply Taxes
                     
                     A->>BE: Review Final Bill for Discharge
                     BE->>DB: Apply Corporate Discount / Insurance
@@ -256,31 +691,86 @@
     <!-- 4. Laboratory (LIS) Workflow -->
     <div class="section">
         <h2>4. Laboratory (LIS) Module Decision Flow</h2>
-        <p class="desc">How a blood test requested for Ramesh moves through the laboratory module, including the critical alert decision tree.</p>
+        <p class="desc">
+            How a blood test requested for <strong>Ramesh Kumar</strong> moves through the Laboratory module —
+            from doctor's order to final PDF report, including the critical alert decision tree.
+        </p>
+
+        <div class="click-legend" style="margin-bottom:16px;">
+            <span class="legend-dot" style="background:#7c3aed;"></span>
+            <strong>Step types:</strong>
+            <div class="legend-chips">
+                <span class="legend-chip" style="background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd;">🔬 Lab Technician</span>
+                <span class="legend-chip" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;">🚨 Critical Alert</span>
+                <span class="legend-chip" style="background:#dcfce7;color:#166534;border:1px solid #86efac;">✅ Completed</span>
+                <span class="legend-chip" style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;">💻 System / Auto</span>
+            </div>
+        </div>
+
         <div class="diagram">
             <pre class="mermaid">
-                flowchart TD
-                    Order["🩺 Doctor/Nurse:\nOrders CBC Test"]:::start --> Pending["⏳ Lab Dashboard:\nTest Appears in Pending"]:::lab
-                    Pending --> Collect["🩸 Lab Tech:\nCollects Blood Sample"]:::lab
-                    Collect --> InProgress["🔬 Status:\nChanged to In-Progress"]:::lab
-                    InProgress --> Analyze["⚙️ Lab Tech:\nAnalyzes in Machine"]:::lab
-                    Analyze --> DataEntry["⌨️ Lab Tech:\nEnter Results (Hb, WBC)"]:::lab
-                    
-                    DataEntry --> Validation{"✅ Values in\nNormal Range?"}
-                    Validation -->|"Yes"| Complete["🏁 Status:\nCompleted"]:::lab
-                    Validation -->|"No"| CheckCritical{"⚠️ Is Value\nCritical? (e.g. Hb < 7)"}
-                    
-                    CheckCritical -->|"No, just abnormal"| Complete
-                    CheckCritical -->|"Yes, Critical"| Alert["🚨 System generates\nCritical Alert (Red)"]:::alert
-                    Alert --> Notify["📞 Lab Tech:\nCalls Doctor immediately"]:::alert
-                    Notify --> Complete
-                    
-                    Complete --> Report["📄 System:\nAuto-generates PDF Report"]:::finish
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontSize": "11px",
+    "fontFamily": "Inter, system-ui, sans-serif",
+    "primaryColor": "#ede9fe",
+    "primaryTextColor": "#0f172a",
+    "lineColor": "#94a3b8"
+  },
+  "flowchart": {
+    "nodeSpacing": 15,
+    "rankSpacing": 20,
+    "useMaxWidth": false,
+    "curve": "linear",
+    "htmlLabels": true
+  }
+}}%%
+flowchart TD
+    Order(["🩸 <b>TEST ORDERED</b><br/>Doctor orders CBC test<br/>for Ramesh Kumar"])
 
-                    classDef start fill:#e2e8f0,stroke:#64748b,stroke-width:2px,color:#0f172a,font-weight:bold;
-                    classDef lab fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#0f172a,font-weight:bold;
-                    classDef alert fill:#fee2e2,stroke:#dc2626,stroke-width:3px,color:#991b1b,font-weight:bold;
-                    classDef finish fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#0f172a,font-weight:bold;
+    Pending["⏳ <b>STEP 1 · LAB DASHBOARD</b><br/>Test appears in pending queue<br/>Visible to all technicians"]:::lab
+    Collect["💉 <b>STEP 2 · LAB TECHNICIAN</b><br/>Collect blood sample<br/>Label and log sample"]:::lab
+    InProg["🔄 <b>STEP 3 · SYSTEM</b><br/>Status changed to In-Progress<br/>Timestamp recorded"]:::sys
+    Analyze["⚙️ <b>STEP 4 · LAB TECHNICIAN</b><br/>Analyze sample in machine<br/>Run CBC panel"]:::lab
+    DataEntry["⌨️ <b>STEP 5 · LAB TECHNICIAN</b><br/>Enter results into system<br/>Hb, WBC, Platelets, RBC"]:::lab
+
+    Validate{"🔍 <b>SYSTEM CHECK</b><br/>Are values in<br/>normal range?"}
+
+    NormalPath["✅ <b>STEP 6A · SYSTEM</b><br/>Values normal<br/>Auto mark Completed"]:::done
+    AbnCheck{"⚠️ <b>ABNORMAL CHECK</b><br/>Is value critical?<br/>e.g. Hb below 7"}
+
+    AbnOnly["🚩 <b>STEP 6B · SYSTEM</b><br/>Flag as Abnormal<br/>Mark for pathologist"]:::sys
+    Alert["🚨 <b>STEP 6C · CRITICAL ALERT</b><br/>System generates red alert<br/>Mandatory call required"]:::alert
+    Notify["📞 <b>STEP 7 · LAB TECHNICIAN</b><br/>Call doctor immediately<br/>Document call"]:::alert
+
+    Sign["👨‍⚕️ <b>STEP 8 · PATHOLOGIST</b><br/>Review and digitally sign<br/>completed report"]:::lab
+    Report(["📄 <b>REPORT READY</b><br/>Auto-generate PDF<br/>Available in Doctor panel"])
+
+    Order -->|"Test queued"| Pending
+    Pending -->|"Tech picks up order"| Collect
+    Collect -->|"Sample collected"| InProg
+    InProg -->|"Processing started"| Analyze
+    Analyze -->|"Analysis done"| DataEntry
+    DataEntry -->|"Results entered"| Validate
+
+    Validate -->|"✔ Yes, normal"| NormalPath
+    Validate -->|"⚠️ No, abnormal"| AbnCheck
+
+    AbnCheck -->|"Slightly off"| AbnOnly
+    AbnCheck -->|"Dangerously critical"| Alert
+    Alert -->|"Alert raised"| Notify
+
+    NormalPath -->|"Ready for sign-off"| Sign
+    AbnOnly -->|"Ready for sign-off"| Sign
+    Notify -->|"Call documented"| Sign
+
+    Sign -->|"Signed and sealed"| Report
+
+    classDef lab   fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#5b21b6,font-weight:500,rx:6px,ry:6px;
+    classDef alert fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#991b1b,font-weight:600,rx:6px,ry:6px;
+    classDef done  fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534,font-weight:500,rx:6px,ry:6px;
+    classDef sys   fill:#f1f5f9,stroke:#94a3b8,stroke-width:2px,color:#475569,font-weight:500,rx:6px,ry:6px;
             </pre>
         </div>
     </div>
@@ -305,7 +795,8 @@
                         CheckStock --> FIFO{"FIFO Logic Applied Automatically"}
                         FIFO -->|Deducts first from Oldest| TakeA["Takes 10 tabs from Batch A"]
                         FIFO -->|Deducts remaining from Next| TakeB["Takes 5 tabs from Batch B"]
-                        TakeA & TakeB --> Bill["Cost automatically added to Ramesh's IPD Bill"]
+                        TakeA --> Bill["Cost automatically added to Ramesh's IPD Bill"]
+                        TakeB --> Bill
                         Bill --> Dispense["Medicines dispatched to Ward"]
                     end
                     

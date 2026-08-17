@@ -13,14 +13,14 @@
     
     <style>
         :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text: #1e293b;
-            --text-light: #64748b;
-            --border: #e2e8f0;
-            --gradient: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            --primary: #1f6b4a;
+            --primary-dark: #1f6b4a;
+            --bg: #f3efe6;
+            --card-bg: #f3efe6;
+            --text: #1f6b4a;
+            --text-light: rgba(31, 107, 74, 0.7);
+            --border: rgba(31, 107, 74, 0.2);
+            --gradient: #1f6b4a;
         }
 
         body {
@@ -179,8 +179,8 @@
             font-size: 15px;
         }
         .markdown-body th {
-            background: #f1f5f9;
-            color: #334155;
+            background: rgba(31, 107, 74, 0.1);
+            color: var(--text);
             font-weight: 600;
             padding: 12px 16px;
             border: 1px solid var(--border);
@@ -191,22 +191,23 @@
             border: 1px solid var(--border);
             vertical-align: top;
         }
-        .markdown-body tr:nth-child(even) { background: #f8fafc; }
+        .markdown-body tr:nth-child(even) { background: rgba(31, 107, 74, 0.05); }
 
         /* Code & Quotes */
         .markdown-body code {
-            background: #f1f5f9;
+            background: rgba(31, 107, 74, 0.1);
             padding: 0.2em 0.4em;
             border-radius: 4px;
             font-family: monospace;
             font-size: 0.9em;
-            color: #db2777;
+            color: var(--text);
         }
         .markdown-body pre {
-            background: #1e293b;
-            color: #f8fafc;
+            background: rgba(31, 107, 74, 0.05);
+            color: var(--text);
             padding: 16px;
             border-radius: 8px;
+            border: 1px solid var(--border);
             overflow: auto;
             line-height: 1.45;
         }
@@ -214,20 +215,21 @@
             background: transparent;
             color: inherit;
             padding: 0;
+            border: none;
         }
         .markdown-body blockquote {
             margin: 0;
             padding: 0 1em;
             color: var(--text-light);
             border-left: 4px solid var(--primary);
-            background: #eff6ff;
+            background: rgba(31, 107, 74, 0.05);
             padding: 16px;
             border-radius: 0 8px 8px 0;
         }
         
         /* Mermaid specific */
         .mermaid {
-            background: white;
+            background: var(--bg);
             padding: 20px;
             border-radius: 8px;
             border: 1px solid var(--border);
@@ -235,7 +237,7 @@
             overflow-x: auto;
         }
         
-        .mermaid svg { max-width: none !important; height: auto !important; }
+        .mermaid svg { max-width: 100% !important; height: auto !important; display: block; margin: 0 auto; }
         
         /* Connection Line Animations */
         .mermaid path.path, .mermaid .edgePath path, .mermaid path.flowchart-link {
@@ -299,12 +301,12 @@
             theme: 'base',
             themeVariables: {
                 fontFamily: 'Inter, sans-serif',
-                primaryColor: '#e2e8f0',
-                primaryTextColor: '#1e293b',
-                primaryBorderColor: '#94a3b8',
-                lineColor: '#2563eb',
-                secondaryColor: '#f8fafc',
-                tertiaryColor: '#fff',
+                primaryColor: 'rgba(31, 107, 74, 0.1)',
+                primaryTextColor: '#1f6b4a',
+                primaryBorderColor: '#1f6b4a',
+                lineColor: '#1f6b4a',
+                secondaryColor: '#f3efe6',
+                tertiaryColor: '#f3efe6',
                 fontSize: '26px'
             },
             flowchart: {

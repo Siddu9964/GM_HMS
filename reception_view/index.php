@@ -341,10 +341,9 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             padding: 0.9rem 1rem;
         }
 
-        /* 2×3 icon grid */
         .quick-actions-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 0.6rem;
         }
 
@@ -894,6 +893,10 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                                 <button onclick="window.location.href='doctor_availability.php'" class="quick-action-btn">
                                     <i class="fas fa-user-md"></i>
                                     Doctor Schedule
+                                </button>
+                                <button onclick="window.location.href='ipd_management/views/admissions/index.php?openModal=true'" class="quick-action-btn" style="border-color: #0ea5e9; background: #f0f9ff;">
+                                    <i class="fas fa-procedures" style="background: #0ea5e9; color: white;"></i>
+                                    New IPD Admission
                                 </button>
                             </div>
                         </div>

@@ -33,6 +33,9 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
     <!-- Toastify CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- Reception Dashboard CSS -->
     <link rel="stylesheet" href="../../assets/css/reception_dashboard.css?v=<?= time() ?>">
 
@@ -319,6 +322,42 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             position: relative;
             z-index: 1;
         }
+
+        /* ── Notice Board Cards ── */
+        .notice-card {
+            border: 1px solid rgba(0, 0, 0, 0.05) !important;
+            border-radius: 16px !important;
+            background: #fff;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        .notice-card::after {
+            content: '';
+            position: absolute;
+            left: 0; bottom: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #1f6b4a 0%, #10b981 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .notice-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+            border-color: transparent !important;
+        }
+        .notice-card:hover::after {
+            opacity: 1;
+        }
+        .notice-card-icon {
+            transition: all 0.3s ease;
+        }
+        .notice-card:hover .notice-card-icon {
+            background: #1f6b4a !important;
+            color: #ffffff !important;
+            transform: rotate(-10deg) scale(1.1);
+        }
     </style>
 </head>
 
@@ -482,6 +521,58 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     </div>
                 </div>
                     </div>
+                <!-- Patient Details Modal -->
+                <div class="modal fade" id="patientDetailsModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold" style="color: #1f6b4a;"><i class="fas fa-id-card-alt me-2"></i>Patient Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body pt-3 pb-4">
+                                <div class="text-center mb-4">
+                                    <div style="width: 80px; height: 80px; background: #eef2f6; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 35px; color: #64748b; margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <h4 id="modalPatientName" class="fw-bold mb-2 text-dark"></h4>
+                                    <div id="modalBedStatus"></div>
+                                </div>
+                                
+                                <div class="bg-light p-3 rounded-4 border" style="border-color: #f1f5f9 !important;">
+                                    <div class="row g-3">
+                                        <div class="col-6">
+                                            <label class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.65rem; letter-spacing: 0.5px;">Admitted On</label>
+                                            <div id="modalAdmitDate" class="fw-semibold text-dark" style="font-size: 0.9rem;"></div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.65rem; letter-spacing: 0.5px;">Rent / Day</label>
+                                            <div id="modalRent" class="fw-bold text-success" style="font-size: 1rem;"></div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.65rem; letter-spacing: 0.5px;">Room Number</label>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="fas fa-door-closed text-secondary"></i>
+                                                <span id="modalBedInfo" class="fw-semibold text-dark" style="font-size: 0.9rem;"></span>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 0.65rem; letter-spacing: 0.5px;">Room Type</label>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="fas fa-layer-group text-secondary"></i>
+                                                <span id="modalBedType" class="fw-semibold text-dark" style="font-size: 0.9rem;"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0 pt-0 pb-4 justify-content-center">
+                                <button type="button" class="btn btn-light px-4 rounded-pill fw-semibold border" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-success px-4 rounded-pill fw-semibold shadow-sm" onclick="window.location.href='../views/admissions/'"><i class="fas fa-external-link-alt me-2"></i>Manage Patient</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                     <!-- End Reception Content -->
                 </div>
                 <!-- End Reception Main Content -->
@@ -532,107 +623,269 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                         });
                 }
 
+                // Global function to show patient details modal
+                window.showPatientDetails = function(bedId, patientName, admissionDate, rent, roomNum, bedType, bedStatus) {
+                    if (!patientName || patientName === 'null') patientName = 'Unknown Patient';
+                    
+                    // Format date nicely if possible
+                    let formattedDate = admissionDate;
+                    if (admissionDate && admissionDate !== 'null') {
+                        try {
+                            const d = new Date(admissionDate);
+                            if (!isNaN(d.getTime())) {
+                                formattedDate = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                            }
+                        } catch(e) {}
+                    } else {
+                        formattedDate = 'N/A';
+                    }
+                    
+                    $('#modalPatientName').text(patientName);
+                    $('#modalAdmitDate').text(formattedDate);
+                    $('#modalBedInfo').text(roomNum);
+                    $('#modalBedType').text(bedType);
+                    $('#modalRent').text('₹' + rent);
+                    
+                    let statusHtml = '';
+                    if (bedStatus.toLowerCase() === 'occupied') {
+                        statusHtml = '<span class="badge" style="background: #ef4444; color: white; padding: 6px 12px; border-radius: 8px;"><i class="fas fa-bed me-1"></i> Occupied</span>';
+                    } else if (bedStatus.toLowerCase() === 'maintenance') {
+                        statusHtml = '<span class="badge" style="background: #f59e0b; color: white; padding: 6px 12px; border-radius: 8px;"><i class="fas fa-tools me-1"></i> Maintenance</span>';
+                    }
+                    $('#modalBedStatus').html(statusHtml);
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('patientDetailsModal'));
+                    modal.show();
+                };
+
                 // Load notice board
                 function loadNoticeBoard() {
                     IPD.ajax('beds', 'GET')
                         .then(response => {
                             const beds = response.data.beds || [];
-                            let rooms = {};
+                            
+                            // Stats for graph/summary
+                            let stats = { total: 0, occupied: 0, available: 0, maintenance: 0 };
+                            let roomTypeStats = {};
+                            let roomTypeDetails = {};
                             
                             beds.forEach(bed => {
-                                const fName = bed.floor_name || 'Unassigned';
-                                const wName = bed.ward_name  || 'Unassigned Ward';
                                 const rType = bed.room_type || bed.room_category || 'General';
-                                const rNum  = bed.room_number || '0';
                                 
                                 let status = (bed.bed_status || 'Available').toLowerCase();
                                 if (status === 'occupied' && !bed.patient_id) status = 'available';
                                 
-                                const key = `${fName}|${wName}|${rType}|${rNum}`;
+                                stats.total++;
+                                if (status === 'occupied') stats.occupied++;
+                                else if (status === 'available') stats.available++;
+                                else if (status === 'maintenance') stats.maintenance++;
                                 
-                                if (!rooms[key]) {
-                                    rooms[key] = {
-                                        floor: fName,
-                                        ward: wName,
-                                        type: rType,
-                                        room: rNum,
-                                        rent: bed.total_bed_amount || 0,
-                                        stats: { total:0, occ:0, avail:0 }
+                                if (!roomTypeStats[rType]) {
+                                    roomTypeStats[rType] = 0;
+                                    roomTypeDetails[rType] = {
+                                        rent: bed.total_bed_amount || bed.amount_per_day || 0,
+                                        patients: []
                                     };
                                 }
+                                roomTypeStats[rType]++;
                                 
-                                rooms[key].stats.total++;
-                                if (status === 'occupied') rooms[key].stats.occ++;
-                                else if (status === 'available') rooms[key].stats.avail++;
+                                if (status === 'occupied' && bed.patient_id) {
+                                    roomTypeDetails[rType].patients.push({
+                                        name: bed.patient_name || 'Unknown',
+                                        id: bed.patient_id || 'N/A',
+                                        bed: (bed.room_number ? bed.room_number : '') + ' / B-' + bed.bed_number,
+                                        date: bed.admission_date || 'N/A'
+                                    });
+                                }
                             });
                             
                             let html = `
-                            <div class="card border-0 shadow-sm" style="border-radius: 12px; border: 1px solid rgba(31, 107, 74, 0.1) !important; overflow: hidden; margin-top: 5px;">
-                                <div class="table-responsive board-scroll" style="max-height: 380px; overflow-y: auto;">
-                                    <table class="table align-middle mb-0 board-table" style="font-size: 13.5px; border-collapse: separate; border-spacing: 0;">
-                                        <thead>
-                                            <tr>
-                                                <th class="py-3 px-4 border-0 text-uppercase" style="font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Floor</th>
-                                                <th class="py-3 px-3 border-0 text-uppercase" style="font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Ward</th>
-                                                <th class="py-3 px-3 border-0 text-uppercase" style="font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Room Type</th>
-                                                <th class="py-3 px-3 border-0 text-uppercase" style="font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Room</th>
-                                                <th class="py-3 px-3 border-0 text-uppercase" style="font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Rent</th>
-                                                <th class="py-3 px-3 border-0 text-uppercase text-center" style="font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Occ.</th>
-                                                <th class="py-3 px-3 border-0 text-uppercase text-center" style="font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Avail.</th>
-                                                <th class="py-3 px-3 border-0 text-uppercase text-center" style="font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px;">Total</th>
-                                                <th class="py-3 px-4 border-0 text-uppercase" style="font-size: 11px; font-weight: 700; color: #64748b; letter-spacing: 0.5px; width: 140px;">Occupancy</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                            `;
-                            
-                            Object.values(rooms).forEach(r => {
-                                const pct = r.stats.total > 0 ? Math.round((r.stats.occ / r.stats.total) * 100) : 0;
-                                html += `
-                                    <tr class="board-row" style="cursor: pointer; border-bottom: 1px solid #f1f5f9;" onclick="window.location.href='../views/beds/'">
-                                        <td class="py-3 px-4">
-                                            <div class="d-flex align-items-center">
-                                                <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(31, 107, 74, 0.1); color: #1f6b4a; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
-                                                    <i class="fas fa-layer-group" style="font-size: 12px;"></i>
-                                                </div>
-                                                <span class="fw-semibold text-dark">${r.floor}</span>
-                                            </div>
-                                        </td>
-                                        <td class="py-3 px-3 fw-medium" style="color: #334155;">${r.ward}</td>
-                                        <td class="py-3 px-3" style="color: #64748b; font-size: 13px;">${r.type}</td>
-                                        <td class="py-3 px-3 fw-bold" style="color: #1f6b4a;">${r.room}</td>
-                                        <td class="py-3 px-3 fw-medium text-dark">₹${r.rent}</td>
-                                        <td class="py-3 px-3 text-center">
-                                            <span class="status-pill" style="background: ${r.stats.occ > 0 ? '#fee2e2' : '#f1f5f9'}; color: ${r.stats.occ > 0 ? '#ef4444' : '#94a3b8'};">
-                                                ${r.stats.occ}
-                                            </span>
-                                        </td>
-                                        <td class="py-3 px-3 text-center">
-                                            <span class="status-pill" style="background: ${r.stats.avail > 0 ? '#d1fae5' : '#f1f5f9'}; color: ${r.stats.avail > 0 ? '#10b981' : '#94a3b8'};">
-                                                ${r.stats.avail}
-                                            </span>
-                                        </td>
-                                        <td class="py-3 px-3 text-center fw-semibold" style="color: #475569;">${r.stats.total}</td>
-                                        <td class="py-3 px-4">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <div class="progress flex-grow-1" style="height: 6px; background: #f1f5f9; border-radius: 3px;">
-                                                    <div class="progress-bar" role="progressbar" style="width: ${pct}%; background-color: ${pct > 80 ? '#ef4444' : (pct > 0 ? '#1f6b4a' : '#cbd5e1')} !important; border-radius: 3px;"></div>
-                                                </div>
-                                                <span style="font-size: 12px; font-weight: 600; color: #475569; min-width: 32px; text-align: right;">${pct}%</span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                `;
-                            });
-                            
-                            html += `
-                                        </tbody>
-                                    </table>
+                            <!-- Summary Graph -->
+                            <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; border: 1px solid rgba(0,0,0,0.05) !important; background: #fff;">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0 fw-bold text-dark" style="font-size: 1rem;"><i class="fas fa-chart-pie text-primary me-2"></i>Room Types Distribution</h6>
+                                    </div>
+                                    <div style="position: relative; height: 350px; width: 100%; display: flex; justify-content: center;">
+                                        <canvas id="roomTypeChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
                             `;
                             
                             $('#noticeBoardContainer').html(html);
+                            
+                            // Initialize Chart.js Donut Chart
+                            const ctx = document.getElementById('roomTypeChart');
+                            if (ctx) {
+                                if (window.roomTypeChartInstance) {
+                                    window.roomTypeChartInstance.destroy();
+                                }
+                                
+                                const labels = Object.keys(roomTypeStats);
+                                const dataValues = Object.values(roomTypeStats);
+                                const backgroundColors = [
+                                    '#1f6b4a', '#10b981', '#0ea5e9', '#6366f1', 
+                                    '#8b5cf6', '#d946ef', '#f43f5e', '#f59e0b',
+                                    '#14b8a6', '#84cc16', '#eab308'
+                                ];
+                                
+                                window.roomTypeChartInstance = new Chart(ctx, {
+                                    type: 'doughnut',
+                                    data: {
+                                        labels: labels,
+                                        datasets: [{
+                                            data: dataValues,
+                                            backgroundColor: backgroundColors.slice(0, labels.length),
+                                            borderWidth: 2,
+                                            borderColor: '#ffffff',
+                                            hoverOffset: 4
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                            legend: {
+                                                position: 'right',
+                                                labels: {
+                                                    font: { family: 'Inter', size: 13, weight: '600' },
+                                                    color: '#475569',
+                                                    padding: 20
+                                                }
+                                            },
+                                            tooltip: {
+                                                enabled: false,
+                                                external: function(context) {
+                                                    // Tooltip Element
+                                                    let tooltipEl = document.getElementById('chartjs-tooltip');
+                                                    
+                                                    // Create element on first render
+                                                    if (!tooltipEl) {
+                                                        tooltipEl = document.createElement('div');
+                                                        tooltipEl.id = 'chartjs-tooltip';
+                                                        tooltipEl.style.background = '#1f6b4a';
+                                                        tooltipEl.style.borderRadius = '16px';
+                                                        tooltipEl.style.color = '#f3efe6';
+                                                        tooltipEl.style.opacity = 1;
+                                                        tooltipEl.style.pointerEvents = 'none';
+                                                        tooltipEl.style.position = 'absolute';
+                                                        tooltipEl.style.transition = 'opacity 0.2s ease';
+                                                        tooltipEl.style.boxShadow = '0 10px 30px rgba(31,107,74,0.4)';
+                                                        tooltipEl.style.border = '2px solid #f3efe6';
+                                                        tooltipEl.style.zIndex = 9999;
+                                                        tooltipEl.style.minWidth = '280px';
+                                                        tooltipEl.style.maxWidth = '340px';
+                                                        
+                                                        document.body.appendChild(tooltipEl);
+                                                    }
+                                                    
+                                                    // Hide if no tooltip
+                                                    const tooltipModel = context.tooltip;
+                                                    if (tooltipModel.opacity === 0) {
+                                                        tooltipEl.style.opacity = 0;
+                                                        return;
+                                                    }
+                                                    
+                                                    // Set Text
+                                                    if (tooltipModel.body) {
+                                                        const dataIndex = tooltipModel.dataPoints[0].dataIndex;
+                                                        const rType = tooltipModel.dataPoints[0].label;
+                                                        const parsedCount = tooltipModel.dataPoints[0].parsed;
+                                                        const details = roomTypeDetails[rType];
+                                                        
+                                                        const bgColor = tooltipModel.dataPoints[0].dataset.backgroundColor[dataIndex];
+                                                        
+                                                        let innerHtml = `
+                                                            <div style="padding: 18px;">
+                                                                <div style="display: flex; align-items: center; border-bottom: 2px solid #f3efe6; padding-bottom: 12px; margin-bottom: 14px;">
+                                                                    <div style="width: 16px; height: 16px; background: ${bgColor}; border-radius: 4px; margin-right: 12px; flex-shrink: 0; border: 2px solid #f3efe6;"></div>
+                                                                    <h6 style="margin: 0; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 16px; letter-spacing: 0.2px; color: #f3efe6;">${rType}</h6>
+                                                                </div>
+                                                                
+                                                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                                                    <span style="font-family: 'Inter'; font-size: 14px; color: #f3efe6; font-weight: 600;">Total Beds:</span>
+                                                                    <span style="font-family: 'Inter'; font-size: 14px; font-weight: 800; color: #f3efe6;">${parsedCount}</span>
+                                                                </div>
+                                                        `;
+                                                        
+                                                        if (details && details.rent) {
+                                                            innerHtml += `
+                                                                <div style="display: flex; justify-content: space-between; margin-bottom: 14px;">
+                                                                    <span style="font-family: 'Inter'; font-size: 14px; color: #f3efe6; font-weight: 600;">Rent/Day:</span>
+                                                                    <span style="font-family: 'Inter'; font-size: 14px; font-weight: 800; color: #f3efe6;">₹${details.rent}</span>
+                                                                </div>
+                                                            `;
+                                                        }
+                                                        
+                                                        if (details && details.patients && details.patients.length > 0) {
+                                                            innerHtml += `
+                                                                <div style="background: #f3efe6; border-radius: 12px; padding: 12px; margin-top: 14px; border: 2px solid #f3efe6;">
+                                                                    <div style="font-family: 'Inter'; font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; color: #1f6b4a; font-weight: 800; margin-bottom: 12px;">
+                                                                        <i class="fas fa-users me-1" style="color: #1f6b4a;"></i> Occupied Patients (${details.patients.length})
+                                                                    </div>
+                                                                    <div style="max-height: 150px; overflow-y: auto; padding-right: 6px;" class="board-scroll">
+                                                            `;
+                                                            
+                                                            details.patients.forEach(p => {
+                                                                let pDate = p.date !== 'N/A' && p.date !== 'null' ? p.date.split(' ')[0] : 'N/A';
+                                                                innerHtml += `
+                                                                    <div style="border-left: 4px solid ${bgColor}; padding-left: 10px; margin-bottom: 12px;">
+                                                                        <div style="font-family: 'Inter'; font-size: 14px; font-weight: 800; color: #1f6b4a; line-height: 1.2; margin-bottom: 4px;">
+                                                                            ${p.name}
+                                                                        </div>
+                                                                        <div style="font-family: 'Inter'; font-size: 12px; color: #1f6b4a; font-weight: 600; margin-bottom: 6px;">
+                                                                            <i class="fas fa-id-badge me-1"></i> ${p.id}
+                                                                        </div>
+                                                                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #1f6b4a; padding-top: 6px; margin-top: 4px;">
+                                                                            <span style="font-family: 'Inter'; font-size: 11px; color: #1f6b4a; font-weight: 800;"><i class="fas fa-bed me-1" style="color: #1f6b4a;"></i> ${p.bed}</span>
+                                                                            <span style="font-family: 'Inter'; font-size: 11px; color: #1f6b4a; font-weight: 800;"><i class="far fa-calendar-alt me-1" style="color: #1f6b4a;"></i> ${pDate}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                `;
+                                                            });
+                                                            
+                                                            innerHtml += `
+                                                                    </div>
+                                                                </div>
+                                                            `;
+                                                        } else {
+                                                            innerHtml += `
+                                                                <div style="text-align: center; padding: 16px 0 8px 0; background: #f3efe6; border-radius: 12px; margin-top: 14px; border: 2px solid #f3efe6;">
+                                                                    <div style="font-family: 'Inter'; font-size: 13px; color: #1f6b4a; font-weight: 800;">
+                                                                        <i class="fas fa-check-circle me-1"></i> Fully Available
+                                                                    </div>
+                                                                </div>
+                                                            `;
+                                                        }
+                                                        
+                                                        innerHtml += `</div>`;
+                                                        tooltipEl.innerHTML = innerHtml;
+                                                    }
+                                                    
+                                                    const position = context.chart.canvas.getBoundingClientRect();
+                                                    
+                                                    // Dynamic positioning to keep tooltip on screen
+                                                    let leftPos = position.left + window.pageXOffset + tooltipModel.caretX + 15;
+                                                    let topPos = position.top + window.pageYOffset + tooltipModel.caretY + 15;
+                                                    
+                                                    // Prevent tooltip from overflowing the right edge
+                                                    if (leftPos + 320 > window.innerWidth) {
+                                                        leftPos = position.left + window.pageXOffset + tooltipModel.caretX - 335;
+                                                    }
+                                                    
+                                                    tooltipEl.style.opacity = 1;
+                                                    tooltipEl.style.position = 'absolute';
+                                                    tooltipEl.style.left = leftPos + 'px';
+                                                    tooltipEl.style.top = topPos + 'px';
+                                                    tooltipEl.style.fontFamily = tooltipModel.options.bodyFont.family;
+                                                }
+                                            }
+                                        },
+                                        cutout: '65%'
+                                    }
+                                });
+                            }
                         })
                         .catch(err => {
                             console.error('Failed to load beds for notice board:', err);
