@@ -26,29 +26,22 @@ if (empty($query)) {
 try {
     $db = SecureDatabase::getInstance();
     $conn = $db->getConnection();
+    $currentWard = getCurrentNurseWard($conn, $nurseId);
+    $roleId = $_SESSION['role_id'] ?? $_SESSION['user_id'] ?? null;
+
+    $shiftModel = new \GM_HMS\Models\NurseShiftModel();
+    $assignedPatients = $shiftModel->getAssignedPatientsRedesigned($nurseId, $roleId, $currentWard);
     
-    $q = "%{$query}%";
+    $filtered = array_filter($assignedPatients, function($p) use ($query) {
+        $q = strtolower($query);
+        $name = strtolower(($p['first_name'] ?? '') . ' ' . ($p['last_name'] ?? ''));
+        $pid = strtolower($p['patient_id'] ?? '');
+        $phone = strtolower($p['phone'] ?? '');
+        $room = strtolower($p['room_no'] ?? $p['room_number'] ?? '');
+        return str_contains($name, $q) || str_contains($pid, $q) || str_contains($phone, $q) || str_contains($room, $q);
+    });
     
-    // Search by Patient ID, Admission ID, First Name, Last Name, Phone
-    $sql = "SELECT a.admission_id, a.patient_id, a.ward, a.room_no, a.bed_id, 
-                   p.first_name, p.last_name, p.age, p.sex, p.phone
-            FROM ipd_admissions a 
-            JOIN patient p ON a.patient_id = p.patient_id 
-            WHERE a.status != 'Discharged' 
-              AND (
-                  a.admission_id LIKE ? 
-                  OR a.patient_id LIKE ? 
-                  OR p.first_name LIKE ? 
-                  OR p.last_name LIKE ? 
-                  OR p.phone LIKE ?
-              )
-            LIMIT 10";
-            
-    $results = $db->fetchAll($sql, [
-        $q, $q, $q, $q, $q
-    ]);
-    
-    echo json_encode(['success' => true, 'data' => $results]);
+    echo json_encode(['success' => true, 'data' => array_values($filtered)]);
 } catch (\Throwable $e) {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }

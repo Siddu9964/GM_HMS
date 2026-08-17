@@ -25,6 +25,18 @@ try {
             if(!empty($r['room_type'])) $allWards[] = $r['room_type'];
         }
     }
+    
+    // Fetch assigned shift and patients
+    require_once __DIR__ . '/includes/nurse_auth_helper.php';
+    $nurseWard = null;
+    $assignedPatients = [];
+    if ($nurseId) {
+        $nurseWard = getCurrentNurseWard($conn, $nurseId);
+        $roleId = $_SESSION['role_id'] ?? $_SESSION['user_id'] ?? null;
+        $shiftModel = new \GM_HMS\Models\NurseShiftModel();
+        $assignedPatients = $shiftModel->getAssignedPatientsRedesigned($nurseId, $roleId, $currentWard ?? $nurseWard);
+    }
+
 } catch(Exception $e) {}
 ?>
 <!DOCTYPE html>
@@ -395,30 +407,44 @@ body{background:var(--bg);color:var(--tx)}
   <div class="content-wrapper" style="flex:1;display:block!important;overflow-x:hidden!important;overflow-y:auto!important;height:100%;">
     <?php $pageTitle = 'Nurse Workspace'; include 'includes/nurse_navbar.php'; ?>
 
-    <!-- Patient Search Overlay -->
-    <div id="ps-overlay">
-      <div id="ps-box">
-        <div class="ps-head">
-          <h3><i class="fas fa-search" style="margin-right:8px"></i>Select IPD Patient</h3>
-          <p>Search by patient name, ID, or phone number</p>
-        </div>
-        <div class="ps-body">
-          <div class="ps-inp-w">
-            <i class="fas fa-user-injured"></i>
-            <input type="text" id="ps-input" placeholder="Type at least 2 characters..." autocomplete="off">
-          </div>
-          <div id="ps-results"></div>
-          <p class="ps-empty" id="ps-hint">Type to search admitted patients</p>
-        </div>
-      </div>
-    </div>
 
-    <!-- No Patient State (fallback) -->
-    <div class="nopt" id="nopt-state" style="display:none">
-      <div class="nopt-ic"><i class="fas fa-user-injured"></i></div>
-      <h3>No Patient Selected</h3>
-      <p>Please search and select an admitted IPD patient to start entering records.</p>
-      <button class="btn-sv" onclick="openSearch()"><i class="fas fa-search"></i> Search Patient</button>
+
+    <!-- Assigned Patients Dashboard -->
+    <div class="nopt" id="nopt-state" style="display:block; padding: 0 24px;">
+      <?php if (!empty($assignedPatients)): ?>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+              <h3 style="margin: 0; color: var(--primary); text-align: left;"><i class="fas fa-users"></i> Your Assigned Patients (<?php echo htmlspecialchars($nurseWard['floor_name'] . ($nurseWard['room_type'] ? ' - '.$nurseWard['room_type'] : '')); ?>)</h3>
+              
+              <!-- Integrated Dashboard Search -->
+              <div style="display: flex; align-items: center; background: white; border: 1px solid var(--bd); border-radius: 8px; padding: 4px 12px; width: 100%; max-width: 350px;">
+                  <i class="fas fa-search" style="color: var(--mt); margin-right: 8px;"></i>
+                  <input type="text" id="dash-search" placeholder="Search by name, ID, room..." style="border: none; outline: none; padding: 8px 0; width: 100%; font-size: 0.9rem; background: transparent;">
+              </div>
+          </div>
+
+          <div id="dash-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; text-align: left;">
+              <?php foreach($assignedPatients as $p): ?>
+                  <div class="card-new dash-card" data-search="<?php echo htmlspecialchars(strtolower($p['first_name'].' '.$p['last_name'].' '.$p['patient_id'].' '.$p['room_type'].' '.$p['room_number'])); ?>" style="cursor: pointer; transition: transform 0.2s;" onclick='selectPatient(<?php echo json_encode($p); ?>)' onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+                      <div style="font-weight: 800; font-size: 1.05rem; color: var(--primary); margin-bottom: 8px;">
+                          <?php echo htmlspecialchars($p['first_name'] . ' ' . $p['last_name']); ?>
+                      </div>
+                      <div style="font-size: 0.8rem; color: var(--mt); display: flex; flex-direction: column; gap: 4px;">
+                          <span><strong>PID:</strong> <?php echo htmlspecialchars($p['patient_id'] ?? ''); ?></span>
+                          <span><strong>Bed:</strong> <?php echo htmlspecialchars(($p['room_type'] ?? '') . ' / ' . ($p['room_number'] ?? '')); ?></span>
+                          <span><strong>Age/Sex:</strong> <?php echo htmlspecialchars(($p['age'] ?? '?') . 'Y / ' . ($p['sex'] ?? '?')); ?></span>
+                      </div>
+                  </div>
+              <?php endforeach; ?>
+          </div>
+          <div id="dash-no-res" style="display: none; padding: 40px; text-align: center; color: var(--mt);">
+              <i class="fas fa-search-minus" style="font-size: 3rem; margin-bottom: 10px; opacity: 0.5;"></i>
+              <h4>No patients match your search.</h4>
+          </div>
+      <?php else: ?>
+          <div class="nopt-ic" style="margin-top: 40px;"><i class="fas fa-user-injured"></i></div>
+          <h3 style="text-align: center;">No Assigned Patients</h3>
+          <p style="text-align: center;">You have no active shift or no patients assigned to your ward today.</p>
+      <?php endif; ?>
     </div>
 
     <!-- Patient Banner (shown after selection) -->
@@ -800,42 +826,45 @@ const NN = "<?php echo addslashes($nurseName); ?>";
 let cp = null;
 let tsCart = [], phCart = [];
 
-/* ── Patient Search ── */
+/* ── Patient Search / Dashboard ── */
 function openSearch(){
-  document.getElementById('ps-overlay').style.display='flex';
-  document.getElementById('ps-input').value='';
-  document.getElementById('ps-results').style.display='none';
-  document.getElementById('ps-results').innerHTML='';
-  document.getElementById('ps-hint').style.display='block';
-  setTimeout(()=>document.getElementById('ps-input').focus(),100);
+  // If changing patient, simply hide the workspace and show the dashboard again!
+  document.getElementById('ws-layout').style.display='none';
+  document.getElementById('pt-banner').style.display='none';
+  document.getElementById('nopt-state').style.display='block';
+  cp = null; // Clear current patient
+  
+  const searchInput = document.getElementById('dash-search');
+  if(searchInput) {
+      searchInput.value = '';
+      searchInput.dispatchEvent(new Event('input')); // Reset filter
+      searchInput.focus();
+  }
 }
 
-let psT=null;
-document.getElementById('ps-input').addEventListener('input',function(){
-  clearTimeout(psT); const q=this.value.trim();
-  const hint=document.getElementById('ps-hint'), res=document.getElementById('ps-results');
-  if(q.length<2){res.style.display='none';hint.style.display='block';return;}
-  hint.style.display='none';
-  psT=setTimeout(()=>{
-    fetch('api/search_ipd_patient.php?q='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{
-      res.innerHTML='';
-      if(d.success&&d.data.length>0){
-        d.data.forEach(p=>{
-          const el=document.createElement('div');el.className='ps-item';
-          el.innerHTML=`<div><div class="ps-item-n">${p.first_name} ${p.last_name||''}</div><div class="ps-item-m">PID: ${p.patient_id} | Admission: ${p.admission_id} | Ward: ${p.ward||'N/A'} Rm: ${p.room_no||'N/A'}</div></div><span class="ps-item-b">Select</span>`;
-          el.onclick=()=>selectPatient(p); res.appendChild(el);
+// Live filter for the dashboard cards
+const ds = document.getElementById('dash-search');
+if(ds) {
+    ds.addEventListener('input', function() {
+        const q = this.value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.dash-card');
+        let visibleCount = 0;
+        cards.forEach(c => {
+            const text = c.getAttribute('data-search');
+            if(text.includes(q)) {
+                c.style.display = 'block';
+                visibleCount++;
+            } else {
+                c.style.display = 'none';
+            }
         });
-      } else {
-        res.innerHTML='<div class="ps-empty">No admitted patient found for "'+q+'".</div>';
-      }
-      res.style.display='block';
-    }).catch(()=>{res.innerHTML='<div class="ps-empty">Search error. Please try again.</div>';res.style.display='block';});
-  },300);
-});
+        const noRes = document.getElementById('dash-no-res');
+        if(noRes) noRes.style.display = (visibleCount === 0) ? 'block' : 'none';
+    });
+}
 
 function selectPatient(p){
   cp=p;
-  document.getElementById('ps-overlay').style.display='none';
   document.getElementById('nopt-state').style.display='none';
   // Update banner
   const ini=((p.first_name||'')[0]||'')+((p.last_name||'')[0]||'')||'PT';
@@ -844,17 +873,17 @@ function selectPatient(p){
   document.getElementById('pt-chips').innerHTML=[
     {ic:'fa-id-card',l:'PID',v:p.patient_id},
     {ic:'fa-file-invoice',l:'IP#',v:p.admission_id},
-    {ic:'fa-bed',l:'Ward',v:`${p.ward||'N/A'}/Rm:${p.room_no||'N/A'}`},
+    {ic:'fa-bed',l:'Ward',v:`${p.room_type||'N/A'}/Rm:${p.room_number||'N/A'}`},
     {ic:'fa-user',l:'Age/Sex',v:`${p.age||'?'}Y / ${p.sex||'?'}`},
     {ic:'fa-tint',l:'Blood',v:p.blood_group||'N/A'}
   ].map(c=>`<span class="ptchip"><i class="fas ${c.ic}"></i><strong>${c.l}:</strong> ${c.v}</span>`).join('');
   document.getElementById('pt-banner').style.display='flex';
   document.getElementById('ws-layout').style.display='flex';
   // Pre-fill consultant and ward in activity form
-  const ci=document.querySelector('#f-act input[name="consultant"]');
-  if(ci&&p.consultant)ci.value=p.consultant;
+  const ci=document.querySelector('#f-act select[name="consultant"]');
+  if(ci&&p.doctor_name){ Array.from(ci.options).forEach(o=>{if(o.value===p.doctor_name)o.selected=true;}); }
   const wi=document.getElementById('act-wr');
-  if(wi&&p.ward)wi.value=`${p.ward}/${p.room_no||''}`;
+  if(wi&&(p.room_type||p.room_number))wi.value=`${p.room_type||''}/${p.room_number||''}`;
   autoFill();
   loadAllRecords();
 }
@@ -1138,7 +1167,11 @@ function showToast(msg,err=false){
 }
 
 /* ── Init ── */
-document.addEventListener('DOMContentLoaded',()=>openSearch());
+document.addEventListener('DOMContentLoaded',() => {
+    <?php if (empty($assignedPatients)): ?>
+        openSearch();
+    <?php endif; ?>
+});
 
 // Bind individual save buttons
 document.querySelectorAll('.btn-sv[data-ct]').forEach(b => {
