@@ -1,4 +1,5 @@
 <?php
+ob_start();
 session_start();
 
 // Allow all nurse roles and admins to view the page
@@ -40,23 +41,14 @@ try {
     $currentWard = getCurrentNurseWard($conn, $nurseId);
     
     if ($isListView && $currentWard) {
-        $stmt = $conn->prepare("
-            SELECT p.first_name, p.last_name, p.patient_id, p.age, p.sex, p.blood_group, 
-                   ia.admission_id, ia.ward_name, ia.room_no, ia.admission_date,
-                   d.full_name as consultant_name 
-            FROM patient p 
-            JOIN ipd_admissions ia ON p.patient_id = ia.patient_id 
-            LEFT JOIN hospital_beds b ON ia.bed_id = b.sl_no
-            LEFT JOIN doctors d ON ia.admitting_doctor_id = d.doctor_id
-            WHERE (ia.status = 'Admitted' OR ia.status = 'Active')
-              AND b.floor_name = ? AND b.ward_name = ? AND b.room_type = ? 
-            ORDER BY ia.admission_date DESC
-        ");
-        $stmt->bind_param("sss", $currentWard['floor_name'], $currentWard['ward_name'], $currentWard['room_type']);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        while ($row = $result->fetch_assoc()) {
-            $patientsList[] = $row;
+        require_once __DIR__ . '/../models/NurseShiftModel.php';
+        $shiftModel = new \GM_HMS\Models\NurseShiftModel();
+        
+        $assigned = $shiftModel->getAssignedPatientsRedesigned($nurseId, $_SESSION['role_id'] ?? $nurseId, $currentWard);
+        if ($assigned) {
+            foreach ($assigned as $row) {
+                $patientsList[] = $row;
+            }
         }
     } elseif ($isListView && !$currentWard) {
         // Not assigned today
@@ -97,22 +89,11 @@ try {
         }
         
         $records = [
-            'vitals' => [],
-            'nurses_record' => [],
-            'pharmacy_orders' => [],
-            'lab_tests' => [],
-            'radiology_tests' => [],
-            'other_tests' => [],
-            'grbs_chart' => [],
-            'nebulization_chart' => [],
-            'dialysis_chart' => [],
-            'oxygen_chart' => [],
-            'ventilation_chart' => [],
-            'blood_transfusion_chart' => [],
-            'consultant_visits' => [],
-            'procedures' => [],
-            'billing_items' => [],
-            'nursing_notes' => []
+            'vitals' => [], 'nurses_record' => [], 'pharmacy_orders' => [], 'lab_tests' => [],
+            'radiology_tests' => [], 'other_tests' => [], 'grbs_chart' => [], 'nebulization_chart' => [],
+            'dialysis_chart' => [], 'oxygen_chart' => [], 'ventilation_chart' => [], 'blood_transfusion_chart' => [],
+            'consultant_visits' => [], 'procedures' => [], 'billing_items' => [], 'nursing_notes' => [],
+            'pharmacy_returns' => [], 'attachments' => [], 'bp_test' => [], 'bed_trasfer' => []
         ];
 
         $records_stmt = $conn->prepare("SELECT * FROM ipd_clinical_records WHERE patient_id = ? ORDER BY record_date ASC");
@@ -195,8 +176,8 @@ try {
                         </div>
                     </div>
                     <div style="display: flex; gap: 10px; margin-top: auto;">
-                        <span class="badge-chip"><i class="fas fa-bed"></i> <?php echo htmlspecialchars($p['ward_name'] . ' - ' . $p['room_no']); ?></span>
-                        <span class="badge-chip" style="background: rgba(30, 64, 175, 0.1); color: #1e40af;"><i class="fas fa-user-md"></i> Dr. <?php echo htmlspecialchars($p['consultant_name'] ?: 'N/A'); ?></span>
+                        <span class="badge-chip"><i class="fas fa-bed"></i> <?php echo htmlspecialchars(($p['room_type'] ?? 'N/A') . ' - ' . ($p['room_number'] ?? 'N/A')); ?></span>
+                        <span class="badge-chip" style="background: rgba(30, 64, 175, 0.1); color: #1e40af;"><i class="fas fa-user-md"></i> Dr. <?php echo htmlspecialchars($p['doctor_name'] ?? 'N/A'); ?></span>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -209,48 +190,54 @@ try {
                 <?php endif; ?>
             </div>
             
-        <?php else: ?>
-        
-            <!-- Premium Hero Header -->
-            <div class="hero-card">
-                <p class="hero-title">GM Hospital & Research Center</p>
-                <h1 class="hero-name"><i class="fas fa-user-circle" style="opacity:0.8;"></i> <?php echo htmlspecialchars($patientName); ?></h1>
+        <?php else: ?>            <!-- Compact Hero Header -->
+            <div class="hero-card" style="padding: 15px 20px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                    <h1 class="hero-name" style="font-size: 1.5rem; margin: 0;"><i class="fas fa-user-circle" style="opacity:0.8;"></i> <?php echo htmlspecialchars($patientName); ?></h1>
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">GM Hospital & Research Center</span>
+                </div>
                 
-                <div class="hero-chips">
-                    <div class="hero-chip"><i class="fas fa-id-card"></i> PID: <?php echo htmlspecialchars($patientPID); ?></div>
-                    <div class="hero-chip"><i class="fas fa-file-medical"></i> IP: <?php echo htmlspecialchars($patientIP); ?></div>
-                    <div class="hero-chip"><i class="fas fa-venus-mars"></i> <?php echo htmlspecialchars($patientAgeSex); ?></div>
-                    <div class="hero-chip"><i class="fas fa-tint" style="color: #ff6b6b;"></i> <?php echo htmlspecialchars($patientBlood); ?></div>
-                    <div class="hero-chip"><i class="fas fa-user-md"></i> <?php echo htmlspecialchars($patientConsultant); ?></div>
-                    <div class="hero-chip"><i class="fas fa-procedures"></i> <?php echo htmlspecialchars($patientLocation); ?></div>
-                    <div class="hero-chip"><i class="fas fa-calendar-check"></i> Admitted: <?php echo htmlspecialchars($admissionDateVal); ?></div>
+                <div class="hero-chips" style="margin-top: 10px; gap: 8px;">
+                    <div class="hero-chip" style="padding: 4px 10px; font-size: 0.8rem;"><i class="fas fa-id-card"></i> PID: <?php echo htmlspecialchars($patientPID); ?></div>
+                    <div class="hero-chip" style="padding: 4px 10px; font-size: 0.8rem;"><i class="fas fa-file-medical"></i> IP: <?php echo htmlspecialchars($patientIP); ?></div>
+                    <div class="hero-chip" style="padding: 4px 10px; font-size: 0.8rem;"><i class="fas fa-venus-mars"></i> <?php echo htmlspecialchars($patientAgeSex); ?></div>
+                    <div class="hero-chip" style="padding: 4px 10px; font-size: 0.8rem;"><i class="fas fa-tint" style="color: #ff6b6b;"></i> <?php echo htmlspecialchars($patientBlood); ?></div>
+                    <div class="hero-chip" style="padding: 4px 10px; font-size: 0.8rem;"><i class="fas fa-user-md"></i> <?php echo htmlspecialchars($patientConsultant); ?></div>
+                    <div class="hero-chip" style="padding: 4px 10px; font-size: 0.8rem;"><i class="fas fa-procedures"></i> <?php echo htmlspecialchars($patientLocation); ?></div>
+                    <div class="hero-chip" style="padding: 4px 10px; font-size: 0.8rem;"><i class="fas fa-calendar-check"></i> Admitted: <?php echo htmlspecialchars($admissionDateVal); ?></div>
                 </div>
             </div>
 
-            <!-- Vitals -->
-            <?php if (!empty($records['vitals'])): ?>
+            <!-- BP / Vitals Test -->
+            <?php if (!empty($records['bp_test']) || !empty($records['vitals'])): ?>
             <div class="glass-panel">
                 <div class="section-header">
-                    <i class="fas fa-heartbeat"></i>
-                    <h3>Vitals Monitoring</h3>
+                    <i class="fas fa-heartbeat" style="color: #ef4444; background: rgba(239, 68, 68, 0.1);"></i>
+                    <h3>BP / Vitals Monitoring</h3>
                 </div>
                 <div class="modern-table-wrapper">
                     <table class="modern-table">
                         <thead>
-                            <tr><th>Date</th><th>Time</th><th>Temp (°F)</th><th>Pulse</th><th>Resp</th><th>BP</th><th>SpO2</th><th>GCS</th><th>Signature</th></tr>
+                            <tr><th>Date</th><th>Time</th><th>BP</th><th>Pulse</th><th>Temp</th><th>SpO2</th><th>GCS</th><th>Nurse</th></tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($records['vitals'] as $v): ?>
+                            <?php 
+                            $mergedVitals = array_merge($records['vitals'], $records['bp_test']);
+                            usort($mergedVitals, function($a, $b) {
+                                $timeA = strtotime(($a['bp_date'] ?? $a['vitals_date'] ?? '') . ' ' . ($a['bp_time'] ?? $a['vitals_time'] ?? ''));
+                                $timeB = strtotime(($b['bp_date'] ?? $b['vitals_date'] ?? '') . ' ' . ($b['bp_time'] ?? $b['vitals_time'] ?? ''));
+                                return $timeA <=> $timeB;
+                            });
+                            foreach ($mergedVitals as $v): ?>
                             <tr>
-                                <td><strong><?php echo htmlspecialchars($v['vitals_date'] ?? ''); ?></strong></td>
-                                <td><?php echo htmlspecialchars($v['vitals_time'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($v['temp'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($v['pulse'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($v['resp'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($v['bp'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($v['spo2'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($v['gcs'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($v['nurse_sign'] ?? ''); ?></td>
+                                <td><strong><?php echo htmlspecialchars($v['bp_date'] ?? $v['vitals_date'] ?? ''); ?></strong></td>
+                                <td><?php echo htmlspecialchars($v['bp_time'] ?? $v['vitals_time'] ?? ''); ?></td>
+                                <td><strong><?php echo htmlspecialchars($v['bp_value'] ?? $v['bp'] ?? ''); ?></strong></td>
+                                <td><?php echo htmlspecialchars($v['bp_pulse'] ?? $v['pulse'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($v['bp_temp'] ?? $v['temp'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($v['bp_spo2'] ?? $v['spo2'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($v['gcs'] ?? '-'); ?></td>
+                                <td><?php echo htmlspecialchars($v['bp_nurse'] ?? $v['nurse_sign'] ?? ''); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -280,6 +267,34 @@ try {
                                 <td><?php echo htmlspecialchars($v['shift'] ?? ''); ?></td>
                                 <td><small style="color:#64748b;"><?php echo htmlspecialchars($v['created_at'] ?? ''); ?></small></td>
                                 <td><small style="color:#64748b;"><?php echo htmlspecialchars($v['created_by_name'] ?? ''); ?></small></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Bed Transfers -->
+            <?php if (!empty($records['bed_trasfer'])): ?>
+            <div class="glass-panel">
+                <div class="section-header">
+                    <i class="fas fa-bed" style="color: #f97316; background: rgba(249, 115, 22, 0.1);"></i>
+                    <h3>Bed Transfers</h3>
+                </div>
+                <div class="modern-table-wrapper">
+                    <table class="modern-table">
+                        <thead>
+                            <tr><th>Transfer Date</th><th>From Ward</th><th>To Ward</th><th>Remarks</th><th>Logged By</th></tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($records['bed_trasfer'] as $v): ?>
+                            <tr>
+                                <td><strong><?php echo htmlspecialchars($v['transfer_date'] ?? ''); ?></strong></td>
+                                <td><?php echo htmlspecialchars($v['from_ward'] ?? ''); ?></td>
+                                <td><strong><?php echo htmlspecialchars($v['to_ward'] ?? ''); ?></strong></td>
+                                <td><?php echo htmlspecialchars($v['transfer_remarks'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($v['created_by_name'] ?? ''); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -363,7 +378,7 @@ try {
                                 <td><?php echo htmlspecialchars($v['dia_start'] ?? ''); ?></td>
                                 <td><?php echo htmlspecialchars($v['dia_end'] ?? ''); ?></td>
                                 <td><?php echo htmlspecialchars($v['dia_dur'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($v['dia_sign'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($v['dia_nurse'] ?? ''); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -391,7 +406,7 @@ try {
                                 <td><?php echo htmlspecialchars($v['oxy_start'] ?? ''); ?></td>
                                 <td><?php echo htmlspecialchars($v['oxy_end'] ?? ''); ?></td>
                                 <td><?php echo htmlspecialchars($v['oxy_dur'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($v['oxy_sign'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($v['oxy_nurse'] ?? ''); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -419,7 +434,7 @@ try {
                                 <td><?php echo htmlspecialchars($v['vent_start'] ?? ''); ?></td>
                                 <td><?php echo htmlspecialchars($v['vent_end'] ?? ''); ?></td>
                                 <td><?php echo htmlspecialchars($v['vent_dur'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($v['vent_sign'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($v['vent_nurse'] ?? ''); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -471,13 +486,16 @@ try {
                             <tr><th>Date</th><th>Time</th><th>Particulars</th><th>Units</th><th>Signature</th></tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($records['nurses_record'] as $v): ?>
+                            <?php foreach ($records['nurses_record'] as $v): 
+                                // Ignore admission entries which don't have nurse_date
+                                if(empty($v['nurse_date']) && empty($v['nurse_time'])) continue;
+                            ?>
                             <tr>
-                                <td><strong><?php echo htmlspecialchars($v['date'] ?? ''); ?></strong></td>
-                                <td><?php echo htmlspecialchars($v['time'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($v['particulars'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($v['units'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($v['signature'] ?? ''); ?></td>
+                                <td><strong><?php echo htmlspecialchars($v['nurse_date'] ?? ''); ?></strong></td>
+                                <td><?php echo htmlspecialchars($v['nurse_time'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($v['nurse_part'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($v['nurse_units'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($v['nurse_sign'] ?? ''); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -594,6 +612,33 @@ try {
             </div>
             <?php endif; ?>
 
+            <!-- Pharmacy Returns -->
+            <?php if (!empty($records['pharmacy_returns'])): ?>
+            <div class="glass-panel">
+                <div class="section-header">
+                    <i class="fas fa-undo" style="color: #eab308; background: rgba(234, 179, 8, 0.1);"></i>
+                    <h3>Pharmacy Returns</h3>
+                </div>
+                <div class="modern-table-wrapper">
+                    <table class="modern-table">
+                        <thead>
+                            <tr><th>Medicine ID</th><th>Medicine Name</th><th>Batch</th><th>Return Qty</th></tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($records['pharmacy_returns'] as $v): $d = $v['data'] ?? $v; ?>
+                            <tr>
+                                <td><strong><?php echo htmlspecialchars($d['id'] ?? 'N/A'); ?></strong></td>
+                                <td><?php echo htmlspecialchars($d['name'] ?? 'Unknown Medicine'); ?></td>
+                                <td><?php echo htmlspecialchars($d['batch'] ?? 'N/A'); ?></td>
+                                <td><strong style="color: #eab308;"><?php echo htmlspecialchars($d['qty'] ?? '1'); ?></strong></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <!-- Nursing Notes -->
             <?php if (!empty($records['nursing_notes'])): ?>
             <div class="glass-panel">
@@ -609,9 +654,101 @@ try {
                         <tbody>
                             <?php foreach ($records['nursing_notes'] as $v): ?>
                             <tr>
+                                <td><strong><?php echo htmlspecialchars($v['note_date'] ?? $v['date'] ?? ''); ?></strong></td>
+                                <td><?php echo htmlspecialchars($v['note_text'] ?? $v['note'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($v['nurse_sign'] ?? $v['nurse'] ?? ''); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Bed Transfers -->
+            <?php if (!empty($records['bed_trasfer'])): ?>
+            <div class="glass-panel">
+                <div class="section-header">
+                    <i class="fas fa-bed" style="color: #f59e0b; background: rgba(245, 158, 11, 0.1);"></i>
+                    <h3>Bed Transfers</h3>
+                </div>
+                <div class="modern-table-wrapper">
+                    <table class="modern-table">
+                        <thead>
+                            <tr><th>Date</th><th>Time</th><th>From</th><th>To</th><th>Reason</th><th>Transferred By</th></tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($records['bed_trasfer'] as $v): ?>
+                            <tr>
+                                <td><strong><?php echo htmlspecialchars($v['transfer_date'] ?? $v['date'] ?? ''); ?></strong></td>
+                                <td><?php echo htmlspecialchars($v['transfer_time'] ?? $v['time'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($v['from_ward'] ?? $v['from_bed'] ?? 'N/A'); ?></td>
+                                <td><?php echo htmlspecialchars($v['to_ward'] ?? $v['to_bed'] ?? 'N/A'); ?></td>
+                                <td><?php echo htmlspecialchars($v['reason'] ?? $v['transfer_reason'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars($v['nurse_sign'] ?? $v['transferred_by'] ?? ''); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Billing Items -->
+            <?php if (!empty($records['billing_items'])): ?>
+            <div class="glass-panel">
+                <div class="section-header">
+                    <i class="fas fa-file-invoice-dollar" style="color: #10b981; background: rgba(16, 185, 129, 0.1);"></i>
+                    <h3>Billing Items (IPD)</h3>
+                </div>
+                <div class="modern-table-wrapper">
+                    <table class="modern-table">
+                        <thead>
+                            <tr><th>Date</th><th>Item Description</th><th>Category</th><th>Qty</th><th>Amount</th></tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($records['billing_items'] as $v): ?>
+                            <tr>
                                 <td><strong><?php echo htmlspecialchars($v['date'] ?? date('Y-m-d')); ?></strong></td>
-                                <td><?php echo htmlspecialchars($v['note'] ?? $v['particulars'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($v['nurse'] ?? $v['signature'] ?? 'N/A'); ?></td>
+                                <td><?php echo htmlspecialchars($v['item_name'] ?? $v['description'] ?? 'Unknown'); ?></td>
+                                <td><?php echo htmlspecialchars($v['category'] ?? 'General'); ?></td>
+                                <td><?php echo htmlspecialchars($v['qty'] ?? '1'); ?></td>
+                                <td><strong style="color: #10b981;">₹<?php echo htmlspecialchars($v['amount'] ?? $v['price'] ?? '0.00'); ?></strong></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Attachments -->
+            <?php if (!empty($records['attachments'])): ?>
+            <div class="glass-panel">
+                <div class="section-header">
+                    <i class="fas fa-paperclip" style="color: #6366f1; background: rgba(99, 102, 241, 0.1);"></i>
+                    <h3>Clinical Attachments</h3>
+                </div>
+                <div class="modern-table-wrapper">
+                    <table class="modern-table">
+                        <thead>
+                            <tr><th>Date</th><th>Document Name</th><th>Type</th><th>Action</th></tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($records['attachments'] as $v): ?>
+                            <tr>
+                                <td><strong><?php echo htmlspecialchars($v['date'] ?? date('Y-m-d')); ?></strong></td>
+                                <td><?php echo htmlspecialchars($v['name'] ?? $v['title'] ?? 'Document'); ?></td>
+                                <td><?php echo htmlspecialchars($v['type'] ?? 'File'); ?></td>
+                                <td>
+                                    <?php if(!empty($v['file_url']) || !empty($v['url'])): ?>
+                                        <a href="<?php echo htmlspecialchars($v['file_url'] ?? $v['url']); ?>" target="_blank" class="btn-modern btn-primary" style="padding: 4px 10px; font-size: 0.8rem;">
+                                            <i class="fas fa-download"></i> View
+                                        </a>
+                                    <?php else: ?>
+                                        <span style="color: #999;">Unavailable</span>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -632,8 +769,7 @@ try {
                         <thead>
                             <tr><th>Date</th><th>Procedure</th><th>Doctor / Nurse</th><th>Remarks</th></tr>
                         </thead>
-                        <tbody>
-                            <?php foreach ($records['procedures'] as $v): ?>
+                        <tbody>                            <?php foreach ($records['procedures'] as $v): ?>
                             <tr>
                                 <td><strong><?php echo htmlspecialchars($v['date'] ?? date('Y-m-d')); ?></strong></td>
                                 <td><?php echo htmlspecialchars($v['procedure'] ?? $v['name'] ?? 'Unknown'); ?></td>
@@ -648,7 +784,13 @@ try {
             <?php endif; ?>
 
         <?php endif; ?>
+
     </div>
 </div>
 </body>
-</html>>
+</html>
+<?php 
+$html = ob_get_clean(); 
+file_put_contents(__DIR__ . '/../k_sheet_last_render.html', $html);
+echo $html; 
+?>

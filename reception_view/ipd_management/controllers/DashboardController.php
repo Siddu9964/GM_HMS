@@ -57,8 +57,9 @@ class DashboardController extends BaseController
         } elseif ($action === 'doctors') {
             // Search doctors for dropdown
             $search = $this->getParam('search', '');
+            $limit = (int)$this->getParam('limit', 20);
             $doctorModel = new Doctor();
-            $doctors = $doctorModel->searchDoctors($search);
+            $doctors = $doctorModel->searchDoctors($search, $limit);
             $this->success(['doctors' => $doctors]);
         } else {
             // Get dashboard statistics

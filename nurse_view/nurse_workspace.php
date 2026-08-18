@@ -309,7 +309,7 @@ body{background:var(--bg);color:var(--tx)}
 .ph-item-m{font-size:.72rem;color:var(--mt);margin-top:2px}
 
 /* Toast */
-#toast{position:fixed;bottom:28px;right:28px;background:#10b981;color:#f3efe6;padding:12px 22px;border-radius:10px;font-size:.85rem;font-weight:700;z-index:9999;display:none;box-shadow:0 6px 20px rgba(0,0,0,.15);max-width:320px}
+#toast{position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);background:#10b981;color:#f3efe6;padding:12px 22px;border-radius:10px;font-size:.85rem;font-weight:700;z-index:9999;display:none;box-shadow:0 6px 20px rgba(0,0,0,.15);max-width:320px}
 
 /* Hide Individual Saves */
 .btn-sv[data-ct], #ts-save-btn, #ph-save-btn { display: none !important; }
@@ -645,11 +645,15 @@ body{background:var(--bg);color:var(--tx)}
           <div class="split-card card-body" id="f-ts">
             <div class="split-left">
               <div class="fg c2">
-                <div class="fmg"><label>Test Name</label><input type="text" id="ts-input" placeholder="-- Select Test --"></div>
+                <div class="fmg" style="position:relative;">
+                  <label>Test Name</label>
+                  <input type="text" id="ts-input" placeholder="-- Select Test --">
+                  <div id="ts-results"></div>
+                </div>
                 <div class="fmg"><label>Order Date</label><input type="date" name="test_date"></div>
               </div>
-              <button class="btn-sv-out btn-sv" id="ts-save-btn" onclick="saveTests()">+ Add Test Order</button>
-              <div id="ts-results" style="position:absolute;background:#f3efe6;z-index:10;width:100%;max-height:200px;overflow-y:auto;border:1px solid #ccc;display:none;"></div>
+              <div id="ts-cart" style="margin-top: 15px;"></div>
+              <button class="btn-sv-out btn-sv" id="ts-save-btn" onclick="saveTests()" style="margin-top: 15px;">+ Add Test Order</button>
             </div>
             <div class="split-right">
               <div class="ht-title">Tests Order History</div>
@@ -669,11 +673,15 @@ body{background:var(--bg);color:var(--tx)}
           <div class="split-card card-body" id="f-ph">
             <div class="split-left">
               <div class="fg c2">
-                <div class="fmg"><label>Medicine Name</label><input type="text" id="ph-input" placeholder="-- Select Medicine --"></div>
+                <div class="fmg" style="position:relative;">
+                  <label>Medicine Name</label>
+                  <input type="text" id="ph-input" placeholder="-- Select Medicine --">
+                  <div id="ph-results"></div>
+                </div>
                 <div class="fmg"><label>Quantity</label><input type="number" id="ph-qty" placeholder="1"></div>
               </div>
-              <button class="btn-sv-out btn-sv" id="ph-save-btn" onclick="savePharmacy()">+ Add Medicine Order</button>
-              <div id="ph-results" style="position:absolute;background:#f3efe6;z-index:10;width:100%;max-height:200px;overflow-y:auto;border:1px solid #ccc;display:none;"></div>
+              <div id="ph-cart" style="margin-top: 15px;"></div>
+              <button class="btn-sv-out btn-sv" id="ph-save-btn" onclick="savePharmacy()" style="margin-top: 15px;">+ Add Medicine Order</button>
             </div>
             <div class="split-right">
               <div class="ht-title">Pharmacy Order History</div>

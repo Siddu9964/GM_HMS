@@ -36,13 +36,13 @@ try {
         'consultant_visits', 'lab_tests', 'radiology_tests', 'other_tests', 
         'pharmacy_orders', 'pharmacy_returns', 'grbs_chart', 'nebulization_chart', 
         'dialysis_chart', 'oxygen_chart', 'ventilation_chart', 'blood_transfusion_chart', 
-        'nurses_record', 'vitals', 'nursing_notes', 'procedures', 'billing_items', 'attachments', 'bp_test', 'bed_trasfer'
+        'nurses_record', 'vitals', 'nursing_notes', 'procedures', 'billing_items', 'attachments', 'bp_chart', 'ward_transfer'
     ];
     
     // Some legacy mappings to support the frontend out of the box
     $mapping = [
         'activity_record' => 'nurses_record',
-        'ward_transfer' => 'bed_trasfer',
+        'ward_transfer' => 'ward_transfer',
         'consultant_visit' => 'consultant_visits',
         'ot_procedure' => 'procedures',
         'lab_chart' => 'lab_tests',
@@ -51,7 +51,7 @@ try {
         'blood_transfusion' => 'blood_transfusion_chart',
         'nurse_record' => 'nurses_record',
         'support_charges' => 'billing_items',
-        'bp_chart' => 'bp_test'
+        'bp_chart' => 'bp_chart'
     ];
     
     $column = $mapping[$chartType] ?? $chartType;

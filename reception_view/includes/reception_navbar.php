@@ -760,6 +760,7 @@ $projectRoot = str_ireplace($docRoot, '', $fullPath);
 $apiBase = rtrim($projectRoot, '/') . '/api/';
 ?>
 const API_BASE = '<?php echo $apiBase; ?>';
+window.HOSPITAL_BRANCH = '<?php echo addslashes($_SESSION['hospital_branch'] ?? $_SESSION['branch'] ?? ''); ?>';
 
 // Toggle password visibility
 function togglePwVis(inputId, iconId) {

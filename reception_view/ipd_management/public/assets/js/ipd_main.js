@@ -19,6 +19,9 @@ const IPD = {
                 data: method === 'GET' ? data : JSON.stringify(data),
                 contentType: method === 'GET' ? undefined : 'application/json',
                 dataType: 'json',
+                headers: {
+                    'X-Hospital-Branch': window.HOSPITAL_BRANCH || ''
+                },
                 success: function (response) {
                     if (response.success) {
                         resolve(response);
@@ -194,6 +197,7 @@ const IPD = {
                 url: `${this.API_BASE}/dashboard/patients`,
                 dataType: 'json',
                 delay: 250,
+                headers: { 'X-Hospital-Branch': window.HOSPITAL_BRANCH || '' },
                 data: function (params) {
                     return {
                         search: params.term || ''
@@ -229,6 +233,7 @@ const IPD = {
                 url: `${this.API_BASE}/dashboard/doctors`,
                 dataType: 'json',
                 delay: 250,
+                headers: { 'X-Hospital-Branch': window.HOSPITAL_BRANCH || '' },
                 data: function (params) {
                     return {
                         search: params.term || ''
@@ -264,6 +269,7 @@ const IPD = {
                 url: `${this.API_BASE}/admissions`,
                 dataType: 'json',
                 delay: 250,
+                headers: { 'X-Hospital-Branch': window.HOSPITAL_BRANCH || '' },
                 data: function (params) {
                     return {
                         search: params.term,
