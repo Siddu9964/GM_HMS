@@ -128,11 +128,8 @@ class NurseShiftModel
      */
     public function getAssignedPatientsRedesigned($nurseId, $roleId, $currentWard = null)
     {
-        // USER REQUEST: Filter by current ward if assigned
-        // If the nurse has no active ward today, they should see NO patients.
-        if (!$currentWard) {
-            return [];
-        }
+        // By user request, we are removing the strict ward filter for testing
+        // so that all users can view the patient list regardless of shift assignments.
 
         $sql = "SELECT DISTINCT 
                     p.patient_id, p.first_name, p.last_name, p.age, p.sex, p.blood_group,

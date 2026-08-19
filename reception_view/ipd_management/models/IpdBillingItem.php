@@ -109,7 +109,7 @@ class IpdBillingItem extends BaseModel {
         // Get bed details from ipd_admissions → hospital_beds
         $bedInfo = $this->fetchOne(
             "SELECT hb.sl_no, hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
-                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount
+                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.service_charge, hb.total_bed_amount
              FROM ipd_admissions ia
              JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
              WHERE ia.admission_id = ?",

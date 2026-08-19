@@ -7,7 +7,6 @@ use GM_HMS\Database\SecureDatabase;
 
 $patientId = $_GET['patient_id'] ?? null;
 $admissionId = $_GET['admission_id'] ?? null;
-$date = $_GET['date'] ?? date('Y-m-d'); // Fetch records for this date by default
 
 if (!$patientId || !$admissionId) {
     echo json_encode(['success' => false, 'message' => 'Missing patient_id or admission_id']);
@@ -22,7 +21,7 @@ try {
         SELECT * 
         FROM ipd_clinical_records 
         WHERE patient_id = ? AND admission_id = ?
-        ORDER BY record_date ASC
+        ORDER BY record_date ASC, id ASC
     ");
     
     $stmt->bind_param("ss", $patientId, $admissionId);
@@ -43,11 +42,22 @@ try {
     }
 
     while ($row = $result->fetch_assoc()) {
+        $rowId = $row['id'];
         foreach ($jsonColumns as $col) {
             if (!empty($row[$col])) {
                 $decoded = json_decode($row[$col], true);
                 if (is_array($decoded)) {
-                    $records[$col] = array_merge($records[$col], $decoded);
+                    foreach ($decoded as $k => $item) {
+                        if (is_array($item)) {
+                            if (empty($item['entry_id'])) {
+                                $item['entry_id'] = 'ent_' . $rowId . '_' . $col . '_' . $k;
+                            }
+                            $item['_db_row_id'] = $rowId;
+                            $item['_col_name'] = $col;
+                            $item['_arr_idx'] = $k;
+                            $records[$col][] = $item;
+                        }
+                    }
                 }
             }
         }

@@ -24,9 +24,6 @@ if (!$patientId || !$chartType) {
     exit();
 }
 
-$chartData = $_POST;
-unset($chartData['patient_id'], $chartData['admission_id'], $chartData['chart_type'], $chartData['recorded_at'], $chartData['record_id']);
-
 try {
     $db = SecureDatabase::getInstance();
     $conn = $db->getConnection();
@@ -65,69 +62,123 @@ try {
         mkdir($uploadDir, 0777, true);
     }
     
+    $uploadedFiles = [];
     foreach ($_FILES as $key => $fileInfo) {
         if ($fileInfo['error'] === UPLOAD_ERR_OK) {
             $ext = pathinfo($fileInfo['name'], PATHINFO_EXTENSION);
             $filename = uniqid('att_') . '.' . $ext;
             if (move_uploaded_file($fileInfo['tmp_name'], $uploadDir . $filename)) {
-                $chartData[$key] = 'uploads/attachments/' . $filename;
+                $uploadedFiles[$key] = 'uploads/attachments/' . $filename;
             }
         }
     }
 
     // Serialize Form Data
-    // Remove control fields to get the pure data payload
     $chartData = $_POST;
     unset($chartData['chart_type'], $chartData['patient_id'], $chartData['admission_id']);
-    
-    $chartData['entry_id'] = uniqid('ent_');
-    $chartData['created_at'] = date('Y-m-d H:i:s');
-    $chartData['created_by_name'] = $nurseName;
-    
-    $newEntry = $chartData;
-
-    // Check if row exists for today
-    $checkStmt = $conn->prepare("SELECT id, `$column` FROM ipd_clinical_records WHERE admission_id = ? AND record_date = ? LIMIT 1");
-    $checkStmt->bind_param("ss", $admissionId, $recordDate);
-    $checkStmt->execute();
-    $res = $checkStmt->get_result();
-
-    if ($res->num_rows > 0) {
-        // Row exists -> UPDATE
-        $row = $res->fetch_assoc();
-        $recordId = $row['id'];
-        
-        $existingData = json_decode($row[$column], true);
-        if (!is_array($existingData)) {
-            $existingData = [];
-        }
-        
-        $existingData[] = $newEntry;
-        $jsonData = json_encode($existingData);
-        
-        $updateStmt = $conn->prepare("UPDATE ipd_clinical_records SET `$column` = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
-        $updateStmt->bind_param("ssi", $jsonData, $nurseId, $recordId);
-        $isSuccess = $updateStmt->execute();
-        $updateStmt->close();
-    } else {
-        // Row doesn't exist -> INSERT
-        $finalData = [$newEntry];
-        $jsonData = json_encode($finalData);
-        
-        $insertStmt = $conn->prepare("INSERT INTO ipd_clinical_records (patient_id, admission_id, record_date, `$column`, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?)");
-        $insertStmt->bind_param("ssssss", $patientId, $admissionId, $recordDate, $jsonData, $nurseId, $nurseId);
-        $isSuccess = $insertStmt->execute();
-        $recordId = $insertStmt->insert_id;
-        $insertStmt->close();
+    foreach ($uploadedFiles as $k => $path) {
+        $chartData[$k] = $path;
     }
     
-    $checkStmt->close();
+    $entryId = trim($_POST['entry_id'] ?? '');
+    $dbRowId = !empty($_POST['_db_row_id']) ? intval($_POST['_db_row_id']) : null;
+    $arrIdx = isset($_POST['_arr_idx']) && $_POST['_arr_idx'] !== '' ? intval($_POST['_arr_idx']) : null;
+    
+    unset($chartData['_db_row_id'], $chartData['_col_name'], $chartData['_arr_idx']);
+
+    $isUpdate = !empty($entryId);
+    
+    if ($isUpdate) {
+        $chartData['entry_id'] = $entryId;
+        $chartData['updated_at'] = date('Y-m-d H:i:s');
+        $chartData['updated_by_name'] = $nurseName;
+    } else {
+        $chartData['entry_id'] = uniqid('ent_');
+        $chartData['created_at'] = date('Y-m-d H:i:s');
+        $chartData['created_by_name'] = $nurseName;
+    }
+    
+    $newEntry = $chartData;
+    $isSuccess = false;
+    $recordId = null;
+
+    if ($isUpdate) {
+        // Find existing record across all entries for this patient & admission
+        $stmt = $conn->prepare("SELECT id, `$column` FROM ipd_clinical_records WHERE patient_id = ? AND admission_id = ? ORDER BY record_date ASC, id ASC");
+        $stmt->bind_param("ss", $patientId, $admissionId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        
+        $found = false;
+        while ($row = $res->fetch_assoc()) {
+            $currRowId = $row['id'];
+            $existingData = json_decode($row[$column], true);
+            if (!is_array($existingData)) $existingData = [];
+            
+            foreach ($existingData as $idx => $item) {
+                if (is_array($item)) {
+                    $itemEntryId = $item['entry_id'] ?? ('ent_' . $currRowId . '_' . $column . '_' . $idx);
+                    if ($itemEntryId === $entryId || ($dbRowId && $currRowId === $dbRowId && $arrIdx !== null && $idx === $arrIdx)) {
+                        $existingData[$idx] = array_merge($item, $newEntry);
+                        $found = true;
+                        $recordId = $currRowId;
+                        
+                        $jsonData = json_encode($existingData);
+                        $updateStmt = $conn->prepare("UPDATE ipd_clinical_records SET `$column` = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+                        $updateStmt->bind_param("ssi", $jsonData, $nurseId, $currRowId);
+                        $isSuccess = $updateStmt->execute();
+                        $updateStmt->close();
+                        break 2;
+                    }
+                }
+            }
+        }
+        $stmt->close();
+        
+        if (!$found) {
+            // If not found in previous rows, treat as insert or append to latest
+            $isUpdate = false;
+        }
+    }
+
+    if (!$isUpdate) {
+        // Insert or append new record
+        $checkStmt = $conn->prepare("SELECT id, `$column` FROM ipd_clinical_records WHERE patient_id = ? AND admission_id = ? ORDER BY record_date DESC, id DESC LIMIT 1");
+        $checkStmt->bind_param("ss", $patientId, $admissionId);
+        $checkStmt->execute();
+        $res = $checkStmt->get_result();
+
+        if ($res->num_rows > 0) {
+            $row = $res->fetch_assoc();
+            $recordId = $row['id'];
+            $existingData = json_decode($row[$column], true);
+            if (!is_array($existingData)) $existingData = [];
+            $existingData[] = $newEntry;
+            $jsonData = json_encode($existingData);
+            
+            $updateStmt = $conn->prepare("UPDATE ipd_clinical_records SET `$column` = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+            $updateStmt->bind_param("ssi", $jsonData, $nurseId, $recordId);
+            $isSuccess = $updateStmt->execute();
+            $updateStmt->close();
+        } else {
+            $finalData = [$newEntry];
+            $jsonData = json_encode($finalData);
+            
+            $insertStmt = $conn->prepare("INSERT INTO ipd_clinical_records (patient_id, admission_id, record_date, `$column`, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?)");
+            $insertStmt->bind_param("ssssss", $patientId, $admissionId, $recordDate, $jsonData, $nurseId, $nurseId);
+            $isSuccess = $insertStmt->execute();
+            $recordId = $insertStmt->insert_id;
+            $insertStmt->close();
+        }
+        $checkStmt->close();
+    }
 
     if ($isSuccess) {
         echo json_encode([
             'success' => true, 
-            'message' => ucfirst(str_replace('_', ' ', $column)) . ' saved successfully!',
-            'record_id' => $recordId
+            'message' => ucfirst(str_replace('_', ' ', $column)) . ($isUpdate ? ' updated successfully!' : ' saved successfully!'),
+            'record_id' => $recordId,
+            'entry_id' => $newEntry['entry_id']
         ]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Database update failed.']);

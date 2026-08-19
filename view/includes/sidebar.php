@@ -178,52 +178,6 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
 
             <div class="pt-4 pb-2">
 
-                <p class="text-gray-400 text-xs uppercase px-4">Hospital Services</p>
-
-            </div>
-
-
-
-            <a href="laboratory.php"
-                class="sidebar-item <?php echo isActive('laboratory.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
-                <i class="fas fa-flask"></i>
-                <span>Laboratory</span>
-            </a>
-
-            <a href="opd_beds.php"
-                class="sidebar-item <?php echo isActive('opd_beds.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
-                <i class="fas fa-bed"></i>
-                <span>IPD Beds Details</span>
-            </a>
-
-            <a href="#blood-bank" class="sidebar-item">
-
-                <i class="fas fa-tint"></i>
-
-                <span>Blood Bank</span>
-
-            </a>
-
-            <a href="#ambulance" class="sidebar-item">
-
-                <i class="fas fa-ambulance"></i>
-
-                <span>Ambulance</span>
-
-            </a>
-
-            <a href="#operations" class="sidebar-item">
-
-                <i class="fas fa-procedures"></i>
-
-                <span>Operations</span>
-
-            </a>
-
-
-
-            <div class="pt-4 pb-2">
-
                 <p class="text-gray-400 text-xs uppercase px-4">Finance</p>
 
             </div>
@@ -265,7 +219,47 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
 
             </a>
 
+            <div class="pt-4 pb-2">
 
+                <p class="text-gray-400 text-xs uppercase px-4">Hospital Services</p>
+
+            </div>
+
+            <a href="laboratory.php"
+                class="sidebar-item <?php echo isActive('laboratory.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
+                <i class="fas fa-flask"></i>
+                <span>Laboratory</span>
+            </a>
+
+            <a href="opd_beds.php"
+                class="sidebar-item <?php echo isActive('opd_beds.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
+                <i class="fas fa-bed"></i>
+                <span>IPD Beds Details</span>
+            </a>
+
+            <a href="#blood-bank" class="sidebar-item">
+
+                <i class="fas fa-tint"></i>
+
+                <span>Blood Bank</span>
+
+            </a>
+
+            <a href="#ambulance" class="sidebar-item">
+
+                <i class="fas fa-ambulance"></i>
+
+                <span>Ambulance</span>
+
+            </a>
+
+            <a href="#operations" class="sidebar-item">
+
+                <i class="fas fa-procedures"></i>
+
+                <span>Operations</span>
+
+            </a>
 
             <div class="pt-4 pb-2">
 

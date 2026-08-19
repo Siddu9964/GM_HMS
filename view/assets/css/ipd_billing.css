@@ -457,12 +457,14 @@ kbd {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    width: 240px;
-    background: var(--bg-white);
+    width: 260px;
+    max-height: 420px;
+    overflow-y: auto;
+    background: #f3efe6;
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-hover);
-    border: 1px solid var(--green-100);
-    z-index: 100;
+    box-shadow: 0 10px 30px rgba(31, 107, 74, 0.25);
+    border: 1.5px solid #1f6b4a;
+    z-index: 9999;
     display: none;
     flex-direction: column;
     padding: 8px;
@@ -477,10 +479,10 @@ kbd {
     cursor: pointer;
     transition: var(--transition);
 }
-.charge-menu-item:hover { background: var(--green-50); }
-.charge-menu-icon { width: 18px; height: 18px; color: var(--green-500); }
-.cmi-label { font-size: 13px; font-weight: 600; color: var(--green-500); }
-.cmi-desc { font-size: 11px; color: var(--text-muted); }
+.charge-menu-item:hover { background: rgba(31, 107, 74, 0.12); }
+.charge-menu-icon { width: 18px; height: 18px; color: #1f6b4a; flex-shrink: 0; }
+.cmi-label { font-size: 13px; font-weight: 700; color: #1f6b4a; }
+.cmi-desc { font-size: 11px; color: #1f6b4a; opacity: 0.8; }
 
 /* Category Pills */
 .category-filter-tabs {

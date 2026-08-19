@@ -20,7 +20,7 @@ class IpdBillingMaster extends BaseModel {
         // Check existing
         $existing = $this->fetchOne(
             "SELECT bm.*, 
-                    CONCAT(p.first_name,' ',p.last_name) AS patient_name,
+                    TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.age, p.sex, p.phone,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
@@ -81,7 +81,7 @@ class IpdBillingMaster extends BaseModel {
 
         $newRecord = $this->fetchOne(
             "SELECT bm.*,
-                    CONCAT(p.first_name,' ',p.last_name) AS patient_name,
+                    TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.age, p.sex, p.phone,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
@@ -105,7 +105,7 @@ class IpdBillingMaster extends BaseModel {
     public function getFullDetails(string $billId): ?array {
         return $this->fetchOne(
             "SELECT bm.*,
-                    CONCAT(p.first_name,' ',p.last_name) AS patient_name,
+                    TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.age, p.sex, p.phone, p.address,
                     d.full_name AS doctor_name, d.specialization,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
@@ -124,7 +124,7 @@ class IpdBillingMaster extends BaseModel {
     public function getByAdmission(string $admissionId): ?array {
         return $this->fetchOne(
             "SELECT bm.*,
-                    CONCAT(p.first_name,' ',p.last_name) AS patient_name,
+                    TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.age, p.sex, p.phone,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
@@ -320,7 +320,7 @@ class IpdBillingMaster extends BaseModel {
         $like = "%{$q}%";
         return $this->fetchAll(
             "SELECT ia.admission_id, ia.patient_id,
-                    CONCAT(p.first_name,' ',p.last_name) AS patient_name,
+                    TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.phone, p.age, p.sex,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number,
@@ -377,7 +377,7 @@ class IpdBillingMaster extends BaseModel {
 
         $rows = $this->fetchAll(
             "SELECT bm.*,
-                    CONCAT(p.first_name,' ',p.last_name) AS patient_name,
+                    TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.phone, p.age, p.sex,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number

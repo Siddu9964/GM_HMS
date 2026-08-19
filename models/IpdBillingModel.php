@@ -612,7 +612,7 @@ class IpdBillingModel {
      */
     public function getBillDetails($billId) {
         $billSql = "SELECT ibm.*, 
-                           CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
+                           TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                            p.age, p.sex, p.phone, p.address, p.aadhar,
                            d.full_name AS doctor_name, d.specialization,
                            ia.admission_type, ia.diagnosis
@@ -689,8 +689,8 @@ class IpdBillingModel {
      */
     public function getAllBills($filters = []) {
         $sql = "SELECT ibm.*, 
-                       CONCAT(p.first_name, ' ', p.last_name) AS patient_name,
-                       CONCAT(p.first_name, ' ', p.last_name) AS name,
+                       TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
+                       TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS name,
                        d.full_name AS doctor_name
                 FROM ipd_billing_master ibm
                 LEFT JOIN patient p ON ibm.patient_id = p.patient_id

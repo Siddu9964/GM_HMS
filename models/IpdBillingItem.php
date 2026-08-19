@@ -89,11 +89,318 @@ class IpdBillingItem extends IpdBaseModel {
             'updated_at'      => $now,
         ]);
 
+        // Synchronize to ipd_clinical_records for K-Sheet visibility (WITHOUT amount)
+        try {
+            $this->syncToClinicalRecords($patientId, $admissionId, $data, $data['created_by'] ?? 'system');
+        } catch (\Throwable $e) {
+            error_log("IPD Clinical Sync Error: " . $e->getMessage());
+        }
+
         // Trigger master recalculation
         require_once __DIR__ . '/IpdBillingMaster.php';
         $summary = (new IpdBillingMaster())->recalculateMaster($billId, $data['created_by'] ?? 'system');
 
         return ['success' => true, 'message' => 'Charge added successfully', 'total' => $total, 'financial' => $summary];
+    }
+
+    /**
+     * Synchronize added billing charge to ipd_clinical_records (WITHOUT prices/amounts)
+     */
+    public function syncToClinicalRecords(string $patientId, string $admissionId, array $data, string $createdBy): void {
+        $type = strtoupper($data['charge_type'] ?? '');
+        $date = $data['charge_date'] ?? date('Y-m-d');
+        $desc = trim($data['description'] ?? '');
+        $qty  = (float)($data['quantity'] ?? 1);
+        $dept = trim($data['department'] ?? '');
+        $code = trim($data['item_code'] ?? $data['reference_id'] ?? '');
+
+        $column = null;
+        $entry  = null;
+
+        switch ($type) {
+            case 'LAB':
+            case 'LABORATORY':
+                $column = 'lab_tests';
+                $entry = [
+                    'entry_id'        => uniqid('ent_'),
+                    'created_date'    => $date,
+                    'date'            => $date,
+                    'data'            => [
+                        'id'        => $code ?: 'LAB',
+                        'test_id'   => $code ?: 'LAB',
+                        'name'      => $desc,
+                        'test_name' => $desc,
+                        'category'  => $dept ?: 'Laboratory',
+                        'qty'       => $qty,
+                        'quantity'  => $qty
+                    ],
+                    'created_by_name' => $createdBy,
+                    'created_at'      => date('Y-m-d H:i:s')
+                ];
+                break;
+
+            case 'RADIOLOGY':
+                $column = 'radiology_tests';
+                $entry = [
+                    'entry_id'        => uniqid('ent_'),
+                    'created_date'    => $date,
+                    'date'            => $date,
+                    'data'            => [
+                        'id'        => $code ?: 'RAD',
+                        'test_id'   => $code ?: 'RAD',
+                        'name'      => $desc,
+                        'test_name' => $desc,
+                        'category'  => $dept ?: 'Radiology',
+                        'qty'       => $qty,
+                        'quantity'  => $qty
+                    ],
+                    'created_by_name' => $createdBy,
+                    'created_at'      => date('Y-m-d H:i:s')
+                ];
+                break;
+
+            case 'PHARMACY':
+                $column = 'pharmacy_orders';
+                $batch  = trim($data['batch_number'] ?? $data['batch'] ?? 'N/A');
+                $entry = [
+                    'entry_id'        => uniqid('ent_'),
+                    'created_date'    => $date,
+                    'date'            => $date,
+                    'data'            => [
+                        'id'            => $code ?: 'PHR',
+                        'product_id'    => $code ?: 'PHR',
+                        'name'          => $desc,
+                        'medicine_name' => $desc,
+                        'batch'         => $batch,
+                        'batch_no'      => $batch,
+                        'qty'           => $qty,
+                        'quantity'      => $qty
+                    ],
+                    'created_by_name' => $createdBy,
+                    'created_at'      => date('Y-m-d H:i:s')
+                ];
+                break;
+
+            case 'DOCTOR_VISIT':
+                $column = 'consultant_visits';
+                $docName = str_replace(['Dr. ', 'Dr '], '', $data['doctor_name'] ?? $desc);
+                $entry = [
+                    'entry_id'        => uniqid('ent_'),
+                    'date'            => $date,
+                    'visit_date'      => $date,
+                    'time'            => $data['visit_time'] ?? date('H:i'),
+                    'visit_time'      => $data['visit_time'] ?? date('H:i'),
+                    'consultant'      => $docName,
+                    'doctor_name'     => $docName,
+                    'shift'           => $data['shift_type'] ?? 'Morning',
+                    'shift_type'      => $data['shift_type'] ?? 'Morning',
+                    'remarks'         => $data['notes'] ?? 'Consultant Round',
+                    'notes'           => $data['notes'] ?? 'Consultant Round',
+                    'created_by_name' => $createdBy,
+                    'created_at'      => date('Y-m-d H:i:s')
+                ];
+                break;
+
+            case 'OT':
+            case 'PROCEDURE':
+                $column = 'procedures';
+                $docName = $data['doctor_name'] ?? $data['person'] ?? 'Attending Doctor';
+                $entry = [
+                    'entry_id'        => uniqid('ent_'),
+                    'date'            => $date,
+                    'created_date'    => $date,
+                    'procedure'       => $desc,
+                    'procedure_name'  => $desc,
+                    'name'            => $desc,
+                    'doctor'          => $docName,
+                    'person'          => $docName,
+                    'remarks'         => $data['notes'] ?? $dept,
+                    'created_by_name' => $createdBy,
+                    'created_at'      => date('Y-m-d H:i:s')
+                ];
+                break;
+
+            case 'DIALYSIS':
+                $column = 'dialysis_chart';
+                $docName = $data['doctor_name'] ?? 'Attending Nephrologist / Doctor';
+                $entry = [
+                    'entry_id'        => uniqid('ent_'),
+                    'date'            => $date,
+                    'created_date'    => $date,
+                    'dia_date'        => $date,
+                    'doctor_name'     => $docName,
+                    'doctor'          => $docName,
+                    'start_time'      => $data['start_time'] ?? '',
+                    'dia_start'       => $data['start_time'] ?? '',
+                    'end_time'        => $data['end_time'] ?? '',
+                    'dia_end'         => $data['end_time'] ?? '',
+                    'duration'        => $data['duration'] ?? '4h',
+                    'dia_dur'         => $data['duration'] ?? '4h',
+                    'dialysis_type'   => $desc,
+                    'nurse_sign'      => $createdBy,
+                    'dia_nurse'       => $createdBy,
+                    'remarks'         => $data['notes'] ?? '',
+                    'created_by_name' => $createdBy,
+                    'created_at'      => date('Y-m-d H:i:s')
+                ];
+                break;
+
+            case 'OXYGEN':
+                $column = 'oxygen_chart';
+                $docName = $data['doctor_name'] ?? 'Attending Doctor';
+                $entry = [
+                    'entry_id'        => uniqid('ent_'),
+                    'date'            => $date,
+                    'created_date'    => $date,
+                    'oxy_date'        => $date,
+                    'doctor_name'     => $docName,
+                    'doctor'          => $docName,
+                    'flow_rate'       => $data['flow_rate'] ?? '2 L/min',
+                    'oxy_flow'        => $data['flow_rate'] ?? '2 L/min',
+                    'device'          => $desc,
+                    'start_time'      => $data['start_time'] ?? '',
+                    'oxy_start'       => $data['start_time'] ?? '',
+                    'end_time'        => $data['end_time'] ?? '',
+                    'oxy_end'         => $data['end_time'] ?? '',
+                    'duration'        => $data['duration'] ?? '2h',
+                    'oxy_dur'         => $data['duration'] ?? '2h',
+                    'nurse_sign'      => $createdBy,
+                    'oxy_nurse'       => $createdBy,
+                    'remarks'         => $data['notes'] ?? '',
+                    'created_by_name' => $createdBy,
+                    'created_at'      => date('Y-m-d H:i:s')
+                ];
+                break;
+
+            case 'VENTILATION':
+            case 'VENTILATOR':
+                $column = 'ventilation_chart';
+                $docName = $data['doctor_name'] ?? 'Attending Intensivist / Doctor';
+                $entry = [
+                    'entry_id'        => uniqid('ent_'),
+                    'date'            => $date,
+                    'created_date'    => $date,
+                    'vent_date'       => $date,
+                    'doctor_name'     => $docName,
+                    'doctor'          => $docName,
+                    'mode'            => $data['vent_mode'] ?? 'CPAP',
+                    'vent_mode'       => $data['vent_mode'] ?? 'CPAP',
+                    'start_time'      => $data['start_time'] ?? '',
+                    'vent_start'      => $data['start_time'] ?? '',
+                    'end_time'        => $data['end_time'] ?? '',
+                    'vent_end'        => $data['end_time'] ?? '',
+                    'duration'        => $data['duration'] ?? '6h',
+                    'vent_dur'        => $data['duration'] ?? '6h',
+                    'nurse_sign'      => $createdBy,
+                    'vent_nurse'      => $createdBy,
+                    'remarks'         => $data['notes'] ?? '',
+                    'created_by_name' => $createdBy,
+                    'created_at'      => date('Y-m-d H:i:s')
+                ];
+                break;
+
+            case 'BLOOD_TRANSFUSION':
+                $column = 'blood_transfusion';
+                $docName = $data['doctor_name'] ?? 'Prescribing Doctor';
+                $entry = [
+                    'entry_id'        => uniqid('ent_'),
+                    'date'            => $date,
+                    'created_date'    => $date,
+                    'trans_date'      => $date,
+                    'doctor_name'     => $docName,
+                    'doctor'          => $docName,
+                    'blood_group'     => $data['blood_group'] ?? 'O+',
+                    'component'       => $desc,
+                    'bag_number'      => $data['bag_number'] ?? '',
+                    'quantity'        => $data['trans_qty'] ?? $qty,
+                    'vitals_during'   => $data['vitals_during'] ?? '',
+                    'nurse_sign'      => $createdBy,
+                    'remarks'         => $data['notes'] ?? '',
+                    'created_by_name' => $createdBy,
+                    'created_at'      => date('Y-m-d H:i:s')
+                ];
+                break;
+
+            case 'WARD_TRANSFER':
+                $column = 'ward_transfer';
+                $docName = $data['doctor_name'] ?? 'Authorizing Doctor';
+                $entry = [
+                    'entry_id'        => uniqid('ent_'),
+                    'date'            => $date,
+                    'created_date'    => $date,
+                    'transfer_date'   => $date,
+                    'doctor_name'     => $docName,
+                    'doctor'          => $docName,
+                    'from_ward'       => $data['from_ward'] ?? '',
+                    'to_ward'         => $data['to_ward'] ?? '',
+                    'reason'          => $desc,
+                    'remarks'         => $data['notes'] ?? '',
+                    'created_by_name' => $createdBy,
+                    'created_at'      => date('Y-m-d H:i:s')
+                ];
+                break;
+
+            case 'CONSUMABLE':
+            case 'MISC':
+            case 'OTHER':
+                $column = 'billing_items';
+                $entry = [
+                    'entry_id'        => uniqid('ent_'),
+                    'date'            => $date,
+                    'created_date'    => $date,
+                    'item_name'       => $desc,
+                    'description'     => $desc,
+                    'category'        => $dept ?: ucfirst(strtolower($type)),
+                    'qty'             => $qty,
+                    'quantity'        => $qty,
+                    'created_by_name' => $createdBy,
+                    'created_at'      => date('Y-m-d H:i:s')
+                ];
+                break;
+        }
+
+        if (!$column || !$entry) {
+            return;
+        }
+
+        $userId = !empty($_SESSION['user_id']) ? intval($_SESSION['user_id']) : (is_numeric($createdBy) ? intval($createdBy) : 1);
+        $createdByName = !empty($_SESSION['username']) ? $_SESSION['username'] : (is_string($createdBy) && !is_numeric($createdBy) ? $createdBy : 'Staff');
+
+        // Fetch existing record or insert new
+        $rec = $this->fetchOne(
+            "SELECT id, `{$column}` FROM ipd_clinical_records 
+             WHERE (patient_id = ? OR (admission_id = ? AND admission_id != '')) 
+             ORDER BY record_date DESC, id DESC LIMIT 1",
+            [$patientId, $admissionId]
+        );
+
+        if ($rec) {
+            $existing = json_decode($rec[$column] ?? '[]', true) ?: [];
+            if (!is_array($existing)) $existing = [];
+            // If associative array instead of indexed list, normalize
+            if (!empty($existing) && array_keys($existing) !== range(0, count($existing) - 1)) {
+                $existing = [$existing];
+            }
+            $existing[] = $entry;
+
+            $this->db->update('ipd_clinical_records', [
+                $column      => json_encode($existing),
+                'updated_by' => $userId,
+                'updated_at' => date('Y-m-d H:i:s')
+            ], 'id = ?', [$rec['id']]);
+        } else {
+            $this->db->insert('ipd_clinical_records', [
+                'patient_id'       => $patientId,
+                'admission_id'     => $admissionId,
+                'record_date'      => $date,
+                'admission_status' => 'Active',
+                $column            => json_encode([$entry]),
+                'created_by'       => $userId,
+                'updated_by'       => $userId,
+                'created_at'       => date('Y-m-d H:i:s'),
+                'updated_at'       => date('Y-m-d H:i:s')
+            ]);
+        }
     }
 
     /* ───────────────────────────────────────────────────────────────
@@ -128,7 +435,7 @@ class IpdBillingItem extends IpdBaseModel {
         $serviceChg   = 0; // Included in total_bed_amount
         $foodChg      = 570.00;
         
-        $totalPerDay = $bedRent + $foodChg;
+        $totalPerDay = $bedRent;
         
         $baseBedRent = (float)$bedInfo['amount_per_day'];
         $baseNursing = (float)$bedInfo['nursig_charge'];
@@ -169,14 +476,38 @@ class IpdBillingItem extends IpdBaseModel {
                     'description'    => $descriptionBase . ' – ' . date('d-M-Y', $current) . "<br><small style='color: #6c757d; font-size: 0.85em;'>" . $breakdownText . "</small>",
                     'total_amount'   => $totalPerDay,
                     'items_json'     => json_encode([
-                        ['name' => 'Room Rent', 'qty' => 1, 'price' => $bedRent, 'total' => $bedRent],
-                        ['name' => 'Food Charges', 'qty' => 1, 'price' => $foodChg, 'total' => $foodChg]
+                        ['name' => 'Room Rent', 'qty' => 1, 'price' => $bedRent, 'total' => $bedRent]
                     ]),
                     'status'      => 'COMPLETED',
                     'created_by'  => $createdBy,
                     'created_at'  => $now,
                     'updated_at'  => $now,
                 ]);
+
+                // Also add food charge under MISC if not already present
+                if ($foodChg > 0) {
+                    $dupFood = $this->fetchOne(
+                        "SELECT item_id FROM ipd_billing_items 
+                         WHERE bill_id = ? AND charge_type = 'MISC' AND charge_date = ? AND description LIKE 'Food Charge%' AND status != 'CANCELLED'",
+                        [$billId, $dateStr]
+                    );
+                    if (!$dupFood) {
+                        $this->db->insert('ipd_billing_items', [
+                            'bill_id'     => $billId,
+                            'patient_id'  => $patientId,
+                            'admission_id'=> $admissionId,
+                            'charge_date' => $dateStr,
+                            'charge_type' => 'MISC',
+                            'description' => 'Food Charge – ' . date('d-M-Y', $current),
+                            'total_amount'=> $foodChg,
+                            'status'      => 'COMPLETED',
+                            'created_by'  => $createdBy,
+                            'created_at'  => $now,
+                            'updated_at'  => $now,
+                        ]);
+                    }
+                }
+
                 $addedDates[] = $dateStr;
             }
 
@@ -198,10 +529,10 @@ class IpdBillingItem extends IpdBaseModel {
                 'ward'        => $bedInfo['ward_name'],
                 'room'        => $bedInfo['room_name'],
                 'bed'         => $bedInfo['bed_number'],
-                'bed_rent'    => $bedRent,
-                'nursing'     => $nursingChg,
-                'duty_dr'     => $dutyDrChg,
-                'service'     => $serviceChg,
+                'bed_rent'    => $baseBedRent,
+                'nursing'     => $baseNursing,
+                'duty_dr'     => $baseDoctor,
+                'service'     => $baseService,
                 'food'        => $foodChg,
                 'per_day'     => $totalPerDay,
             ],
@@ -225,13 +556,13 @@ class IpdBillingItem extends IpdBaseModel {
         if (!$bedInfo) return ['success' => false, 'message' => 'Bed not found'];
 
         $totalBedAmount = (float)$bedInfo['total_bed_amount'];
-        $bedRent     = $totalBedAmount;
-        $nursingChg  = 0;
-        $dutyDrChg   = 0;
-        $serviceChg  = 0;
+        $baseBedRent = (float)$bedInfo['amount_per_day'];
+        $baseNursing = (float)$bedInfo['nursig_charge'];
+        $baseDoctor = (float)$bedInfo['doctor_charge'];
+        $baseService = isset($bedInfo['service_charge']) ? (float)$bedInfo['service_charge'] : 0;
         $foodChg     = 570.00;
         
-        $totalPerDay = $bedRent + $foodChg;
+        $totalPerDay = $totalBedAmount;
 
         $rows    = [];
         $current = strtotime($fromDate);
@@ -247,10 +578,10 @@ class IpdBillingItem extends IpdBaseModel {
             $rows[] = [
                 'date'          => $dateStr,
                 'display_date'  => date('d-M-Y', $current),
-                'bed_rent'      => $bedRent,
-                'nursing'       => $nursingChg,
-                'duty_dr'       => $dutyDrChg,
-                'service'       => $serviceChg,
+                'bed_rent'      => $baseBedRent,
+                'nursing'       => $baseNursing,
+                'duty_dr'       => $baseDoctor,
+                'service'       => $baseService,
                 'food'          => $foodChg,
                 'total'         => $totalPerDay,
                 'already_exists'=> (bool)$dup,

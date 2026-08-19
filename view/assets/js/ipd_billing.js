@@ -12,6 +12,9 @@ const billing = (function () {
     let currentPatientId = null;
     let currentMaster = null;
     let currentBedInfo = null;
+    let phCart = [];
+    let tsCart = [];
+    let addChargeForce = false;
     window.allAdmittedPatientsList = [];
     window.currentPatientSort = { col: 'admission_date', asc: false };
 
@@ -66,13 +69,14 @@ const billing = (function () {
             } else {
                 let html = '';
                 json.data.forEach(p => {
+                    const pName = p.patient_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || 'Patient';
                     const statusClass = p.payment_status === 'Paid' ? 'paid' : (p.payment_status === 'Partial' ? 'partial' : 'pending');
                     html += `
                         <div class="asd-item" onclick="billing.loadAdmission('${p.admission_id}', '${p.patient_id}')">
-                            <div class="asd-icon">${p.patient_name.charAt(0)}</div>
+                            <div class="asd-icon">${pName.charAt(0).toUpperCase()}</div>
                             <div style="flex:1;">
-                                <div class="asd-name">${p.patient_name} <span style="font-weight:normal; font-size:0.8rem; color:var(--slate);">(${p.age}/${p.sex.charAt(0)})</span></div>
-                                <div class="asd-meta">${p.admission_id} · Bed: ${p.ward_name} ${p.bed_number}</div>
+                                <div class="asd-name">${pName} <span style="font-weight:normal; font-size:0.8rem; color:var(--slate);">(${p.age || '-'}/${(p.sex || '-').charAt(0)})</span></div>
+                                <div class="asd-meta">${p.admission_id} · Bed: ${p.ward_name || ''} ${p.bed_number || ''}</div>
                             </div>
                             ${p.bill_id ? `<div class="asd-badge ${statusClass}">${p.payment_status}</div>` : `<div class="asd-badge pending">NEW</div>`}
                         </div>
@@ -158,9 +162,10 @@ const billing = (function () {
         const m = currentMaster;
 
         // Header Card
-        document.getElementById('phcAvatar').textContent = m.patient_name.substring(0, 2).toUpperCase();
-        document.getElementById('phcName').textContent = m.patient_name;
-        document.getElementById('phcAge').textContent = `${m.age} / ${m.sex}`;
+        const pName = m.patient_name || [m.first_name, m.last_name].filter(Boolean).join(' ') || 'Patient';
+        document.getElementById('phcAvatar').textContent = pName.substring(0, 2).toUpperCase();
+        document.getElementById('phcName').textContent = pName;
+        document.getElementById('phcAge').textContent = `${m.age || '-'} / ${m.sex || '-'}`;
         document.getElementById('phcAdmId').textContent = m.admission_id;
         document.getElementById('phcDoctor').textContent = `Dr. ${m.doctor_name || 'N/A'}`;
 
@@ -202,10 +207,11 @@ const billing = (function () {
             extraInfoEl.style.display = 'none';
         }
 
-        document.getElementById('phcBillNo').textContent = m.bill_id;
+        document.getElementById('phcBillNo').textContent = m.bill_id || '—';
         const bStatus = document.getElementById('phcBillingStatus');
-        bStatus.textContent = m.billing_status.replace('_', ' ');
-        bStatus.style.color = m.billing_status === 'FINALIZED' ? '#166534' : (m.billing_status === 'CANCELLED' ? '#991b1b' : '#0369a1');
+        const stStr = m.billing_status || 'DRAFT';
+        bStatus.textContent = stStr.replace('_', ' ');
+        bStatus.style.color = stStr === 'FINALIZED' ? '#166534' : (stStr === 'CANCELLED' ? '#991b1b' : '#0369a1');
 
         // Toggle Insurance Button
         const btnIns = document.getElementById('btnInsuranceInfo');
@@ -384,15 +390,15 @@ const billing = (function () {
             
             // Parent Row
             html += `
-                <tr class="group-header" onclick="billing.toggleGroup('${group.charge_type}')" style="cursor: pointer; background: var(--slate-50); border-bottom: 1px solid var(--slate-200);">
-                    <td colspan="4" style="font-weight: 600; padding: 12px 16px;">
-                        <i data-lucide="chevron-right" class="group-icon-${group.charge_type}" style="transition: transform 0.2s; width: 16px; height: 16px; vertical-align: text-bottom; margin-right: 8px;"></i>
-                        <div class="charge-type-badge ${badgeClass}" style="display:inline-flex;">
-                            <i data-lucide="${icon}"></i> ${catName} (${group.count} items)
+                <tr class="group-header" onclick="billing.toggleGroup('${group.charge_type}')" style="cursor: pointer; background: #f3efe6; border-bottom: 1.5px solid rgba(31, 107, 74, 0.25); color: #1f6b4a;">
+                    <td colspan="4" style="font-weight: 700; padding: 12px 16px;">
+                        <i data-lucide="chevron-right" class="group-icon-${group.charge_type}" style="transition: transform 0.2s; width: 16px; height: 16px; vertical-align: text-bottom; margin-right: 8px; color: #1f6b4a;"></i>
+                        <div class="charge-type-badge" style="display:inline-flex; background: #1f6b4a; color: #f3efe6; padding: 4px 10px; border-radius: 12px; font-weight: 700; gap: 6px; font-size: 0.8rem;">
+                            <i data-lucide="${icon}" style="width: 14px; height: 14px;"></i> ${catName} (${group.count} items)
                         </div>
                     </td>
                     <td colspan="2"></td>
-                    <td class="tbl-amt" style="font-weight: 700;">₹${groupTotal}</td>
+                    <td class="tbl-amt" style="font-weight: 800; color: #1f6b4a; font-size: 0.95rem;">₹${groupTotal}</td>
                     <td colspan="2"></td>
                 </tr>
             `;
@@ -414,16 +420,16 @@ const billing = (function () {
                     try {
                         const subItems = JSON.parse(item.items_json);
                         if (Array.isArray(subItems) && subItems.length > 0) {
-                            subDesc = '<div class="item-sub" style="color: var(--slate-500); font-size: 12px; margin-top: 4px; line-height: 1.4;">' + 
+                            subDesc = '<div class="item-sub" style="color: #1f6b4a; opacity: 0.85; font-size: 12px; margin-top: 4px; line-height: 1.4;">' + 
                                 subItems.map(si => {
                                     const n = si.name || si.test_name || si.item_name || 'Item';
                                     const t = si.total || si.amount || 0;
                                     return `${n}: ₹${parseFloat(t).toLocaleString('en-IN')}`;
-                                }).join(' <span style="color: #cbd5e1;">|</span> ') + 
+                                }).join(' <span style="opacity: 0.5;">|</span> ') + 
                                 '</div>';
                         } else if (typeof subItems === 'object' && subItems !== null) {
                             if (parseFloat(subItems.returned_qty) > 0) {
-                                subDesc = `<div class="item-sub" style="color: #dc2626; font-size: 12px; margin-top: 4px; line-height: 1.4;">
+                                subDesc = `<div class="item-sub" style="color: #1f6b4a; font-weight: 700; font-size: 12px; margin-top: 4px; line-height: 1.4;">
                                     <i data-lucide="undo-2" style="width:12px; height:12px; display:inline-block; margin-right:2px; vertical-align:text-bottom;"></i>
                                     Returned: ${subItems.returned_qty} (Refund: ₹${parseFloat(subItems.returned_amount || 0).toLocaleString('en-IN', {minimumFractionDigits:2})})
                                 </div>`;
@@ -436,32 +442,32 @@ const billing = (function () {
                     const nurR = parseFloat(item.nursing_charge || 0).toLocaleString('en-IN');
                     const drR = parseFloat(item.duty_dr_charge || 0).toLocaleString('en-IN');
                     if (parseFloat(item.bed_rent || 0) > 0) {
-                        subDesc = `<div class="item-sub">Bed:₹${bedR} + Nurse:₹${nurR} + DutyDr:₹${drR}</div>`;
+                        subDesc = `<div class="item-sub" style="color: #1f6b4a; opacity: 0.85;">Bed:₹${bedR} + Nurse:₹${nurR} + DutyDr:₹${drR}</div>`;
                     }
                 }
 
                 const canCancel = !isCancelled && currentMaster && currentMaster.billing_status !== 'FINALIZED' && currentMaster.billing_status !== 'CANCELLED';
-                const sourceIcon = item.source !== 'MANUAL' ? `<i data-lucide="link" title="Source: ${item.source}" style="color:var(--blue);margin-left:4px;"></i>` : '';
+                const sourceIcon = item.source !== 'MANUAL' ? `<i data-lucide="link" title="Source: ${item.source}" style="color:#1f6b4a; margin-left:4px;"></i>` : '';
 
                 html += `
-                    <tr class="child-row group-${group.charge_type} ${isCancelled ? 'cancelled-row' : ''}" style="display: none; background: #fff;">
-                        <td style="padding-left: 2rem;">${index + 1}</td>
-                        <td>${dateStr}</td>
-                        <td><span style="color: var(--slate-400); font-size: 12px;">${catName}</span></td>
-                        <td>
-                            <div class="item-desc">${item.description} ${sourceIcon}</div>
+                    <tr class="child-row group-${group.charge_type} ${isCancelled ? 'cancelled-row' : ''}" style="display: none; background: #f3efe6; border-bottom: 1px solid rgba(31, 107, 74, 0.15); color: #1f6b4a;">
+                        <td style="padding: 10px 14px 10px 2rem; font-weight: 600;">${index + 1}</td>
+                        <td style="padding: 10px 14px; font-weight: 600;">${dateStr}</td>
+                        <td style="padding: 10px 14px;"><span style="font-size: 12px; opacity: 0.85; font-weight: 600;">${catName}</span></td>
+                        <td style="padding: 10px 14px;">
+                            <div class="item-desc" style="font-weight: 700;">${item.description} ${sourceIcon}</div>
                             ${subDesc}
                         </td>
-                        <td class="tbl-num">${qty}</td>
-                        <td class="tbl-num">${rate}</td>
-                        <td class="tbl-amt" id="total-cell-${item.item_id}">
-                            ${canCancel ? `<span style="cursor:pointer; color:var(--blue); text-decoration:underline;" onclick="billing.startInlineEdit(${item.item_id}, ${totalFloat})" title="Click to edit total">₹${total}</span>` : `₹${total}`}
+                        <td class="tbl-num" style="padding: 10px 14px; font-weight: 600;">${qty}</td>
+                        <td class="tbl-num" style="padding: 10px 14px; font-weight: 600;">${rate}</td>
+                        <td class="tbl-amt" id="total-cell-${item.item_id}" style="padding: 10px 14px; font-weight: 800;">
+                            ${canCancel ? `<span style="cursor:pointer; color:#1f6b4a; text-decoration:underline;" onclick="billing.startInlineEdit(${item.item_id}, ${totalFloat})" title="Click to edit total">₹${total}</span>` : `₹${total}`}
                         </td>
-                        <td>
-                            <div class="item-status-badge status-${item.status}">${item.status}</div>
+                        <td style="padding: 10px 14px;">
+                            <div class="item-status-badge" style="background: #1f6b4a; color: #f3efe6; border: 1px solid #1f6b4a; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700;">${item.status}</div>
                         </td>
-                        <td>
-                            ${canCancel ? `<button class="btn-tbl-cancel" onclick="billing.openCancelChargeModal(${item.item_id}, '${item.charge_type}', '${item.description}', '${dateStr}', '${total}')" title="Cancel Charge"><i data-lucide="x"></i></button>` : ''}
+                        <td style="padding: 10px 14px;">
+                            ${canCancel ? `<button class="btn-tbl-cancel" style="background: transparent; border: 1px solid #1f6b4a; color: #1f6b4a; border-radius: 4px; padding: 4px 6px; cursor: pointer;" onclick="billing.openCancelChargeModal(${item.item_id}, '${item.charge_type}', '${item.description}', '${dateStr}', '${total}')" title="Cancel Charge"><i data-lucide="x" style="width:12px;height:12px;"></i></button>` : ''}
                         </td>
                     </tr>
                 `;
@@ -517,14 +523,14 @@ const billing = (function () {
             const isRefund = pay.payment_type === 'REFUND';
 
             html += `
-                <tr style="${pay.is_insurance == 1 ? 'background:var(--blue-light);' : ''}">
-                    <td>${index + 1}</td>
-                    <td>${dateStr}</td>
-                    <td><div class="pay-type-badge pay-${pay.payment_type}">${pay.payment_type}</div></td>
-                    <td><i class="fas ${modeIcon} pay-mode-icon"></i> ${pay.payment_mode}</td>
-                    <td class="tbl-amt" style="${isRefund ? 'color:var(--red);' : ''}">${isRefund ? '-' : ''}₹${amount}</td>
-                    <td>${pay.reference_no || '—'}</td>
-                    <td><div class="verified-chip v-${pay.verified_status}">${pay.verified_status === 'VERIFIED' ? '✅' : '⏳'} ${pay.verified_status}</div></td>
+                <tr style="border-bottom: 1px solid rgba(31, 107, 74, 0.2); color: #1f6b4a;">
+                    <td style="padding: 10px 14px; font-weight: 700;">${index + 1}</td>
+                    <td style="padding: 10px 14px; font-weight: 600;">${dateStr}</td>
+                    <td style="padding: 10px 14px;"><span style="background: #f3efe6; color: #1f6b4a; border: 1px solid #1f6b4a; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">${pay.payment_type}</span></td>
+                    <td style="padding: 10px 14px; font-weight: 600;"><i class="fas ${modeIcon} pay-mode-icon" style="color: #1f6b4a; margin-right: 4px;"></i> ${pay.payment_mode}</td>
+                    <td style="padding: 10px 14px; font-weight: 800; color: #1f6b4a;">${isRefund ? '-' : ''}₹${amount}</td>
+                    <td style="padding: 10px 14px; opacity: 0.85;">${pay.reference_no || '—'}</td>
+                    <td style="padding: 10px 14px;"><span style="background: #1f6b4a; color: #f3efe6; border: 1px solid #1f6b4a; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">${pay.verified_status === 'VERIFIED' ? '✓' : '⏳'} ${pay.verified_status}</span></td>
                 </tr>
             `;
         });
@@ -548,12 +554,22 @@ const billing = (function () {
         }
     }
 
-    window.filterPatientsTable = function() {
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function filterPatientsTable() {
         const tbody = document.getElementById('admittedPatientsList');
         if (!tbody || !window.allAdmittedPatientsList) return;
 
-        const statusFilter = document.getElementById('patientStatusFilter').value;
-        const searchQuery = (document.getElementById('patientTableSearch').value || '').toLowerCase();
+        const statusFilter = document.getElementById('patientStatusFilter')?.value || '';
+        const searchQuery = (document.getElementById('patientTableSearch')?.value || '').toLowerCase();
         
         // Filtering
         let filtered = window.allAdmittedPatientsList.filter(p => {
@@ -575,17 +591,17 @@ const billing = (function () {
 
         // Sorting
         filtered.sort((a, b) => {
-            let valA = a[window.currentPatientSort.col] || '';
-            let valB = b[window.currentPatientSort.col] || '';
+            let valA = a[window.currentPatientSort?.col || 'admission_id'] || '';
+            let valB = b[window.currentPatientSort?.col || 'admission_id'] || '';
             
             // Special handling for computed status
-            if (window.currentPatientSort.col === 'status') {
+            if (window.currentPatientSort?.col === 'status') {
                 valA = a.discharge_date ? 'Discharged' : 'Active';
                 valB = b.discharge_date ? 'Discharged' : 'Active';
             }
 
-            if (valA < valB) return window.currentPatientSort.asc ? -1 : 1;
-            if (valA > valB) return window.currentPatientSort.asc ? 1 : -1;
+            if (valA < valB) return window.currentPatientSort?.asc ? -1 : 1;
+            if (valA > valB) return window.currentPatientSort?.asc ? 1 : -1;
             return 0;
         });
 
@@ -597,27 +613,28 @@ const billing = (function () {
 
         let html = '';
         filtered.forEach(p => {
+            const pName = p.patient_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || 'Patient';
             const isDischarged = (p.discharge_date !== null && p.discharge_date !== undefined && p.discharge_date !== '');
-            const statusLabel = isDischarged ? `<span style="background:#fef3c7; color:#d97706; padding:3px 8px; border-radius:12px; font-size:0.8em; font-weight:bold;">Discharged</span>` 
-                                             : `<span style="background:#dcfce7; color:#166534; padding:3px 8px; border-radius:12px; font-size:0.8em; font-weight:bold;">Active</span>`;
+            const statusLabel = isDischarged ? `<span style="background:#f3efe6; color:#1f6b4a; border: 1px dashed #1f6b4a; padding:3px 8px; border-radius:12px; font-size:0.8em; font-weight:700;">Discharged</span>` 
+                                             : `<span style="background:#1f6b4a; color:#f3efe6; border: 1px solid #1f6b4a; padding:3px 8px; border-radius:12px; font-size:0.8em; font-weight:700;">Active</span>`;
 
             html += `
-                <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <td style="padding: 12px; font-weight: 500;">${p.admission_id}</td>
+                <tr style="border-bottom: 1px solid rgba(31, 107, 74, 0.2); transition: background 0.2s; color: #1f6b4a;" onmouseover="this.style.background='rgba(31, 107, 74, 0.08)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 12px; font-weight: 700;">${p.admission_id}</td>
                     <td style="padding: 12px;">
-                        <div style="font-weight: 600;">${p.patient_name}</div>
+                        <div style="font-weight: 800; color: #1f6b4a;">${pName}</div>
                     </td>
-                    <td style="padding: 12px;">${p.age} / ${p.sex ? p.sex.charAt(0) : '-'}</td>
-                    <td style="padding: 12px;">${p.phone || '-'}</td>
+                    <td style="padding: 12px; font-weight: 600;">${p.age || '-'} / ${p.sex ? p.sex.charAt(0) : '-'}</td>
+                    <td style="padding: 12px; font-weight: 600;">${p.phone || '-'}</td>
                     <td style="padding: 12px;">
-                        <div>${p.ward_name || '-'}</div>
-                        <div style="font-size: 0.85em; color: var(--slate);">${p.room_name || '-'} (${p.bed_number || '-'})</div>
+                        <div style="font-weight: 700;">${p.ward_name || '-'}</div>
+                        <div style="font-size: 0.85em; opacity: 0.8;">${p.room_name || '-'} (${p.bed_number || '-'})</div>
                     </td>
-                    <td style="padding: 12px;">${p.doctor_name || '-'}</td>
+                    <td style="padding: 12px; font-weight: 600;">${p.doctor_name || '-'}</td>
                     <td style="padding: 12px;">${statusLabel}</td>
                     <td style="padding: 12px;">
                         <button onclick="billing.loadAdmission('${p.admission_id}', '${p.patient_id}')" 
-                                style="background: var(--primary-color); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                                style="background: #1f6b4a; color: #f3efe6; border: 1.5px solid #1f6b4a; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-weight: 700; transition: all 0.2s;">
                             <i data-lucide="external-link" style="width: 14px; height: 14px;"></i> Open
                         </button>
                     </td>
@@ -626,28 +643,31 @@ const billing = (function () {
         });
         tbody.innerHTML = html;
         if(window.lucide) lucide.createIcons();
-    };
+    }
+    window.filterPatientsTable = filterPatientsTable;
 
-    window.sortPatientsTable = function(col) {
+    function sortPatientsTable(col) {
+        if (!window.currentPatientSort) window.currentPatientSort = { col: 'admission_id', asc: true };
         if (window.currentPatientSort.col === col) {
             window.currentPatientSort.asc = !window.currentPatientSort.asc;
         } else {
             window.currentPatientSort.col = col;
             window.currentPatientSort.asc = true;
         }
-        billing.filterPatientsTable();
-    };
+        filterPatientsTable();
+    }
+    window.sortPatientsTable = sortPatientsTable;
 
     // ─────────────────────────────────────────────────────────────
     // TABS & MENUS
     // ─────────────────────────────────────────────────────────────
-    window.filterItems = function (btn, type) {
+    function filterItems(btn, type) {
         document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         loadItems(type);
-    };
+    }
 
-    window.toggleChargeMenu = function () {
+    function toggleChargeMenu() {
         if (currentMaster && (currentMaster.billing_status === 'FINALIZED' || currentMaster.billing_status === 'CANCELLED')) {
             showToast('Cannot add charges to finalized/cancelled bill', 'error');
             return;
@@ -661,12 +681,12 @@ const billing = (function () {
             menu.classList.add('open');
             arrow.classList.add('open');
         }
-    };
+    }
 
-    window.closeChargeMenu = function () {
+    function closeChargeMenu() {
         document.getElementById('chargeMenu').classList.remove('open');
         document.getElementById('chargeArrow').classList.remove('open');
-    };
+    }
 
     function initCloseClick() {
         document.addEventListener('click', function (e) {
@@ -679,7 +699,7 @@ const billing = (function () {
     // ─────────────────────────────────────────────────────────────
     // MODALS: OPEN / CLOSE
     // ─────────────────────────────────────────────────────────────
-    window.openModal = function (id) {
+    function openModal(id) {
         const el = document.getElementById(id);
         if (el) {
             el.classList.add('active');
@@ -687,72 +707,1772 @@ const billing = (function () {
             const firstInput = el.querySelector('input:not([type="hidden"]), select, textarea');
             if (firstInput) setTimeout(() => firstInput.focus(), 100);
         }
-    };
+    }
 
-    window.closeModal = function (id) {
+    function closeModal(id) {
         const el = document.getElementById(id);
         if (el) el.classList.remove('active');
-    };
+    }
 
-    // ── 1. ADD CHARGE ──
-    let addChargeForce = false;
-    window.openAddChargeModal = function (type) {
-        document.getElementById('chargeType').value = type;
-        document.getElementById('chargeDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('chargeDept').value = '';
-        document.getElementById('chargeDesc').value = '';
-        document.getElementById('chargeQty').value = '1';
-        document.getElementById('chargeUnitPrice').value = '';
-        document.getElementById('chargeDiscount').value = '0';
-        document.getElementById('chargeNotes').value = '';
-        document.getElementById('chargeDupWarning').style.display = 'none';
-        addChargeForce = false;
+    // ── 1. ADD CHARGE (NURSE WORKSPACE PATTERN) ──
+    let labSearchDebounce = null;
+    let radSearchDebounce = null;
+    let otherSearchDebounce = null;
+    let phSearchDebounce = null;
+    let docSearchDebounce = null;
 
-        onChargeTypeChange();
-        calcChargeTotal();
-        openModal('modalAddCharge');
-    };
-
-    window.onChargeTypeChange = function () {
-        const type = document.getElementById('chargeType').value;
-        if (type === 'ROOM_RENT') {
-            closeModal('modalAddCharge');
-            openRoomRentModal();
+    function openAddChargeModal(type = 'tab-doctor') {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select an admitted patient first', 'warning');
+            return;
         }
-        // Could implement smart auto-suggest placeholder changes based on type
-    };
 
-    window.calcChargeTotal = function () {
-        const qty = parseFloat(document.getElementById('chargeQty').value) || 0;
-        const price = parseFloat(document.getElementById('chargeUnitPrice').value) || 0;
-        const disc = parseFloat(document.getElementById('chargeDiscount').value) || 0;
-        const total = (qty * price) - disc;
-        document.getElementById('chargeTotalPreview').textContent = `₹ ${Math.max(0, total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    };
+        let tabId = 'tab-doctor';
+        if (type === 'LAB' || type === 'tab-lab') tabId = 'tab-lab';
+        else if (type === 'RADIOLOGY' || type === 'tab-radiology') tabId = 'tab-radiology';
+        else if (type === 'PROCEDURE' || type === 'OT' || type === 'OTHER' || type === 'tab-other-services') tabId = 'tab-other-services';
+        else if (type === 'PHARMACY' || type === 'tab-pharmacy') tabId = 'tab-pharmacy';
+        else if (type === 'DOCTOR_VISIT' || type === 'tab-doctor') tabId = 'tab-doctor';
+        else if (type === 'DIALYSIS' || type === 'tab-dialysis') tabId = 'tab-dialysis';
+        else if (type === 'OXYGEN' || type === 'tab-oxygen') tabId = 'tab-oxygen';
+        else if (type === 'VENTILATION' || type === 'VENTILATOR' || type === 'tab-ventilator') tabId = 'tab-ventilator';
+        else if (type === 'BLOOD_TRANSFUSION' || type === 'TRANSFUSION' || type === 'tab-transfusion') tabId = 'tab-transfusion';
+        else if (type === 'WARD_TRANSFER' || type === 'TRANSFER' || type === 'tab-ward-transfer') tabId = 'tab-ward-transfer';
+        else if (type === 'CONSUMABLE' || type === 'MISC' || type === 'tab-consumables') tabId = 'tab-consumables';
+        else if (type.startsWith('tab-')) tabId = type;
+        else tabId = 'tab-doctor';
 
-    window.saveCharge = async function () {
+        const today = new Date().toISOString().split('T')[0];
+        const nowTime = new Date().toTimeString().slice(0, 5);
+
+        // 1. Doctor Visit
+        const docDate = document.getElementById('doc-date'); if (docDate) docDate.value = today;
+        const docTime = document.getElementById('doc-time'); if (docTime) docTime.value = nowTime;
+        const docSearch = document.getElementById('doc-search-input'); if (docSearch) docSearch.value = '';
+        const docName = document.getElementById('doc-name'); if (docName) docName.value = '';
+        const docShift = document.getElementById('doc-shift'); if (docShift) docShift.value = 'Morning';
+        const docFee = document.getElementById('doc-fee'); if (docFee) docFee.value = '500';
+        const docDisc = document.getElementById('doc-discount'); if (docDisc) docDisc.value = '0';
+        const docNotes = document.getElementById('doc-notes'); if (docNotes) docNotes.value = '';
+        calcDoctorTotal();
+
+        // 2. Lab Test (Table: lab_services)
+        const labDate = document.getElementById('lab-date'); if (labDate) labDate.value = today;
+        const labInp = document.getElementById('lab-input'); if (labInp) labInp.value = '';
+        const labName = document.getElementById('lab-name'); if (labName) labName.value = '';
+        const labCode = document.getElementById('lab-code'); if (labCode) labCode.value = '';
+        const labTier = document.getElementById('lab-tier'); if (labTier) labTier.value = '';
+        const labFee = document.getElementById('lab-fee'); if (labFee) labFee.value = '0';
+        const labDisc = document.getElementById('lab-discount'); if (labDisc) labDisc.value = '0';
+        const labNotes = document.getElementById('lab-notes'); if (labNotes) labNotes.value = '';
+        calcLabTotal();
+
+        // 3. Radiology Test (Table: radiology_services)
+        const radDate = document.getElementById('rad-date'); if (radDate) radDate.value = today;
+        const radInp = document.getElementById('rad-input'); if (radInp) radInp.value = '';
+        const radName = document.getElementById('rad-name'); if (radName) radName.value = '';
+        const radCode = document.getElementById('rad-code'); if (radCode) radCode.value = '';
+        const radTier = document.getElementById('rad-tier'); if (radTier) radTier.value = '';
+        const radFee = document.getElementById('rad-fee'); if (radFee) radFee.value = '0';
+        const radDisc = document.getElementById('rad-discount'); if (radDisc) radDisc.value = '0';
+        const radNotes = document.getElementById('rad-notes'); if (radNotes) radNotes.value = '';
+        calcRadTotal();
+
+        // 4. Other Services (Table: other_services)
+        const otherDate = document.getElementById('other-date'); if (otherDate) otherDate.value = today;
+        const otherInp = document.getElementById('other-input'); if (otherInp) otherInp.value = '';
+        const otherName = document.getElementById('other-name'); if (otherName) otherName.value = '';
+        const procDocSearch = document.getElementById('proc-doc-search'); if (procDocSearch) procDocSearch.value = '';
+        const procDoc = document.getElementById('proc-doctor'); if (procDoc) procDoc.value = '';
+        const otherTier = document.getElementById('other-tier'); if (otherTier) otherTier.value = '';
+        const otherQty = document.getElementById('other-qty'); if (otherQty) otherQty.value = '1';
+        const otherFee = document.getElementById('other-fee'); if (otherFee) otherFee.value = '0';
+        const otherDisc = document.getElementById('other-discount'); if (otherDisc) otherDisc.value = '0';
+        const otherNotes = document.getElementById('other-notes'); if (otherNotes) otherNotes.value = '';
+        calcOtherTotal();
+
+        // 5. Pharmacy
+        const phDate = document.getElementById('ph-date'); if (phDate) phDate.value = today;
+        const phInp = document.getElementById('ph-input'); if (phInp) phInp.value = '';
+        const phNotes = document.getElementById('ph-notes'); if (phNotes) phNotes.value = '';
+        phCart = [];
+        renderPhCart();
+
+        // 6. Dialysis (14. dialysis_chart)
+        const diaDocSearch = document.getElementById('dia-doc-search'); if (diaDocSearch) diaDocSearch.value = '';
+        const diaDoc = document.getElementById('dia-doctor'); if (diaDoc) diaDoc.value = '';
+        const diaDate = document.getElementById('dia-date'); if (diaDate) diaDate.value = today;
+        const diaStart = document.getElementById('dia-start'); if (diaStart) diaStart.value = '09:00';
+        const diaEnd = document.getElementById('dia-end'); if (diaEnd) diaEnd.value = '13:00';
+        const diaDur = document.getElementById('dia-dur'); if (diaDur) diaDur.value = '4h';
+        const diaFee = document.getElementById('dia-fee'); if (diaFee) diaFee.value = '2500';
+        const diaDisc = document.getElementById('dia-discount'); if (diaDisc) diaDisc.value = '0';
+        calcDiaTotal();
+
+        // 7. Oxygen Therapy (15. oxygen_chart)
+        const oxyDocSearch = document.getElementById('oxy-doc-search'); if (oxyDocSearch) oxyDocSearch.value = '';
+        const oxyDoc = document.getElementById('oxy-doctor'); if (oxyDoc) oxyDoc.value = '';
+        const oxyDate = document.getElementById('oxy-date'); if (oxyDate) oxyDate.value = today;
+        const oxyFlow = document.getElementById('oxy-flow'); if (oxyFlow) oxyFlow.value = '2 L/min';
+        const oxyStart = document.getElementById('oxy-start'); if (oxyStart) oxyStart.value = nowTime;
+        const oxyEnd = document.getElementById('oxy-end'); if (oxyEnd) oxyEnd.value = '';
+        const oxyDur = document.getElementById('oxy-dur'); if (oxyDur) oxyDur.value = '2h';
+        const oxyFee = document.getElementById('oxy-fee'); if (oxyFee) oxyFee.value = '500';
+        const oxyDisc = document.getElementById('oxy-discount'); if (oxyDisc) oxyDisc.value = '0';
+        calcOxyTotal();
+
+        // 8. Ventilator Support (16. ventilation_chart)
+        const ventDocSearch = document.getElementById('vent-doc-search'); if (ventDocSearch) ventDocSearch.value = '';
+        const ventDoc = document.getElementById('vent-doctor'); if (ventDoc) ventDoc.value = '';
+        const ventDate = document.getElementById('vent-date'); if (ventDate) ventDate.value = today;
+        const ventMode = document.getElementById('vent-mode'); if (ventMode) ventMode.value = 'CPAP';
+        const ventStart = document.getElementById('vent-start'); if (ventStart) ventStart.value = nowTime;
+        const ventEnd = document.getElementById('vent-end'); if (ventEnd) ventEnd.value = '';
+        const ventDur = document.getElementById('vent-dur'); if (ventDur) ventDur.value = '6h';
+        const ventFee = document.getElementById('vent-fee'); if (ventFee) ventFee.value = '2000';
+        const ventDisc = document.getElementById('vent-discount'); if (ventDisc) ventDisc.value = '0';
+        calcVentTotal();
+
+        // 9. Blood Transfusion (17. blood_transfusion_chart)
+        const btDocSearch = document.getElementById('bt-doc-search'); if (btDocSearch) btDocSearch.value = '';
+        const btDoc = document.getElementById('bt-doctor'); if (btDoc) btDoc.value = '';
+        const btDate = document.getElementById('bt-date'); if (btDate) btDate.value = today;
+        const btGroup = document.getElementById('blood-group'); if (btGroup) btGroup.value = 'O+';
+        const btBag = document.getElementById('bag-number'); if (btBag) btBag.value = '';
+        const btQty = document.getElementById('trans-qty'); if (btQty) btQty.value = '350';
+        const btVitals = document.getElementById('vitals-during'); if (btVitals) btVitals.value = '';
+        const btFee = document.getElementById('bt-fee'); if (btFee) btFee.value = '1200';
+        const btDisc = document.getElementById('bt-discount'); if (btDisc) btDisc.value = '0';
+        calcBtTotal();
+
+        // 10. Ward Transfer (18. ward_transfer)
+        const wtDocSearch = document.getElementById('wt-doc-search'); if (wtDocSearch) wtDocSearch.value = '';
+        const wtDoc = document.getElementById('wt-doctor'); if (wtDoc) wtDoc.value = '';
+        const wtDate = document.getElementById('wt-date'); if (wtDate) wtDate.value = today;
+        const wtTime = document.getElementById('wt-time'); if (wtTime) wtTime.value = nowTime;
+        const wtFrom = document.getElementById('wt-from'); if (wtFrom) wtFrom.value = currentMaster?.ward_name || currentMaster?.ward || '';
+        const wtTo = document.getElementById('wt-to'); if (wtTo) wtTo.value = '';
+        const wtFee = document.getElementById('wt-fee'); if (wtFee) wtFee.value = '0';
+        const wtDisc = document.getElementById('wt-discount'); if (wtDisc) wtDisc.value = '0';
+        const wtReason = document.getElementById('wt-reason'); if (wtReason) wtReason.value = '';
+        calcWtTotal();
+
+        // 11. Consumables
+        const miscDate = document.getElementById('misc-date'); if (miscDate) miscDate.value = today;
+        const miscType = document.getElementById('misc-type'); if (miscType) miscType.value = 'CONSUMABLE';
+        const miscDesc = document.getElementById('misc-desc'); if (miscDesc) miscDesc.value = '';
+        const miscDept = document.getElementById('misc-dept'); if (miscDept) miscDept.value = 'General';
+        const miscQty = document.getElementById('misc-qty'); if (miscQty) miscQty.value = '1';
+        const miscFee = document.getElementById('misc-fee'); if (miscFee) miscFee.value = '0';
+        const miscDisc = document.getElementById('misc-discount'); if (miscDisc) miscDisc.value = '0';
+        const miscNotes = document.getElementById('misc-notes'); if (miscNotes) miscNotes.value = '';
+        calcConsumableTotal();
+
+        // Close search dropdowns
+        document.querySelectorAll('#doc-results, #lab-results, #rad-results, #other-results, #ph-results, #proc-doc-results, #dia-doc-results, #oxy-doc-results, #vent-doc-results, #bt-doc-results, #wt-doc-results').forEach(el => el.style.display = 'none');
+
+        // Select initial tab
+        const targetBtn = document.querySelector(`.t-tab[data-tab="${tabId}"]`) || document.querySelector('.t-tab');
+        selectSubTab(tabId, targetBtn);
+
+        openModal('modalAddCharge');
+    }
+
+    function selectSubTab(tabId, btn) {
+        document.querySelectorAll('.t-tab').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        document.querySelectorAll('.t-panel').forEach(p => p.classList.remove('active'));
+        const panel = document.getElementById(tabId);
+        if (panel) panel.classList.add('active');
+    }
+
+    // Cached search results to prevent attribute quoting/escaping issues
+    window._labResults = [];
+    window._radResults = [];
+    window._otherResults = [];
+    window._phResults = [];
+    window._docResults = [];
+
+    // ── LIVE CATALOG & DOCTOR SEARCH LISTENERS ──
+    document.addEventListener('input', function(e) {
+        if (!e.target) return;
+
+        // ── 1. Lab Test Search (Table: lab_services with Room-Tier Pricing) ──
+        if (e.target.id === 'lab-input') {
+            clearTimeout(labSearchDebounce);
+            const q = e.target.value.trim();
+            const res = document.getElementById('lab-results');
+            if (q.length < 1) { if(res) res.style.display = 'none'; return; }
+
+            const roomType = currentMaster?.room_type || currentMaster?.ward_name || currentMaster?.ward || '';
+
+            labSearchDebounce = setTimeout(async () => {
+                try {
+                    const r = await fetch(`${API_URL}ipd-catalog-search?type=LAB&q=${encodeURIComponent(q)}&room_type=${encodeURIComponent(roomType)}&admission_id=${encodeURIComponent(currentAdmissionId || '')}`);
+                    const json = await r.json();
+                    const items = json.data || [];
+                    window._labResults = items;
+
+                    if (items.length > 0) {
+                        let html = '';
+                        items.forEach((item, idx) => {
+                            const tierBadge = item.room_tier ? `<span class="badge" style="font-size:0.68rem;opacity:0.9;">${escapeHtml(item.room_tier)}</span>` : '';
+                            const price = parseFloat(item.price || 0);
+                            html += `
+                                <div class="ts-item" onclick="billing.selectLabItemByIndex(${idx})">
+                                    <div>
+                                        <strong style="color:#1f6b4a"><i class="fas fa-flask"></i> ${escapeHtml(item.name)}</strong><br>
+                                        <small style="color:#1f6b4a; opacity:0.85;">Code: ${item.id || '-'} ${tierBadge}</small>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <strong style="color:#1f6b4a;">₹${price.toLocaleString('en-IN', {minimumFractionDigits:2})}</strong>
+                                        <span class="badge">Select</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        res.innerHTML = html;
+                        res.style.display = 'block';
+                    } else {
+                        res.innerHTML = '<div style="padding:12px;text-align:center;color:#1f6b4a;opacity:0.8;font-size:.82rem">No matching lab tests found.</div>';
+                        res.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error("Lab search error:", err);
+                }
+            }, 200);
+        }
+
+        // ── 2. Radiology Test Search (Table: radiology_services with Room-Tier Pricing) ──
+        if (e.target.id === 'rad-input') {
+            clearTimeout(radSearchDebounce);
+            const q = e.target.value.trim();
+            const res = document.getElementById('rad-results');
+            if (q.length < 1) { if(res) res.style.display = 'none'; return; }
+
+            const roomType = currentMaster?.room_type || currentMaster?.ward_name || currentMaster?.ward || '';
+
+            radSearchDebounce = setTimeout(async () => {
+                try {
+                    const r = await fetch(`${API_URL}ipd-catalog-search?type=RADIOLOGY&q=${encodeURIComponent(q)}&room_type=${encodeURIComponent(roomType)}&admission_id=${encodeURIComponent(currentAdmissionId || '')}`);
+                    const json = await r.json();
+                    const items = json.data || [];
+                    window._radResults = items;
+
+                    if (items.length > 0) {
+                        let html = '';
+                        items.forEach((item, idx) => {
+                            const tierBadge = item.room_tier ? `<span class="badge" style="font-size:0.68rem;opacity:0.9;">${escapeHtml(item.room_tier)}</span>` : '';
+                            const price = parseFloat(item.price || 0);
+                            html += `
+                                <div class="ts-item" onclick="billing.selectRadItemByIndex(${idx})">
+                                    <div>
+                                        <strong style="color:#1f6b4a"><i class="fas fa-radiation"></i> ${escapeHtml(item.name)}</strong><br>
+                                        <small style="color:#1f6b4a; opacity:0.85;">Modality/Code: ${item.id || '-'} ${tierBadge}</small>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <strong style="color:#1f6b4a;">₹${price.toLocaleString('en-IN', {minimumFractionDigits:2})}</strong>
+                                        <span class="badge">Select</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        res.innerHTML = html;
+                        res.style.display = 'block';
+                    } else {
+                        res.innerHTML = '<div style="padding:12px;text-align:center;color:#1f6b4a;opacity:0.8;font-size:.82rem">No matching radiology tests found.</div>';
+                        res.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error("Radiology search error:", err);
+                }
+            }, 200);
+        }
+
+        // ── 3. Other Services Search (Table: other_services with Room-Tier Pricing) ──
+        if (e.target.id === 'other-input') {
+            clearTimeout(otherSearchDebounce);
+            const q = e.target.value.trim();
+            const res = document.getElementById('other-results');
+            if (q.length < 1) { if(res) res.style.display = 'none'; return; }
+
+            const roomType = currentMaster?.room_type || currentMaster?.ward_name || currentMaster?.ward || '';
+
+            otherSearchDebounce = setTimeout(async () => {
+                try {
+                    const r = await fetch(`${API_URL}ipd-catalog-search?type=PROCEDURE&q=${encodeURIComponent(q)}&room_type=${encodeURIComponent(roomType)}&admission_id=${encodeURIComponent(currentAdmissionId || '')}`);
+                    const json = await r.json();
+                    const items = json.data || [];
+                    window._otherResults = items;
+
+                    if (items.length > 0) {
+                        let html = '';
+                        items.forEach((item, idx) => {
+                            const price = parseFloat(item.price || 0);
+                            const tierBadge = item.room_tier ? `<span class="badge" style="font-size:0.68rem;opacity:0.9;">${escapeHtml(item.room_tier)}</span>` : '';
+                            html += `
+                                <div class="ts-item" onclick="billing.selectOtherItemByIndex(${idx})">
+                                    <div>
+                                        <strong style="color:#1f6b4a"><i class="fas fa-stethoscope"></i> ${escapeHtml(item.name)}</strong><br>
+                                        <small style="color:#1f6b4a; opacity:0.85;">Code: ${item.id || '-'} ${tierBadge}</small>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <strong style="color:#1f6b4a;">₹${price.toLocaleString('en-IN', {minimumFractionDigits:2})}</strong>
+                                        <span class="badge">Select</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        res.innerHTML = html;
+                        res.style.display = 'block';
+                    } else {
+                        res.innerHTML = '<div style="padding:12px;text-align:center;color:#1f6b4a;opacity:0.8;font-size:.82rem">No services found.</div>';
+                        res.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error("Other services search error:", err);
+                }
+            }, 200);
+        }
+
+        // ── 4. Pharmacy Order Search (Referencing nurse_workspace.php) ──
+        if (e.target.id === 'ph-input') {
+            clearTimeout(phSearchDebounce);
+            const q = e.target.value.trim();
+            const res = document.getElementById('ph-results');
+            if (q.length < 1) { if(res) res.style.display = 'none'; return; }
+            phSearchDebounce = setTimeout(async () => {
+                try {
+                    const r = await fetch(`${API_URL}ipd-catalog-search?type=PHARMACY&q=${encodeURIComponent(q)}`);
+                    const json = await r.json();
+                    const items = json.data || [];
+                    window._phResults = items;
+
+                    if (items.length > 0) {
+                        let html = '';
+                        items.forEach((item, idx) => {
+                            const price = parseFloat(item.price || 0);
+                            html += `
+                                <div class="ph-item" onclick="billing.selectPhItemByIndex(${idx})">
+                                    <div>
+                                        <strong style="color:#1f6b4a"><i class="fas fa-pills"></i> ${escapeHtml(item.name)}</strong><br>
+                                        <small style="color:#1f6b4a; opacity:0.85;">Batch: ${item.batch || 'N/A'} | Stock: ${item.stock ?? '?'}</small>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <strong style="color:#1f6b4a;">₹${price.toLocaleString('en-IN', {minimumFractionDigits:2})}</strong>
+                                        <span class="badge"><i class="fas fa-plus"></i> Add</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        res.innerHTML = html;
+                        res.style.display = 'block';
+                    } else {
+                        res.innerHTML = '<div style="padding:12px;text-align:center;color:#1f6b4a;opacity:0.8;font-size:.82rem">No medicines found.</div>';
+                        res.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error("Pharmacy search error:", err);
+                }
+            }, 200);
+        }
+
+        // ── 5. Advance Search Doctor (All Doctor Input Fields) ──
+        const docInputsMap = [
+            { inp: 'doc-search-input', res: 'doc-results', isMainDoc: true },
+            { inp: 'proc-doc-search', res: 'proc-doc-results', target: 'proc-doctor' },
+            { inp: 'dia-doc-search', res: 'dia-doc-results', target: 'dia-doctor' },
+            { inp: 'oxy-doc-search', res: 'oxy-doc-results', target: 'oxy-doctor' },
+            { inp: 'vent-doc-search', res: 'vent-doc-results', target: 'vent-doctor' },
+            { inp: 'bt-doc-search', res: 'bt-doc-results', target: 'bt-doctor' },
+            { inp: 'wt-doc-search', res: 'wt-doc-results', target: 'wt-doctor' }
+        ];
+
+        const matchedDoc = docInputsMap.find(d => e.target.id === d.inp);
+        if (matchedDoc) {
+            clearTimeout(docSearchDebounce);
+            const q = e.target.value.trim();
+            const res = document.getElementById(matchedDoc.res);
+            if (q.length < 1) { if(res) res.style.display = 'none'; return; }
+            docSearchDebounce = setTimeout(async () => {
+                try {
+                    const r = await fetch(`${API_URL}ipd-catalog-search?type=DOCTOR&q=${encodeURIComponent(q)}`);
+                    const json = await r.json();
+                    const items = json.data || [];
+                    window._docResults = items;
+
+                    if (items.length > 0) {
+                        let html = '';
+                        items.forEach((doc, idx) => {
+                            const fee = parseFloat(doc.price || 500);
+                            const clickAction = matchedDoc.isMainDoc 
+                                ? `billing.selectDocItemByIndex(${idx})`
+                                : `billing.selectGenericDocByIndex('${matchedDoc.inp}', '${matchedDoc.res}', '${matchedDoc.target}', ${idx})`;
+
+                            html += `
+                                <div class="ts-item" onclick="${clickAction}">
+                                    <div>
+                                        <strong style="color:#1f6b4a"><i class="fas fa-user-md"></i> ${escapeHtml(doc.name)}</strong><br>
+                                        <small style="color:#1f6b4a; opacity:0.85;">${escapeHtml(doc.department || doc.designation || 'Consultant')} | ID: ${doc.id || '-'}</small>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <strong style="color:#1f6b4a;">₹${fee.toLocaleString('en-IN', {minimumFractionDigits:2})}</strong>
+                                        <span class="badge">Select</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        res.innerHTML = html;
+                        res.style.display = 'block';
+                    } else {
+                        res.innerHTML = '<div style="padding:12px;text-align:center;color:#1f6b4a;opacity:0.8;font-size:.82rem">No matching doctors found.</div>';
+                        res.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error("Doctor search error:", err);
+                }
+            }, 200);
+        }
+    });
+
+    // Index-based selection helpers
+    function selectLabItemByIndex(idx) {
+        const item = window._labResults ? window._labResults[idx] : null;
+        if (item) selectLabItem(item);
+    }
+
+    function selectRadItemByIndex(idx) {
+        const item = window._radResults ? window._radResults[idx] : null;
+        if (item) selectRadItem(item);
+    }
+
+    function selectOtherItemByIndex(idx) {
+        const item = window._otherResults ? window._otherResults[idx] : null;
+        if (item) selectOtherItem(item);
+    }
+
+    function selectPhItemByIndex(idx) {
+        const item = window._phResults ? window._phResults[idx] : null;
+        if (item) addToPhCart(item);
+    }
+
+    function selectDocItemByIndex(idx) {
+        const doc = window._docResults ? window._docResults[idx] : null;
+        if (doc) selectDoctorItem(doc);
+    }
+
+    function selectGenericDocByIndex(inputId, resultsId, targetInputId, idx) {
+        const doc = window._docResults ? window._docResults[idx] : null;
+        if (doc) selectGenericDoctor(inputId, resultsId, targetInputId, doc);
+    }
+
+    // Close search dropdowns on outside click
+    document.addEventListener('click', function(e) {
+        const dropdownPairs = [
+            { inp: '#doc-search-input', res: '#doc-results' },
+            { inp: '#lab-input', res: '#lab-results' },
+            { inp: '#rad-input', res: '#rad-results' },
+            { inp: '#other-input', res: '#other-results' },
+            { inp: '#ph-input', res: '#ph-results' },
+            { inp: '#proc-doc-search', res: '#proc-doc-results' },
+            { inp: '#dia-doc-search', res: '#dia-doc-results' },
+            { inp: '#oxy-doc-search', res: '#oxy-doc-results' },
+            { inp: '#vent-doc-search', res: '#vent-doc-results' },
+            { inp: '#bt-doc-search', res: '#bt-doc-results' },
+            { inp: '#wt-doc-search', res: '#wt-doc-results' }
+        ];
+
+        dropdownPairs.forEach(pair => {
+            if (!e.target.closest(pair.inp) && !e.target.closest(pair.res)) {
+                const el = document.querySelector(pair.res);
+                if (el) el.style.display = 'none';
+            }
+        });
+    });
+
+    function selectGenericDoctor(inputId, resultsId, targetInputId, doc) {
+        if (!doc) return;
+        const res = document.getElementById(resultsId); if (res) res.style.display = 'none';
+        const inp = document.getElementById(inputId); if (inp) inp.value = doc.name;
+        const target = document.getElementById(targetInputId); if (target) target.value = doc.name;
+    }
+
+    function selectDoctorItem(doc) {
+        if (!doc) return;
+        const res = document.getElementById('doc-results'); if (res) res.style.display = 'none';
+        const inp = document.getElementById('doc-search-input'); if (inp) inp.value = doc.name;
+
+        const docNameEl = document.getElementById('doc-name'); if (docNameEl) docNameEl.value = doc.name;
+        const docDeptEl = document.getElementById('doc-dept'); if (docDeptEl) docDeptEl.value = doc.department || doc.designation || 'General Medicine';
+        const docIdEl = document.getElementById('doc-id'); if (docIdEl) docIdEl.value = doc.id || '';
+        const docFeeEl = document.getElementById('doc-fee'); if (docFeeEl) docFeeEl.value = parseFloat(doc.price || 500);
+
+        // Also select in dropdown if exists
+        const select = document.getElementById('doc-select');
+        if (select) {
+            let found = false;
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === doc.name || (select.options[i].dataset && select.options[i].dataset.id === doc.id)) {
+                    select.selectedIndex = i;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) select.selectedIndex = 0;
+        }
+
+        calcDoctorTotal();
+    }
+
+    function onDoctorSelect(selectEl) {
+        const opt = selectEl.options[selectEl.selectedIndex];
+        if (opt && opt.value) {
+            const docNameEl = document.getElementById('doc-name'); if (docNameEl) docNameEl.value = opt.value;
+            const docDeptEl = document.getElementById('doc-dept'); if (docDeptEl) docDeptEl.value = opt.dataset.dept || 'General Medicine';
+            const docIdEl = document.getElementById('doc-id'); if (docIdEl) docIdEl.value = opt.dataset.id || '';
+            const docFeeEl = document.getElementById('doc-fee'); if (docFeeEl) docFeeEl.value = parseFloat(opt.dataset.fee || 500);
+            const searchInp = document.getElementById('doc-search-input'); if (searchInp) searchInp.value = opt.value;
+            calcDoctorTotal();
+        }
+    }
+
+    // ── 1. Lab Test Methods (Table: lab_services) ──
+    function selectLabItem(item) {
+        if (!item) return;
+        const res = document.getElementById('lab-results'); if(res) res.style.display = 'none';
+        const inp = document.getElementById('lab-input'); if(inp) inp.value = item.name || '';
+
+        const nameEl = document.getElementById('lab-name'); if (nameEl) nameEl.value = item.name || '';
+        const codeEl = document.getElementById('lab-code'); if (codeEl) codeEl.value = item.id || '';
+        const tierEl = document.getElementById('lab-tier'); if (tierEl) tierEl.value = item.room_tier ? `${item.room_tier} (₹${item.price})` : `Rate: ₹${item.price}`;
+        const feeEl = document.getElementById('lab-fee'); if (feeEl) feeEl.value = parseFloat(item.price || 0);
+
+        calcLabTotal();
+    }
+
+    function calcLabTotal() {
+        const fee = parseFloat(document.getElementById('lab-fee')?.value) || 0;
+        const disc = parseFloat(document.getElementById('lab-discount')?.value) || 0;
+        const total = Math.max(0, fee - disc);
+        const el = document.getElementById('lab-total-preview');
+        if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+
+    async function saveLabCharge() {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select a patient bill first', 'warning'); return;
+        }
+
+        const date = document.getElementById('lab-date')?.value || new Date().toISOString().split('T')[0];
+        const labName = (document.getElementById('lab-name')?.value || document.getElementById('lab-input')?.value || '').trim();
+        const labCode = (document.getElementById('lab-code')?.value || '').trim();
+        const fee = parseFloat(document.getElementById('lab-fee')?.value) || 0;
+        const discount = parseFloat(document.getElementById('lab-discount')?.value) || 0;
+        const notes = (document.getElementById('lab-notes')?.value || '').trim();
+
+        if (!labName) {
+            showToast('Please search and select a laboratory test', 'warning');
+            const searchEl = document.getElementById('lab-input');
+            if (searchEl) searchEl.focus();
+            return;
+        }
+
+        const btn = document.getElementById('lab-save-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        try {
+            const res = await fetch(`${API_URL}ipd-billing-items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'add',
+                    bill_id: currentBillId,
+                    admission_id: currentAdmissionId,
+                    patient_id: currentPatientId,
+                    charge_date: date,
+                    charge_type: 'LAB',
+                    department: 'Laboratory',
+                    description: labName,
+                    item_code: labCode,
+                    quantity: 1,
+                    unit_price: fee,
+                    discount_amt: discount,
+                    reference_id: notes,
+                    notes: notes,
+                    force: true
+                })
+            });
+            const json = await res.json();
+            if (json.success) {
+                showToast('Lab test charge added & synced to K-Sheet!', 'success');
+                closeModal('modalAddCharge');
+                loadAdmission(currentAdmissionId, currentPatientId);
+                loadItems();
+            } else {
+                showToast(json.message || 'Failed to add lab test charge', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Error saving lab test charge', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus"></i> Add Lab Test Charge';
+        }
+    }
+
+    // ── 2. Radiology Methods (Table: radiology_services) ──
+    function selectRadItem(item) {
+        if (!item) return;
+        const res = document.getElementById('rad-results'); if(res) res.style.display = 'none';
+        const inp = document.getElementById('rad-input'); if(inp) inp.value = item.name || '';
+
+        const nameEl = document.getElementById('rad-name'); if (nameEl) nameEl.value = item.name || '';
+        const codeEl = document.getElementById('rad-code'); if (codeEl) codeEl.value = item.id || '';
+        const tierEl = document.getElementById('rad-tier'); if (tierEl) tierEl.value = item.room_tier ? `${item.room_tier} (₹${item.price})` : `Rate: ₹${item.price}`;
+        const feeEl = document.getElementById('rad-fee'); if (feeEl) feeEl.value = parseFloat(item.price || 0);
+
+        calcRadTotal();
+    }
+
+    function calcRadTotal() {
+        const fee = parseFloat(document.getElementById('rad-fee')?.value) || 0;
+        const disc = parseFloat(document.getElementById('rad-discount')?.value) || 0;
+        const total = Math.max(0, fee - disc);
+        const el = document.getElementById('rad-total-preview');
+        if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+
+    async function saveRadCharge() {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select a patient bill first', 'warning'); return;
+        }
+
+        const date = document.getElementById('rad-date')?.value || new Date().toISOString().split('T')[0];
+        const radName = (document.getElementById('rad-name')?.value || document.getElementById('rad-input')?.value || '').trim();
+        const radCode = (document.getElementById('rad-code')?.value || '').trim();
+        const fee = parseFloat(document.getElementById('rad-fee')?.value) || 0;
+        const discount = parseFloat(document.getElementById('rad-discount')?.value) || 0;
+        const notes = (document.getElementById('rad-notes')?.value || '').trim();
+
+        if (!radName) {
+            showToast('Please search and select a radiology investigation', 'warning');
+            const searchEl = document.getElementById('rad-input');
+            if (searchEl) searchEl.focus();
+            return;
+        }
+
+        const btn = document.getElementById('rad-save-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        try {
+            const res = await fetch(`${API_URL}ipd-billing-items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'add',
+                    bill_id: currentBillId,
+                    admission_id: currentAdmissionId,
+                    patient_id: currentPatientId,
+                    charge_date: date,
+                    charge_type: 'RADIOLOGY',
+                    department: 'Radiology',
+                    description: radName,
+                    item_code: radCode,
+                    quantity: 1,
+                    unit_price: fee,
+                    discount_amt: discount,
+                    reference_id: notes,
+                    notes: notes,
+                    force: true
+                })
+            });
+            const json = await res.json();
+            if (json.success) {
+                showToast('Radiology charge added & synced to K-Sheet!', 'success');
+                closeModal('modalAddCharge');
+                loadAdmission(currentAdmissionId, currentPatientId);
+                loadItems();
+            } else {
+                showToast(json.message || 'Failed to add radiology charge', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Error saving radiology charge', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus"></i> Add Radiology Charge';
+        }
+    }
+
+    // ── 3. Other Services Methods (Table: other_services) ──
+    function selectOtherItem(item) {
+        if (!item) return;
+        const res = document.getElementById('other-results'); if(res) res.style.display = 'none';
+        const inp = document.getElementById('other-input'); if(inp) inp.value = item.name || '';
+
+        const nameEl = document.getElementById('other-name'); if (nameEl) nameEl.value = item.name || '';
+        const tierEl = document.getElementById('other-tier'); if (tierEl) tierEl.value = item.room_tier ? `${item.room_tier} (₹${item.price})` : `Rate: ₹${item.price}`;
+        const feeEl = document.getElementById('other-fee'); if (feeEl) feeEl.value = parseFloat(item.price || 0);
+
+        calcOtherTotal();
+    }
+
+    function calcOtherTotal() {
+        const qty = parseFloat(document.getElementById('other-qty')?.value) || 1;
+        const fee = parseFloat(document.getElementById('other-fee')?.value) || 0;
+        const disc = parseFloat(document.getElementById('other-discount')?.value) || 0;
+        const total = Math.max(0, (qty * fee) - disc);
+        const el = document.getElementById('other-total-preview');
+        if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+
+    async function saveOtherCharge() {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select a patient bill first', 'warning'); return;
+        }
+
+        const date = document.getElementById('other-date')?.value || new Date().toISOString().split('T')[0];
+        const otherName = (document.getElementById('other-name')?.value || document.getElementById('other-input')?.value || '').trim();
+        const docName = (document.getElementById('proc-doctor')?.value || '').trim();
+        const qty = parseFloat(document.getElementById('other-qty')?.value) || 1;
+        const fee = parseFloat(document.getElementById('other-fee')?.value) || 0;
+        const discount = parseFloat(document.getElementById('other-discount')?.value) || 0;
+        const notes = (document.getElementById('other-notes')?.value || '').trim();
+
+        if (!otherName) {
+            showToast('Please search and select a hospital service', 'warning');
+            const searchEl = document.getElementById('other-input');
+            if (searchEl) searchEl.focus();
+            return;
+        }
+
+        const btn = document.getElementById('other-save-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        try {
+            const res = await fetch(`${API_URL}ipd-billing-items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'add',
+                    bill_id: currentBillId,
+                    admission_id: currentAdmissionId,
+                    patient_id: currentPatientId,
+                    charge_date: date,
+                    charge_type: 'PROCEDURE',
+                    department: 'Other Services',
+                    description: otherName,
+                    doctor_name: docName,
+                    quantity: qty,
+                    unit_price: fee,
+                    discount_amt: discount,
+                    reference_id: notes,
+                    notes: notes,
+                    force: true
+                })
+            });
+            const json = await res.json();
+            if (json.success) {
+                showToast('Service charge added & synced to K-Sheet!', 'success');
+                closeModal('modalAddCharge');
+                loadAdmission(currentAdmissionId, currentPatientId);
+                loadItems();
+            } else {
+                showToast(json.message || 'Failed to add service charge', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Error saving service charge', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus"></i> Add Service Charge';
+        }
+    }
+
+    // ── Pharmacy Order Methods ──
+    function addToPhCart(item) {
+        const res = document.getElementById('ph-results'); if(res) res.style.display = 'none';
+        const inp = document.getElementById('ph-input'); if(inp) inp.value = '';
+
+        const price = parseFloat(item.price || 0);
+        const ex = phCart.find(x => x.id === item.id);
+        if (ex) {
+            ex.qty++;
+        } else {
+            phCart.push({
+                id: item.id || '',
+                name: item.name || '',
+                batch: item.batch || 'N/A',
+                qty: 1,
+                price: price
+            });
+        }
+        renderPhCart();
+    }
+
+    function renderPhCart() {
+        const ca = document.getElementById('ph-cart');
+        if (!ca) return;
+        if (!phCart.length) {
+            ca.innerHTML = '<div style="padding:12px;text-align:center;color:#1f6b4a;opacity:0.7;font-size:.82rem;border:1.5px dashed #1f6b4a;border-radius:8px;">No medicines added to cart yet. Search above to add.</div>';
+            calcPhCartTotal();
+            return;
+        }
+
+        ca.innerHTML = phCart.map((m, idx) => `
+            <div class="cart-row">
+                <div class="cart-row-n">
+                    ${escapeHtml(m.name)} 
+                    <span class="badge">Batch: ${escapeHtml(m.batch)}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="font-size:0.75rem; color:#1f6b4a; font-weight:700;">Qty:</div>
+                    <input type="number" value="${m.qty}" min="0.01" step="0.01" onchange="billing.updatePhQty(${idx}, this.value)">
+                    <div style="font-size:0.75rem; color:#1f6b4a; font-weight:700;">Rate (₹):</div>
+                    <input type="number" value="${m.price}" min="0" step="0.01" style="width:85px;" onchange="billing.updatePhPrice(${idx}, this.value)">
+                    <strong style="color:#1f6b4a; min-width:65px; text-align:right;">₹${(m.qty * m.price).toFixed(2)}</strong>
+                    <button type="button" class="rm-btn" onclick="billing.removePhCartItem(${idx})" title="Remove"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </div>
+        `).join('');
+
+        calcPhCartTotal();
+    }
+
+    function updatePhQty(idx, val) {
+        if (phCart[idx]) {
+            phCart[idx].qty = Math.max(0.01, parseFloat(val) || 1);
+            renderPhCart();
+        }
+    }
+
+    function updatePhPrice(idx, val) {
+        if (phCart[idx]) {
+            phCart[idx].price = Math.max(0, parseFloat(val) || 0);
+            renderPhCart();
+        }
+    }
+
+    function removePhCartItem(idx) {
+        phCart.splice(idx, 1);
+        renderPhCart();
+    }
+
+    function calcPhCartTotal() {
+        const total = phCart.reduce((sum, item) => sum + (item.qty * item.price), 0);
+        const el = document.getElementById('ph-total-preview');
+        if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+
+    async function savePharmacyOrder() {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select a patient bill first', 'warning'); return;
+        }
+        if (!phCart.length) {
+            showToast('Please add at least one medicine to order.', 'warning'); return;
+        }
+
+        const date = document.getElementById('ph-date').value || new Date().toISOString().split('T')[0];
+        const notes = document.getElementById('ph-notes').value.trim();
+        const btn = document.getElementById('ph-save-btn');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+        try {
+            for (const item of phCart) {
+                await fetch(`${API_URL}ipd-billing-items`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'add',
+                        bill_id: currentBillId,
+                        admission_id: currentAdmissionId,
+                        patient_id: currentPatientId,
+                        charge_date: date,
+                        charge_type: 'PHARMACY',
+                        department: 'Pharmacy',
+                        description: item.name,
+                        item_code: item.id,
+                        batch_number: item.batch,
+                        quantity: item.qty,
+                        unit_price: item.price,
+                        discount_amt: 0,
+                        reference_id: notes,
+                        notes: notes,
+                        force: true
+                    })
+                });
+            }
+
+            showToast('Pharmacy Order submitted & synced to K-Sheet!', 'success');
+            phCart = [];
+            renderPhCart();
+            closeModal('modalAddCharge');
+            loadAdmission(currentAdmissionId, currentPatientId);
+            loadItems();
+        } catch (e) {
+            console.error(e);
+            showToast('Error submitting pharmacy order', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Pharmacy Order';
+        }
+    }
+
+    // ── Doctor Visit Methods ──
+    function onDoctorSelect(selectEl) {
+        const opt = selectEl.options[selectEl.selectedIndex];
+        if (opt && opt.dataset && opt.dataset.fee) {
+            document.getElementById('doc-fee').value = parseFloat(opt.dataset.fee || 500);
+            calcDoctorTotal();
+        }
+    }
+
+    function calcDoctorTotal() {
+        const fee = parseFloat(document.getElementById('doc-fee').value) || 0;
+        const disc = parseFloat(document.getElementById('doc-discount').value) || 0;
+        const total = Math.max(0, fee - disc);
+        const el = document.getElementById('doc-total-preview');
+        if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+
+    async function saveDoctorVisitCharge() {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select a patient bill first', 'warning'); return;
+        }
+
+        const date = document.getElementById('doc-date').value || new Date().toISOString().split('T')[0];
+        const time = document.getElementById('doc-time').value || new Date().toTimeString().slice(0, 5);
+        const doctorName = (document.getElementById('doc-name')?.value || document.getElementById('doc-select')?.value || document.getElementById('doc-search-input')?.value || '').trim();
+        const docDept = (document.getElementById('doc-dept')?.value || 'Consultant Round').trim();
+        const docId = (document.getElementById('doc-id')?.value || '').trim();
+        const shift = document.getElementById('doc-shift').value;
+        const fee = parseFloat(document.getElementById('doc-fee').value) || 0;
+        const discount = parseFloat(document.getElementById('doc-discount').value) || 0;
+        const notes = document.getElementById('doc-notes').value.trim();
+
+        if (!doctorName) {
+            showToast('Please search or select an attending doctor', 'warning');
+            const searchEl = document.getElementById('doc-search-input');
+            if (searchEl) searchEl.focus();
+            return;
+        }
+
+        const btn = document.getElementById('doc-save-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        try {
+            const res = await fetch(`${API_URL}ipd-billing-items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'add',
+                    bill_id: currentBillId,
+                    admission_id: currentAdmissionId,
+                    patient_id: currentPatientId,
+                    charge_date: date,
+                    charge_type: 'DOCTOR_VISIT',
+                    department: docDept || 'Consultant Round',
+                    description: doctorName,
+                    doctor_name: doctorName,
+                    item_code: docId,
+                    visit_time: time,
+                    shift_type: shift,
+                    quantity: 1,
+                    unit_price: fee,
+                    discount_amt: discount,
+                    reference_id: notes,
+                    notes: notes,
+                    force: true
+                })
+            });
+            const json = await res.json();
+            if (json.success) {
+                showToast('Doctor round visit added & synced to K-Sheet!', 'success');
+                closeModal('modalAddCharge');
+                loadAdmission(currentAdmissionId, currentPatientId);
+                loadItems();
+            } else {
+                showToast(json.message || 'Failed to add doctor visit', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Error saving doctor visit', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus"></i> Add Round Visit Charge';
+        }
+    }
+
+    // ── Procedure & OT Methods ──
+    function selectProcItem(item) {
+        const res = document.getElementById('proc-results'); if(res) res.style.display = 'none';
+        document.getElementById('proc-input').value = item.name || '';
+        document.getElementById('proc-fee').value = parseFloat(item.price || 0);
+        calcProcedureTotal();
+    }
+
+    function calcProcedureTotal() {
+        const qty = parseFloat(document.getElementById('proc-qty').value) || 0;
+        const fee = parseFloat(document.getElementById('proc-fee').value) || 0;
+        const disc = parseFloat(document.getElementById('proc-discount').value) || 0;
+        const total = Math.max(0, (qty * fee) - disc);
+        const el = document.getElementById('proc-total-preview');
+        if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+
+    async function saveProcedureCharge() {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select a patient bill first', 'warning'); return;
+        }
+
+        const date = document.getElementById('proc-date').value || new Date().toISOString().split('T')[0];
+        const procName = document.getElementById('proc-input').value.trim();
+        const doctorName = document.getElementById('proc-doctor').value.trim();
+        const setting = document.getElementById('proc-setting').value;
+        const qty = parseFloat(document.getElementById('proc-qty').value) || 1;
+        const fee = parseFloat(document.getElementById('proc-fee').value) || 0;
+        const discount = parseFloat(document.getElementById('proc-discount').value) || 0;
+        const notes = document.getElementById('proc-notes').value.trim();
+
+        if (!procName) {
+            showToast('Please enter procedure name', 'warning');
+            document.getElementById('proc-input').focus();
+            return;
+        }
+
+        const btn = document.getElementById('proc-save-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        try {
+            const res = await fetch(`${API_URL}ipd-billing-items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'add',
+                    bill_id: currentBillId,
+                    admission_id: currentAdmissionId,
+                    patient_id: currentPatientId,
+                    charge_date: date,
+                    charge_type: 'PROCEDURE',
+                    department: setting,
+                    description: procName,
+                    doctor_name: doctorName,
+                    quantity: qty,
+                    unit_price: fee,
+                    discount_amt: discount,
+                    reference_id: notes,
+                    notes: notes,
+                    force: true
+                })
+            });
+            const json = await res.json();
+            if (json.success) {
+                showToast('Procedure charge added & synced to K-Sheet!', 'success');
+                closeModal('modalAddCharge');
+                loadAdmission(currentAdmissionId, currentPatientId);
+                loadItems();
+            } else {
+                showToast(json.message || 'Failed to add procedure charge', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Error saving procedure charge', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus"></i> Add Procedure Charge';
+        }
+    }
+
+    // ── Helper Time Duration Calculator ──
+    function diffHours(startTime, endTime) {
+        if (!startTime || !endTime) return '';
+        const [sh, sm] = startTime.split(':').map(Number);
+        const [eh, em] = endTime.split(':').map(Number);
+        let sMin = sh * 60 + sm;
+        let eMin = eh * 60 + em;
+        if (eMin < sMin) eMin += 24 * 60; // Next day
+        const diff = eMin - sMin;
+        const hrs = Math.floor(diff / 60);
+        const mins = diff % 60;
+        if (mins === 0) return `${hrs}h`;
+        return `${hrs}h ${mins}m`;
+    }
+
+    // ── 5. Dialysis Methods (14. dialysis_chart) ──
+    function calcDiaDuration() {
+        const s = document.getElementById('dia-start')?.value;
+        const e = document.getElementById('dia-end')?.value;
+        const dur = diffHours(s, e);
+        if (dur) {
+            const el = document.getElementById('dia-dur');
+            if (el) el.value = dur;
+        }
+    }
+
+    function calcDiaTotal() {
+        const fee = parseFloat(document.getElementById('dia-fee')?.value) || 0;
+        const disc = parseFloat(document.getElementById('dia-discount')?.value) || 0;
+        const total = Math.max(0, fee - disc);
+        const el = document.getElementById('dia-total-preview');
+        if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+
+    async function saveDialysisCharge() {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select a patient bill first', 'warning'); return;
+        }
+        const doctorName = (document.getElementById('dia-doctor')?.value || document.getElementById('dia-doc-search')?.value || '').trim();
+        const date = document.getElementById('dia-date')?.value || new Date().toISOString().split('T')[0];
+        const startTime = document.getElementById('dia-start')?.value || '';
+        const endTime = document.getElementById('dia-end')?.value || '';
+        const duration = document.getElementById('dia-dur')?.value.trim() || '4h';
+        const diaType = document.getElementById('dia-type')?.value || 'Hemodialysis';
+        const fee = parseFloat(document.getElementById('dia-fee')?.value) || 0;
+        const discount = parseFloat(document.getElementById('dia-discount')?.value) || 0;
+        const notes = document.getElementById('dia-notes')?.value.trim() || '';
+
+        if (!doctorName) {
+            showToast('Please search or select an attending nephrologist/doctor', 'warning');
+            const el = document.getElementById('dia-doc-search'); if (el) el.focus();
+            return;
+        }
+
+        const btn = document.getElementById('dia-save-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        try {
+            const res = await fetch(`${API_URL}ipd-billing-items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'add',
+                    bill_id: currentBillId,
+                    admission_id: currentAdmissionId,
+                    patient_id: currentPatientId,
+                    charge_date: date,
+                    charge_type: 'DIALYSIS',
+                    department: 'Dialysis Unit',
+                    description: diaType,
+                    doctor_name: doctorName,
+                    start_time: startTime,
+                    end_time: endTime,
+                    duration: duration,
+                    quantity: 1,
+                    unit_price: fee,
+                    discount_amt: discount,
+                    reference_id: notes,
+                    notes: notes,
+                    force: true
+                })
+            });
+            const json = await res.json();
+            if (json.success) {
+                showToast('Dialysis record added & synced to K-Sheet!', 'success');
+                closeModal('modalAddCharge');
+                loadAdmission(currentAdmissionId, currentPatientId);
+                loadItems();
+            } else {
+                showToast(json.message || 'Failed to add dialysis charge', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Error saving dialysis charge', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus"></i> Add Dialysis Charge';
+        }
+    }
+
+    // ── 6. Oxygen Therapy Methods (15. oxygen_chart) ──
+    function calcOxyDuration() {
+        const s = document.getElementById('oxy-start')?.value;
+        const e = document.getElementById('oxy-end')?.value;
+        const dur = diffHours(s, e);
+        if (dur) {
+            const el = document.getElementById('oxy-dur');
+            if (el) el.value = dur;
+        }
+    }
+
+    function calcOxyTotal() {
+        const fee = parseFloat(document.getElementById('oxy-fee')?.value) || 0;
+        const disc = parseFloat(document.getElementById('oxy-discount')?.value) || 0;
+        const total = Math.max(0, fee - disc);
+        const el = document.getElementById('oxy-total-preview');
+        if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+
+    async function saveOxygenCharge() {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select a patient bill first', 'warning'); return;
+        }
+        const doctorName = (document.getElementById('oxy-doctor')?.value || document.getElementById('oxy-doc-search')?.value || '').trim();
+        const date = document.getElementById('oxy-date')?.value || new Date().toISOString().split('T')[0];
+        const flowRate = document.getElementById('oxy-flow')?.value.trim() || '2 L/min';
+        const device = document.getElementById('oxy-device')?.value || 'Nasal Cannula / Prongs';
+        const startTime = document.getElementById('oxy-start')?.value || '';
+        const endTime = document.getElementById('oxy-end')?.value || '';
+        const duration = document.getElementById('oxy-dur')?.value.trim() || '2h';
+        const fee = parseFloat(document.getElementById('oxy-fee')?.value) || 0;
+        const discount = parseFloat(document.getElementById('oxy-discount')?.value) || 0;
+        const notes = document.getElementById('oxy-notes')?.value.trim() || '';
+
+        if (!doctorName) {
+            showToast('Please search or select an attending doctor', 'warning');
+            const el = document.getElementById('oxy-doc-search'); if (el) el.focus();
+            return;
+        }
+
+        const btn = document.getElementById('oxy-save-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        try {
+            const res = await fetch(`${API_URL}ipd-billing-items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'add',
+                    bill_id: currentBillId,
+                    admission_id: currentAdmissionId,
+                    patient_id: currentPatientId,
+                    charge_date: date,
+                    charge_type: 'OXYGEN',
+                    department: 'Respiratory Care',
+                    description: `Oxygen Therapy - ${device} (${flowRate})`,
+                    doctor_name: doctorName,
+                    flow_rate: flowRate,
+                    start_time: startTime,
+                    end_time: endTime,
+                    duration: duration,
+                    quantity: 1,
+                    unit_price: fee,
+                    discount_amt: discount,
+                    reference_id: notes,
+                    notes: notes,
+                    force: true
+                })
+            });
+            const json = await res.json();
+            if (json.success) {
+                showToast('Oxygen therapy added & synced to K-Sheet!', 'success');
+                closeModal('modalAddCharge');
+                loadAdmission(currentAdmissionId, currentPatientId);
+                loadItems();
+            } else {
+                showToast(json.message || 'Failed to add oxygen charge', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Error saving oxygen charge', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus"></i> Add Oxygen Charge';
+        }
+    }
+
+    // ── 7. Ventilator Support Methods (16. ventilation_chart) ──
+    function calcVentDuration() {
+        const s = document.getElementById('vent-start')?.value;
+        const e = document.getElementById('vent-end')?.value;
+        const dur = diffHours(s, e);
+        if (dur) {
+            const el = document.getElementById('vent-dur');
+            if (el) el.value = dur;
+        }
+    }
+
+    function calcVentTotal() {
+        const fee = parseFloat(document.getElementById('vent-fee')?.value) || 0;
+        const disc = parseFloat(document.getElementById('vent-discount')?.value) || 0;
+        const total = Math.max(0, fee - disc);
+        const el = document.getElementById('vent-total-preview');
+        if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+
+    async function saveVentilatorCharge() {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select a patient bill first', 'warning'); return;
+        }
+        const doctorName = (document.getElementById('vent-doctor')?.value || document.getElementById('vent-doc-search')?.value || '').trim();
+        const date = document.getElementById('vent-date')?.value || new Date().toISOString().split('T')[0];
+        const mode = document.getElementById('vent-mode')?.value || 'CPAP';
+        const startTime = document.getElementById('vent-start')?.value || '';
+        const endTime = document.getElementById('vent-end')?.value || '';
+        const duration = document.getElementById('vent-dur')?.value.trim() || '6h';
+        const fee = parseFloat(document.getElementById('vent-fee')?.value) || 0;
+        const discount = parseFloat(document.getElementById('vent-discount')?.value) || 0;
+        const notes = document.getElementById('vent-notes')?.value.trim() || '';
+
+        if (!doctorName) {
+            showToast('Please search or select an attending intensivist/doctor', 'warning');
+            const el = document.getElementById('vent-doc-search'); if (el) el.focus();
+            return;
+        }
+
+        const btn = document.getElementById('vent-save-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        try {
+            const res = await fetch(`${API_URL}ipd-billing-items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'add',
+                    bill_id: currentBillId,
+                    admission_id: currentAdmissionId,
+                    patient_id: currentPatientId,
+                    charge_date: date,
+                    charge_type: 'VENTILATION',
+                    department: 'Critical Care / ICU',
+                    description: `Ventilator Support (${mode})`,
+                    doctor_name: doctorName,
+                    vent_mode: mode,
+                    start_time: startTime,
+                    end_time: endTime,
+                    duration: duration,
+                    quantity: 1,
+                    unit_price: fee,
+                    discount_amt: discount,
+                    reference_id: notes,
+                    notes: notes,
+                    force: true
+                })
+            });
+            const json = await res.json();
+            if (json.success) {
+                showToast('Ventilator support added & synced to K-Sheet!', 'success');
+                closeModal('modalAddCharge');
+                loadAdmission(currentAdmissionId, currentPatientId);
+                loadItems();
+            } else {
+                showToast(json.message || 'Failed to add ventilator charge', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Error saving ventilator charge', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus"></i> Add Ventilator Charge';
+        }
+    }
+
+    // ── 8. Blood Transfusion Methods (17. blood_transfusion_chart) ──
+    function calcBtTotal() {
+        const fee = parseFloat(document.getElementById('bt-fee')?.value) || 0;
+        const disc = parseFloat(document.getElementById('bt-discount')?.value) || 0;
+        const total = Math.max(0, fee - disc);
+        const el = document.getElementById('bt-total-preview');
+        if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+
+    async function saveTransfusionCharge() {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select a patient bill first', 'warning'); return;
+        }
+        const doctorName = (document.getElementById('bt-doctor')?.value || document.getElementById('bt-doc-search')?.value || '').trim();
+        const date = document.getElementById('bt-date')?.value || new Date().toISOString().split('T')[0];
+        const group = document.getElementById('bt-group')?.value || 'O+';
+        const component = document.getElementById('bt-comp')?.value || 'Packed Red Blood Cells (PRBC)';
+        const bag = document.getElementById('bt-bag')?.value.trim() || '';
+        const qty = parseFloat(document.getElementById('bt-qty')?.value) || 350;
+        const vitals = document.getElementById('bt-vitals')?.value.trim() || '';
+        const fee = parseFloat(document.getElementById('bt-fee')?.value) || 0;
+        const discount = parseFloat(document.getElementById('bt-discount')?.value) || 0;
+        const notes = document.getElementById('bt-notes')?.value.trim() || '';
+
+        if (!doctorName) {
+            showToast('Please search or select prescribing doctor', 'warning');
+            const el = document.getElementById('bt-doc-search'); if (el) el.focus();
+            return;
+        }
+
+        const btn = document.getElementById('bt-save-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        try {
+            const res = await fetch(`${API_URL}ipd-billing-items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'add',
+                    bill_id: currentBillId,
+                    admission_id: currentAdmissionId,
+                    patient_id: currentPatientId,
+                    charge_date: date,
+                    charge_type: 'BLOOD_TRANSFUSION',
+                    department: 'Blood Bank',
+                    description: `Blood Transfusion - ${component} (${group}) [Bag: ${bag || 'N/A'}]`,
+                    doctor_name: doctorName,
+                    blood_group: group,
+                    bag_number: bag,
+                    trans_qty: qty,
+                    vitals_during: vitals,
+                    quantity: 1,
+                    unit_price: fee,
+                    discount_amt: discount,
+                    reference_id: notes,
+                    notes: notes,
+                    force: true
+                })
+            });
+            const json = await res.json();
+            if (json.success) {
+                showToast('Blood transfusion added & synced to K-Sheet!', 'success');
+                closeModal('modalAddCharge');
+                loadAdmission(currentAdmissionId, currentPatientId);
+                loadItems();
+            } else {
+                showToast(json.message || 'Failed to add transfusion charge', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Error saving transfusion charge', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus"></i> Add Transfusion Charge';
+        }
+    }
+
+    // ── 9. Ward Transfer Methods (18. ward_transfer) ──
+    function calcWtTotal() {
+        const fee = parseFloat(document.getElementById('wt-fee')?.value) || 0;
+        const disc = parseFloat(document.getElementById('wt-discount')?.value) || 0;
+        const total = Math.max(0, fee - disc);
+        const el = document.getElementById('wt-total-preview');
+        if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+
+    async function saveWardTransferCharge() {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select a patient bill first', 'warning'); return;
+        }
+        const doctorName = (document.getElementById('wt-doctor')?.value || document.getElementById('wt-doc-search')?.value || '').trim();
+        const date = document.getElementById('wt-date')?.value || new Date().toISOString().split('T')[0];
+        const time = document.getElementById('wt-time')?.value || new Date().toTimeString().slice(0, 5);
+        const fromWard = document.getElementById('wt-from')?.value.trim() || '';
+        const toWard = document.getElementById('wt-to')?.value.trim() || '';
+        const fee = parseFloat(document.getElementById('wt-fee')?.value) || 0;
+        const discount = parseFloat(document.getElementById('wt-discount')?.value) || 0;
+        const reason = document.getElementById('wt-reason')?.value.trim() || '';
+
+        if (!doctorName) {
+            showToast('Please search or select authorising doctor', 'warning');
+            const el = document.getElementById('wt-doc-search'); if (el) el.focus();
+            return;
+        }
+
+        const btn = document.getElementById('wt-save-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        try {
+            const res = await fetch(`${API_URL}ipd-billing-items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'add',
+                    bill_id: currentBillId,
+                    admission_id: currentAdmissionId,
+                    patient_id: currentPatientId,
+                    charge_date: date,
+                    charge_type: 'WARD_TRANSFER',
+                    department: 'Nursing Administration',
+                    description: `Ward Transfer: ${fromWard || 'Ward'} → ${toWard || 'Ward'}`,
+                    doctor_name: doctorName,
+                    from_ward: fromWard,
+                    to_ward: toWard,
+                    visit_time: time,
+                    quantity: 1,
+                    unit_price: fee,
+                    discount_amt: discount,
+                    reference_id: reason,
+                    notes: reason,
+                    force: true
+                })
+            });
+            const json = await res.json();
+            if (json.success) {
+                showToast('Ward transfer recorded & synced!', 'success');
+                closeModal('modalAddCharge');
+                loadAdmission(currentAdmissionId, currentPatientId);
+                loadItems();
+            } else {
+                showToast(json.message || 'Failed to add ward transfer charge', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Error saving ward transfer charge', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus"></i> Add Transfer Charge';
+        }
+    }
+
+    // ── Consumables & Other Methods ──
+    function calcConsumableTotal() {
+        const qty = parseFloat(document.getElementById('misc-qty').value) || 0;
+        const fee = parseFloat(document.getElementById('misc-fee').value) || 0;
+        const disc = parseFloat(document.getElementById('misc-discount').value) || 0;
+        const total = Math.max(0, (qty * fee) - disc);
+        const el = document.getElementById('misc-total-preview');
+        if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+
+    async function saveConsumableCharge() {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select a patient bill first', 'warning'); return;
+        }
+
+        const date = document.getElementById('misc-date').value || new Date().toISOString().split('T')[0];
+        const type = document.getElementById('misc-type').value;
+        const desc = document.getElementById('misc-desc').value.trim();
+        const dept = document.getElementById('misc-dept').value.trim() || 'General';
+        const qty = parseFloat(document.getElementById('misc-qty').value) || 1;
+        const fee = parseFloat(document.getElementById('misc-fee').value) || 0;
+        const discount = parseFloat(document.getElementById('misc-discount').value) || 0;
+        const notes = document.getElementById('misc-notes').value.trim();
+
+        if (!desc) {
+            showToast('Please enter consumable / item description', 'warning');
+            document.getElementById('misc-desc').focus();
+            return;
+        }
+
+        const btn = document.getElementById('misc-save-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        try {
+            const res = await fetch(`${API_URL}ipd-billing-items`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'add',
+                    bill_id: currentBillId,
+                    admission_id: currentAdmissionId,
+                    patient_id: currentPatientId,
+                    charge_date: date,
+                    charge_type: type,
+                    department: dept,
+                    description: desc,
+                    quantity: qty,
+                    unit_price: fee,
+                    discount_amt: discount,
+                    reference_id: notes,
+                    notes: notes,
+                    force: true
+                })
+            });
+            const json = await res.json();
+            if (json.success) {
+                showToast('Consumable charge added successfully!', 'success');
+                closeModal('modalAddCharge');
+                loadAdmission(currentAdmissionId, currentPatientId);
+                loadItems();
+            } else {
+                showToast(json.message || 'Failed to add charge', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Error saving consumable charge', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus"></i> Add Consumable Charge';
+        }
+    }
+
+    // Close search dropdowns on global click
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.catalog-search-wrap')) {
+            document.querySelectorAll('.catalog-search-results').forEach(el => el.classList.remove('open'));
+        }
+    });
+
+    function calcChargeTotal() {
+        const catType = document.getElementById('chargeType') ? document.getElementById('chargeType').value : 'LAB';
+        let qty = 1;
+        let price = 0;
+        let disc = 0;
+
+        if (catType === 'LAB') {
+            qty = parseFloat(document.getElementById('labQty').value) || 0;
+            price = parseFloat(document.getElementById('labUnitPrice').value) || 0;
+            disc = parseFloat(document.getElementById('labDiscount').value) || 0;
+        } else if (catType === 'RADIOLOGY') {
+            qty = parseFloat(document.getElementById('radQty').value) || 0;
+            price = parseFloat(document.getElementById('radUnitPrice').value) || 0;
+            disc = parseFloat(document.getElementById('radDiscount').value) || 0;
+        } else if (catType === 'PHARMACY') {
+            qty = parseFloat(document.getElementById('phQty').value) || 0;
+            price = parseFloat(document.getElementById('phUnitPrice').value) || 0;
+            disc = parseFloat(document.getElementById('phDiscount').value) || 0;
+        } else if (catType === 'DOCTOR_VISIT') {
+            qty = 1;
+            price = parseFloat(document.getElementById('docUnitPrice').value) || 0;
+            disc = parseFloat(document.getElementById('docDiscount').value) || 0;
+        } else if (catType === 'OT' || catType === 'PROCEDURE') {
+            qty = parseFloat(document.getElementById('procQty').value) || 0;
+            price = parseFloat(document.getElementById('procUnitPrice').value) || 0;
+            disc = parseFloat(document.getElementById('procDiscount').value) || 0;
+        } else {
+            qty = parseFloat(document.getElementById('miscQty').value) || 0;
+            price = parseFloat(document.getElementById('miscUnitPrice').value) || 0;
+            disc = parseFloat(document.getElementById('miscDiscount').value) || 0;
+        }
+
+        const total = Math.max(0, (qty * price) - disc);
+        const preview = document.getElementById('chargeTotalPreview');
+        if (preview) {
+            preview.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+        }
+    }
+
+    async function saveCharge() {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select a patient bill first', 'warning');
+            return;
+        }
+
         const btn = document.getElementById('btnSaveCharge');
+        const chargeType = document.getElementById('chargeType').value;
+        const chargeDate = document.getElementById('chargeDate').value || new Date().toISOString().split('T')[0];
+
+        let description = '';
+        let itemCode = '';
+        let department = '';
+        let batchNumber = '';
+        let doctorName = '';
+        let shiftType = '';
+        let quantity = 1;
+        let unitPrice = 0;
+        let discountAmt = 0;
+        let notes = '';
+
+        if (chargeType === 'LAB') {
+            description = document.getElementById('labSearchInput').value.trim();
+            itemCode = document.getElementById('labCode').value.trim();
+            department = document.getElementById('labDept').value.trim() || 'Laboratory';
+            quantity = parseFloat(document.getElementById('labQty').value) || 1;
+            unitPrice = parseFloat(document.getElementById('labUnitPrice').value);
+            discountAmt = parseFloat(document.getElementById('labDiscount').value) || 0;
+            notes = document.getElementById('labNotes').value.trim();
+
+            if (!description) {
+                showToast('Please select or enter a Lab Test', 'warning');
+                document.getElementById('labSearchInput').focus();
+                return;
+            }
+        } else if (chargeType === 'RADIOLOGY') {
+            description = document.getElementById('radSearchInput').value.trim();
+            itemCode = document.getElementById('radCode').value.trim();
+            department = document.getElementById('radDept').value.trim() || 'Radiology';
+            quantity = parseFloat(document.getElementById('radQty').value) || 1;
+            unitPrice = parseFloat(document.getElementById('radUnitPrice').value);
+            discountAmt = parseFloat(document.getElementById('radDiscount').value) || 0;
+            notes = document.getElementById('radNotes').value.trim();
+
+            if (!description) {
+                showToast('Please select or enter a Radiology Investigation', 'warning');
+                document.getElementById('radSearchInput').focus();
+                return;
+            }
+        } else if (chargeType === 'PHARMACY') {
+            description = document.getElementById('phSearchInput').value.trim();
+            itemCode = document.getElementById('phCode').value.trim();
+            batchNumber = document.getElementById('phBatch').value.trim() || 'N/A';
+            department = 'Pharmacy';
+            quantity = parseFloat(document.getElementById('phQty').value) || 1;
+            unitPrice = parseFloat(document.getElementById('phUnitPrice').value);
+            discountAmt = parseFloat(document.getElementById('phDiscount').value) || 0;
+            notes = document.getElementById('phNotes').value.trim();
+
+            if (!description) {
+                showToast('Please select or enter a Medication Name', 'warning');
+                document.getElementById('phSearchInput').focus();
+                return;
+            }
+        } else if (chargeType === 'DOCTOR_VISIT') {
+            description = document.getElementById('docSearchInput').value.trim();
+            doctorName = description;
+            department = document.getElementById('docDept').value.trim() || 'General Medicine';
+            shiftType = document.getElementById('docShift').value;
+            quantity = 1;
+            unitPrice = parseFloat(document.getElementById('docUnitPrice').value);
+            discountAmt = parseFloat(document.getElementById('docDiscount').value) || 0;
+            notes = document.getElementById('docNotes').value.trim();
+
+            if (!description) {
+                showToast('Please enter or select Visiting Doctor name', 'warning');
+                document.getElementById('docSearchInput').focus();
+                return;
+            }
+        } else if (chargeType === 'OT' || chargeType === 'PROCEDURE') {
+            description = document.getElementById('procSearchInput').value.trim();
+            doctorName = document.getElementById('procDoctor').value.trim();
+            department = document.getElementById('procDept').value.trim() || (chargeType === 'OT' ? 'Operation Theatre' : 'Procedure');
+            quantity = parseFloat(document.getElementById('procQty').value) || 1;
+            unitPrice = parseFloat(document.getElementById('procUnitPrice').value);
+            discountAmt = parseFloat(document.getElementById('procDiscount').value) || 0;
+            notes = document.getElementById('procNotes').value.trim();
+
+            if (!description) {
+                showToast('Please enter Procedure name', 'warning');
+                document.getElementById('procSearchInput').focus();
+                return;
+            }
+        } else {
+            // Consumables / Misc / Other
+            description = document.getElementById('miscDesc').value.trim();
+            department = document.getElementById('miscDept').value.trim() || ucfirst(chargeType.toLowerCase());
+            quantity = parseFloat(document.getElementById('miscQty').value) || 1;
+            unitPrice = parseFloat(document.getElementById('miscUnitPrice').value);
+            discountAmt = parseFloat(document.getElementById('miscDiscount').value) || 0;
+            notes = document.getElementById('miscNotes').value.trim();
+
+            if (!description) {
+                showToast('Please enter Item / Service Description', 'warning');
+                document.getElementById('miscDesc').focus();
+                return;
+            }
+        }
+
+        if (isNaN(unitPrice) || unitPrice < 0) {
+            showToast('Please enter a valid Rate / Unit Price', 'warning');
+            return;
+        }
 
         const data = {
             action: 'add',
             bill_id: currentBillId,
             admission_id: currentAdmissionId,
             patient_id: currentPatientId,
-            charge_date: document.getElementById('chargeDate').value,
-            charge_type: document.getElementById('chargeType').value,
-            department: document.getElementById('chargeDept').value,
-            description: document.getElementById('chargeDesc').value,
-            quantity: document.getElementById('chargeQty').value,
-            unit_price: document.getElementById('chargeUnitPrice').value,
-            discount_amt: document.getElementById('chargeDiscount').value,
-            reference_id: document.getElementById('chargeNotes').value,
+            charge_date: chargeDate,
+            charge_type: chargeType,
+            department: department,
+            description: description,
+            item_code: itemCode,
+            batch_number: batchNumber,
+            doctor_name: doctorName,
+            shift_type: shiftType,
+            quantity: quantity,
+            unit_price: unitPrice,
+            discount_amt: discountAmt,
+            reference_id: notes,
+            notes: notes,
             force: addChargeForce
         };
-
-        if (!data.charge_type || !data.description || !data.unit_price) {
-            showToast('Please fill all required fields', 'warning');
-            return;
-        }
 
         btn.classList.add('loading');
         try {
@@ -764,15 +2484,20 @@ const billing = (function () {
             const json = await res.json();
 
             if (json.success) {
-                showToast('Charge added successfully', 'success');
+                showToast('Charge added & synchronized to Kardex successfully', 'success');
                 closeModal('modalAddCharge');
 
                 // Update UI state
-                currentMaster = { ...currentMaster, ...json.data.financial };
-                updateWorkspaceUI();
+                if (json.data && json.data.financial) {
+                    currentMaster = { ...currentMaster, ...json.data.financial };
+                    updateWorkspaceUI();
+                } else {
+                    loadAdmission(currentAdmissionId, currentPatientId);
+                }
 
                 // Refresh list if viewing all or same category
-                const activeTab = document.querySelector('.cat-tab.active').dataset.type;
+                const activeTabEl = document.querySelector('.cat-tab.active');
+                const activeTab = activeTabEl ? activeTabEl.dataset.type : '';
                 if (!activeTab || activeTab === data.charge_type) {
                     loadItems(activeTab);
                 }
@@ -781,7 +2506,7 @@ const billing = (function () {
                 document.getElementById('chargeDupMsg').textContent = json.message;
                 warn.style.display = 'flex';
             } else {
-                showToast(json.message, 'error');
+                showToast(json.message || 'Failed to add charge', 'error');
             }
         } catch (e) {
             console.error(e);
@@ -789,16 +2514,16 @@ const billing = (function () {
         } finally {
             btn.classList.remove('loading');
         }
-    };
+    }
 
-    window.forceAddCharge = function () {
+    function forceAddCharge() {
         addChargeForce = true;
         document.getElementById('chargeDupWarning').style.display = 'none';
         saveCharge();
-    };
+    }
 
     // ── 2. ROOM RENT GENERATOR ──
-    window.openRoomRentModal = function () {
+    function openRoomRentModal() {
         if (!currentBedInfo) {
             showToast('Bed information not found', 'error');
             return;
@@ -821,10 +2546,10 @@ const billing = (function () {
 
         loadRoomRentPreview();
         openModal('modalRoomRent');
-    };
+    }
 
     let rrPreviewTimeout;
-    window.loadRoomRentPreview = function () {
+    function loadRoomRentPreview() {
         clearTimeout(rrPreviewTimeout);
         document.getElementById('rrPreview').innerHTML = `<div class="rr-preview-loading"><i data-lucide="loader-2" class="lucide-spin"></i> Generating preview...</div>`;
         document.getElementById('rrPreviewSummary').style.display = 'none';
@@ -862,7 +2587,7 @@ const billing = (function () {
                     html += `</tbody></table>`;
 
                     document.getElementById('rrPreview').innerHTML = html;
-            if(window.lucide) lucide.createIcons();
+                    if(window.lucide) lucide.createIcons();
 
                     document.getElementById('rrNewCount').textContent = json.data.new_count;
                     document.getElementById('rrSkipCount').textContent = json.data.skip_count;
@@ -879,9 +2604,9 @@ const billing = (function () {
                 console.error(e);
             }
         }, 300);
-    };
+    }
 
-    window.confirmRoomRent = async function () {
+    async function confirmRoomRent() {
         const btn = document.getElementById('btnConfirmRoomRent');
         btn.classList.add('loading');
 
@@ -919,13 +2644,13 @@ const billing = (function () {
         } finally {
             btn.classList.remove('loading');
         }
-    };
+    }
 
     // ── 3. PAYMENT MODAL ──
     let currentPayMode = 'CASH';
     let currentPayType = 'PARTIAL';
 
-    window.openPaymentModal = function (suggestedType = 'PARTIAL') {
+    function openPaymentModal(suggestedType = 'PARTIAL') {
         if (!currentMaster) return;
 
         document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
@@ -954,7 +2679,7 @@ const billing = (function () {
         togglePaymentFields();
         updatePayPreview();
         openModal('modalPayment');
-    };
+    }
 
     // Event delegation for Pay Type
     document.getElementById('payTypeGroup').addEventListener('click', function (e) {
@@ -1000,7 +2725,7 @@ const billing = (function () {
         }
     }
 
-    window.fillFullAmount = function () {
+    function fillFullAmount() {
         if (!currentMaster) return;
         document.getElementById('payAmount').value = currentMaster.balance_due;
         if (currentPayType === 'PARTIAL') {
@@ -1010,9 +2735,10 @@ const billing = (function () {
             });
         }
         updatePayPreview();
-    };
+    }
+    window.fillFullAmount = fillFullAmount;
 
-    window.updatePayPreview = function () {
+    function updatePayPreview() {
         const amt = parseFloat(document.getElementById('payAmount').value) || 0;
         const bal = parseFloat(currentMaster.balance_due);
         const preview = document.getElementById('payAfterVal');
@@ -1033,9 +2759,9 @@ const billing = (function () {
                 preview.style.color = 'var(--navy)';
             }
         }
-    };
+    }
 
-    window.savePayment = async function () {
+    async function savePayment() {
         const amt = parseFloat(document.getElementById('payAmount').value) || 0;
         if (amt <= 0) { showToast('Enter valid amount', 'warning'); return; }
 
@@ -1096,7 +2822,7 @@ const billing = (function () {
     };
 
     // ── 4. INSURANCE RECEIPT ──
-    window.openInsuranceReceiptModal = async function () {
+    async function openInsuranceReceiptModal() {
         if (!currentMaster) return;
 
         try {
@@ -1123,14 +2849,14 @@ const billing = (function () {
         } catch (e) {
             console.error(e);
         }
-    };
+    }
 
-    window.fillInsFullAmount = function () {
+    function fillInsFullAmount() {
         const amt = document.getElementById('insRcptAmount');
         amt.value = amt.dataset.pending || 0;
-    };
+    }
 
-    window.saveInsuranceReceipt = async function () {
+    async function saveInsuranceReceipt() {
         const amt = parseFloat(document.getElementById('insRcptAmount').value) || 0;
         const ref = document.getElementById('insRcptRef').value.trim();
         if (amt <= 0) { showToast('Enter valid amount', 'warning'); return; }
@@ -1165,10 +2891,10 @@ const billing = (function () {
         } catch (e) {
             showToast('Error saving receipt', 'error');
         }
-    };
+    }
 
     // ── 5. APPLY DISCOUNT ──
-    window.openDiscountModal = function () {
+    function openDiscountModal() {
         if (!currentMaster) return;
         if (USER_ROLE === 'Receptionist') {
             showToast('Only admins or finance managers can modify discounts', 'warning');
@@ -1184,9 +2910,9 @@ const billing = (function () {
 
         updateDiscountPreview();
         openModal('modalDiscount');
-    };
+    }
 
-    window.calcDiscountPct = function () {
+    function calcDiscountPct() {
         const sub = parseFloat(currentMaster.subtotal) || 0;
         const amt = parseFloat(document.getElementById('discAmount').value) || 0;
         if (sub > 0 && amt <= sub) {
@@ -1196,9 +2922,9 @@ const billing = (function () {
             document.getElementById('discPct').value = 100;
         }
         updateDiscountPreview();
-    };
+    }
 
-    window.calcDiscountAmt = function () {
+    function calcDiscountAmt() {
         const sub = parseFloat(currentMaster.subtotal) || 0;
         const pct = parseFloat(document.getElementById('discPct').value) || 0;
         if (pct >= 0 && pct <= 100) {
@@ -1208,7 +2934,7 @@ const billing = (function () {
             document.getElementById('discAmount').value = sub;
         }
         updateDiscountPreview();
-    };
+    }
 
     function updateDiscountPreview() {
         const sub = parseFloat(currentMaster.subtotal) || 0;
@@ -1524,7 +3250,7 @@ const billing = (function () {
         }
     };
 
-    window.startInlineEdit = function(itemId, currentTotal) {
+    function startInlineEdit(itemId, currentTotal) {
         const cell = document.getElementById(`total-cell-${itemId}`);
         if (!cell) return;
         cell.innerHTML = `
@@ -1563,16 +3289,16 @@ const billing = (function () {
                 }
             });
         }
-    };
+    }
 
-    window.cancelInlineEdit = function(itemId, originalTotal) {
+    function cancelInlineEdit(itemId, originalTotal) {
         const cell = document.getElementById(`total-cell-${itemId}`);
         if (!cell) return;
         const formattedTotal = originalTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
         cell.innerHTML = `<span style="cursor:pointer; color:var(--blue); text-decoration:underline;" onclick="billing.startInlineEdit(${itemId}, ${originalTotal})" title="Click to edit total">₹${formattedTotal}</span>`;
-    };
+    }
 
-    window.saveInlineEdit = async function (itemId, originalTotal) {
+    async function saveInlineEdit(itemId, originalTotal) {
         const input = document.getElementById(`total-input-${itemId}`);
         if (!input) return;
         const newTotalStr = input.value;
@@ -1621,11 +3347,11 @@ const billing = (function () {
             showToast('Error updating total', 'error');
             billing.cancelInlineEdit(itemId, originalTotal);
         }
-    };
+    }
 
     // ── 8. INSURANCE DETAILS ──
     let currentBillType = 'SELF';
-    window.openInsuranceModal = async function () {
+    async function openInsuranceModal() {
         if (!currentMaster) return;
 
         currentBillType = currentMaster.bill_type || 'SELF';
@@ -1663,14 +3389,14 @@ const billing = (function () {
 
         calcInsPatientPayable();
         openModal('modalInsurance');
-    };
+    }
 
-    window.selectBillType = function (btn) {
+    function selectBillType(btn) {
         document.querySelectorAll('.bill-type-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentBillType = btn.dataset.type;
         toggleInsFields();
-    };
+    }
 
     function toggleInsFields() {
         const fields = document.getElementById('insFormFields');
@@ -1681,7 +3407,7 @@ const billing = (function () {
         }
     }
 
-    window.calcInsPatientPayable = function () {
+    function calcInsPatientPayable() {
         const gt = parseFloat(currentMaster.grand_total) || 0;
         const app = parseFloat(document.getElementById('insApprovedAmt').value) || 0;
         const pp = Math.max(0, gt - app);
@@ -1689,9 +3415,9 @@ const billing = (function () {
         document.getElementById('insGtDisplay').textContent = `₹${gt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
         document.getElementById('insApprDisplay').textContent = `₹${app.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
         document.getElementById('insPpDisplay').textContent = `₹${pp.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    };
+    }
 
-    window.saveInsuranceDetails = async function () {
+    async function saveInsuranceDetails() {
         if (currentBillType !== 'SELF') {
             if (!document.getElementById('insCompanyName').value.trim()) {
                 showToast('Company name is required', 'warning'); return;
@@ -1748,7 +3474,7 @@ const billing = (function () {
         } catch (e) {
             showToast('Error saving insurance details', 'error');
         }
-    };
+    }
 
     // ─────────────────────────────────────────────────────────────
     // UTILS
@@ -1894,6 +3620,13 @@ const billing = (function () {
         openPrintPage('/GM_HMS/reception_view/print_receipt.php', { bill_id: currentBillId });
     }
 
+    function toggleGroup(groupName) {
+        const rows = document.querySelectorAll(`tr[data-group="${groupName}"]`);
+        rows.forEach(r => {
+            r.style.display = (r.style.display === 'none' || r.classList.contains('hidden')) ? '' : 'none';
+        });
+    }
+
     // Export exposed functions
     return {
         init,
@@ -1903,12 +3636,63 @@ const billing = (function () {
         closeChargeMenu,
         openModal,
         closeModal,
-        // Add Charge
+        // Add Charge (Nurse Workspace Pattern)
         openAddChargeModal,
-        onChargeTypeChange,
-        calcChargeTotal,
-        saveCharge,
-        forceAddCharge,
+        selectSubTab,
+        // Lab Test
+        selectLabItem,
+        selectLabItemByIndex,
+        calcLabTotal,
+        saveLabCharge,
+        // Radiology
+        selectRadItem,
+        selectRadItemByIndex,
+        calcRadTotal,
+        saveRadCharge,
+        // Other Services
+        selectOtherItem,
+        selectOtherItemByIndex,
+        calcOtherTotal,
+        saveOtherCharge,
+        // Pharmacy
+        addToPhCart,
+        selectPhItemByIndex,
+        updatePhQty,
+        updatePhPrice,
+        removePhCartItem,
+        savePharmacyOrder,
+        // Doctor Visit
+        onDoctorSelect,
+        selectDoctorItem,
+        selectDocItemByIndex,
+        selectGenericDoctor,
+        selectGenericDocByIndex,
+        calcDoctorTotal,
+        saveDoctorVisitCharge,
+        // Procedure
+        selectProcItem,
+        calcProcedureTotal,
+        saveProcedureCharge,
+        // Dialysis (14)
+        calcDiaDuration,
+        calcDiaTotal,
+        saveDialysisCharge,
+        // Oxygen (15)
+        calcOxyDuration,
+        calcOxyTotal,
+        saveOxygenCharge,
+        // Ventilator (16)
+        calcVentDuration,
+        calcVentTotal,
+        saveVentilatorCharge,
+        // Blood Transfusion (17)
+        calcBtTotal,
+        saveTransfusionCharge,
+        // Ward Transfer (18)
+        calcWtTotal,
+        saveWardTransferCharge,
+        calcConsumableTotal,
+        saveConsumableCharge,
         // Room Rent
         openRoomRentModal,
         loadRoomRentPreview,
@@ -1957,6 +3741,8 @@ const billing = (function () {
     };
 
 })();
+
+window.billing = billing;
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', billing.init);

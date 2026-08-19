@@ -223,6 +223,8 @@ $router->add('POST',   '#^/api/ipd-payment/?$#',                    'GM_HMS\\Con
 $router->add('GET',    '#^/api/ipd-insurance/?$#',                  'GM_HMS\\Controllers\\api\\IpdInsuranceController', 'handleRequest');
 $router->add('POST',   '#^/api/ipd-insurance/?$#',                  'GM_HMS\\Controllers\\api\\IpdInsuranceController', 'handleRequest');
 $router->add('PUT',    '#^/api/ipd-insurance/?$#',                  'GM_HMS\\Controllers\\api\\IpdInsuranceController', 'handleRequest');
+
+$router->add('GET',    '#^/api/ipd-catalog-search/?$#',             'GM_HMS\\Controllers\\api\\IpdCatalogSearchController', 'handleRequest');
 // ── Pharmacy: Reports ─────────────────────────────────────────────────────────
 $router->add('GET',    '#^/api/pharmacy/reports/sales/?$#',         'GM_HMS\\Modules\\Pharmacy\\Controllers\\ReportController', 'sales');
 $router->add('GET',    '#^/api/pharmacy/reports/expiry/?$#',        'GM_HMS\\Modules\\Pharmacy\\Controllers\\ReportController', 'expiry');

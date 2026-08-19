@@ -28,7 +28,31 @@ if (!$billId) { echo "No Bill ID provided."; exit(); }
 
         /* Header */
         .hospital-header { text-align: center; margin-bottom: 20px; }
-        .hospital-header h1 { font-size: 18px; font-weight: bold; margin-bottom: 5px; color: #000; text-transform: uppercase; }
+        .hospital-brand {
+            font-size: 26px;
+            font-weight: 800;
+            color: #1793a5;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+        }
+        .hospital-branches {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #4b5563;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+        .hospital-branches::before, .hospital-branches::after {
+            content: '';
+            display: inline-block;
+            width: 45px;
+            height: 1px;
+            background: #6b7280;
+        }
         .hospital-header p { font-size: 11px; line-height: 1.4; color: #333; }
         
         .bill-title { text-align: center; margin: 25px 0 15px 0; font-size: 14px; font-weight: bold; }
@@ -105,7 +129,8 @@ if (!$billId) { echo "No Bill ID provided."; exit(); }
     <div class="watermark">GM Hospital</div>
     <div class="print-content">
         <div class="hospital-header">
-            <h1>GM HOSPITAL (Basaveshwar Nagar)</h1>
+            <div class="hospital-brand">GM HOSPITALS</div>
+            <div class="hospital-branches">Nagarabhavi | Basaveshwaranagar</div>
             <p>(A Unit of PANNAGARABHAVI HOSPITALS PVT LTD)<br>
                No. 335, 3rd Stage, 4th Block, Siddaiah Puranik Road,<br>
                Basaveshwara nagar, Bengaluru - 560079<br>
@@ -198,10 +223,8 @@ function renderBill(b) {
 
     // Meta Top
     document.getElementById('metaTop').innerHTML = `
-        <div>IP.No : ${b.adm_id || ''}</div>
-        <div>Reg.No : ${b.patient_id || ''}</div>
-        <div>UHID.No : ${b.patient_id || ''}</div>
         <div>Bill No : ${b.bill_id}</div>
+        <div>Reg.No : ${b.patient_id || ''}</div>
         <div>Bill Date : ${fmtDate(b.created_at)}</div>
     `;
 

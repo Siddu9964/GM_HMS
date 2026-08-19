@@ -181,7 +181,7 @@ class IpdBillingMaster extends IpdBaseModel {
         // Check existing
         $existing = $this->fetchOne(
             "SELECT bm.*, 
-                    CONCAT(p.first_name,' ',p.last_name) AS patient_name,
+                    TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.age, p.sex, p.phone,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
@@ -242,7 +242,7 @@ class IpdBillingMaster extends IpdBaseModel {
 
         $newRecord = $this->fetchOne(
             "SELECT bm.*,
-                    CONCAT(p.first_name,' ',p.last_name) AS patient_name,
+                    TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.age, p.sex, p.phone,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
@@ -267,7 +267,7 @@ class IpdBillingMaster extends IpdBaseModel {
         $this->recalculateMaster($billId);
         return $this->fetchOne(
             "SELECT bm.*,
-                    CONCAT(p.first_name,' ',p.last_name) AS patient_name,
+                    TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.age, p.sex, p.phone, p.address,
                     d.full_name AS doctor_name, d.specialization,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
@@ -290,7 +290,7 @@ class IpdBillingMaster extends IpdBaseModel {
         }
         return $this->fetchOne(
             "SELECT bm.*,
-                    CONCAT(p.first_name,' ',p.last_name) AS patient_name,
+                    TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.age, p.sex, p.phone,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
@@ -492,7 +492,7 @@ class IpdBillingMaster extends IpdBaseModel {
         $like = "%{$q}%";
         return $this->fetchAll(
             "SELECT ia.admission_id, ia.patient_id, ia.status, ia.discharge_date,
-                    CONCAT(p.first_name,' ',p.last_name) AS patient_name,
+                    TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.phone, p.age, p.sex,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number,
@@ -548,7 +548,7 @@ class IpdBillingMaster extends IpdBaseModel {
 
         $rows = $this->fetchAll(
             "SELECT bm.*,
-                    CONCAT(p.first_name,' ',p.last_name) AS patient_name,
+                    TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.phone, p.age, p.sex,
                     d.full_name AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number
@@ -651,8 +651,6 @@ class IpdBillingMaster extends IpdBaseModel {
             $nursingPrice = 0;
             $doctorPrice = 0;
             $servicePrice = 0;
-            
-            $totalDailyCharge = $roomPrice + $foodPrice;
 
             // Loop and add the missing periods
             for ($i = 0; $i < $periodsToAdd; $i++) {
@@ -668,10 +666,9 @@ class IpdBillingMaster extends IpdBaseModel {
                     [$billId, $chargeDate]
                 );
 
-                if (!$dup && $totalDailyCharge > 0) {
+                if (!$dup && $roomPrice > 0) {
                     $itemsJson = json_encode([
-                        ['name' => 'Room Rent', 'qty' => 1, 'price' => $roomPrice, 'total' => $roomPrice],
-                        ['name' => 'Food Charges', 'qty' => 1, 'price' => $foodPrice, 'total' => $foodPrice]
+                        ['name' => 'Room Rent', 'qty' => 1, 'price' => $roomPrice, 'total' => $roomPrice]
                     ]);
 
                     $baseBedRent = (float)$admission['amount_per_day'];
@@ -689,12 +686,35 @@ class IpdBillingMaster extends IpdBaseModel {
                         'charge_date' => $chargeDate,
                         'charge_type' => 'ROOM_RENT',
                         'description' => $roomDesc,
-                        'total_amount'=> $totalDailyCharge,
+                        'total_amount'=> $roomPrice,
                         'items_json'  => $itemsJson,
                         'status'      => 'COMPLETED',
                         'created_by'  => $updatedBy,
                         'created_at'  => date('Y-m-d H:i:s')
                     ]);
+
+                    // Add Food Charge for this day under MISC if not already present
+                    if ($foodPrice > 0) {
+                        $dupFood = $this->fetchOne(
+                            "SELECT item_id FROM ipd_billing_items 
+                             WHERE bill_id = ? AND charge_type = 'MISC' AND charge_date = ? AND description LIKE 'Food Charge%' AND status != 'CANCELLED'",
+                            [$billId, $chargeDate]
+                        );
+                        if (!$dupFood) {
+                            $this->db->insert('ipd_billing_items', [
+                                'bill_id'     => $billId,
+                                'patient_id'  => $admission['patient_id'],
+                                'admission_id'=> $admission['admission_id'],
+                                'charge_date' => $chargeDate,
+                                'charge_type' => 'MISC',
+                                'description' => 'Food Charge - Day ' . $dayNumber,
+                                'total_amount'=> $foodPrice,
+                                'status'      => 'COMPLETED',
+                                'created_by'  => $updatedBy,
+                                'created_at'  => date('Y-m-d H:i:s')
+                            ]);
+                        }
+                    }
                 }
             }
         }

@@ -64,13 +64,14 @@ const billing = (function() {
             } else {
                 let html = '';
                 json.data.forEach(p => {
+                    const pName = p.patient_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || 'Patient';
                     const statusClass = p.payment_status === 'Paid' ? 'paid' : (p.payment_status === 'Partial' ? 'partial' : 'pending');
                     html += `
                         <div class="asd-item" onclick="billing.loadAdmission('${p.admission_id}', '${p.patient_id}')">
-                            <div class="asd-icon">${p.patient_name.charAt(0)}</div>
+                            <div class="asd-icon">${pName.charAt(0).toUpperCase()}</div>
                             <div style="flex:1;">
-                                <div class="asd-name">${p.patient_name} <span style="font-weight:normal; font-size:0.8rem; color:var(--slate);">(${p.age}/${p.sex.charAt(0)})</span></div>
-                                <div class="asd-meta">${p.admission_id} · Bed: ${p.ward_name} ${p.bed_number}</div>
+                                <div class="asd-name">${pName} <span style="font-weight:normal; font-size:0.8rem; color:var(--slate);">(${p.age || '-'}/${(p.sex || '-').charAt(0)})</span></div>
+                                <div class="asd-meta">${p.admission_id} · Bed: ${p.ward_name || ''} ${p.bed_number || ''}</div>
                             </div>
                             ${p.bill_id ? `<div class="asd-badge ${statusClass}">${p.payment_status}</div>` : `<div class="asd-badge pending">NEW</div>`}
                         </div>
