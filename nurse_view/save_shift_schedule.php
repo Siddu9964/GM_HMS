@@ -26,15 +26,133 @@ try {
     $shifts = $data['shifts'] ?? [];
 
     if (!$startDate || !$endDate) {
-        echo json_encode(['status' => 'error', 'message' => 'Missing date range in payload.']);
+        echo json_encode(['status' => 'error', 'message' => 'Missing From Date or To Date in payload.']);
         if(isset($conn)) $conn->rollback();
         exit;
     }
 
-    // Delete existing records for this week to properly handle removed assignments
-    $stmtDelete = $conn->prepare("DELETE FROM shift_schedules WHERE start_date = ? AND end_date = ?");
-    $stmtDelete->bind_param("ss", $startDate, $endDate);
-    $stmtDelete->execute();
+    if ($startDate > $endDate) {
+        echo json_encode(['status' => 'error', 'message' => "Invalid Date Range: 'From Date' ($startDate) cannot be later than 'To Date' ($endDate). Please select a valid date range."]);
+        if(isset($conn)) $conn->rollback();
+        exit;
+    }
+
+    // Check internal duplicates in payload
+    $occupiedSlots = [];
+    $nurseDutySlots = [];
+
+    foreach ($shifts as $s) {
+        $nId = $s['nurse_id'] ?? '';
+        $nName = $s['nurse_name'] ?? 'Nurse';
+        $sDate = $s['shift_date'] ?? '';
+        $sType = $s['shift_type'] ?? '';
+        $fName = $s['floor_name'] ?? '';
+        $wName = $s['ward_name'] ?? '';
+        $rType = $s['room_type'] ?? '';
+
+        if ($sType === 'Week Off') {
+            continue;
+        }
+
+        // 1. Room Duplicate Check (same floor, ward, room, date, shift)
+        $roomSlotKey = $fName . '|' . $wName . '|' . $rType . '|' . $sDate . '|' . $sType;
+        if (isset($occupiedSlots[$roomSlotKey]) && $occupiedSlots[$roomSlotKey]['nurse_id'] !== $nId) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => "This floor and room are already assigned to a nurse for the selected date range. Please change the From Date, To Date, or select a different room."
+            ]);
+            if(isset($conn)) $conn->rollback();
+            exit;
+        }
+        $occupiedSlots[$roomSlotKey] = ['nurse_id' => $nId, 'nurse_name' => $nName];
+
+        // 2. Nurse Duplicate Check (same nurse on same date & shift in multiple rooms)
+        $nurseSlotKey = $nId . '|' . $sDate . '|' . $sType;
+        if (isset($nurseDutySlots[$nurseSlotKey])) {
+            $prevLoc = $nurseDutySlots[$nurseSlotKey]['ward_name'] ?: 'another ward';
+            echo json_encode([
+                'status' => 'error',
+                'message' => "Nurse {$nName} is already assigned to {$prevLoc} for the {$sType} shift on {$sDate}. A nurse cannot be in two places at the same time."
+            ]);
+            if(isset($conn)) $conn->rollback();
+            exit;
+        }
+        $nurseDutySlots[$nurseSlotKey] = ['ward_name' => $wName, 'floor_name' => $fName];
+    }
+
+    // Check overlapping external schedules in database
+    $stmtCheckOverlap = $conn->prepare("
+        SELECT floor_name, ward_name, room_type, start_date, end_date, shift_data
+        FROM shift_schedules
+        WHERE (start_date <= ? AND end_date >= ?)
+          AND NOT (start_date = ? AND end_date = ?)
+    ");
+    $stmtCheckOverlap->bind_param("ssss", $endDate, $startDate, $startDate, $endDate);
+    $stmtCheckOverlap->execute();
+    $overlapRes = $stmtCheckOverlap->get_result();
+
+    while ($overlapRow = $overlapRes->fetch_assoc()) {
+        $overlapJson = json_decode($overlapRow['shift_data'], true);
+        if (is_array($overlapJson)) {
+            foreach ($overlapJson as $extShift) {
+                if ($extShift['shift_type'] === 'Week Off') continue;
+                $extDate = $extShift['shift_date'];
+                
+                // Only check dates that fall within the current selected range
+                if ($extDate >= $startDate && $extDate <= $endDate) {
+                    $extFloor = $overlapRow['floor_name'];
+                    $extWard = $overlapRow['ward_name'];
+                    $extRoomType = $overlapRow['room_type'];
+                    $extType = $extShift['shift_type'];
+                    $extNurseId = $extShift['nurse_id'];
+                    $extNurseName = $extShift['nurse_name'];
+
+                    $targetKey = $extFloor . '|' . $extWard . '|' . $extRoomType . '|' . $extDate . '|' . $extType;
+                    if (isset($occupiedSlots[$targetKey])) {
+                        echo json_encode([
+                            'status' => 'error',
+                            'message' => "This floor and room are already assigned to a nurse for the selected date range. Please change the From Date, To Date, or select a different room."
+                        ]);
+                        if(isset($conn)) $conn->rollback();
+                        exit;
+                    }
+
+                    $nurseKey = $extNurseId . '|' . $extDate . '|' . $extType;
+                    if (isset($nurseDutySlots[$nurseKey])) {
+                        echo json_encode([
+                            'status' => 'error',
+                            'message' => "Nurse {$extNurseName} is already assigned to {$extWard} ({$extFloor}) on {$extDate} in an overlapping schedule. Please resolve the schedule conflict."
+                        ]);
+                        if(isset($conn)) $conn->rollback();
+                        exit;
+                    }
+                }
+            }
+        }
+    }
+
+    // Determine specific floor & room types being updated so we only delete matching records
+    $floorsBeingSaved = [];
+    foreach ($shifts as $row) {
+        if (!empty($row['floor_name']) && !empty($row['room_type'])) {
+            $floorsBeingSaved[$row['floor_name'] . '|' . $row['room_type']] = [
+                'floor_name' => $row['floor_name'],
+                'room_type' => $row['room_type']
+            ];
+        }
+    }
+
+    if (!empty($floorsBeingSaved)) {
+        $stmtDelete = $conn->prepare("DELETE FROM shift_schedules WHERE start_date = ? AND end_date = ? AND floor_name = ? AND room_type = ?");
+        foreach ($floorsBeingSaved as $fItem) {
+            $stmtDelete->bind_param("ssss", $startDate, $endDate, $fItem['floor_name'], $fItem['room_type']);
+            $stmtDelete->execute();
+        }
+    } else {
+        $stmtDelete = $conn->prepare("DELETE FROM shift_schedules WHERE start_date = ? AND end_date = ?");
+        $stmtDelete->bind_param("ss", $startDate, $endDate);
+        $stmtDelete->execute();
+    }
 
     // Prepare statement to fetch bed/room data
     $stmtFetch = $conn->prepare("

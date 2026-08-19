@@ -50,6 +50,13 @@ if ($hasEndDate) {
     $endDateStr = $endDate->format('Y-m-d');
 }
 
+// Ensure start date is not after end date
+if ($startDate > $endDate) {
+    $endDate = clone $startDate;
+    $endDate->modify("+6 days");
+    $endDateStr = $endDate->format('Y-m-d');
+}
+
 // Calculate the number of days between start and end (inclusive)
 $interval = $startDate->diff($endDate);
 $numDays = $interval->days + 1; // +1 to include both start and end date
@@ -187,25 +194,36 @@ try {
         $wardIndex++;
     }
 
-    // Fetch Existing Assignments
+    // Fetch Existing and Overlapping Assignments
     $existingAssignments = [];
+    $overlappingAssignments = [];
     $stmtExisting = $conn->prepare("
-        SELECT floor_name, ward_name, room_type, shift_data 
+        SELECT sl_no, floor_name, ward_name, room_type, room_name, start_date, end_date, shift_data 
         FROM shift_schedules 
-        WHERE start_date = ? AND end_date = ?
+        WHERE (start_date <= ? AND end_date >= ?)
     ");
     if ($stmtExisting) {
-        $stmtExisting->bind_param("ss", $startDateStr, $endDateStr);
+        $stmtExisting->bind_param("ss", $endDateStr, $startDateStr);
         $stmtExisting->execute();
         $resExisting = $stmtExisting->get_result();
         while($row = $resExisting->fetch_assoc()) {
+            $isExactRange = ($row['start_date'] === $startDateStr && $row['end_date'] === $endDateStr);
             $jsonData = json_decode($row['shift_data'], true);
             if (is_array($jsonData)) {
                 foreach($jsonData as $shift) {
                     $shift['floor_name'] = $row['floor_name'];
                     $shift['ward_name'] = $row['ward_name'];
                     $shift['room_type'] = $row['room_type'];
-                    $existingAssignments[] = $shift;
+                    $shift['room_name'] = $row['room_name'];
+                    $shift['sched_start'] = $row['start_date'];
+                    $shift['sched_end'] = $row['end_date'];
+                    $shift['sched_id'] = $row['sl_no'];
+                    
+                    if ($isExactRange) {
+                        $existingAssignments[] = $shift;
+                    } else {
+                        $overlappingAssignments[] = $shift;
+                    }
                 }
             }
         }
@@ -214,10 +232,12 @@ try {
     $dbNurses = [];
     $dbWards = [];
     $existingAssignments = [];
+    $overlappingAssignments = [];
 }
 $dbNursesJson = json_encode($dbNurses);
 $dbWardsJson = json_encode($dbWards);
 $existingAssignmentsJson = json_encode($existingAssignments);
+$overlappingAssignmentsJson = json_encode($overlappingAssignments);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -1181,6 +1201,80 @@ $existingAssignmentsJson = json_encode($existingAssignments);
         #confirm-body { font-size: 0.88rem; font-weight: 600; color: var(--gm-text-body); line-height: 1.5; margin-bottom: 20px; }
         .confirm-btns { display: flex; gap: 10px; justify-content: center; }
 
+        /* ── Validation Alert Modal ── */
+        #modal-validation .val-modal-box {
+            border: 2.5px solid #d97706;
+            box-shadow: 0 20px 60px rgba(217, 119, 6, 0.22);
+            text-align: center;
+            max-width: 480px;
+            padding: 28px 24px;
+        }
+        #modal-validation.error .val-modal-box {
+            border-color: #dc2626;
+            box-shadow: 0 20px 60px rgba(220, 38, 38, 0.25);
+        }
+        .val-icon-wrap {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(217, 119, 6, 0.12);
+            color: #d97706;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin: 0 auto 16px auto;
+            border: 2px solid rgba(217, 119, 6, 0.25);
+        }
+        #modal-validation.error .val-icon-wrap {
+            background: rgba(220, 38, 38, 0.12);
+            color: #dc2626;
+            border-color: rgba(220, 38, 38, 0.25);
+        }
+        .val-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--gm-primary);
+            margin-bottom: 10px;
+            letter-spacing: -0.2px;
+        }
+        #modal-validation.error .val-title {
+            color: #dc2626;
+        }
+        .val-msg {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--gm-text-body);
+            line-height: 1.55;
+            margin-bottom: 16px;
+        }
+        .val-details {
+            background: var(--gm-bg);
+            border: 1.5px solid var(--gm-border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--gm-primary);
+            margin-bottom: 18px;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+        .bp-assigned-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #b45309;
+            background: rgba(217, 119, 6, 0.12);
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(217, 119, 6, 0.25);
+            margin-top: 6px;
+        }
+
         /* Floating Toast */
         #toast-overlay { position: fixed; top: 24px; right: 24px; z-index: 9999; pointer-events: none; }
         #toast { 
@@ -1355,6 +1449,23 @@ $existingAssignmentsJson = json_encode($existingAssignments);
     </div>
 </div>
 
+<!-- Validation Alert Modal -->
+<div class="modal-overlay" id="modal-validation" onclick="if(event.target===event.currentTarget) closeValidationModal();">
+    <div class="modal-box val-modal-box">
+        <div class="val-icon-wrap" id="val-icon-wrap">
+            <i class="fas fa-exclamation-triangle" id="val-icon"></i>
+        </div>
+        <h3 class="val-title" id="val-title">Validation Notice</h3>
+        <p class="val-msg" id="val-msg"></p>
+        <div class="val-details" id="val-details" style="display:none;"></div>
+        <div class="confirm-btns" style="margin-top:16px;">
+            <button class="btn btn-p" onclick="closeValidationModal()" style="min-width:130px;">
+                <i class="fas fa-check"></i> Understood
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Custom Confirm Modal -->
 <div id="confirm-overlay">
     <div id="confirm-box">
@@ -1381,6 +1492,7 @@ const MOCK_NURSES = <?php echo $dbNursesJson; ?>;
 const MOCK_WARDS = <?php echo $dbWardsJson; ?>;
 const DAYS = <?php echo $dbDaysJson; ?>;
 const EXISTING_ASSIGNMENTS = <?php echo $existingAssignmentsJson; ?>;
+const OVERLAPPING_ASSIGNMENTS = <?php echo $overlappingAssignmentsJson; ?>;
 const TODAY_STR = new Date().toISOString().split('T')[0];
 
 let assignments = {};
@@ -1389,6 +1501,42 @@ let draggedNurseId = null;
 let conflicts = [];
 let currentFloorName = null;
 let currentRoomType = null;
+
+// -- VALIDATION ALERT MODAL LOGIC --
+function showValidationModal({ title = 'Validation Notice', message = '', details = '', type = 'warning' } = {}) {
+    const modal = document.getElementById('modal-validation');
+    const titleEl = document.getElementById('val-title');
+    const msgEl = document.getElementById('val-msg');
+    const detailsEl = document.getElementById('val-details');
+    const iconWrap = document.getElementById('val-icon-wrap');
+    const icon = document.getElementById('val-icon');
+
+    if (type === 'error') {
+        modal.classList.add('error');
+        icon.className = 'fas fa-ban';
+    } else {
+        modal.classList.remove('error');
+        icon.className = 'fas fa-exclamation-triangle';
+    }
+
+    titleEl.textContent = title;
+    msgEl.innerHTML = message;
+
+    if (details) {
+        detailsEl.innerHTML = details;
+        detailsEl.style.display = 'block';
+    } else {
+        detailsEl.innerHTML = '';
+        detailsEl.style.display = 'none';
+    }
+
+    modal.classList.add('open');
+}
+
+function closeValidationModal() {
+    const modal = document.getElementById('modal-validation');
+    if (modal) modal.classList.remove('open');
+}
 
 // -- BLUEPRINT LOGIC --
 const DB_FLOORS = <?php echo json_encode($dbFloors); ?>;
@@ -1478,10 +1626,24 @@ function selectFloor(floorName) {
         } else {
             rtKeys.sort().forEach(key => {
                 const rt = roomTypes[key];
+                
+                // Check if this floor & room has existing or overlapping assignments
+                const activeDates = DAYS.map(d => d.fullDate);
+                const overlappingForRoom = OVERLAPPING_ASSIGNMENTS.filter(o => 
+                    o.floor_name === floorName && 
+                    o.room_type === rt.type &&
+                    activeDates.includes(o.shift_date) &&
+                    o.shift_type !== 'Week Off'
+                );
+
+                const hasOverlap = overlappingForRoom.length > 0;
+                const assignedNurses = [...new Set(overlappingForRoom.map(x => x.nurse_name))].join(', ');
+                
                 html += `<div class="bp-room-card" id="rt-card-${rt.type.replace(/\s+/g, '-')}" onclick="viewCalendarType('${floorName}', '${rt.type}')">
                     <div class="bp-room-name">${rt.type}</div>
                     <div class="bp-room-type"><i class="fas fa-door-open"></i> ${rt.wardCount} Ward(s)</div>
                     <div class="bp-room-beds"><i class="fas fa-bed"></i> ${rt.beds} Beds</div>
+                    ${hasOverlap ? `<div class="bp-assigned-badge" title="Assigned to ${assignedNurses}"><i class="fas fa-user-lock"></i> Assigned in overlap (${overlappingForRoom.length})</div>` : ''}
                 </div>`;
             });
         }
@@ -1491,6 +1653,28 @@ function selectFloor(floorName) {
 }
 
 function viewCalendarType(floorName, roomType) {
+    // Check if another overlapping schedule already assigned this Floor and Room
+    const activeDates = DAYS.map(d => d.fullDate);
+    const overlappingForRoom = OVERLAPPING_ASSIGNMENTS.filter(o => 
+        o.floor_name === floorName && 
+        o.room_type === roomType &&
+        activeDates.includes(o.shift_date) &&
+        o.shift_type !== 'Week Off'
+    );
+
+    if (overlappingForRoom.length > 0) {
+        const uniqueNurses = [...new Set(overlappingForRoom.map(x => x.nurse_name))].join(', ');
+        const dateRangeStr = `${DAYS[0].date} to ${DAYS[DAYS.length - 1].date}`;
+        
+        showValidationModal({
+            title: 'Room Already Assigned',
+            message: `This floor and room are already assigned to a nurse for the selected date range. Please change the From Date, To Date, or select a different room.`,
+            details: `<strong>Conflicting Details:</strong><br>&bull; Floor: <strong>${floorName}</strong> &bull; Room: <strong>${roomType}</strong><br>&bull; Assigned Nurse(s): <strong>${uniqueNurses}</strong><br>&bull; Date Range: <strong>${dateRangeStr}</strong>`,
+            type: 'error'
+        });
+        return;
+    }
+
     document.getElementById('cal-breadcrumb').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${floorName} &nbsp;&rsaquo;&nbsp; ${roomType}`;
     document.getElementById('ff').value = floorName;
     document.getElementById('fw').value = '';
@@ -1528,6 +1712,38 @@ async function applyDateRange(){
     const e = document.getElementById('dr-end').value;
     const ff = document.getElementById('ff').value;
     const fr = document.getElementById('fr').value;
+    
+    if(!s || !e) {
+        showValidationModal({
+            title: 'Invalid Date Selection',
+            message: 'Please select both a valid From Date and To Date.',
+            type: 'warning'
+        });
+        return;
+    }
+    
+    const dStart = new Date(s);
+    const dEnd = new Date(e);
+    
+    if(dStart > dEnd) {
+        showValidationModal({
+            title: 'Invalid Date Sequence',
+            message: `Invalid Date Range: 'From Date' (${s}) cannot be later than 'To Date' (${e}). Please change the From Date, To Date, or select a valid date range.`,
+            type: 'error'
+        });
+        return;
+    }
+    
+    const diffTime = Math.abs(dEnd - dStart);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    if(diffDays > 31) {
+        showValidationModal({
+            title: 'Date Range Limit Exceeded',
+            message: `The selected date range spans ${diffDays} days. The maximum allowed scheduling range is 31 days. Please select a shorter date range.`,
+            type: 'warning'
+        });
+        return;
+    }
     
     if(Object.keys(assignments).length > 0) {
         const ok = await showConfirm({
@@ -1684,19 +1900,31 @@ function selectNurse(id){
         document.body.classList.remove('nurse-selected');
         return; 
     }
+
+    const n = MOCK_NURSES.find(n => n.id == id);
+    if (n && n.status === 'On Leave') {
+        showValidationModal({
+            title: 'Nurse On Leave',
+            message: `Nurse <strong>${n.name}</strong> is currently marked as 'On Leave' in staff records and cannot be assigned to shifts.`,
+            type: 'warning'
+        });
+        return;
+    }
+
     selectedNurseId = id;
     const card = document.getElementById('nurse_' + id);
     if(card) card.classList.add('selected');
     
     document.body.classList.add('nurse-selected');
-    const n = MOCK_NURSES.find(n => n.id == id);
     toast('Selected ' + (n ? n.name : id) + ' — Tap any shift or week-off slot to assign');
 }
+
 function clearSelection(){
     selectedNurseId = null;
     document.querySelectorAll('.nurse-card').forEach(el => el.classList.remove('selected'));
     document.body.classList.remove('nurse-selected');
 }
+
 function handleClick(slotId){ 
     if(selectedNurseId) assign(selectedNurseId, slotId); 
 }
@@ -1742,42 +1970,176 @@ function setupDnD(){
     });
 }
 
-// -- ASSIGN --
+// -- ASSIGN WITH COMPREHENSIVE VALIDATIONS --
 function assign(nurseId, slotId, isInit=false){
     const nurse = MOCK_NURSES.find(n => n.id == nurseId);
     if(!nurse) return;
-    if(nurse.status === 'On Leave'){ if(!isInit) toast('Nurse is currently On Leave', true); return; }
+    
+    // 1. Check Nurse Leave Status
+    if(nurse.status === 'On Leave'){ 
+        if(!isInit) {
+            showValidationModal({
+                title: 'Nurse On Leave',
+                message: `Nurse <strong>${nurse.name}</strong> is currently marked as 'On Leave' and cannot be assigned to shifts.`,
+                type: 'error'
+            });
+        }
+        return; 
+    }
     
     const parts = slotId.split('_');
+
+    // 2. Handling Staff Week Off Slot
     if(parts[0] === 'weekoff'){
+        const di = parseInt(parts[1]);
+        const dateStr = DAYS[di]?.date || `Day ${di+1}`;
+
+        // Check if nurse has active duty in any room on this day
+        let activeDutySlot = null;
+        Object.keys(assignments).forEach(sid => {
+            if(sid.startsWith('weekoff_')) return;
+            const p = sid.split('_');
+            const dayIdx = parseInt(p[2]);
+            if(dayIdx === di && assignments[sid].some(n => n.id == nurseId)) {
+                activeDutySlot = sid;
+            }
+        });
+
+        if (activeDutySlot) {
+            if(!isInit) {
+                const sp = activeDutySlot.split('_');
+                const wObj = MOCK_WARDS.find(w => w.id === (sp[0] + '_' + sp[1]));
+                const shName = sp[3] === 'm' ? 'Morning' : (sp[3] === 'e' ? 'Evening' : 'Night');
+                showValidationModal({
+                    title: 'Duty Shift Conflict',
+                    message: `Nurse <strong>${nurse.name}</strong> is already assigned to active duty at <strong>${wObj ? wObj.name : 'Ward'} (${shName})</strong> on <strong>${dateStr}</strong>.<br><br>Please remove their duty shift before assigning a Week Off.`,
+                    type: 'warning'
+                });
+            }
+            return;
+        }
+
         if(!assignments[slotId]) assignments[slotId] = [];
         if(!assignments[slotId].find(n => n.id == nurseId)){ 
             assignments[slotId].push(nurse); 
             refreshSlot(slotId); 
         }
     } else {
+        // 3. Handling Ward / Room Duty Shift Slot
         const wardId = parts[0] + '_' + parts[1];
         const startDay = parseInt(parts[2]);
         const sh = parts[3];
-        const autoFill = document.getElementById('auto-fill-cb') ? document.getElementById('auto-fill-cb').checked : false;
+        const shiftLabel = sh === 'm' ? 'Morning' : (sh === 'e' ? 'Evening' : 'Night');
+        const ward = MOCK_WARDS.find(w => w.id === wardId);
+        const wardDisplayName = ward ? `${ward.name} (${ward.type})` : 'Selected Room';
         
+        const autoFill = document.getElementById('auto-fill-cb') ? document.getElementById('auto-fill-cb').checked : false;
         const sDay = (isInit || !autoFill) ? startDay : 0;
         const eDay = (isInit || !autoFill) ? startDay + 1 : DAYS.length;
         
-        for(let i=sDay; i<eDay; i++){
+        let assignedCount = 0;
+        let conflictOccurred = false;
+
+        for(let i = sDay; i < eDay; i++){
             const tgt = `${wardId}_${i}_${sh}`;
+            const targetDateStr = DAYS[i]?.date || `Day ${i+1}`;
+            const targetFullDate = DAYS[i]?.fullDate;
+
+            // A. Check if the nurse is scheduled for Week Off on this day
+            const woSlotId = `weekoff_${i}`;
+            if(assignments[woSlotId] && assignments[woSlotId].some(n => n.id == nurseId)) {
+                if(!isInit && !conflictOccurred) {
+                    showValidationModal({
+                        title: 'Week Off Conflict',
+                        message: `Nurse <strong>${nurse.name}</strong> has a scheduled Week Off on <strong>${targetDateStr}</strong>.<br><br>Please remove the Week Off before assigning an active duty shift.`,
+                        type: 'warning'
+                    });
+                    conflictOccurred = true;
+                }
+                continue;
+            }
+
+            // B. Check if this Room Slot is ALREADY assigned to another nurse
+            if(assignments[tgt] && assignments[tgt].length > 0 && !assignments[tgt].some(n => n.id == nurseId)) {
+                if(!isInit && !conflictOccurred) {
+                    const currentNurse = assignments[tgt][0].name;
+                    showValidationModal({
+                        title: 'Room Already Assigned',
+                        message: `This floor and room are already assigned to a nurse for the selected date range. Please change the From Date, To Date, or select a different room.`,
+                        details: `<strong>Current Slot Occupant:</strong> <strong>${currentNurse}</strong><br>&bull; Room: <strong>${wardDisplayName}</strong><br>&bull; Shift: <strong>${shiftLabel}</strong> on <strong>${targetDateStr}</strong>`,
+                        type: 'error'
+                    });
+                    conflictOccurred = true;
+                }
+                continue;
+            }
+
+            // C. Check if this nurse is ALREADY assigned to another room/ward on this date and shift
+            let duplicateSlot = null;
+            Object.keys(assignments).forEach(sid => {
+                if(sid.startsWith('weekoff_')) return;
+                const p = sid.split('_');
+                const dayIdx = parseInt(p[2]);
+                const shiftKey = p[3];
+                if(dayIdx === i && shiftKey === sh && assignments[sid].some(n => n.id == nurseId) && sid !== tgt) {
+                    duplicateSlot = sid;
+                }
+            });
+
+            if(duplicateSlot) {
+                if(!isInit && !conflictOccurred) {
+                    const dp = duplicateSlot.split('_');
+                    const dWard = MOCK_WARDS.find(w => w.id === (dp[0] + '_' + dp[1]));
+                    showValidationModal({
+                        title: 'Duplicate Assignment Prevented',
+                        message: `Nurse <strong>${nurse.name}</strong> is already assigned to <strong>${dWard ? dWard.name : 'another room'}</strong> for the <strong>${shiftLabel}</strong> shift on <strong>${targetDateStr}</strong>.<br><br>A nurse cannot be assigned to multiple rooms for the same shift.`,
+                        type: 'error'
+                    });
+                    conflictOccurred = true;
+                }
+                continue;
+            }
+
+            // D. Check Overlapping External Database Schedules
+            const extRoomConflict = OVERLAPPING_ASSIGNMENTS.find(o => 
+                o.floor_name === currentFloorName &&
+                o.ward_name === ward?.ward_name &&
+                o.room_type === currentRoomType &&
+                o.shift_date === targetFullDate &&
+                o.shift_type === shiftLabel
+            );
+
+            if(extRoomConflict) {
+                if(!isInit && !conflictOccurred) {
+                    showValidationModal({
+                        title: 'Room Already Assigned in Overlap',
+                        message: `This floor and room are already assigned to a nurse for the selected date range. Please change the From Date, To Date, or select a different room.`,
+                        details: `<strong>External Schedule Conflict:</strong><br>&bull; Assigned To: <strong>${extRoomConflict.nurse_name}</strong><br>&bull; Date: <strong>${targetDateStr} (${shiftLabel})</strong>`,
+                        type: 'error'
+                    });
+                    conflictOccurred = true;
+                }
+                continue;
+            }
+
             if(!assignments[tgt]) assignments[tgt] = [];
             if(!assignments[tgt].find(n => n.id == nurseId)){ 
                 assignments[tgt].push(nurse); 
                 refreshSlot(tgt); 
+                assignedCount++;
             }
         }
     }
+
     if(!isInit){
         updateCounters(); 
         detectConflicts(); 
         clearSelection();
-        toast('Assigned ' + nurse.name + (parts[0]==='weekoff' ? ' (Week Off)' : ''));
+        if(parts[0] === 'weekoff') {
+            toast('Assigned ' + nurse.name + ' (Week Off)');
+        } else if(assignedCount > 0) {
+            toast('Assigned ' + nurse.name + ' to ' + (assignedCount > 1 ? `${assignedCount} days` : 'shift'));
+        }
     }
 }
 
@@ -1996,14 +2358,22 @@ function closeConflictModal(e){
 
 // -- SAVE SCHEDULE --
 async function saveSchedule(){
-    if(!Object.keys(assignments).length){ toast('No shift assignments entered to save', true); return; }
-    if(conflicts.length > 0) {
-        const ok = await showConfirm({
-            title: 'Duty Conflicts Detected',
-            message: conflicts.length + ' nurse assignments have double-booked shifts. Do you still want to save?',
-            okLabel: 'Save Anyway'
+    if(!Object.keys(assignments).length){ 
+        showValidationModal({
+            title: 'Empty Schedule',
+            message: 'No shift assignments entered to save. Please assign nurses to shifts before saving.',
+            type: 'warning'
         });
-        if (!ok) return;
+        return; 
+    }
+
+    if(conflicts.length > 0) {
+        showValidationModal({
+            title: 'Duty Conflicts Detected',
+            message: 'Shift double-booking conflicts were detected. Duplicate room and nurse assignments are not allowed. Please resolve all conflicts before saving.',
+            type: 'error'
+        });
+        return;
     }
     
     const payload = [];
@@ -2017,9 +2387,9 @@ async function saveSchedule(){
                     nurse_name: nurse.name,
                     shift_date: DAYS[di].fullDate,
                     shift_type: 'Week Off',
-                    floor_name: null,
+                    floor_name: currentFloorName,
                     ward_name: null,
-                    room_type: null
+                    room_type: currentRoomType
                 }); 
             } else { 
                 const wardId = parts[0] + '_' + parts[1], di = parseInt(parts[2]), sh = parts[3];
@@ -2030,9 +2400,9 @@ async function saveSchedule(){
                     nurse_name: nurse.name,
                     shift_date: DAYS[di].fullDate,
                     shift_type: st,
-                    floor_name: ward?.floor_name || null,
+                    floor_name: ward?.floor_name || currentFloorName,
                     ward_name: ward?.ward_name || null,
-                    room_type: ward?.room_type || null
+                    room_type: ward?.room_type || currentRoomType
                 }); 
             } 
         }); 
@@ -2070,15 +2440,23 @@ async function saveSchedule(){
             btn.innerHTML = '<i class="fas fa-check"></i> Saved!'; 
             setTimeout(() => window.location.reload(), 1200); 
         } else { 
-            toast('Error: ' + data.message, true); 
             btn.innerHTML = orig; 
             btn.disabled = false; 
+            showValidationModal({
+                title: 'Schedule Validation Error',
+                message: data.message || 'Unable to save shift schedule due to validation errors.',
+                type: 'error'
+            });
         } 
     })
     .catch(() => { 
-        toast('Network connection error', true); 
         btn.innerHTML = orig; 
         btn.disabled = false; 
+        showValidationModal({
+            title: 'Network Error',
+            message: 'A network connection error occurred while saving the schedule. Please check your connection and try again.',
+            type: 'error'
+        });
     });
 }
 
