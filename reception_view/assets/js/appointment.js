@@ -33,9 +33,43 @@ class AppointmentManager {
     }
 
     /**
-     * Check URL parameters for auto-booking actions
+     * Check URL parameters or secure sessionStorage for auto-booking actions
      */
     checkUrlParams() {
+        // 1. Check secure sessionStorage & localStorage first (clean navigation, no URL params)
+        let pendingPatient = null;
+        try {
+            const raw = sessionStorage.getItem('pending_appointment_patient') || localStorage.getItem('pending_appointment_patient');
+            if (raw) {
+                pendingPatient = JSON.parse(raw);
+                sessionStorage.removeItem('pending_appointment_patient');
+                localStorage.removeItem('pending_appointment_patient');
+            }
+        } catch (e) {
+            console.error('Failed to parse pending appointment patient', e);
+        }
+
+        if (pendingPatient && pendingPatient.patient_id) {
+            const patientId = pendingPatient.patient_id;
+            const patientName = pendingPatient.patient_name || `${pendingPatient.first_name || ''} ${pendingPatient.last_name || ''}`.trim();
+            const patientPhone = pendingPatient.phone || '';
+
+            setTimeout(() => {
+                this.openModal('create');
+                const displayText = patientName ? `${patientId} - ${patientName}${patientPhone ? ' (' + patientPhone + ')' : ''}` : patientId;
+                const patientOption = new Option(displayText, patientId, true, true);
+                $('#patientSelect').append(patientOption).trigger('change');
+                if (patientPhone) {
+                    $('#patientPhone').val(patientPhone);
+                }
+                if (patientName) {
+                    this.showToast(`Booking for: ${patientName}`, 'info');
+                }
+            }, 600);
+            return;
+        }
+
+        // 2. Fallback to URL parameters if present
         const urlParams = new URLSearchParams(window.location.search);
         const patientId = urlParams.get('patient_id');
         const action = urlParams.get('action');
@@ -49,11 +83,9 @@ class AppointmentManager {
         if (patientId && action === 'new') {
             console.log('Auto-opening booking modal for patient:', patientId);
 
-            // Allow dynamic loading to complete, then trigger
             setTimeout(() => {
                 this.openModal('create');
 
-                // Fetch basic name info via API to display in Select2
                 this.apiCall('GET', `/${patientId}`, null, this.patientApiBase).then(response => {
                     if (response.success && response.data) {
                         const p = response.data;
@@ -64,7 +96,6 @@ class AppointmentManager {
                     }
                 });
 
-                // Clean URL after handling
                 const newUrl = window.location.pathname;
                 window.history.replaceState({}, document.title, newUrl);
             }, 800);

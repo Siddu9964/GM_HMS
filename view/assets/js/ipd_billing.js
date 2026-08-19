@@ -315,25 +315,33 @@ const billing = (function () {
         }
     }
 
-    window.toggleGroup = function(groupId) {
-        const rows = document.querySelectorAll('.child-row.group-' + groupId);
-        const icon = document.querySelector('.group-icon-' + groupId);
-        let isExpanded = false;
+    function toggleGroup(groupId) {
+        const safeId = String(groupId || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const rows = document.querySelectorAll(`tr.child-row[data-group-id="${safeId}"]`);
+        const icon = document.querySelector(`.group-icon-${safeId}`);
         
+        if (!rows || rows.length === 0) return;
+
+        // Check if currently hidden
+        const isHidden = (rows[0].style.display === 'none' || rows[0].classList.contains('is-hidden'));
+
         rows.forEach(row => {
-            if (row.style.display === 'none') {
-                row.style.display = 'table-row';
-                isExpanded = true;
+            if (isHidden) {
+                row.classList.remove('is-hidden');
+                row.classList.add('is-visible');
+                row.style.setProperty('display', 'table-row', 'important');
             } else {
-                row.style.display = 'none';
-                isExpanded = false;
+                row.classList.remove('is-visible');
+                row.classList.add('is-hidden');
+                row.style.setProperty('display', 'none', 'important');
             }
         });
 
         if (icon) {
-            icon.style.transform = isExpanded ? 'rotate(90deg)' : 'rotate(0deg)';
+            icon.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
         }
-    };
+    }
+    window.toggleGroup = toggleGroup;
 
     function renderItemsTable(items) {
         const tbody = document.getElementById('itemsTableBody');
@@ -354,45 +362,55 @@ const billing = (function () {
         // Group items by charge_type
         const grouped = {};
         items.forEach(item => {
-            if (!grouped[item.charge_type]) {
-                grouped[item.charge_type] = {
-                    charge_type: item.charge_type,
+            const cType = item.charge_type || 'OTHER';
+            if (!grouped[cType]) {
+                grouped[cType] = {
+                    charge_type: cType,
                     total_amount: 0,
                     count: 0,
                     items: []
                 };
             }
-            grouped[item.charge_type].items.push(item);
+            grouped[cType].items.push(item);
             
             if (item.status !== 'CANCELLED') {
-                grouped[item.charge_type].total_amount += parseFloat(item.total_amount || 0);
+                grouped[cType].total_amount += parseFloat(item.total_amount || 0);
             }
-            grouped[item.charge_type].count++;
+            grouped[cType].count++;
         });
 
         let html = '';
         
         Object.values(grouped).forEach(group => {
+            const rawType = String(group.charge_type || 'MISC');
+            const safeId = rawType.replace(/[^a-zA-Z0-9_-]/g, '_');
+
             let badgeClass = 'badge-MISC';
             let icon = 'more-horizontal';
-            let catName = group.charge_type.replace('_', ' ');
-            if (group.charge_type === 'MISC') { catName = 'MISCELLANEOUS'; }
-            if (group.charge_type === 'ROOM_RENT') { badgeClass = 'badge-ROOM_RENT'; icon = 'bed-double'; catName = 'Room Rent'; }
-            if (group.charge_type === 'DOCTOR_VISIT') { badgeClass = 'badge-DOCTOR_VISIT'; icon = 'stethoscope'; }
-            if (group.charge_type === 'LAB') { badgeClass = 'badge-LAB'; icon = 'flask-conical'; }
-            if (group.charge_type === 'RADIOLOGY') { badgeClass = 'badge-RADIOLOGY'; icon = 'radio'; }
-            if (group.charge_type === 'PHARMACY') { badgeClass = 'badge-PHARMACY'; icon = 'pill'; }
-            if (group.charge_type === 'OT') { badgeClass = 'badge-OT'; icon = 'syringe'; }
-            if (group.charge_type === 'PROCEDURE') { badgeClass = 'badge-PROCEDURE'; icon = 'activity'; }
-            if (group.charge_type === 'OTHER') { badgeClass = 'badge-OTHER'; icon = 'layers'; }
+            let catName = rawType.replace(/_/g, ' ');
+            if (rawType === 'MISC') { catName = 'MISCELLANEOUS'; }
+            if (rawType === 'ROOM_RENT') { badgeClass = 'badge-ROOM_RENT'; icon = 'bed-double'; catName = 'Room Rent'; }
+            if (rawType === 'DOCTOR_VISIT') { badgeClass = 'badge-DOCTOR_VISIT'; icon = 'stethoscope'; catName = 'Doctor Visit'; }
+            if (rawType === 'LAB') { badgeClass = 'badge-LAB'; icon = 'flask-conical'; catName = 'Laboratory'; }
+            if (rawType === 'RADIOLOGY') { badgeClass = 'badge-RADIOLOGY'; icon = 'radio'; catName = 'Radiology'; }
+            if (rawType === 'PHARMACY') { badgeClass = 'badge-PHARMACY'; icon = 'pill'; catName = 'Pharmacy'; }
+            if (rawType === 'OT') { badgeClass = 'badge-OT'; icon = 'syringe'; catName = 'Operation Theatre'; }
+            if (rawType === 'PROCEDURE') { badgeClass = 'badge-PROCEDURE'; icon = 'activity'; catName = 'Procedure'; }
+            if (rawType === 'DIALYSIS') { badgeClass = 'badge-DIALYSIS'; icon = 'filter'; catName = 'Dialysis'; }
+            if (rawType === 'OXYGEN') { badgeClass = 'badge-OXYGEN'; icon = 'wind'; catName = 'Oxygen'; }
+            if (rawType === 'VENTILATION') { badgeClass = 'badge-VENTILATION'; icon = 'activity'; catName = 'Ventilator'; }
+            if (rawType === 'BLOOD_TRANSFUSION') { badgeClass = 'badge-BLOOD_TRANSFUSION'; icon = 'droplet'; catName = 'Blood Transfusion'; }
+            if (rawType === 'WARD_TRANSFER') { badgeClass = 'badge-WARD_TRANSFER'; icon = 'arrow-right-left'; catName = 'Ward Transfer'; }
+            if (rawType === 'CONSUMABLE') { badgeClass = 'badge-CONSUMABLE'; icon = 'bandage'; catName = 'Consumables'; }
+            if (rawType === 'OTHER') { badgeClass = 'badge-OTHER'; icon = 'layers'; catName = 'Other'; }
 
             const groupTotal = group.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 });
             
-            // Parent Row
+            // Parent Row (Expanded by default, click to collapse/expand)
             html += `
-                <tr class="group-header" onclick="billing.toggleGroup('${group.charge_type}')" style="cursor: pointer; background: #f3efe6; border-bottom: 1.5px solid rgba(31, 107, 74, 0.25); color: #1f6b4a;">
+                <tr class="group-header" data-group-id="${safeId}" onclick="window.toggleGroup('${safeId}')" style="cursor: pointer; background: #f3efe6; border-bottom: 1.5px solid rgba(31, 107, 74, 0.25); color: #1f6b4a; user-select: none;" title="Click to collapse/expand">
                     <td colspan="4" style="font-weight: 700; padding: 12px 16px;">
-                        <i data-lucide="chevron-right" class="group-icon-${group.charge_type}" style="transition: transform 0.2s; width: 16px; height: 16px; vertical-align: text-bottom; margin-right: 8px; color: #1f6b4a;"></i>
+                        <i data-lucide="chevron-right" class="group-icon-${safeId}" style="transform: rotate(90deg); transition: transform 0.2s ease; width: 16px; height: 16px; vertical-align: text-bottom; margin-right: 8px; color: #1f6b4a; display: inline-block;"></i>
                         <div class="charge-type-badge" style="display:inline-flex; background: #1f6b4a; color: #f3efe6; padding: 4px 10px; border-radius: 12px; font-weight: 700; gap: 6px; font-size: 0.8rem;">
                             <i data-lucide="${icon}" style="width: 14px; height: 14px;"></i> ${catName} (${group.count} items)
                         </div>
@@ -403,7 +421,7 @@ const billing = (function () {
                 </tr>
             `;
 
-            // Child Rows
+            // Child Rows (Visible by default)
             group.items.forEach((item, index) => {
                 const isCancelled = item.status === 'CANCELLED';
                 const dateStr = new Date(item.charge_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -450,7 +468,7 @@ const billing = (function () {
                 const sourceIcon = item.source !== 'MANUAL' ? `<i data-lucide="link" title="Source: ${item.source}" style="color:#1f6b4a; margin-left:4px;"></i>` : '';
 
                 html += `
-                    <tr class="child-row group-${group.charge_type} ${isCancelled ? 'cancelled-row' : ''}" style="display: none; background: #f3efe6; border-bottom: 1px solid rgba(31, 107, 74, 0.15); color: #1f6b4a;">
+                    <tr class="child-row group-${safeId} ${isCancelled ? 'cancelled-row' : ''}" data-group-id="${safeId}" style="display: table-row; background: #f3efe6; border-bottom: 1px solid rgba(31, 107, 74, 0.15); color: #1f6b4a;">
                         <td style="padding: 10px 14px 10px 2rem; font-weight: 600;">${index + 1}</td>
                         <td style="padding: 10px 14px; font-weight: 600;">${dateStr}</td>
                         <td style="padding: 10px 14px;"><span style="font-size: 12px; opacity: 0.85; font-weight: 600;">${catName}</span></td>

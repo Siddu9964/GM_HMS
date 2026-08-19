@@ -1283,11 +1283,13 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 $('#patientSearchResults').hide().empty();
             };
 
-            window.showAddAdmissionModal = function () {
+            window.showAddAdmissionModal = function (skipClearPatient = false) {
                 $('#addAdmissionModal').removeClass('hidden');
                 
-                // Reset Search
-                clearPatientSelection();
+                // Reset Search only when not pre-filling patient details
+                if (!skipClearPatient) {
+                    clearPatientSelection();
+                }
                 
                 // Reset Payment Splits
                 if (typeof splitPaymentCount !== 'undefined') {
@@ -1310,7 +1312,9 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 document.getElementById('admissionTime').value = `${hours}:${minutes}`;
 
                 // Reset doctor dropdown selection without emptying options
-                $('#doctorSelect').val('').trigger('change');
+                if (!skipClearPatient) {
+                    $('#doctorSelect').val('').trigger('change');
+                }
             };
 
             window.closeAddAdmissionModal = function () {
@@ -1381,14 +1385,29 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             }
 
             window.selectPatient = function (pat) {
+                if (!pat) return;
+                const pId = pat.patient_id || '';
+                const pName = pat.name || pat.patient_name || `${pat.first_name || ''} ${pat.last_name || ''}`.trim() || 'Patient';
+                const pPhone = pat.contact || pat.phone || '';
+                const valText = `${pName} (${pId})`;
+
                 // Set hidden patient_id field
-                $('#patientSelect').val(pat.patient_id || '');
+                $('#patientSelect').val(pId);
+                const hiddenEl = document.getElementById('patientSelect');
+                if (hiddenEl) {
+                    hiddenEl.value = pId;
+                }
+
                 // Populate search input with name and ID
-                $('#patientSearchInput').val(pat.name + ' (' + pat.patient_id + ')');
+                const el = document.getElementById('patientSearchInput');
+                if (el) {
+                    el.value = valText;
+                }
+                $('#patientSearchInput').val(valText);
                 $('#patientSearchResults').hide();
 
                 // Store the patient's registered phone for emergency contact validation
-                selectedPatientPhone = (pat.contact || '').trim().replace(/\s+/g, '');
+                selectedPatientPhone = pPhone.trim().replace(/\s+/g, '');
 
                 // Reset emergency phone field state when patient changes
                 $('#emergencyContactPhone').css('border-color', 'var(--gray-300)');
@@ -1397,9 +1416,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 // Auto-fetch Referral Type and Name from patient registration
                 if (pat.referral_type) {
                     let refType = '';
-                    if (pat.referral_type === 'Doctor') {
-                        refType = 'External';
-                    } else if (pat.referral_type === 'Others' || pat.referral_type === 'External') {
+                    if (pat.referral_type === 'Doctor' || pat.referral_type === 'Others' || pat.referral_type === 'External') {
                         refType = 'External';
                     } else if (pat.referral_type !== 'Self' && pat.referral_type !== 'walk-in') {
                         refType = pat.referral_type;
@@ -1421,7 +1438,9 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 }
                 
                 // Fetch the latest doctor for this patient (will select in the pre-loaded dropdown)
-                fetchLatestDoctor(pat.patient_id);
+                if (pId) {
+                    fetchLatestDoctor(pId);
+                }
             };
 
             // ── Emergency Contact Phone Validation ────────────────────────────
@@ -1535,10 +1554,77 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 viewAdmission(admId);
             }
 
+            // 1. Check secure sessionStorage & localStorage first (clean navigation, no URL params)
+            function checkAndPopulatePendingAdmission() {
+                let pendingAdmission = null;
+                try {
+                    const raw = sessionStorage.getItem('pending_admission_patient') || localStorage.getItem('pending_admission_patient');
+                    if (raw) {
+                        pendingAdmission = JSON.parse(raw);
+                    }
+                } catch (e) {
+                    console.error('Failed to parse pending admission patient', e);
+                }
+
+                if (pendingAdmission && pendingAdmission.patient_id) {
+                    const pId = (pendingAdmission.patient_id || '').trim();
+                    const pName = (pendingAdmission.patient_name || pendingAdmission.name || `${pendingAdmission.first_name || ''} ${pendingAdmission.last_name || ''}`.trim() || 'Patient').trim();
+                    const pPhone = (pendingAdmission.phone || pendingAdmission.contact || '').trim();
+                    const valText = `${pName} (${pId})`;
+
+                    const patObj = {
+                        patient_id: pId,
+                        name: pName,
+                        patient_name: pName,
+                        first_name: pendingAdmission.first_name || '',
+                        last_name: pendingAdmission.last_name || '',
+                        contact: pPhone,
+                        phone: pPhone,
+                        gender: pendingAdmission.gender || '',
+                        age: pendingAdmission.age || '',
+                        referral_type: pendingAdmission.referral_type || '',
+                        referral_name: pendingAdmission.referral_name || ''
+                    };
+
+                    showAddAdmissionModal(true);
+                    selectPatient(patObj);
+
+                    const searchInput = document.getElementById('patientSearchInput');
+                    const hiddenSelect = document.getElementById('patientSelect');
+                    if (searchInput) {
+                        searchInput.value = valText;
+                    }
+                    if (hiddenSelect) {
+                        hiddenSelect.value = pId;
+                    }
+
+                    // Remove from storage after successfully applying
+                    sessionStorage.removeItem('pending_admission_patient');
+                    localStorage.removeItem('pending_admission_patient');
+
+                    // Sync any fresh information from database
+                    IPD.ajax(`dashboard/patients?search=${encodeURIComponent(pId)}&limit=10`, 'GET')
+                        .then(response => {
+                            if (response.data && response.data.patients && response.data.patients.length > 0) {
+                                const exactMatch = response.data.patients.find(p => p.patient_id === pId) || response.data.patients[0];
+                                selectPatient(exactMatch);
+                                if (searchInput) searchInput.value = valText;
+                                if (hiddenSelect) hiddenSelect.value = pId;
+                            }
+                        })
+                        .catch(() => {});
+                }
+            }
+
+            checkAndPopulatePendingAdmission();
+            setTimeout(checkAndPopulatePendingAdmission, 150);
+            setTimeout(checkAndPopulatePendingAdmission, 400);
+
+            // 2. Fallback: Check for URL parameters if present
             const newPatientId = urlParams.get('patient_id');
             const action = urlParams.get('action');
             if (newPatientId && action === 'new') {
-                showAddAdmissionModal();
+                showAddAdmissionModal(true);
                 
                 // Pre-fill patient search box and fetch patient details
                 $('#patientSearchInput').val(newPatientId);
@@ -1546,14 +1632,10 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                 
                 IPD.ajax(`dashboard/patients?search=${encodeURIComponent(newPatientId)}&limit=1`, 'GET')
                     .then(response => {
-                        const patients = response.data.patients;
+                        const patients = response.data?.patients;
                         if (patients && patients.length > 0) {
                             const exactMatch = patients.find(p => p.patient_id === newPatientId) || patients[0];
                             selectPatient(exactMatch);
-                            
-                            // Clean URL
-                            const newUrl = window.location.pathname;
-                            window.history.replaceState({}, document.title, newUrl);
                         } else {
                             $('#patientSearchResults').html('<div class="p-3 text-muted small text-center">Patient not found</div>').show();
                         }
@@ -1561,6 +1643,10 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     .catch(() => {
                         $('#patientSearchResults').hide();
                     });
+
+                // Clean URL
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
             }
         });
 

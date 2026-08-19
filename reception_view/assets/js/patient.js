@@ -532,25 +532,76 @@ class PatientManager {
             const newPatient = await this.createPatient(data);
             
             if (newPatient) {
-                const pId = newPatient.patient_id || newPatient.id || newPatient;
+                const pId = newPatient.patient_id || newPatient.id || (typeof newPatient === 'string' ? newPatient : (data.patient_id || ''));
+                const fullName = ((data.first_name || '') + ' ' + (data.last_name || '')).trim() || data.name || 'Patient';
+                const patientPayload = {
+                    patient_id: pId,
+                    patient_name: fullName,
+                    name: fullName,
+                    first_name: data.first_name || '',
+                    last_name: data.last_name || '',
+                    phone: data.phone || '',
+                    contact: data.phone || '',
+                    age: data.age || '',
+                    gender: data.sex || '',
+                    referral_type: data.referral_type || '',
+                    referral_name: data.referral_name || ''
+                };
+
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
-                        title: 'Registration Successful',
-                        text: 'What would you like to do next?',
-                        icon: 'success',
-                        showCancelButton: true,
-                        showDenyButton: true,
-                        confirmButtonColor: '#1f6b4a',
-                        denyButtonColor: '#0ea5e9',
-                        cancelButtonColor: '#64748b',
-                        confirmButtonText: '<i class="fas fa-calendar-plus" style="margin-right: 5px;"></i> Appointment',
-                        denyButtonText: '<i class="fas fa-bed" style="margin-right: 5px;"></i> IP Admission',
-                        cancelButtonText: 'Close'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = `appointment_management.php?patient_id=${encodeURIComponent(pId)}&action=new&auto_billing=true`;
-                        } else if (result.isDenied) {
-                            window.location.href = `ipd_management/views/admissions/?patient_id=${encodeURIComponent(pId)}&action=new`;
+                        html: `
+                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0 5px 0;">
+                                <div style="width: 68px; height: 68px; border-radius: 50%; border: 3px solid #bbf7d0; display: flex; align-items: center; justify-content: center; margin-bottom: 18px;">
+                                    <i class="fas fa-check" style="font-size: 28px; color: #22c55e;"></i>
+                                </div>
+                                <h2 style="font-size: 1.45rem; font-weight: 700; color: #374151; margin: 0 0 8px 0;">Registration Successful</h2>
+                                <p style="font-size: 0.95rem; color: #6b7280; margin: 0 0 24px 0;">What would you like to do next?</p>
+                                <div style="display: flex; gap: 12px; justify-content: center; width: 100%; flex-wrap: wrap;">
+                                    <button id="swalBtnAppointment" class="btn" style="background-color: #1f6b4a; color: #ffffff !important; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;">
+                                        <i class="fas fa-calendar-plus"></i> Appointment
+                                    </button>
+                                    <button id="swalBtnAdmission" class="btn" style="background-color: #009be5; color: #ffffff !important; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;">
+                                        <i class="fas fa-bed"></i> IP Admission
+                                    </button>
+                                    <button id="swalBtnClose" class="btn" style="background-color: #5c6f84; color: #ffffff !important; border: none; padding: 10px 22px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s;">
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        `,
+                        showConfirmButton: false,
+                        showCancelButton: false,
+                        showCloseButton: false,
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            const btnAppt = document.getElementById('swalBtnAppointment');
+                            const btnAdm = document.getElementById('swalBtnAdmission');
+                            const btnCls = document.getElementById('swalBtnClose');
+
+                            if (btnAppt) {
+                                btnAppt.addEventListener('click', () => {
+                                    Swal.close();
+                                    sessionStorage.setItem('pending_appointment_patient', JSON.stringify(patientPayload));
+                                    localStorage.setItem('pending_appointment_patient', JSON.stringify(patientPayload));
+                                    window.location.href = '/GM_HMS/reception_view/appointment_management.php';
+                                });
+                            }
+
+                            if (btnAdm) {
+                                btnAdm.addEventListener('click', () => {
+                                    Swal.close();
+                                    sessionStorage.setItem('pending_admission_patient', JSON.stringify(patientPayload));
+                                    localStorage.setItem('pending_admission_patient', JSON.stringify(patientPayload));
+                                    window.location.href = '/GM_HMS/reception_view/ipd_management/views/admissions/';
+                                });
+                            }
+
+                            if (btnCls) {
+                                btnCls.addEventListener('click', () => {
+                                    Swal.close();
+                                });
+                            }
                         }
                     });
                 }
