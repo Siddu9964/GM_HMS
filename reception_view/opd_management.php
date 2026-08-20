@@ -51,7 +51,16 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                         </div>
                         <div class="stat-info">
                             <h3 id="stat-opd-total">0</h3>
-                            <p>Today's OPD</p>
+                            <p>Today's Total OPD</p>
+                        </div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-icon warning">
+                            <i class="fas fa-user-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="stat-opd-waiting">0</h3>
+                            <p>Waiting in Queue</p>
                         </div>
                     </div>
                     <div class="stat-card success">
@@ -63,52 +72,85 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                             <p>Doctors Available</p>
                         </div>
                     </div>
-                    <div class="stat-card warning">
-                        <div class="stat-icon warning">
+                    <div class="stat-card info">
+                        <div class="stat-icon info">
                             <i class="fas fa-rupee-sign"></i>
                         </div>
                         <div class="stat-info">
-                            <h3 id="stat-revenue">0</h3>
+                            <h3 id="stat-revenue">₹0.00</h3>
                             <p>Today's Revenue</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- 2. Live Queue -->
-                <div class="card mb-4">
+                <!-- 2. Live Clinical Queue Board (Department-Wise Table View) -->
+                <div class="card opd-queue-card mb-4">
                     <div class="card-header queue-header">
-                        <div class="card-title">
-                            <i class="fas fa-procedures text-primary"></i>
-                            <span>Live Patient Queue</span>
-                        </div>
-                        <div class="d-flex gap-2">
-
-                            <div class="queue-filters">
-                                <button class="filter-btn active" data-filter="all">All</button>
-                                <button class="filter-btn" data-filter="Pending" id="tab-pending">Pending (0)</button>
-                                <button class="filter-btn" data-filter="Completed" id="tab-completed">Completed
-                                    (0)</button>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="card-title mb-0">
+                                <i class="fas fa-hospital-user text-primary"></i>
+                                <span>Live OPD Queue Board</span>
                             </div>
+                            <span class="live-pulse-badge"><span class="pulse-dot"></span> LIVE</span>
+                        </div>
+                        <div class="d-flex gap-3 align-items-center flex-wrap">
+                            <!-- Real-time Search Input -->
+                            <div class="queue-search-box">
+                                <i class="fas fa-search search-icon"></i>
+                                <input type="text" id="queue-search" class="form-control form-control-sm" placeholder="Search name, PID, phone, doctor, token..." oninput="onQueueSearch(this.value)" autocomplete="off">
+                                <button type="button" class="clear-search-btn" id="btn-clear-search" onclick="clearQueueSearch()" style="display:none;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+
+                            <!-- Department Filter Selector -->
+                            <div class="department-filter-box d-flex align-items-center gap-2">
+                                <label for="dept-select" class="mb-0 font-weight-bold text-dark" style="font-size: 0.85rem; white-space: nowrap;">
+                                    <i class="fas fa-clinic-medical text-primary mr-1"></i> Dept:
+                                </label>
+                                <select id="dept-select" class="form-select form-select-sm custom-dept-select" onchange="onDepartmentChange(this.value)">
+                                    <option value="all">🏥 All Departments</option>
+                                </select>
+                            </div>
+
+                            <!-- Status Filter Buttons -->
+                            <div class="queue-filters">
+                                <button class="filter-btn active" data-filter="all">All (<span id="count-all">0</span>)</button>
+                                <button class="filter-btn" data-filter="Pending" id="tab-pending">⏳ Waiting (<span id="count-pending">0</span>)</button>
+                                <button class="filter-btn" data-filter="Completed" id="tab-completed">✅ Done (<span id="count-completed">0</span>)</button>
+                            </div>
+
+                            <!-- Refresh Button -->
+                            <button type="button" class="btn btn-sm btn-outline-primary refresh-queue-btn" onclick="loadQueue(currentStatusFilter)" title="Refresh Queue">
+                                <i class="fas fa-sync-alt" id="refresh-icon"></i>
+                            </button>
                         </div>
                     </div>
 
-                    <div class="card-body">
+                    <!-- Department Quick Pills Bar -->
+                    <div class="dept-pills-bar px-4 pt-3 pb-0" id="dept-pills-container" style="display: none;">
+                        <!-- Quick filter pills injected via JS -->
+                    </div>
+
+                    <div class="card-body p-0">
                         <!-- Loading State -->
-                        <div id="queue-loading" class="text-center p-4">
+                        <div id="queue-loading" class="text-center p-5">
                             <div class="spinner"></div>
-                            <p class="mt-2 text-gray-500">Loading queue...</p>
+                            <p class="mt-3 text-muted font-weight-bold">Loading live patient queue...</p>
                         </div>
 
-                        <!-- Queue Grid -->
-                        <div class="queue-grid" id="queue-list" style="display: none;">
-                            <!-- Queue Items injected via JS -->
+                        <!-- Department-wise Tables Container -->
+                        <div id="queue-list" class="queue-board-container" style="display: none;">
+                            <!-- Department Clinical Tables injected via JS -->
                         </div>
 
                         <!-- Empty State -->
-                        <div id="queue-empty" class="empty-state" style="display: none;">
-                            <i class="fas fa-clipboard-check"></i>
-                            <h3>No patients in queue</h3>
-                            <p>All clear for now.</p>
+                        <div id="queue-empty" class="empty-state p-5 text-center" style="display: none;">
+                            <div class="empty-icon-wrap mb-3">
+                                <i class="fas fa-clipboard-check"></i>
+                            </div>
+                            <h4 class="font-weight-bold text-dark mb-1">No patients in queue</h4>
+                            <p class="text-muted">No appointments matching the active department and status filters.</p>
                         </div>
                     </div>
                 </div>
@@ -132,6 +174,9 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                             <span class="badge mt-1" style="background: #f1f5f9; color: #475569; font-size: 0.75rem;"><i class="fas fa-id-card-alt mr-1"></i><span id="modal-patient-id">PID-000</span></span>
                         </div>
                     </div>
+                    <button type="button" class="btn-close" onclick="closeModal()" style="background: none; border: none; font-size: 1.25rem; color: #64748b; cursor: pointer; padding: 4px 8px;">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
             </div>
 

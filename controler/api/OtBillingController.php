@@ -39,6 +39,7 @@ class OtBillingController extends BaseController
                         patient_id,
                         admission_id,
                         patient_name,
+                        name,
                         department,
                         theatre,
                         anesthesia_type,
@@ -50,13 +51,14 @@ class OtBillingController extends BaseController
                         grand_total,
                         status,
                         created_by
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'COMPLETED', ?)";
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'COMPLETED', ?)";
                     
             $params = [
                 $otBillNo,
                 $data['patient']['patient_id'],
                 $data['patient']['admission_id'],
                 $data['patient']['patient_name'],
+                $data['surgery']['name'] ?? '',
                 $data['surgery']['department'] ?? '',
                 $data['surgery']['theatre'] ?? '',
                 $data['surgery']['anesthesia_type'] ?? '',

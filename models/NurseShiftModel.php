@@ -128,16 +128,14 @@ class NurseShiftModel
      */
     public function getAssignedPatientsRedesigned($nurseId, $roleId, $currentWard = null)
     {
-        // By user request, we are removing the strict ward filter for testing
-        // so that all users can view the patient list regardless of shift assignments.
-
         $sql = "SELECT DISTINCT 
                     p.patient_id, p.first_name, p.last_name, p.age, p.sex, p.blood_group,
                     ia.admission_id, ia.admission_date, ia.diagnosis, ia.bed_id,
                     ia.room_no as room_number, 
                     ia.room_name,
-                    ia.ward_name as room_type,
-                    ia.floor_name,
+                    COALESCE(b.room_type, ia.room_type, ia.ward_name, ia.ward) as room_type,
+                    COALESCE(b.floor_name, ia.floor_name) as floor_name,
+                    COALESCE(b.ward_name, ia.ward_name, ia.ward) as ward_name,
                     COALESCE(b.bed_number, CAST(ia.bed_id AS CHAR)) as bed_number,
                     d.full_name as doctor_name
                 FROM ipd_admissions ia
@@ -147,14 +145,13 @@ class NurseShiftModel
                 WHERE ia.status IN ('Active', 'Admitted')";
         
         $params = [];
-        if ($currentWard) {
-            $sql .= " AND b.floor_name = ? AND b.ward_name = ? AND b.room_type = ?";
+        if ($currentWard && !empty($currentWard['floor_name']) && !empty($currentWard['ward_name'])) {
+            $sql .= " AND COALESCE(b.floor_name, ia.floor_name) = ? AND COALESCE(b.ward_name, ia.ward_name, ia.ward) = ?";
             $params[] = $currentWard['floor_name'];
             $params[] = $currentWard['ward_name'];
-            $params[] = $currentWard['room_type'];
         }
         
-        $sql .= " ORDER BY b.floor_name, b.ward_name, b.room_number, b.bed_number";
+        $sql .= " ORDER BY COALESCE(b.floor_name, ia.floor_name), COALESCE(b.ward_name, ia.ward_name), ia.room_no, COALESCE(b.bed_number, ia.bed_id)";
 
         return $this->db->fetchAll($sql, $params);
     }
@@ -187,10 +184,6 @@ class NurseShiftModel
             'pending_tasks' => 0,
             'vitals_recorded' => 0
         ];
-        
-        if (!$currentWard) {
-            return $stats;
-        }
 
         // Total admitted patients (Active or Admitted)
         $sql = "SELECT COUNT(DISTINCT ia.patient_id) as count
@@ -199,11 +192,10 @@ class NurseShiftModel
                 WHERE ia.status IN ('Active', 'Admitted')";
                 
         $params = [];
-        if ($currentWard) {
-            $sql .= " AND b.floor_name = ? AND b.ward_name = ? AND b.room_type = ?";
+        if ($currentWard && !empty($currentWard['floor_name']) && !empty($currentWard['ward_name'])) {
+            $sql .= " AND COALESCE(b.floor_name, ia.floor_name) = ? AND COALESCE(b.ward_name, ia.ward_name, ia.ward) = ?";
             $params[] = $currentWard['floor_name'];
             $params[] = $currentWard['ward_name'];
-            $params[] = $currentWard['room_type'];
         }
         
         $result = $this->db->fetchOne($sql, $params);

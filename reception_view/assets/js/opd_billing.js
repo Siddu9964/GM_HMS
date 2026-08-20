@@ -415,49 +415,74 @@ class OpdBillingManager {
 
         this.showBillingModal();
 
-        // Add default Registration and Consultation rows
-        if (this.items.length === 0) {
-            // 1. Default Registration Fee (50 Rs)
-            this.addItemRow('Registration Fee', 'Registration Fee', 1, 50);
-            
-            // 2. Default Consultation Fee (initially 0.00 until fetched)
-            this.addItemRow('Consultation', 'Consultation Fee', 1, 0.00);
-
-            // 3. Auto-Fetch Consultation Fee
-            const aptId = p.appointment_id && !p.appointment_id.startsWith('NOAPT-') ? p.appointment_id : '';
-            this.fetchAndApplyConsultationFee(p.patient_id, aptId);
-        }
+        // Auto-Fetch Consultation Fee and Pending Consultations
+        const aptId = p.appointment_id && !p.appointment_id.startsWith('NOAPT-') ? p.appointment_id : '';
+        this.fetchAndApplyConsultationFee(p.patient_id, aptId);
     }
 
     async fetchAndApplyConsultationFee(patientId, appointmentId = '') {
         try {
             const result = await this.api('GET', `/api/billing/opd/consultation-fee?patient_id=${encodeURIComponent(patientId)}&appointment_id=${encodeURIComponent(appointmentId)}`);
-            if (result && result.consultation_fee !== undefined) {
-                const isFollowup = result.is_followup === true;
-                if (isFollowup) {
-                    // Remove Registration and Consultation rows
-                    const rowsToRemove = this.items.filter(i => i.type === 'Registration Fee' || i.type === 'Consultation');
-                    rowsToRemove.forEach(i => this.removeItemRow(i.id));
-                    
-                    // Add Follow-up Fee row
-                    this.addItemRow('Follow-up Fee', 'Follow-up Fee', 1, 300);
-                } else {
-                    const fee = parseFloat(result.consultation_fee) || 0;
-                    const consultItem = this.items.find(i => i.type === 'Consultation');
-                    if (consultItem) {
-                        this._updateItem(consultItem.id, 'price', fee);
-                        
-                        // Also explicitly update the input field visually
-                        const row = document.getElementById('row-' + consultItem.id);
-                        if (row) {
-                            const priceInput = row.querySelector('td:nth-child(4) input[type="number"]');
-                            if (priceInput) priceInput.value = fee;
+            if (result) {
+                const isRegistrationPaid = result.is_registration_paid === true;
+                const consultations = Array.isArray(result.consultations) ? result.consultations : [];
+
+                // Clear previous item rows
+                this.items = [];
+                this.itemCounter = 0;
+                const tbody = document.getElementById('itemsTableBody');
+                if (tbody) tbody.innerHTML = '';
+
+                // 1. Add Registration Fee ONLY IF NOT PREVIOUSLY PAID (and not returning follow-up only)
+                if (!isRegistrationPaid && !result.is_followup) {
+                    this.addItemRow('Registration Fee', 'Registration Fee', 1, 50);
+                }
+
+                // 2. Add consultations based on per-doctor follow-up status
+                if (consultations.length > 1) {
+                    const docNames = consultations.map(c => c.doctor_name).filter(Boolean).join(', ');
+                    const docInput = document.getElementById('editDoctorName');
+                    if (docInput && docNames) docInput.value = docNames;
+
+                    consultations.forEach(c => {
+                        const fee = parseFloat(c.consultation_fee) || 0;
+                        if (c.is_followup) {
+                            const title = c.doctor_name ? `Follow-up Fee (${c.doctor_name})` : 'Follow-up Fee';
+                            this.addItemRow('Follow-up Fee', title, 1, fee);
+                        } else {
+                            const title = c.doctor_name ? `Consultation Fee (${c.doctor_name})` : 'Consultation Fee';
+                            this.addItemRow('Consultation', title, 1, fee);
                         }
+                    });
+                } else if (consultations.length === 1) {
+                    const c = consultations[0];
+                    const fee = parseFloat(c.consultation_fee) || 0;
+                    
+                    const docInput = document.getElementById('editDoctorName');
+                    if (docInput && c.doctor_name) docInput.value = c.doctor_name;
+
+                    if (c.is_followup) {
+                        const title = c.doctor_name ? `Follow-up Fee (${c.doctor_name})` : 'Follow-up Fee';
+                        this.addItemRow('Follow-up Fee', title, 1, fee);
+                    } else {
+                        const title = c.doctor_name ? `Consultation Fee (${c.doctor_name})` : 'Consultation Fee';
+                        this.addItemRow('Consultation', title, 1, fee);
+                    }
+                } else {
+                    // Walk-in / Direct
+                    if (result.is_followup) {
+                        this.addItemRow('Follow-up Fee', 'Follow-up Fee', 1, 300);
+                    } else {
+                        const fee = parseFloat(result.consultation_fee) || 0;
+                        this.addItemRow('Consultation', 'Consultation Fee', 1, fee);
                     }
                 }
             }
         } catch (e) {
             console.warn('Could not fetch consultation fee:', e.message);
+            if (this.items.length === 0) {
+                this.addItemRow('Consultation', 'Consultation Fee', 1, 500);
+            }
         }
     }
 
@@ -579,6 +604,7 @@ class OpdBillingManager {
     clearPatient() {
         this.selectedPatient = null;
         this.items = [];
+        this.itemCounter = 0;
         document.getElementById('itemsTableBody').innerHTML = '';
         this.hideBillingModal();
         document.getElementById('patientSearchInput').value = '';
@@ -616,7 +642,8 @@ class OpdBillingManager {
 
     addItemRow(type = '', name = '', qty = 1, price = 0, itemCode = null) {
         const resolvedType = this._resolveItemType(type);
-        const id = Date.now();
+        this.itemCounter = (this.itemCounter || 0) + 1;
+        const id = this.itemCounter;
         this.items.push({ id, type: resolvedType, name, qty, price, discount: 0, itemCode });
 
         const tbody = document.getElementById('itemsTableBody');
@@ -871,13 +898,15 @@ class OpdBillingManager {
 
         // Derive the primary service_id and item_name from the first service-picked item
         const firstSvcItem = this.items.find(i => i.itemCode);
+        const doctorNameInput = document.getElementById('editDoctorName')?.value?.trim() || '';
+        const doctorName = doctorNameInput || this.selectedPatient.doctor_name || null;
 
         const payload = {
             patient_id:          this.selectedPatient.patient_id,
             name:                this.selectedPatient.patient_name || this.selectedPatient.name || null,
             mobile:              this.selectedPatient.phone || this.selectedPatient.mobile || null,
             doctor_id:           this.selectedPatient.doctor_id   || null,
-            doctor_name:         this.selectedPatient.doctor_name || null,
+            doctor_name:         doctorName,
             appointment_id:      this.selectedPatient.appointment_id,
             referral_type:       referralType || null,
             referred_by:         referredBy   || null,
@@ -1258,6 +1287,13 @@ class OpdBillingManager {
             </div>
         ` : '';
 
+        let docDisplay = (data.doctor_name || '').trim();
+        if (!docDisplay || docDisplay.toLowerCase() === 'walking' || docDisplay.toLowerCase() === 'walk-in') {
+            docDisplay = 'Walk-in';
+        } else if (!/^dr[\.\s]/i.test(docDisplay)) {
+            docDisplay = 'Dr. ' + docDisplay;
+        }
+
         content.innerHTML = `
             <div class="receipt-container ${status === 'paid' ? 'is-paid' : ''}">
                 ${status === 'paid' ? '<div class="watermark-paid">PAID</div>' : ''}
@@ -1298,7 +1334,7 @@ class OpdBillingManager {
                         <span class="info-label">PHONE</span>
                         <span class="info-value">${data.mobile || '—'}</span>
                         <span class="info-label">DOCTOR</span>
-                        <span class="info-value">Dr. ${this._escape(data.doctor_name || 'Walking')}</span>
+                        <span class="info-value">${this._escape(docDisplay)}</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">APPOINTMENT</span>

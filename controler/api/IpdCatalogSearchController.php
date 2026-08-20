@@ -61,6 +61,13 @@ class IpdCatalogSearchController extends IpdBaseController {
                     $results = $this->searchOtherServices($query, $roomType);
                     break;
 
+                case 'SPONSOR':
+                case 'INSURANCE':
+                case 'TPA':
+                case 'TPS':
+                    $results = $this->searchSponsors($query, $type);
+                    break;
+
                 default:
                     $this->error("Unsupported catalog type: {$type}", 400);
                     return;
@@ -361,5 +368,36 @@ class IpdCatalogSearchController extends IpdBaseController {
 
         return $this->db->fetchAll($sql, $params);
     }
+
+    /**
+     * Search Sponsors / Insurance / TPA from sponsors_data
+     */
+    private function searchSponsors(string $query, string $type): array {
+        $targetType = (in_array(strtoupper($type), ['TPA', 'TPS'])) ? 'TPA' : 'Insurance';
+
+        if ($query === '') {
+            $sql = "SELECT sl_no as id, 
+                           sponsor_name as name, 
+                           sponsor_type, 
+                           tpa_name, 
+                           status 
+                    FROM sponsors_data 
+                    WHERE sponsor_type LIKE ? AND sponsor_name IS NOT NULL AND sponsor_name != ''
+                    ORDER BY sponsor_name ASC LIMIT 50";
+            return $this->db->fetchAll($sql, ["%{$targetType}%"]);
+        }
+
+        $sql = "SELECT sl_no as id, 
+                       sponsor_name as name, 
+                       sponsor_type, 
+                       tpa_name, 
+                       status 
+                FROM sponsors_data 
+                WHERE sponsor_type LIKE ? AND sponsor_name LIKE ? 
+                ORDER BY CASE WHEN sponsor_name LIKE ? THEN 0 ELSE 1 END, sponsor_name ASC 
+                LIMIT 50";
+        return $this->db->fetchAll($sql, ["%{$targetType}%", "%{$query}%", "{$query}%"]);
+    }
 }
+
 

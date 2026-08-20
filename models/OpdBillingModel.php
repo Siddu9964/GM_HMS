@@ -25,27 +25,58 @@ class OpdBillingModel
             $billTime = $billData['bill_time'] ?? date('H:i:s');
             $patientId = $billData['patient_id'];
 
-            // ── Duplicate check: same patient, same date, same item names ──
+            // ── Duplicate check: same patient, same date, same non-registration item names ──
             $existingBills = $this->db->fetchAll(
                 "SELECT obm.bill_id, obi.item_name
                  FROM opd_billing_master obm
                  JOIN opd_billing_items obi ON obm.bill_id = obi.bill_id
                  WHERE obm.patient_id = ? AND obm.bill_date = ?",
-            [$patientId, $billDate]
+                [$patientId, $billDate]
             );
 
             if (!empty($existingBills) && !empty($items)) {
                 $existingItemNames = array_map(fn($r) => strtolower(trim($r['item_name'])), $existingBills);
                 foreach ($items as $newItem) {
                     $newName = strtolower(trim($newItem['item_name'] ?? ''));
-                    if (in_array($newName, $existingItemNames)) {
+                    // Skip registration fee and generic items when checking for duplicate consultations/services
+                    if ($newName && $newName !== 'registration fee' && in_array($newName, $existingItemNames)) {
                         $existingBillId = $existingBills[0]['bill_id'];
-                        throw new Exception("Duplicate entry: a bill ({$existingBillId}) for this patient already exists today with the same item(s). Please check Recent Bills.");
+                        throw new Exception("Duplicate entry: a bill ({$existingBillId}) for this patient already exists today with the item '{$newItem['item_name']}'. Please check Recent Bills.");
                     }
                 }
             }
 
             $billId = $this->generateBillId();
+
+            $doctorName = trim($billData['doctor_name'] ?? '');
+            $doctorId   = trim($billData['doctor_id'] ?? '');
+
+            // Auto-resolve doctor name and id if missing or 'Walking'
+            if (empty($doctorName) || $doctorName === 'Walking' || $doctorName === 'Walk-in') {
+                if (!empty($billData['appointment_id'])) {
+                    $apt = $this->db->fetchOne(
+                        "SELECT a.doctor_name, a.doctor_id, d.full_name 
+                         FROM appointments a 
+                         LEFT JOIN doctors d ON a.doctor_id = d.doctor_id 
+                         WHERE a.appointment_id = ?",
+                        [$billData['appointment_id']]
+                    );
+                    if ($apt) {
+                        $doctorName = !empty($apt['doctor_name']) ? $apt['doctor_name'] : ($apt['full_name'] ?? '');
+                        if (empty($doctorId)) $doctorId = $apt['doctor_id'] ?? '';
+                    }
+                }
+                if (empty($doctorName) && !empty($doctorId)) {
+                    $doc = $this->db->fetchOne("SELECT full_name FROM doctors WHERE doctor_id = ?", [$doctorId]);
+                    if ($doc && !empty($doc['full_name'])) {
+                        $doctorName = $doc['full_name'];
+                    }
+                }
+            }
+
+            if (empty($doctorName)) {
+                $doctorName = 'Walk-in';
+            }
 
             $sql = "INSERT INTO opd_billing_master (
                         bill_id, patient_id, name, mobile, appointment_id, doctor_id, doctor_name,
@@ -64,8 +95,8 @@ class OpdBillingModel
                 $billData['name']           ?? '',
                 $billData['mobile']         ?? 0,
                 $billData['appointment_id'] ?? null,
-                $billData['doctor_id']      ?? '',
-                $billData['doctor_name']    ?? 'Walking',
+                $doctorId,
+                $doctorName,
                 $billDate,
                 $billTime,
                 $billData['referral_type']  ?? '',
@@ -90,7 +121,24 @@ class OpdBillingModel
                     if (strpos($code, 'LAB') === 0 || strpos($code, 'OTH') === 0) {
                         $hasLabItems = true;
                     }
+
+                    // Mark corresponding appointment as Paid
+                    $itemName = $item['item_name'] ?? '';
+                    if (str_contains(strtolower($itemName), 'consultation')) {
+                        $this->db->execute(
+                            "UPDATE appointments SET payment_status = 'Paid' 
+                             WHERE patient_id = ? AND appointment_date = ? AND LOCATE(doctor_name, ?) > 0",
+                            [$patientId, $billDate, $itemName]
+                        );
+                    }
                 }
+            }
+
+            if (!empty($billData['appointment_id'])) {
+                $this->db->execute(
+                    "UPDATE appointments SET payment_status = 'Paid' WHERE appointment_id = ?",
+                    [$billData['appointment_id']]
+                );
             }
 
             $this->calculateTotals($billId);
@@ -558,76 +606,143 @@ class OpdBillingModel
     {
         $fee = 0.00;
         $isFollowup = false;
+        $consultations = [];
 
+        // 1. Check if patient has already paid Registration Fee today or in prior bills
+        $regCheck = $this->db->fetchOne(
+            "SELECT obi.item_id 
+             FROM opd_billing_master obm
+             JOIN opd_billing_items obi ON obm.bill_id COLLATE utf8mb4_unicode_ci = obi.bill_id COLLATE utf8mb4_unicode_ci
+             WHERE obm.patient_id COLLATE utf8mb4_unicode_ci = ? 
+               AND (obi.item_type = 'Registration Fee' OR LOWER(obi.item_name) LIKE '%registration%')
+             LIMIT 1",
+            [$patientId]
+        );
+        $isRegistrationPaid = !empty($regCheck);
+
+        // 2. Determine target appointment date and doctor context
+        $targetDate = null;
+        $currentDocId = null;
+        $currentDocName = null;
         if (!empty($currentAppointmentId)) {
-            // We have a specific appointment context
-            $sqlCurrent = "SELECT d.consultation_fee, a.appointment_date 
-                           FROM appointments a
-                           JOIN doctors d ON a.doctor_id = d.doctor_id
-                           WHERE a.appointment_id = ?";
-            $currentApt = $this->db->fetchOne($sqlCurrent, [$currentAppointmentId]);
-            
+            $currentApt = $this->db->fetchOne(
+                "SELECT d.consultation_fee, a.appointment_date, a.doctor_id, d.full_name as doctor_name 
+                 FROM appointments a
+                 JOIN doctors d ON a.doctor_id COLLATE utf8mb4_unicode_ci = d.doctor_id COLLATE utf8mb4_unicode_ci
+                 WHERE a.appointment_id = ?",
+                [$currentAppointmentId]
+            );
             if ($currentApt) {
                 $fee = (float)$currentApt['consultation_fee'];
-                $currentDate = $currentApt['appointment_date'];
-                
-                // Find the most recent appointment BEFORE this one
-                $sqlPrev = "SELECT appointment_date 
-                            FROM appointments 
-                            WHERE patient_id = ? AND appointment_id != ? AND appointment_date <= ?
-                            ORDER BY appointment_date DESC, appointment_time DESC LIMIT 1";
-                $prevApt = $this->db->fetchOne($sqlPrev, [$patientId, $currentAppointmentId, $currentDate]);
-                
-                if ($prevApt) {
-                    $targetTime = strtotime($currentDate);
-                    $prevTime = strtotime($prevApt['appointment_date']);
-                    $daysDiff = ($targetTime - $prevTime) / 86400;
-                    
+                $targetDate = $currentApt['appointment_date'];
+                $currentDocId = $currentApt['doctor_id'];
+                $currentDocName = $currentApt['doctor_name'];
+            }
+        }
+
+        if (empty($targetDate)) {
+            // Find most recent appointment date for this patient
+            $latest = $this->db->fetchOne(
+                "SELECT a.appointment_date, a.doctor_id, d.full_name as doctor_name, d.consultation_fee 
+                 FROM appointments a
+                 JOIN doctors d ON a.doctor_id COLLATE utf8mb4_unicode_ci = d.doctor_id COLLATE utf8mb4_unicode_ci
+                 WHERE a.patient_id COLLATE utf8mb4_unicode_ci = ? 
+                 ORDER BY a.appointment_date DESC, a.appointment_time DESC 
+                 LIMIT 1",
+                [$patientId]
+            );
+            if ($latest) {
+                $targetDate = $latest['appointment_date'];
+                $currentDocId = $latest['doctor_id'];
+                $currentDocName = $latest['doctor_name'];
+                $fee = (float)$latest['consultation_fee'];
+            } else {
+                $targetDate = date('Y-m-d');
+            }
+        }
+
+        // 3. Fetch ONLY PENDING/UNPAID non-cancelled appointments for this patient on this target date
+        $sqlDateApts = "SELECT a.appointment_id, a.doctor_id, d.full_name as doctor_name, d.consultation_fee, a.appointment_date 
+                        FROM appointments a
+                        JOIN doctors d ON a.doctor_id COLLATE utf8mb4_unicode_ci = d.doctor_id COLLATE utf8mb4_unicode_ci
+                        WHERE a.patient_id COLLATE utf8mb4_unicode_ci = ? 
+                          AND a.appointment_date = ? 
+                          AND a.appointment_status != 'Cancelled'
+                          AND (a.payment_status IS NULL OR a.payment_status = 'Pending' OR a.payment_status = '')
+                        ORDER BY a.appointment_time ASC, a.appointment_id ASC";
+        $dateApts = $this->db->fetchAll($sqlDateApts, [$patientId, $targetDate]);
+
+        if (!empty($dateApts)) {
+            foreach ($dateApts as $apt) {
+                $docId = $apt['doctor_id'];
+                $docName = $apt['doctor_name'];
+
+                // Check if this SAME DOCTOR was already billed for this patient in the last 0-3 days
+                $sameDocBill = $this->db->fetchOne(
+                    "SELECT obm.bill_date 
+                     FROM opd_billing_master obm 
+                     JOIN opd_billing_items obi ON obm.bill_id COLLATE utf8mb4_unicode_ci = obi.bill_id COLLATE utf8mb4_unicode_ci
+                     WHERE obm.patient_id COLLATE utf8mb4_unicode_ci = ? 
+                       AND (obm.doctor_id COLLATE utf8mb4_unicode_ci = ? OR obm.doctor_name COLLATE utf8mb4_unicode_ci = ? OR LOCATE(?, obi.item_name) > 0)
+                       AND obm.bill_date <= ?
+                     ORDER BY obm.bill_date DESC, obm.bill_time DESC LIMIT 1",
+                    [$patientId, $docId, $docName, $docName, $targetDate]
+                );
+
+                $docIsFollowup = false;
+                $docFee = (float)$apt['consultation_fee'];
+
+                if ($sameDocBill) {
+                    $targetTime = strtotime($targetDate);
+                    $billTime = strtotime($sameDocBill['bill_date']);
+                    $daysDiff = ($targetTime - $billTime) / 86400;
+
                     if ($daysDiff >= 0 && $daysDiff <= 3) {
-                        $fee = 0.00;
-                        $isFollowup = true;
+                        // SAME DOCTOR within 0-3 days -> Follow-up Fee
+                        $docIsFollowup = true;
+                        $docFee = 300.00;
                     }
                 }
+
+                $consultations[] = [
+                    'appointment_id'   => $apt['appointment_id'],
+                    'doctor_id'        => $apt['doctor_id'],
+                    'doctor_name'      => $apt['doctor_name'],
+                    'consultation_fee' => $docFee,
+                    'is_followup'      => $docIsFollowup
+                ];
             }
-        } else {
-            // No specific appointment context (e.g. walk-in billing)
-            $sqlLatest = "SELECT d.consultation_fee, a.appointment_date 
-                          FROM appointments a
-                          JOIN doctors d ON a.doctor_id = d.doctor_id
-                          WHERE a.patient_id = ?
-                          ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT 1";
-            $latestApt = $this->db->fetchOne($sqlLatest, [$patientId]);
-            
-            if ($latestApt) {
-                $fee = (float)$latestApt['consultation_fee'];
-                $today = strtotime('today');
-                $latestTime = strtotime($latestApt['appointment_date']);
-                $daysDiff = ($today - $latestTime) / 86400;
-                
-                if ($daysDiff == 0) {
-                    // Latest appointment is today. Check if there is an older appointment for follow-up calculation
-                    $sqlPrev = "SELECT appointment_date 
-                                FROM appointments 
-                                WHERE patient_id = ? AND appointment_date < ?
-                                ORDER BY appointment_date DESC, appointment_time DESC LIMIT 1";
-                    $prevApt = $this->db->fetchOne($sqlPrev, [$patientId, $latestApt['appointment_date']]);
-                    if ($prevApt) {
-                        $prevTime = strtotime($prevApt['appointment_date']);
-                        $diff = ($today - $prevTime) / 86400;
-                        if ($diff >= 0 && $diff <= 3) {
-                            $fee = 0.00;
-                            $isFollowup = true;
-                        }
-                    }
-                } else if ($daysDiff > 0 && $daysDiff <= 3) {
-                    // Latest appointment was 1-3 days ago. They walked in today for a follow-up.
-                    $fee = 0.00;
+        } elseif (!empty($currentDocId)) {
+            // Walk-in with specific doctor
+            $sameDocBill = $this->db->fetchOne(
+                "SELECT obm.bill_date 
+                 FROM opd_billing_master obm 
+                 JOIN opd_billing_items obi ON obm.bill_id COLLATE utf8mb4_unicode_ci = obi.bill_id COLLATE utf8mb4_unicode_ci
+                 WHERE obm.patient_id COLLATE utf8mb4_unicode_ci = ? 
+                   AND (obm.doctor_id COLLATE utf8mb4_unicode_ci = ? OR obm.doctor_name COLLATE utf8mb4_unicode_ci = ? OR LOCATE(?, obi.item_name) > 0)
+                   AND obm.bill_date <= ?
+                 ORDER BY obm.bill_date DESC, obm.bill_time DESC LIMIT 1",
+                [$patientId, $currentDocId, $currentDocName, $currentDocName, $targetDate]
+            );
+
+            if ($sameDocBill) {
+                $targetTime = strtotime($targetDate);
+                $billTime = strtotime($sameDocBill['bill_date']);
+                $daysDiff = ($targetTime - $billTime) / 86400;
+
+                if ($daysDiff >= 0 && $daysDiff <= 3) {
                     $isFollowup = true;
+                    $fee = 300.00;
                 }
             }
         }
 
-        return ['fee' => $fee, 'is_followup' => $isFollowup];
+        return [
+            'fee'                  => $fee,
+            'is_followup'          => $isFollowup,
+            'is_registration_paid' => $isRegistrationPaid,
+            'consultations'        => $consultations
+        ];
     }
 
     /**

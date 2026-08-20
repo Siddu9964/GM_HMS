@@ -419,11 +419,13 @@ class OpdBillingController extends BaseController {
             $result = $this->model->getConsultationFeeByPatient($patientId, $appointmentId);
             if (is_array($result)) {
                 $this->respondSuccess([
-                    'consultation_fee' => $result['fee'],
-                    'is_followup' => $result['is_followup']
+                    'consultation_fee'     => $result['fee'],
+                    'is_followup'          => $result['is_followup'],
+                    'is_registration_paid' => $result['is_registration_paid'] ?? false,
+                    'consultations'        => $result['consultations'] ?? []
                 ]);
             } else {
-                $this->respondSuccess(['consultation_fee' => $result, 'is_followup' => false]);
+                $this->respondSuccess(['consultation_fee' => $result, 'is_followup' => false, 'is_registration_paid' => false, 'consultations' => []]);
             }
         } catch (Exception $e) {
             $this->handleException($e);

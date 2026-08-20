@@ -4,11 +4,11 @@ if (!isset($basePath)) {
     $basePath = '../';
 }
 
-// Fetch dynamic unread discharge notifications count
+// Fetch dynamic unread discharge clearances count
 try {
     $notifConn = new mysqli('localhost', 'root', '', 'hmsc_basaveshwranagara');
-    $notifCountResult = $notifConn->query("SELECT COUNT(*) as count FROM discharge_notifications WHERE status = 'Pending'");
-    $notifCountRow = $notifCountResult->fetch_assoc();
+    $notifCountResult = $notifConn->query("SELECT COUNT(*) as count FROM discharge_clearances WHERE overall_status != 'Completed'");
+    $notifCountRow = $notifCountResult ? $notifCountResult->fetch_assoc() : null;
     $unreadNotifCount = $notifCountRow['count'] ?? 0;
     $notifConn->close();
 } catch (Throwable $e) {
@@ -36,33 +36,13 @@ try {
                 <span id="navbar-notif-badge" style="position: absolute; top: -4px; right: -6px; background: var(--gm-danger); color: white; font-size: 0.65rem; font-weight: 700; height: 16px; min-width: 16px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--gm-white); <?php echo ($unreadNotifCount > 0) ? '' : 'display: none;'; ?>"><?php echo $unreadNotifCount; ?></span>
             </button>
             
-            <div id="adminNotificationsDropdown" style="display: none; position: absolute; top: 120%; right: 0; background: var(--gm-white); border-radius: var(--gm-r-md); box-shadow: var(--gm-shadow); min-width: 300px; border: 1px solid var(--gm-glass-border); overflow: hidden; z-index: 1000; padding: 12px; max-height: 350px; overflow-y: auto;">
-                <h4 style="margin: 0 0 10px 0; padding-bottom: 8px; border-bottom: 1px solid var(--gm-glass-border); font-size: 0.85rem; font-weight: 700; color: var(--gm-text);">Discharge Notifications</h4>
+            <div id="adminNotificationsDropdown" style="display: none; position: absolute; top: 120%; right: 0; background: var(--gm-white); border-radius: var(--gm-r-md); box-shadow: var(--gm-shadow); min-width: 380px; max-width: 420px; border: 1px solid var(--gm-glass-border); overflow: hidden; z-index: 1000; padding: 14px; max-height: 480px; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px 0; padding-bottom: 8px; border-bottom: 1px solid var(--gm-glass-border);">
+                    <h4 style="margin: 0; font-size: 0.9rem; font-weight: 800; color: var(--gm-text);"><i class="fas fa-clipboard-check text-primary mr-1"></i> Discharge Clearances</h4>
+                    <span id="admin-notif-count-pill" style="font-size: 0.7rem; font-weight: 700; background: var(--gm-primary-light); color: var(--gm-primary); padding: 2px 8px; border-radius: 10px;">0 Active</span>
+                </div>
                 <div id="admin-notifications-list">
-                    <?php
-                    try {
-                        $notifConn = new mysqli('localhost', 'root', '', 'hmsc_basaveshwranagara');
-                        $notifListResult = $notifConn->query("SELECT * FROM discharge_notifications ORDER BY created_at DESC LIMIT 5");
-                        if ($notifListResult && $notifListResult->num_rows > 0) {
-                            while ($nRow = $notifListResult->fetch_assoc()) {
-                                $statusColor = $nRow['status'] === 'Pending' ? '#ef4444' : '#10b981';
-                                $statusBg = $nRow['status'] === 'Pending' ? '#fef2f2' : '#ecfdf5';
-                                echo "<div id='notif-item-{$nRow['id']}' style='padding: 8px; border-radius: 8px; background: {$statusBg}; margin-bottom: 8px; border: 1px solid var(--gm-glass-border); font-size: 0.75rem; text-align: left;'>";
-                                echo "<div style='display: flex; justify-content: space-between; margin-bottom: 4px;'><strong style='color: var(--gm-text);'>Admission: {$nRow['admission_id']}</strong><span style='color: {$statusColor}; font-weight: 700;'>{$nRow['status']}</span></div>";
-                                echo "<p style='margin: 0; color: var(--gm-text-light); line-height: 1.3;'>{$nRow['message']}</p>";
-                                if ($nRow['status'] === 'Pending') {
-                                    echo "<button onclick='dismissAdminNotification(event, {$nRow['id']})' style='margin-top: 6px; padding: 2px 8px; font-size: 0.65rem; border-radius: 4px; background: #e2e8f0; border: none; cursor: pointer; font-weight: 600;'>Clear</button>";
-                                }
-                                echo "</div>";
-                            }
-                        } else {
-                            echo "<p style='text-align: center; color: var(--gm-text-light); font-size: 0.75rem; padding: 10px; margin: 0;'>No notifications</p>";
-                        }
-                        $notifConn->close();
-                    } catch (Throwable $e) {
-                        echo "<p style='text-align: center; color: var(--gm-text-light); font-size: 0.75rem; margin: 0;'>Error loading alerts</p>";
-                    }
-                    ?>
+                    <p style="text-align: center; color: var(--gm-text-light); font-size: 0.8rem; padding: 15px; margin: 0;">Loading clearance alerts...</p>
                 </div>
             </div>
         </div>
@@ -257,56 +237,121 @@ document.addEventListener('DOMContentLoaded', function() {
 function toggleAdminNotifications(e) {
     e.stopPropagation();
     var dropdown = document.getElementById('adminNotificationsDropdown');
-    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    var isShowing = dropdown.style.display === 'block';
+    dropdown.style.display = isShowing ? 'none' : 'block';
+    if (!isShowing) {
+        fetchAdminDischargeClearances();
+    }
 }
 
-async function dismissAdminNotification(e, id) {
-    e.stopPropagation();
-    if (!confirm('Mark notification as cleared?')) return;
-    
-    var formData = new FormData();
-    formData.append('id', id);
+async function fetchAdminDischargeClearances() {
+    var list = document.getElementById('admin-notifications-list');
+    var badge = document.getElementById('navbar-notif-badge');
+    var pill = document.getElementById('admin-notif-count-pill');
     
     try {
-        var response = await fetch('<?php echo $basePath; ?>view/api/dismiss_discharge_notification.php', {
-            method: 'POST',
-            body: formData
-        });
-        var result = await response.json();
-        if (result.success) {
-            var item = document.getElementById('notif-item-' + id);
-            if (item) {
-                item.style.opacity = '0.5';
-                item.style.background = '#f1f5f9';
-                var btn = item.querySelector('button');
-                if (btn) btn.remove();
-            }
-            // Update badge count
-            var badge = document.getElementById('navbar-notif-badge');
+        var response = await fetch('/GM_HMS/api/discharge_clearance.php?action=pending_list&module=admin');
+        var res = await response.json();
+        
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+            var count = res.data.length;
             if (badge) {
-                var currentCount = parseInt(badge.textContent) || 0;
-                if (currentCount > 1) {
-                    badge.textContent = currentCount - 1;
-                } else {
-                    badge.style.display = 'none';
-                }
+                badge.textContent = count;
+                badge.style.display = 'flex';
             }
-            // Update sidebar badge if it exists
-            var sidebarBadge = document.getElementById('sidebar-notif-badge');
-            if (sidebarBadge) {
-                var currentCount = parseInt(sidebarBadge.textContent) || 0;
-                if (currentCount > 1) {
-                    sidebarBadge.textContent = currentCount - 1;
-                } else {
-                    sidebarBadge.style.display = 'none';
-                }
+            if (pill) {
+                pill.textContent = count + ' Active';
             }
+            
+            var html = '';
+            res.data.forEach(function(item) {
+                var isAllCleared = item.overall_status === 'All Cleared';
+                var hasQueries = item.overall_status === 'Queries Raised';
+                
+                var borderCol = isAllCleared ? '#86efac' : hasQueries ? '#fca5a5' : '#fde68a';
+                var bgCol = isAllCleared ? '#f0fdf4' : hasQueries ? '#fef2f2' : '#fffbeb';
+                var statusText = isAllCleared ? '🎉 All Cleared' : hasQueries ? '⚠️ Query Active' : '⏳ Clearance Pending';
+                var statusBadgeCol = isAllCleared ? '#15803d' : hasQueries ? '#b91c1c' : '#b45309';
+                
+                var rCol = item.reception_status === 'Approved' ? '#15803d' : item.reception_status === 'Query' ? '#dc2626' : '#d97706';
+                var pCol = item.pharmacy_status === 'Approved' ? '#15803d' : item.pharmacy_status === 'Query' ? '#dc2626' : '#d97706';
+                var lCol = item.lab_status === 'Approved' ? '#15803d' : item.lab_status === 'Query' ? '#dc2626' : '#d97706';
+                
+                var querySnippet = '';
+                if (item.reception_query) querySnippet += '<div><small><strong>Reception Query:</strong> ' + item.reception_query + '</small></div>';
+                if (item.pharmacy_query) querySnippet += '<div><small><strong>Pharmacy Query:</strong> ' + item.pharmacy_query + '</small></div>';
+                if (item.lab_query) querySnippet += '<div><small><strong>Lab Query:</strong> ' + item.lab_query + '</small></div>';
+                
+                html += `
+                    <div id="clearance-card-${item.clearance_id}" style="padding: 10px 12px; border-radius: 10px; background: ${bgCol}; border: 1.5px solid ${borderCol}; margin-bottom: 10px; font-size: 0.78rem; text-align: left;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                            <div>
+                                <strong style="font-size: 0.88rem; color: #1e293b;">${item.patient_name || 'Patient'}</strong>
+                                <div style="font-size: 0.72rem; color: #64748b;">${item.bed_info || 'Ward'} • IP: ${item.admission_id}</div>
+                            </div>
+                            <span style="font-size: 0.7rem; font-weight: 800; color: ${statusBadgeCol}; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.7);">${statusText}</span>
+                        </div>
+                        
+                        <!-- Department Matrix -->
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 6px 0; background: #ffffff; padding: 6px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.68rem; text-align: center;">
+                            <div><span style="color:#64748b;">Reception</span><br><strong style="color:${rCol};">${item.reception_status}</strong></div>
+                            <div><span style="color:#64748b;">Pharmacy</span><br><strong style="color:${pCol};">${item.pharmacy_status}</strong></div>
+                            <div><span style="color:#64748b;">Laboratory</span><br><strong style="color:${lCol};">${item.lab_status}</strong></div>
+                        </div>
+                        
+                        ${querySnippet ? '<div style="margin-top:4px; padding:4px 6px; background:#fee2e2; color:#991b1b; border-radius:4px; font-size:0.7rem;">' + querySnippet + '</div>' : ''}
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                            <span style="font-size: 0.68rem; color: #94a3b8;"><i class="fas fa-user-nurse"></i> ${item.nurse_name || 'Nurse'}</span>
+                            ${isAllCleared ? 
+                                `<button type="button" onclick="confirmAdminDischarge('${item.clearance_id}', '${item.admission_id}')" style="padding: 4px 12px; font-size: 0.72rem; font-weight: 800; background: #16a34a; color: #ffffff; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-check-double"></i> Confirm Final Discharge
+                                </button>` :
+                                `<button type="button" onclick="window.location.href='/GM_HMS/view/ipd_billing.php?admission_id=${encodeURIComponent(item.admission_id)}'" style="padding: 3px 8px; font-size: 0.7rem; font-weight: 700; background: #ffffff; color: #1f6b4a; border: 1px solid #1f6b4a; border-radius: 6px; cursor: pointer;">
+                                    <i class="fas fa-file-invoice-dollar"></i> View Billing
+                                </button>`
+                            }
+                        </div>
+                    </div>
+                `;
+            });
+            if (list) list.innerHTML = html;
         } else {
-            alert('Failed to clear notification: ' + result.message);
+            if (badge) badge.style.display = 'none';
+            if (pill) pill.textContent = '0 Active';
+            if (list) list.innerHTML = '<p style="text-align: center; color: var(--gm-text-light); font-size: 0.8rem; padding: 15px; margin: 0;">No active discharge clearances</p>';
         }
     } catch (err) {
-        console.error(err);
-        alert('Network error clearing notification.');
+        console.error('Error fetching admin clearances:', err);
+        if (list) list.innerHTML = '<p style="text-align: center; color: #ef4444; font-size: 0.75rem; margin: 0;">Error loading alerts</p>';
+    }
+}
+
+async function confirmAdminDischarge(clearanceId, admissionId) {
+    if (!confirm('Confirm final discharge clearance for this patient? All department approvals will be finalized.')) return;
+    
+    var payload = {
+        action: 'admin_confirm',
+        clearance_id: clearanceId,
+        admission_id: admissionId
+    };
+    
+    try {
+        var res = await fetch('/GM_HMS/api/discharge_clearance.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        var data = await res.json();
+        if (data.success) {
+            alert('✅ ' + (data.message || 'Patient discharge finalized by Admin!'));
+            fetchAdminDischargeClearances();
+        } else {
+            alert('Error: ' + (data.message || 'Failed to finalize'));
+        }
+    } catch (e) {
+        console.error(e);
+        alert('Network error finalizing discharge.');
     }
 }
 
@@ -317,5 +362,10 @@ document.addEventListener('click', function(e) {
     if (wrapper && dropdown && !wrapper.contains(e.target)) {
         dropdown.style.display = 'none';
     }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    fetchAdminDischargeClearances();
+    setInterval(fetchAdminDischargeClearances, 12000);
 });
 </script>

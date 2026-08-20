@@ -737,21 +737,211 @@ if (!isset($basePath)) {
                         </button>
                     </div>
                     <small style="color: #64748b; font-size: 0.75rem;">Minimum 8 characters</small>
+<!-- Reception Discharge Clearance Action Modal -->
+<div id="recClearanceModal" class="navbar-modal-overlay" style="display: none; z-index: 10003; align-items: center; justify-content: center; position: fixed; inset: 0; background: rgba(15, 35, 25, 0.6); backdrop-filter: blur(4px);">
+    <div class="profile-card-modal" style="max-width: 580px; width: 92%; max-height: 90vh; display: flex; flex-direction: column; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.35); border: 2px solid #1f6b4a;">
+        <div class="profile-card-header" style="background: #1f6b4a; padding: 16px 20px; height: auto; display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 1.05rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-clipboard-check"></i> Reception Discharge Clearance
+            </div>
+            <button type="button" class="close-modal" onclick="closeRecClearanceModal()" style="position: static; background: none; border: none; font-size: 1.3rem; color: #ffffff; cursor: pointer;">&times;</button>
+        </div>
+
+        <div style="padding: 20px; overflow-y: auto; flex: 1; text-align: left;">
+            <!-- Patient Info Box -->
+            <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
+                <div style="font-weight: 800; font-size: 1.05rem; color: #1f6b4a;" id="rec-modal-pt-name">Patient Name</div>
+                <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;" id="rec-modal-pt-details">PID: – | IP#: – | Bed: –</div>
+            </div>
+
+            <!-- Multi-Department Clearance Grid -->
+            <div style="background: #fdfbf7; border: 1.5px dashed #cbd5e1; border-radius: 10px; padding: 12px; margin-bottom: 14px;">
+                <div style="font-size: 0.72rem; font-weight: 800; color: #1f6b4a; text-transform: uppercase; margin-bottom: 8px;">Multi-Department Clearance Status</div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; text-align: center;">
+                        <div style="font-size: 0.68rem; font-weight: 700; color: #64748b;">Reception / Billing</div>
+                        <div id="rec-status-rec" style="font-weight: 800; font-size: 0.8rem; margin-top: 2px; color: #f59e0b;">⏳ Pending</div>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; text-align: center;">
+                        <div style="font-size: 0.68rem; font-weight: 700; color: #64748b;">Pharmacy</div>
+                        <div id="rec-status-ph" style="font-weight: 800; font-size: 0.8rem; margin-top: 2px; color: #f59e0b;">⏳ Pending</div>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; text-align: center;">
+                        <div style="font-size: 0.68rem; font-weight: 700; color: #64748b;">Laboratory</div>
+                        <div id="rec-status-lab" style="font-weight: 800; font-size: 0.8rem; margin-top: 2px; color: #f59e0b;">⏳ Pending</div>
+                    </div>
                 </div>
-                <div id="change-pw-msg" style="display:none; padding:10px; border-radius:8px; font-size:0.875rem; margin-bottom:10px;"></div>
-                <div class="profile-card-actions">
-                    <button type="button" onclick="toggleChangePasswordModal()" class="btn-secondary">Cancel</button>
-                    <button type="submit" class="btn-primary">Update Password</button>
+            </div>
+
+            <!-- Queries / Notes History -->
+            <div id="rec-modal-queries-box" style="display: none; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; padding: 10px; margin-bottom: 14px; font-size: 0.8rem;">
+                <div style="font-weight: 800; color: #e11d48; margin-bottom: 4px;"><i class="fas fa-comments"></i> Department Queries & Discussion:</div>
+                <div id="rec-modal-queries-list"></div>
+            </div>
+
+            <!-- Clearance Actions -->
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 14px;">
+                <div style="font-weight: 800; font-size: 0.85rem; color: #1e293b; margin-bottom: 8px;"><i class="fas fa-check-square text-success"></i> Option A: Approve Reception Clearance</div>
+                <div class="form-group mb-2">
+                    <input type="text" id="rec-clearance-notes" class="form-control" placeholder="Optional notes e.g. IPD bill fully settled, deposit adjusted...">
                 </div>
-            </form>
+                <button type="button" onclick="submitRecClearance('approve')" class="btn btn-primary w-100" style="background: #1f6b4a !important; color: #ffffff; font-weight: 700; padding: 9px;">
+                    <i class="fas fa-check-circle mr-1"></i> Approve Reception Clearance
+                </button>
+            </div>
+
+            <div style="border-top: 1px dashed #e2e8f0; margin-top: 14px; padding-top: 12px;">
+                <div style="font-weight: 800; font-size: 0.85rem; color: #dc2626; margin-bottom: 8px;"><i class="fas fa-exclamation-triangle text-danger"></i> Option B: Raise Query / Settlement Issue</div>
+                <div class="form-group mb-2">
+                    <input type="text" id="rec-query-text" class="form-control" placeholder="Specify issue e.g. Pending final billing clearance ₹2,500...">
+                </div>
+                <button type="button" onclick="submitRecClearance('query')" class="btn btn-outline w-100" style="border: 1.5px solid #dc2626; color: #dc2626; font-weight: 700; padding: 8px;">
+                    <i class="fas fa-paper-plane mr-1"></i> Raise Query to Nurse & Admin
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
-
 </style>
 
 <script>
+let currentRecClearance = null;
+
+function closeRecClearanceModal() {
+    document.getElementById('recClearanceModal').style.display = 'none';
+}
+
+function openRecClearanceModal(clearanceData) {
+    currentRecClearance = clearanceData;
+    document.getElementById('rec-modal-pt-name').textContent = clearanceData.patient_name || 'Patient';
+    document.getElementById('rec-modal-pt-details').textContent = `PID: ${clearanceData.patient_id} | Admission: ${clearanceData.admission_id} | Bed: ${clearanceData.bed_info || 'Ward'} | Doctor: Dr. ${clearanceData.doctor_name || 'Consultant'}`;
+    
+    // Status
+    const setStatus = (elId, status) => {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        if (status === 'Approved') el.innerHTML = `<span style="color:#16a34a;"><i class="fas fa-check-circle"></i> Cleared</span>`;
+        else if (status === 'Query') el.innerHTML = `<span style="color:#dc2626;"><i class="fas fa-exclamation-triangle"></i> Query</span>`;
+        else el.innerHTML = `<span style="color:#f59e0b;"><i class="fas fa-clock"></i> Pending</span>`;
+    };
+
+    setStatus('rec-status-rec', clearanceData.reception_status);
+    setStatus('rec-status-ph', clearanceData.pharmacy_status);
+    setStatus('rec-status-lab', clearanceData.lab_status);
+
+    document.getElementById('rec-clearance-notes').value = '';
+    document.getElementById('rec-query-text').value = '';
+
+    // Load queries
+    fetch(`/GM_HMS/api/discharge_clearance.php?action=status&admission_id=${encodeURIComponent(clearanceData.admission_id)}`)
+        .then(r => r.json())
+        .then(res => {
+            const qBox = document.getElementById('rec-modal-queries-box');
+            const qList = document.getElementById('rec-modal-queries-list');
+            if (res.queries && res.queries.length > 0) {
+                qBox.style.display = 'block';
+                qList.innerHTML = res.queries.map(q => `
+                    <div style="margin-bottom:6px;padding-bottom:4px;border-bottom:1px dashed #fecdd3;">
+                        <strong>[${q.department.toUpperCase()}] ${q.user_name || 'Staff'}:</strong> ${q.query_text}
+                        <span class="badge" style="float:right;font-size:0.65rem;background:${q.status==='Resolved'?'#dcfce7':'#fee2e2'};color:${q.status==='Resolved'?'#15803d':'#b91c1c'};">${q.status}</span>
+                    </div>
+                `).join('');
+            } else {
+                qBox.style.display = 'none';
+            }
+        });
+
+    document.getElementById('recClearanceModal').style.display = 'flex';
+}
+
+async function submitRecClearance(action) {
+    if (!currentRecClearance) return;
+
+    const notes = document.getElementById('rec-clearance-notes').value.trim();
+    const queryText = document.getElementById('rec-query-text').value.trim();
+
+    if (action === 'query' && !queryText) {
+        alert('Please enter query / settlement issue details.');
+        return;
+    }
+
+    const payload = {
+        action: 'update_clearance',
+        clearance_id: currentRecClearance.clearance_id,
+        admission_id: currentRecClearance.admission_id,
+        department: 'reception',
+        action: action,
+        notes: notes,
+        query_text: queryText
+    };
+
+    try {
+        const res = await fetch('/GM_HMS/api/discharge_clearance.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message || 'Clearance status updated!');
+            closeRecClearanceModal();
+            fetchReceptionDischargeClearances();
+        } else {
+            alert('Error: ' + (data.message || 'Failed to update'));
+        }
+    } catch(err) {
+        console.error('Error submitting clearance:', err);
+    }
+}
+
+async function fetchReceptionDischargeClearances() {
+    try {
+        const res = await fetch('/GM_HMS/api/discharge_clearance.php?action=pending_list&module=reception');
+        const json = await res.json();
+        
+        const badge = document.getElementById('navbar-notification-badge');
+        const list = document.getElementById('notifications-list');
+
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            if (badge) {
+                badge.textContent = json.data.length;
+                badge.style.display = 'flex';
+            }
+            if (list) {
+                list.innerHTML = json.data.map(item => `
+                    <div style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; background: ${item.reception_status==='Pending'?'#fdfbf7':'#ffffff'};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                            <strong style="font-size: 0.85rem; color: #1f6b4a;">${item.patient_name || 'Patient'}</strong>
+                            <span class="badge" style="font-size: 0.68rem; background: ${item.reception_status==='Approved'?'#dcfce7':item.reception_status==='Query'?'#fee2e2':'#fef3c7'}; color: ${item.reception_status==='Approved'?'#15803d':item.reception_status==='Query'?'#dc2626':'#b45309'};">${item.reception_status}</span>
+                        </div>
+                        <div style="font-size: 0.75rem; color: #64748b;">${item.bed_info || 'Ward'} • IP: ${item.admission_id}</div>
+                        <button type="button" onclick='openRecClearanceModal(${JSON.stringify(item)})' style="margin-top: 6px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; background: #1f6b4a; color: #ffffff; border: none; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-clipboard-check"></i> Review & Clear
+                        </button>
+                    </div>
+                `).join('');
+            }
+        } else {
+            if (badge) badge.style.display = 'none';
+            if (list) {
+                list.innerHTML = `
+                    <div style="padding: 2rem; text-align: center; color: var(--gray-400);">
+                        <i class="fas fa-bell-slash" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                        <p>No new notifications</p>
+                    </div>
+                `;
+            }
+        }
+    } catch(err) {
+        console.error('Error fetching reception clearances:', err);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    fetchReceptionDischargeClearances();
+    setInterval(fetchReceptionDischargeClearances, 12000);
+});
 <?php
 // Dynamically calculate the project root URL relative to the web root
 $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);

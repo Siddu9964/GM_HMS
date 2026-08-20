@@ -82,6 +82,12 @@
     box-shadow: 0 8px 16px rgba(245, 158, 11, 0.2);
 }
 
+.stat-icon.info {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    color: white;
+    box-shadow: 0 8px 16px rgba(2, 132, 199, 0.2);
+}
+
 .stat-info h3 {
     font-size: 1.5rem;
     font-weight: 800;
@@ -1111,3 +1117,521 @@ textarea[name="chief_complaint"]:focus {
         max-height: 95vh;
     }
 }
+
+/* ============================================================================
+   DEPARTMENT FILTER & GROUPING STYLES
+   ============================================================================ */
+
+.department-filter-box {
+    background: #f1f5f9;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+}
+
+.custom-dept-select {
+    border: 1.5px solid #1f6b4a !important;
+    border-radius: 8px !important;
+    padding: 0.35rem 0.75rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    color: #1f6b4a !important;
+    background-color: #ffffff !important;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.custom-dept-select:focus {
+    box-shadow: 0 0 0 3px rgba(31, 107, 74, 0.15);
+    border-color: #1f6b4a;
+}
+
+.dept-pills-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.dept-pill {
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #475569;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+}
+
+.dept-pill:hover {
+    border-color: #1f6b4a;
+    color: #1f6b4a;
+    background: #f8fafc;
+}
+
+.dept-pill.active {
+    background: #1f6b4a !important;
+    color: #ffffff !important;
+    border-color: #1f6b4a !important;
+    box-shadow: 0 2px 6px rgba(31, 107, 74, 0.25) !important;
+}
+
+.dept-pill-count {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+}
+
+.dept-pill.active .dept-pill-count {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+}
+
+.dept-pill:not(.active) .dept-pill-count {
+    background: #f1f5f9;
+    color: #1f6b4a;
+}
+
+/* ============================================================================
+   ADVANCED CLINICAL QUEUE BOARD & DEPARTMENT TABLE STYLES
+   ============================================================================ */
+
+.opd-queue-card {
+    background: #ffffff !important;
+    border: 1.5px solid #1f6b4a !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 20px rgba(31, 107, 74, 0.08) !important;
+    overflow: hidden;
+}
+
+.live-pulse-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(31, 107, 74, 0.12);
+    color: #1f6b4a;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(31, 107, 74, 0.25);
+    letter-spacing: 0.5px;
+}
+
+.pulse-dot {
+    width: 7px;
+    height: 7px;
+    background: #1f6b4a;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(31, 107, 74, 0.7);
+    animation: livePulse 1.6s infinite;
+}
+
+@keyframes livePulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(31, 107, 74, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(31, 107, 74, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(31, 107, 74, 0);
+    }
+}
+
+/* Search Box */
+.queue-search-box {
+    position: relative;
+    width: 260px;
+}
+
+.queue-search-box input {
+    height: 36px;
+    padding: 0 30px 0 34px !important;
+    border: 1.5px solid #1f6b4a !important;
+    border-radius: 8px !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    background: #fdfbf7 !important;
+    color: #1f6b4a !important;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.queue-search-box input:focus {
+    background: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(31, 107, 74, 0.15) !important;
+    border-color: #1f6b4a !important;
+}
+
+.queue-search-box .search-icon {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #1f6b4a;
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 2px 4px;
+}
+
+.clear-search-btn:hover {
+    color: #1f6b4a;
+}
+
+.refresh-queue-btn {
+    border: 1.5px solid #1f6b4a !important;
+    color: #1f6b4a !important;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    height: 36px;
+    width: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    font-size: 0.85rem !important;
+    transition: all 0.2s ease;
+}
+
+.refresh-queue-btn:hover {
+    background: #1f6b4a !important;
+    color: #f3efe6 !important;
+}
+
+/* Department Section in Queue */
+.department-group-section {
+    border-bottom: 1px solid rgba(31, 107, 74, 0.15);
+    background: #ffffff;
+}
+
+.department-group-section:last-child {
+    border-bottom: none;
+}
+
+.department-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, rgba(31, 107, 74, 0.08) 0%, rgba(31, 107, 74, 0.02) 100%);
+    border-left: 5px solid #1f6b4a;
+}
+
+.dept-group-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #1f6b4a;
+    margin: 0;
+}
+
+.dept-group-title i {
+    font-size: 1.25rem;
+    color: #1f6b4a;
+}
+
+.dept-group-stats {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dept-doctor-pill {
+    background: #ffffff;
+    color: #1f6b4a;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(31, 107, 74, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.dept-group-count {
+    background: #1f6b4a !important;
+    color: #ffffff !important;
+    font-size: 0.8rem !important;
+    font-weight: 800 !important;
+    padding: 5px 14px !important;
+    border-radius: 20px !important;
+    box-shadow: 0 2px 6px rgba(31, 107, 74, 0.25) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    letter-spacing: 0.3px !important;
+}
+
+/* Clinical Table View */
+.opd-clinical-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    background: #ffffff;
+}
+
+.opd-clinical-table thead th {
+    background: #f8fafc;
+    color: #1f6b4a;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 14px;
+    border-bottom: 1.5px solid rgba(31, 107, 74, 0.2);
+    white-space: nowrap;
+}
+
+.opd-clinical-table tbody tr {
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    transition: all 0.15s ease-in-out;
+}
+
+.opd-clinical-table tbody tr:hover {
+    background: rgba(31, 107, 74, 0.03);
+}
+
+.opd-clinical-table tbody td {
+    padding: 12px 14px;
+    font-size: 0.85rem;
+    vertical-align: middle;
+    color: #334155;
+}
+
+/* Token Badge in Table */
+.tbl-token-badge {
+    background: #1f6b4a !important;
+    color: #ffffff !important;
+    font-weight: 900 !important;
+    font-size: 0.9rem !important;
+    padding: 6px 12px !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 48px !important;
+    box-shadow: 0 2px 6px rgba(31, 107, 74, 0.3) !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* Patient Info Cell */
+.tbl-patient-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.tbl-patient-name {
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 0.92rem;
+    line-height: 1.2;
+}
+
+.tbl-patient-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.tbl-pid-chip {
+    background: #f1f5f9;
+    color: #475569;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    border: 1px solid #e2e8f0;
+}
+
+/* Time Cell */
+.tbl-time-chip {
+    font-weight: 700;
+    color: #1f6b4a;
+    font-size: 0.82rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #f3efe6;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(31, 107, 74, 0.2);
+}
+
+/* Doctor Cell */
+.tbl-doctor-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tbl-doctor-name {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 0.85rem;
+}
+
+.tbl-room-tag {
+    font-size: 0.72rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+/* Vitals Cell */
+.vitals-summary-box {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    max-width: 240px;
+}
+
+.vital-chip {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #334155;
+    white-space: nowrap;
+}
+
+.vital-chip.recorded-badge {
+    background: rgba(31, 107, 74, 0.1);
+    color: #1f6b4a;
+    border-color: rgba(31, 107, 74, 0.3);
+}
+
+.vitals-pending-chip {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Status Chips */
+.tbl-status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.tbl-status-chip.status-pending {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fcd34d;
+}
+
+.tbl-status-chip.status-completed {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #86efac;
+}
+
+.tbl-status-chip.status-in-progress {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border: 1px solid #93c5fd;
+}
+
+/* Action Buttons */
+.tbl-actions-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tbl-btn-vitals {
+    background: #1f6b4a;
+    color: #f3efe6;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(31, 107, 74, 0.2);
+}
+
+.tbl-btn-vitals:hover {
+    background: #144d34;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(31, 107, 74, 0.3);
+}
+
+.tbl-btn-view {
+    background: #f3efe6;
+    color: #1f6b4a;
+    border: 1px solid #1f6b4a;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+
+.tbl-btn-view:hover {
+    background: #e5dfd2;
+}
+
+.empty-icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #94a3b8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+}
+
+

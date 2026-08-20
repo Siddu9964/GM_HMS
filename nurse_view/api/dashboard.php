@@ -13,8 +13,6 @@ require_once __DIR__ . '/../includes/nurse_auth_helper.php';
 
 use GM_HMS\Models\NurseShiftModel;
 use GM_HMS\Models\NurseVitalsModel;
-use GM_HMS\Models\NurseMARModel;
-use GM_HMS\Models\NurseNotesModel;
 
 header('Content-Type: application/json');
 session_start();
@@ -39,14 +37,12 @@ if (!$nurseId || !$roleId) {
 try {
     $shiftModel = new NurseShiftModel();
     $vitalsModel = new NurseVitalsModel();
-    $marModel = new NurseMARModel();
-    $notesModel = new NurseNotesModel();
     
     $db = GM_HMS\Database\SecureDatabase::getInstance();
     $conn = $db->getConnection();
     $currentWard = getCurrentNurseWard($conn, $nurseId);
 
-    // Current shift (uses date range and dynamic shift type)
+    // Current shift (uses date range and dynamic shift type from shift_schedules)
     $currentShift = $shiftModel->getCurrentShift($roleId);
 
     // Shift-wide stats (nurse-wise for current shift)
@@ -58,15 +54,50 @@ try {
     // Upcoming shifts (nurse-wise)
     $upcomingShifts = $shiftModel->getUpcomingShifts($roleId);
 
-    // Individual nurse stats (user_id based)
-    $marStats = $marModel->getMARStatistics($nurseId, null, $currentWard);
+    // Vitals statistics
     $vitalsStats = $vitalsModel->getVitalsStatistics($nurseId);
-    $overdueMeds = $marModel->getOverdueMedications($nurseId);
     $recentVitals = $vitalsModel->getRecentVitals($nurseId, 5);
     $abnormalVitals = $vitalsModel->getAbnormalVitals($nurseId);
 
-    // Handover notes (today's important notes)
-    $handoverNotes = $notesModel->getHandoverNotes(date('Y-m-d'));
+    // Fetch Medication & Nursing Notes stats from ipd_clinical_records
+    $today = date('Y-m-d');
+    $todayRecords = $db->fetchAll("SELECT pharmacy_orders, nursing_notes FROM ipd_clinical_records WHERE record_date = ?", [$today]);
+    
+    $marStats = [
+        'total_scheduled' => 0,
+        'administered'    => 0,
+        'pending'         => 0,
+        'missed'          => 0
+    ];
+    $overdueMeds = [];
+    $handoverNotes = [];
+
+    foreach ($todayRecords as $r) {
+        if (!empty($r['pharmacy_orders'])) {
+            $orders = json_decode($r['pharmacy_orders'], true);
+            if (is_array($orders)) {
+                foreach ($orders as $ord) {
+                    $marStats['total_scheduled']++;
+                    $st = strtolower($ord['data']['status'] ?? 'pending');
+                    if ($st === 'given' || $st === 'administered') {
+                        $marStats['administered']++;
+                    } else if ($st === 'missed') {
+                        $marStats['missed']++;
+                    } else {
+                        $marStats['pending']++;
+                    }
+                }
+            }
+        }
+        if (!empty($r['nursing_notes'])) {
+            $notes = json_decode($r['nursing_notes'], true);
+            if (is_array($notes)) {
+                foreach ($notes as $n) {
+                    $handoverNotes[] = $n;
+                }
+            }
+        }
+    }
 
     $response = [
         'success' => true,
@@ -74,15 +105,15 @@ try {
             'current_shift' => $currentShift,
             'upcoming_shifts' => $upcomingShifts,
             'statistics' => [
-                'shift' => $shiftStats,
+                'shift'       => $shiftStats,
                 'medications' => $marStats,
-                'vitals' => $vitalsStats
+                'vitals'      => $vitalsStats
             ],
-            'assigned_patients' => $assignedPatients,
+            'assigned_patients'   => $assignedPatients,
             'overdue_medications' => $overdueMeds,
-            'recent_vitals' => $recentVitals,
-            'handover_notes' => $handoverNotes,
-            'abnormal_vitals' => $abnormalVitals
+            'recent_vitals'       => $recentVitals,
+            'handover_notes'      => $handoverNotes,
+            'abnormal_vitals'     => $abnormalVitals
         ]
     ];
 

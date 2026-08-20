@@ -391,7 +391,6 @@ if (!isset($_SESSION['user_id'])) {
                                     <th>Request Date & Time</th>
                                     <th>Medicine Name & Batch</th>
                                     <th>Return Qty</th>
-                                    <th>Refund Amount</th>
                                     <th>Pharmacy Status</th>
                                 </tr>
                             </thead>
@@ -407,14 +406,223 @@ if (!isset($_SESSION['user_id'])) {
         </div>
     </div>
 </div>
+
+<!-- Center Confirmation Modal -->
+<div id="returnConfirmModal" class="custom-modal-overlay" style="display:none;">
+    <div class="custom-modal-box">
+        <div class="custom-modal-header">
+            <div class="modal-icon-badge"><i class="fas fa-undo-alt"></i></div>
+            <div>
+                <h3>Submit Return Request to Pharmacy</h3>
+                <p>Please review and confirm the medication return details.</p>
+            </div>
+        </div>
+        <div class="custom-modal-body" id="confirmModalBody">
+            <!-- Populated dynamically -->
+        </div>
+        <div class="custom-modal-footer">
+            <button type="button" class="btn-modal-cancel" onclick="closeConfirmModal()">Cancel</button>
+            <button type="button" class="btn-modal-confirm" id="btnConfirmSubmit" onclick="executeReturnSubmission()">
+                <i class="fas fa-check-circle"></i> Confirm & Submit
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Center Message Modal (Success / Warning / Error) -->
+<div id="msgModal" class="custom-modal-overlay" style="display:none;">
+    <div class="custom-modal-box" style="max-width: 440px; text-align: center;">
+        <div id="msgModalIcon" style="font-size: 42px; margin-bottom: 14px;"></div>
+        <h3 id="msgModalTitle" style="font-size: 1.25rem; font-weight: 800; color: var(--gm-primary); margin-bottom: 8px;"></h3>
+        <p id="msgModalText" style="font-size: 0.88rem; color: var(--gm-text-body); margin-bottom: 20px; line-height: 1.5;"></p>
+        <div style="display: flex; justify-content: center;">
+            <button type="button" class="btn-modal-confirm" onclick="closeMsgModal()" style="min-width: 140px;">
+                OK
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ── Custom Center Modals ── */
+.custom-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 35, 25, 0.55);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.custom-modal-box {
+    background: #ffffff;
+    border-radius: 18px;
+    border: 2px solid var(--gm-border);
+    box-shadow: 0 18px 45px rgba(31, 107, 74, 0.22);
+    width: 100%;
+    max-width: 520px;
+    padding: 24px 28px;
+    animation: scaleUp 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scaleUp {
+    from { opacity: 0; transform: scale(0.94); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.custom-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1.5px solid var(--gm-border);
+}
+
+.modal-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--gm-primary);
+    color: #f3efe6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.custom-modal-header h3 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--gm-primary);
+    margin: 0;
+}
+
+.custom-modal-header p {
+    font-size: 0.8rem;
+    color: var(--gm-text-muted);
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+.custom-modal-body {
+    margin-bottom: 22px;
+    font-size: 0.88rem;
+    color: var(--gm-text-body);
+}
+
+.return-preview-list {
+    background: var(--gm-bg);
+    border: 1px solid var(--gm-border);
+    border-radius: 10px;
+    padding: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+
+.return-preview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--gm-border);
+    font-size: 0.84rem;
+}
+
+.return-preview-item:last-child {
+    border-bottom: none;
+}
+
+.custom-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn-modal-cancel {
+    background: #ffffff;
+    color: var(--gm-text-muted);
+    border: 1.5px solid var(--gm-border);
+    padding: 9px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-modal-cancel:hover {
+    background: var(--gm-bg);
+    color: var(--gm-primary);
+}
+
+.btn-modal-confirm {
+    background: var(--gm-primary);
+    color: #f3efe6;
+    border: 1.5px solid var(--gm-primary);
+    padding: 9px 22px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 4px 12px rgba(31, 107, 74, 0.22);
+}
+
+.btn-modal-confirm:hover {
+    background: var(--gm-primary-dark);
+    color: #ffffff;
+}
+</style>
     
 <script>
     let currentAdmission = null;
     let currentCharges = [];
+    let pendingReturnsPayload = [];
     
     const searchInput = document.getElementById('searchInput');
     const suggestionsBox = document.getElementById('suggestions');
     let timeout = null;
+    
+    function showCenterMsg(title, message, type = 'success') {
+        const modal = document.getElementById('msgModal');
+        const iconEl = document.getElementById('msgModalIcon');
+        const titleEl = document.getElementById('msgModalTitle');
+        const textEl = document.getElementById('msgModalText');
+
+        titleEl.textContent = title;
+        textEl.textContent = message;
+
+        if (type === 'success') {
+            iconEl.innerHTML = '<i class="fas fa-check-circle" style="color:var(--gm-primary);"></i>';
+            titleEl.style.color = 'var(--gm-primary)';
+        } else if (type === 'warning') {
+            iconEl.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#b45309;"></i>';
+            titleEl.style.color = '#b45309';
+        } else {
+            iconEl.innerHTML = '<i class="fas fa-times-circle" style="color:#dc2626;"></i>';
+            titleEl.style.color = '#dc2626';
+        }
+
+        modal.style.display = 'flex';
+    }
+
+    function closeMsgModal() {
+        document.getElementById('msgModal').style.display = 'none';
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('returnConfirmModal').style.display = 'none';
+    }
     
     searchInput.addEventListener('input', function() {
         clearTimeout(timeout);
@@ -448,7 +656,7 @@ if (!isset($_SESSION['user_id'])) {
             div.innerHTML = `
                 <div class="suggestion-details">
                     <strong>${patient.first_name} ${patient.last_name || ''}</strong>
-                    <span>Adm ID: ${patient.admission_id} &bull; Ward: ${patient.ward || 'General'} (Bed: ${patient.bed_id || 'N/A'})</span>
+                    <span>Adm ID: ${patient.admission_id} &bull; Ward: ${patient.ward_name || patient.ward || 'General'} (Bed: ${patient.bed_number || patient.bed_id || 'N/A'})</span>
                 </div>
                 <div style="text-align: right;">
                     <span style="font-size:0.75rem; color:var(--gm-primary); font-weight:800;">UHID: ${patient.patient_id}</span>
@@ -482,11 +690,11 @@ if (!isset($_SESSION['user_id'])) {
             </div>
             <div class="p-matrix-col">
                 <span class="p-matrix-lbl">Ward / Bed Location</span>
-                <strong class="p-matrix-val">${patient.ward || 'General'} / Bed ${patient.bed_id || 'N/A'}</strong>
+                <strong class="p-matrix-val">${patient.ward_name || patient.ward || 'General'} / Bed ${patient.bed_number || patient.bed_id || 'N/A'}</strong>
             </div>
             <div class="p-matrix-col">
-                <span class="p-matrix-lbl">Phone Number</span>
-                <strong class="p-matrix-val">${patient.phone || 'N/A'}</strong>
+                <span class="p-matrix-lbl">UHID</span>
+                <strong class="p-matrix-val">${patient.patient_id || 'N/A'}</strong>
             </div>
         `;
         
@@ -521,7 +729,7 @@ if (!isset($_SESSION['user_id'])) {
                     const tbody = document.getElementById('pastReturnsBody');
                     tbody.innerHTML = '';
                     if (data.data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:18px; color:var(--gm-text-muted);">No past return requests logged for this admission.</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:18px; color:var(--gm-text-muted);">No past return requests logged for this admission.</td></tr>';
                         return;
                     }
                     data.data.forEach(req => {
@@ -534,7 +742,6 @@ if (!isset($_SESSION['user_id'])) {
                                 <td><strong>${req.requested_at}</strong></td>
                                 <td><strong style="color:var(--gm-primary);">${req.medicine_name}</strong><br><small style="color:var(--gm-text-muted);">Batch: ${req.batch_no || 'N/A'}</small></td>
                                 <td><strong>${req.return_qty}</strong></td>
-                                <td><strong style="color:var(--gm-primary);">₹${parseFloat(req.return_amount).toFixed(2)}</strong></td>
                                 <td>${statusBadge}</td>
                             </tr>
                         `;
@@ -552,7 +759,7 @@ if (!isset($_SESSION['user_id'])) {
                 let newQty = parseFloat(qty) || 0;
                 if (newQty < 0) newQty = 0;
                 if (newQty > item.available_qty) {
-                    alert('Cannot return more than available billed quantity (' + item.available_qty + ')');
+                    showCenterMsg('Invalid Quantity', 'Cannot return more than available billed quantity (' + item.available_qty + ')', 'warning');
                     newQty = item.available_qty;
                 }
                 item.return_qty = newQty;
@@ -586,15 +793,41 @@ if (!isset($_SESSION['user_id'])) {
     }
 
     function submitReturnRequest() {
-        const returns = currentCharges.filter(x => x.return_qty > 0).map(x => ({
+        const returnItems = currentCharges.filter(x => x.return_qty > 0);
+
+        if (returnItems.length === 0) {
+            showCenterMsg('No Items Selected', 'Please enter a return quantity for at least one billed medicine before submitting.', 'warning');
+            return;
+        }
+
+        pendingReturnsPayload = returnItems.map(x => ({
             item_id: x.item_id,
             return_qty: x.return_qty
         }));
 
-        if (returns.length === 0) {
-            alert('Please enter a return quantity for at least one billed item.');
-            return;
-        }
+        let listHtml = returnItems.map(item => `
+            <div class="return-preview-item">
+                <span><strong>${item.product_name}</strong> <small>(Batch: ${item.batch_no || 'N/A'})</small></span>
+                <strong style="color:var(--gm-primary);">Qty: ${item.return_qty}</strong>
+            </div>
+        `).join('');
+
+        document.getElementById('confirmModalBody').innerHTML = `
+            <p>You are about to submit a return request for <strong>${currentAdmission.first_name} ${currentAdmission.last_name || ''}</strong> (${currentAdmission.admission_id}):</p>
+            <div class="return-preview-list">
+                ${listHtml}
+            </div>
+            <p style="margin-top:12px; font-size:0.8rem; color:var(--gm-text-muted);">This request will be sent to the Pharmacy counter for physical verification.</p>
+        `;
+
+        document.getElementById('returnConfirmModal').style.display = 'flex';
+    }
+
+    function executeReturnSubmission() {
+        const btn = document.getElementById('btnConfirmSubmit');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        btn.disabled = true;
 
         fetch('api/submit_pharmacy_return.php', {
             method: 'POST',
@@ -603,22 +836,29 @@ if (!isset($_SESSION['user_id'])) {
                 patient_id: currentAdmission.patient_id,
                 admission_id: currentAdmission.admission_id,
                 bill_id: currentAdmission.bill_id,
-                returns: returns
+                returns: pendingReturnsPayload
             })
         })
         .then(res => res.json())
         .then(data => {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+            closeConfirmModal();
+
             if (data.success) {
-                alert('Return request submitted successfully for pharmacy verification!');
+                showCenterMsg('Return Request Submitted', 'Return request has been successfully submitted for pharmacy verification.', 'success');
                 fetchCharges(currentAdmission.admission_id);
                 fetchPastReturns(currentAdmission.admission_id);
             } else {
-                alert('Error: ' + data.message);
+                showCenterMsg('Submission Failed', data.message || 'An error occurred while submitting.', 'error');
             }
         })
         .catch(err => {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+            closeConfirmModal();
             console.error(err);
-            alert('An error occurred while submitting the return request.');
+            showCenterMsg('Network Error', 'A network error occurred while submitting the return request. Please try again.', 'error');
         });
     }
 </script>

@@ -1031,7 +1031,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
         </div>
     </div>
 
-        <!-- Edit Admission Modal -->
+    <!-- Edit Admission Modal -->
     <div id="editAdmissionModal" class="modal-overlay hidden" onclick="closeEditAdmissionModalOnBackdrop(event)">
         <div class="billing-modal-card" onclick="event.stopPropagation()">
             <div class="billing-modal-head">
@@ -1047,57 +1047,88 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     <input type="hidden" id="editSlNo" name="sl_no">
 
                     <div class="modal-section-card">
-                        <div class="modal-section-body" style="padding: 0.75rem;">
-                            <!-- Ultra-Dense Grid with 5 Columns -->
-                            <div class="form-row" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.4rem 0.6rem; align-items: end;">
+                        <div class="modal-section-body" style="padding: 0.4rem;">
+                            <!-- Ultra-Dense Grid with 6 Columns -->
+                            <div class="form-row" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.2rem 0.4rem; align-items: end;">
                                 
-                                <!-- SECTION 1: PATIENT & MEDICAL -->
-                                <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-bottom: 0.2rem;">
-                                    <i class="fas fa-user-injured me-1"></i> Patient & Medical Info
+                                <!-- SECTION 1: PATIENT & MEDICAL INFO -->
+                                <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0;">
+                                    <i class="fas fa-user-md me-1"></i> Patient & Medical Info
                                 </div>
-                                
+
                                 <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Patient *</label>
                                     <select id="editPatientSelect" name="patient_id" required style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;"></select>
                                 </div>
                                 <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admitting Doctor *</label>
-                                    <select id="editDoctorSelect" name="admitting_doctor_id" required style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;"></select>
+                                    <select id="editDoctorSelect" name="admitting_doctor_id" required style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;">
+                                        <option value="">Select Doctor...</option>
+                                    </select>
                                 </div>
-                                <div class="form-group" style="margin-bottom: 0; grid-column: span 1;">
-                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Bed Assignment *</label>
-                                    <select id="editBedSelect" name="bed_id" required style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;"></select>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Emergency Contact Name</label>
+                                    <input type="text" id="editEmergencyName" name="emergency_contact_name" placeholder="Contact Name" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
                                 </div>
-
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Emergency Contact Phone</label>
+                                    <input type="text" id="editEmergencyPhone" name="emergency_contact_phone" placeholder="Phone Number" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                </div>
                                 <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Chief Complaint</label>
                                     <input type="text" id="editChiefComplaint" name="chief_complaint" placeholder="Brief complaint..." style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
                                 </div>
-                                <div class="form-group" style="margin-bottom: 0; grid-column: span 3;">
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Diagnosis</label>
                                     <input type="text" id="editDiagnosis" name="diagnosis" placeholder="Diagnosis..." style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
                                 </div>
-                                
-                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
-                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Contact Name</label>
-                                    <input type="text" id="editEmergencyName" name="emergency_contact_name" placeholder="Contact Name" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+
+                                <!-- SECTION 2: BED ALLOCATION -->
+                                <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0.2rem;">
+                                    <i class="fas fa-bed me-1"></i> Hospital Bed Allocation
                                 </div>
-                                <div class="form-group" style="margin-bottom: 0; grid-column: span 3;">
-                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Contact Phone</label>
-                                    <input type="text" id="editEmergencyPhone" name="emergency_contact_phone" placeholder="Phone Number" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Floor No.</label>
+                                    <input type="text" id="editSelFloorNumber" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #f1f5f9;">
                                 </div>
-                                
-                                <!-- SECTION 2: ADMISSION DETAILS -->
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Floor Name</label>
+                                    <input type="text" id="editSelFloorName" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #f1f5f9;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Ward Name</label>
+                                    <input type="text" id="editSelWardName" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #f1f5f9;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Room Type</label>
+                                    <input type="text" id="editSelWardType" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #f1f5f9;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Room No.</label>
+                                    <input type="text" id="editSelRoomNumber" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #f1f5f9;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Bed Assignment *</label>
+                                    <select id="editBedSelect" name="bed_id" required onchange="onEditBedChange(this.value)" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;">
+                                        <option value="">-- Bed --</option>
+                                    </select>
+                                </div>
+
+                                <!-- SECTION 3: ADMISSION & REFERRAL -->
                                 <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0.3rem;">
-                                    <i class="fas fa-sign-in-alt me-1"></i> Admission Details
+                                    <i class="fas fa-hospital-user me-1"></i> Admission & Referral
                                 </div>
-                                
+
                                 <div class="form-group" style="margin-bottom: 0;">
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admission Type</label>
                                     <select id="editAdmissionType" name="admission_type" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;">
                                         <option value="Emergency">Emergency</option>
-                                        <option value="Planned">Planned</option>
+                                        <option value="OPD">OPD</option>
+                                        <option value="Routine">Routine</option>
                                         <option value="Transfer">Transfer</option>
+                                        <option value="Insurance">Insurance</option>
+                                        <option value="Planned">Planned</option>
                                     </select>
                                 </div>
                                 <div class="form-group" style="margin-bottom: 0;">
@@ -1108,11 +1139,63 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                                     <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Admission Time</label>
                                     <input type="time" id="editAdmissionTime" name="admission_time" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
                                 </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Referral Type</label>
+                                    <select id="editReferralTypeSelect" name="referral_type" onchange="onEditReferralTypeChange()" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background-color: #fff;">
+                                        <option value="">None</option>
+                                        <option value="Internal">Internal</option>
+                                        <option value="External">External</option>
+                                    </select>
+                                </div>
+                                <div class="form-group position-relative" style="margin-bottom: 0;" id="editRefNameContainer">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Referral Name</label>
+                                    <input type="text" id="editRefNameText" name="referral_name" placeholder="Referral Name" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem;">
+                                    <i class="fas fa-user-plus d-none" id="btnEditExternalRefAdd" onclick="toggleEditExternalRefCard()" style="position: absolute; right: 25px; bottom: 6px; cursor: pointer; color: var(--teal-dark); font-size: 0.8rem; z-index: 10;" title="Add External Referral Details"></i>
+                                    <select id="editRefNameSelect" class="d-none" style="width: 100%;"><option value="">Select Doctor...</option></select>
 
-                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2; display: flex; justify-content: flex-end; gap: 0.5rem; align-items: flex-end; height: 100%;">
-                                    <button type="button" class="btn btn-outline" style="border: 1px solid var(--gray-300); background: #fff; padding: 0.3rem 1rem; border-radius: 4px; color: var(--gray-700); font-weight: 600; font-size: 0.75rem; height: 26px; line-height: 1;" onclick="closeEditAdmissionModal()">Cancel</button>
-                                    <button type="button" class="btn btn-primary" style="padding: 0.3rem 1.5rem; border-radius: 4px; background: #0ea5e9; color: #ffffff !important; border: none; font-weight: 700; font-size: 0.75rem; height: 26px; line-height: 1;" onclick="updateAdmission()">
-                                        <i class="fas fa-save me-1"></i> Update
+                                    <!-- Edit External Referral Popup Card -->
+                                    <div id="editExternalRefCard" class="d-none" style="position: absolute; top: 100%; left: 0; width: 220px; background: #fff; border: 1px solid var(--gray-300); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1050; padding: 0.6rem; margin-top: 0.3rem;">
+                                        <div style="font-size: 0.7rem; font-weight: 700; color: var(--teal-dark); margin-bottom: 0.4rem;">Add External Referral</div>
+                                        <input type="text" id="editExtRefName" placeholder="Name" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.7rem; margin-bottom: 0.3rem;">
+                                        <input type="text" id="editExtRefPhone" placeholder="Phone Number" style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.7rem; margin-bottom: 0.4rem;">
+                                        <div class="d-flex gap-1 justify-content-end">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 4px;" onclick="toggleEditExternalRefCard()">Cancel</button>
+                                            <button type="button" class="btn btn-sm btn-success" style="font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 4px;" onclick="saveEditExternalRef()">Add</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="grid-column: span 1;"></div>
+
+                                <!-- SECTION 4: BILLING & CHARGES -->
+                                <div style="grid-column: 1 / -1; font-weight: 700; font-size: 0.8rem; color: var(--teal-dark); border-bottom: 1px solid var(--gray-300); padding-bottom: 0.1rem; margin-top: 0.2rem;">
+                                    <i class="fas fa-tags me-1"></i> Bed Charges & Rates
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Amount/Day</label>
+                                    <input type="number" id="editBdAmountPerDay" name="amount_per_day" value="0" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background: #f1f5f9;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Nursing Chg</label>
+                                    <input type="number" id="editBdNursingCharge" name="nursig_charge" value="0" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background: #f1f5f9;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Doctor Chg</label>
+                                    <input type="number" id="editBdDoctorCharge" name="doctor_charge" value="0" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background: #f1f5f9;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Service Chg</label>
+                                    <input type="number" id="editBdServiceCharge" name="service_charge" value="0" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background: #f1f5f9;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 2;">
+                                    <label style="font-size: 0.7rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.1rem; display: block;">Total Bed Amt</label>
+                                    <input type="number" id="editBdTotalAmount" name="total_bed_amount" value="0" readonly style="width: 100%; padding: 0.2rem 0.4rem; border: 1px solid var(--gray-300); border-radius: 4px; font-size: 0.75rem; background: #e0f2fe; color: #0284c7; font-weight: bold;">
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0; grid-column: span 6; display: flex; justify-content: flex-end; gap: 0.5rem; align-items: flex-end; margin-top: 0.5rem;">
+                                    <button type="button" class="btn btn-outline" style="border: 1px solid var(--gray-300); background: #fff; padding: 0.3rem 1rem; border-radius: 4px; color: var(--gray-700); font-weight: 600; font-size: 0.75rem; height: 28px; line-height: 1;" onclick="closeEditAdmissionModal()">Cancel</button>
+                                    <button type="button" class="btn btn-primary" style="padding: 0.3rem 1.5rem; border-radius: 4px; background: #0ea5e9; color: #ffffff !important; border: none; font-weight: 700; font-size: 0.75rem; height: 28px; line-height: 1;" onclick="updateAdmission()">
+                                        <i class="fas fa-save me-1"></i> Update Admission
                                     </button>
                                 </div>
                                 
@@ -1137,6 +1220,31 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
 
     <script>
         let admissionsTable; // Global scope so functions outside $(document).ready can access it
+
+        // Load and sort doctors alphabetically helper (Global Scope)
+        function loadDoctorsSorted(selector, dropdownParent, selectedId = null) {
+            return IPD.ajax('dashboard/doctors?limit=200', 'GET')
+                .then(response => {
+                    const select = $(selector);
+                    select.empty().append('<option value="">Select Doctor...</option>');
+                    if (response.data && response.data.doctors) {
+                        response.data.doctors.forEach(doc => {
+                            select.append(new Option(`${doc.name} - ${doc.specialization}`, doc.doctor_id));
+                        });
+                    }
+                    if (selectedId) {
+                        select.val(selectedId).trigger('change');
+                    } else {
+                        select.val('').trigger('change');
+                    }
+                    select.select2({
+                        dropdownParent: $(dropdownParent),
+                        placeholder: 'Select Doctor...',
+                        allowClear: true
+                    });
+                });
+        }
+        window.loadDoctorsSorted = loadDoctorsSorted;
 
         $(document).ready(function () {
             
@@ -1182,30 +1290,6 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
 
             $('#timeHour, #timeMinute, #timeAmPm').on('change', updateHiddenTime);
             initTimeDropdowns();
-            
-            // Load and sort doctors alphabetically helper
-            function loadDoctorsSorted(selector, dropdownParent, selectedId = null) {
-                return IPD.ajax('dashboard/doctors?limit=200', 'GET')
-                    .then(response => {
-                        const select = $(selector);
-                        select.empty().append('<option value="">Select Doctor...</option>');
-                        if (response.data && response.data.doctors) {
-                            response.data.doctors.forEach(doc => {
-                                select.append(new Option(`${doc.name} - ${doc.specialization}`, doc.doctor_id));
-                            });
-                        }
-                        if (selectedId) {
-                            select.val(selectedId).trigger('change');
-                        } else {
-                            select.val('').trigger('change');
-                        }
-                        select.select2({
-                            dropdownParent: $(dropdownParent),
-                            placeholder: 'Select Doctor...',
-                            allowClear: true
-                        });
-                    });
-            }
 
             // Load doctors alphabetically on document ready
             loadDoctorsSorted('#doctorSelect', '#addAdmissionModal');
@@ -2370,45 +2454,49 @@ window.closeViewAdmissionModalOnBackdrop = function(e) {
                     loadDoctorsSorted('#editDoctorSelect', '#editAdmissionModal', admission.admitting_doctor_id);
 
                     // Pre-populate patient
-                    const patientOption = new Option(admission.patient_name, admission.patient_id, true, true);
-                    $('#editPatientSelect').append(patientOption).trigger('change');
+                    const patientOption = new Option(admission.patient_name || `Patient (${admission.patient_id})`, admission.patient_id, true, true);
+                    $('#editPatientSelect').empty().append(patientOption).trigger('change');
 
-                    // Load beds (available + current bed) - pass current bed info
-                    loadBedsForEdit(admission.bed_id, {
-                        bed_number: admission.bed_number,
-                        ward_name: admission.ward_name,
-                        room_category: admission.room_category || admission.room_type
-                    });
-
-                    // Populate form fields
-                    $('#editAdmissionType').val(admission.admission_type || 'Emergency');
-                    $('#editAdmissionDate').val(admission.admission_date);
-                    $('#editAdmissionTime').val(admission.admission_time || '');
+                    // Populate medical & emergency fields
                     $('#editChiefComplaint').val(admission.chief_complaint || '');
                     $('#editDiagnosis').val(admission.diagnosis || '');
                     $('#editEmergencyName').val(admission.emergency_contact_name || '');
                     $('#editEmergencyPhone').val(admission.emergency_contact_phone || '');
                     
-                    // New Fields Population
-                    $('#editReferralTypeSelect').val(admission.referral_type || '');
-                    $('#editRefNameText').val(admission.referral_name || '');
-                    
-                    $('#editSelFloorNumber').html(`<option value="${admission.floor_number || ''}">${admission.floor_number || '-'}</option>`);
-                    $('#editSelFloorName').html(`<option value="${admission.floor_name || ''}">${admission.floor_name || '-'}</option>`);
-                    $('#editSelWardName').html(`<option value="${admission.ward_name || ''}">${admission.ward_name || '-'}</option>`);
-                    $('#editSelWardType').html(`<option value="${admission.room_category || admission.room_type || ''}">${admission.room_category || admission.room_type || '-'}</option>`);
-                    $('#editSelRoomNumber').html(`<option value="${admission.room_no || ''}">${admission.room_no || '-'}</option>`);
+                    // Populate initial bed details display
+                    $('#editSelFloorNumber').val(admission.floor_number || '-');
+                    $('#editSelFloorName').val(admission.floor_name || '-');
+                    $('#editSelWardName').val(admission.ward_name || '-');
+                    $('#editSelWardType').val(admission.room_category || admission.room_type || '-');
+                    $('#editSelRoomNumber').val(admission.room_no || '-');
 
                     $('#editBdAmountPerDay').val(admission.amount_per_day || 0);
                     $('#editBdNursingCharge').val(admission.nursig_charge || 0);
                     $('#editBdDoctorCharge').val(admission.doctor_charge || 0);
                     $('#editBdServiceCharge').val(admission.service_charge || 0);
                     $('#editBdTotalAmount').val(admission.total_bed_amount || 0);
-                    
-                    $('#editPaymentMethod').val(admission.payment_method || 'CASH');
-                    $('#editAdvAmount').val(admission.advance_amount || 0);
-                    $('#editTotalDue').val(admission.total_due || 0);
 
+                    // Load beds with full dataset metadata
+                    loadBedsForEdit(admission.bed_id, admission);
+
+                    // Admission Details
+                    $('#editAdmissionType').val(admission.admission_type || 'Emergency');
+                    $('#editAdmissionDate').val(admission.admission_date);
+                    $('#editAdmissionTime').val(admission.admission_time || '');
+                    
+                    // Referral Details
+                    const refType = admission.referral_type || '';
+                    $('#editReferralTypeSelect').val(refType);
+                    onEditReferralTypeChange();
+                    
+                    if (admission.referral_name) {
+                        if (refType === 'Internal' || refType === 'External') {
+                            const newOption = new Option(admission.referral_name, admission.referral_name, true, true);
+                            $('#editRefNameSelect').append(newOption).trigger('change');
+                        } else {
+                            $('#editRefNameText').val(admission.referral_name);
+                        }
+                    }
 
                     // Show modal
                     $('#editAdmissionModal').removeClass('hidden');
@@ -2418,51 +2506,220 @@ window.closeViewAdmissionModalOnBackdrop = function(e) {
                 });
         }
 
-
-        function loadBedsForEdit(currentBedId, currentBedInfo) {
+        function loadBedsForEdit(currentBedId, currentAdmission) {
             IPD.ajax('beds?available=1', 'GET')
                 .then(response => {
                     const select = $('#editBedSelect');
                     select.empty();
 
-                    // Check if current bed is in available list
-                    const currentBedInList = response.data.find(bed => bed.bed_id == currentBedId);
+                    const availableBeds = response.data || [];
+                    let currentBedInList = availableBeds.find(bed => bed.bed_id == currentBedId);
 
-                    if (currentBedInList) {
-                        // Current bed is available, add all beds including current
-                        response.data.forEach(bed => {
-                            const isSelected = bed.bed_id == currentBedId;
-                            const label = `${bed.bed_number} - ${bed.ward_name} (${bed.room_category || bed.room_type})${isSelected ? ' - Current' : ''}`;
-                            select.append(`<option value="${bed.bed_id}" ${isSelected ? 'selected' : ''}>${label}</option>`);
-                        });
-                    } else {
-                        // Current bed is occupied, add it first with current bed info
-                        if (currentBedInfo && currentBedInfo.bed_number) {
-                            const currentLabel = `${currentBedInfo.bed_number} - ${currentBedInfo.ward_name} (${currentBedInfo.room_category || currentBedInfo.room_type}) - Current`;
-                            select.append(`<option value="${currentBedId}" selected>${currentLabel}</option>`);
-                        } else {
-                            // Fallback if bed info not available
-                            select.append(`<option value="${currentBedId}" selected>Current Bed (ID: ${currentBedId})</option>`);
-                        }
-
-                        // Add available beds
-                        response.data.forEach(bed => {
-                            select.append(`<option value="${bed.bed_id}">${bed.bed_number} - ${bed.ward_name} (${bed.room_category || bed.room_type})</option>`);
-                        });
+                    // If current bed is not in available list (because it is occupied by this admission), add it first
+                    if (!currentBedInList && currentAdmission) {
+                        const currentBedObj = {
+                            bed_id: currentBedId,
+                            bed_number: currentAdmission.bed_number || currentBedId,
+                            floor_number: currentAdmission.floor_number || '',
+                            floor_name: currentAdmission.floor_name || '',
+                            ward_name: currentAdmission.ward_name || '',
+                            room_category: currentAdmission.room_category || currentAdmission.room_type || '',
+                            room_number: currentAdmission.room_no || '',
+                            amount_per_day: currentAdmission.amount_per_day || 0,
+                            nursig_charge: currentAdmission.nursig_charge || 0,
+                            doctor_charge: currentAdmission.doctor_charge || 0,
+                            service_charge: currentAdmission.service_charge || 0,
+                            total_bed_amount: currentAdmission.total_bed_amount || 0
+                        };
+                        const currentLabel = `${currentBedObj.bed_number} - ${currentBedObj.ward_name} (${currentBedObj.room_category}) - Current`;
+                        const opt = document.createElement('option');
+                        opt.value = currentBedId;
+                        opt.textContent = currentLabel;
+                        opt.selected = true;
+                        opt.dataset.bed = JSON.stringify(currentBedObj);
+                        select.append(opt);
                     }
+
+                    availableBeds.forEach(bed => {
+                        const isSelected = bed.bed_id == currentBedId;
+                        const label = `${bed.bed_number} - ${bed.ward_name} (${bed.room_category || bed.room_type})${isSelected ? ' - Current' : ''}`;
+                        const opt = document.createElement('option');
+                        opt.value = bed.bed_id;
+                        opt.textContent = label;
+                        if (isSelected) opt.selected = true;
+                        opt.dataset.bed = JSON.stringify(bed);
+                        select.append(opt);
+                    });
                 })
                 .catch(error => {
                     console.error('Failed to load beds:', error);
-                    // Fallback: just show current bed
-                    const select = $('#editBedSelect');
-                    select.empty();
-                    if (currentBedInfo && currentBedInfo.bed_number) {
-                        const currentLabel = `${currentBedInfo.bed_number} - ${currentBedInfo.ward_name} (${currentBedInfo.room_category || currentBedInfo.room_type}) - Current`;
-                        select.append(`<option value="${currentBedId}" selected>${currentLabel}</option>`);
-                    } else {
-                        select.append(`<option value="${currentBedId}" selected>Current Bed (ID: ${currentBedId})</option>`);
-                    }
                 });
+        }
+
+        function onEditBedChange(bedId) {
+            if (!bedId) return;
+            const opt = document.querySelector(`#editBedSelect option[value="${bedId}"]`);
+            if (!opt || !opt.dataset.bed) return;
+            try {
+                const bed = JSON.parse(opt.dataset.bed);
+                $('#editSelFloorNumber').val(bed.floor_number || '-');
+                $('#editSelFloorName').val(bed.floor_name || '-');
+                $('#editSelWardName').val(bed.ward_name || '-');
+                $('#editSelWardType').val(bed.room_category || bed.room_type || '-');
+                $('#editSelRoomNumber').val(bed.room_number || bed.room_no || '-');
+                $('#editBdAmountPerDay').val(bed.amount_per_day || 0);
+                $('#editBdNursingCharge').val(bed.nursig_charge || 0);
+                $('#editBdDoctorCharge').val(bed.doctor_charge || 0);
+                $('#editBdServiceCharge').val(bed.service_charge || 0);
+                $('#editBdTotalAmount').val(bed.total_bed_amount || 0);
+            } catch(e) {
+                console.error('Error updating bed fields in edit modal', e);
+            }
+        }
+
+        function onEditReferralTypeChange() {
+            const type = document.getElementById('editReferralTypeSelect').value;
+            const txt = document.getElementById('editRefNameText');
+            const sel = document.getElementById('editRefNameSelect');
+            
+            if ($(sel).data('select2')) {
+                $(sel).select2('destroy');
+                sel.innerHTML = '<option value="">Search...</option>';
+            }
+            
+            if (type === 'Internal') {
+                $('#editRefNameText').addClass('d-none');
+                txt.removeAttribute('name');
+                
+                sel.setAttribute('name', 'referral_name');
+                $(sel).removeClass('d-none');
+                
+                $(sel).select2({
+                    ajax: {
+                        url: IPD.API_BASE + '/dashboard/doctors',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return { search: params.term || '' };
+                        },
+                        processResults: function (data) {
+                            return {
+                                results: data.data.doctors.map(d => ({
+                                    id: d.name,
+                                    text: `${d.name} - ${d.specialization}`
+                                }))
+                            };
+                        }
+                    },
+                    placeholder: 'Search internal doctor...',
+                    tags: true,
+                    dropdownParent: $('#editAdmissionModal')
+                });
+                
+                $(sel).next('.select2-container').show();
+                $('#btnEditExternalRefAdd').addClass('d-none');
+                $('#editExternalRefCard').addClass('d-none');
+                
+            } else if (type === 'External') {
+                $('#editRefNameText').addClass('d-none');
+                txt.removeAttribute('name');
+                
+                sel.setAttribute('name', 'referral_name');
+                $(sel).removeClass('d-none');
+                
+                let baseUrl = (typeof IPD !== 'undefined' && IPD.API_BASE) ? IPD.API_BASE.split('/reception_view/')[0] : '/GM_HMS';
+                
+                $(sel).select2({
+                    ajax: {
+                        url: baseUrl + '/api/billing/opd/referral/search',
+                        dataType: 'json',
+                        delay: 250,
+                        data: function (params) {
+                            return { q: params.term || '' };
+                        },
+                        processResults: function (data) {
+                            let refs = [];
+                            if (data && data.data) {
+                                refs = Array.isArray(data.data) ? data.data : (data.data.referrals || []);
+                            } else if (Array.isArray(data)) {
+                                refs = data;
+                            }
+                            return {
+                                results: refs.map(d => ({
+                                    id: d.mobile ? `${d.name} (${d.mobile})` : d.name,
+                                    text: d.mobile ? `${d.name} - ${d.mobile}` : d.name
+                                }))
+                            };
+                        }
+                    },
+                    placeholder: 'Search external referral...',
+                    tags: true,
+                    dropdownParent: $('#editAdmissionModal')
+                });
+                
+                $(sel).next('.select2-container').show();
+                $('#btnEditExternalRefAdd').removeClass('d-none');
+                $('#editExternalRefCard').addClass('d-none');
+                
+            } else {
+                sel.removeAttribute('name');
+                sel.classList.add('d-none');
+                
+                txt.setAttribute('name', 'referral_name');
+                $('#editRefNameText').removeClass('d-none');
+                
+                $('#btnEditExternalRefAdd').addClass('d-none');
+                $('#editExternalRefCard').addClass('d-none');
+            }
+        }
+
+        function toggleEditExternalRefCard() {
+            const card = document.getElementById('editExternalRefCard');
+            card.classList.toggle('d-none');
+            if (!card.classList.contains('d-none')) {
+                document.getElementById('editExtRefName').focus();
+            }
+        }
+
+        async function saveEditExternalRef() {
+            const btn = document.querySelector('#editExternalRefCard .btn-success');
+            const originalText = btn ? btn.innerText : 'Add';
+            if (btn) { btn.innerText = 'Saving...'; btn.disabled = true; }
+            
+            const name = document.getElementById('editExtRefName').value.trim();
+            const phone = document.getElementById('editExtRefPhone').value.trim();
+            
+            if (name) {
+                try {
+                    let baseUrl = (typeof IPD !== 'undefined' && IPD.API_BASE) ? IPD.API_BASE.split('/reception_view/')[0] : '/GM_HMS';
+                    await fetch(baseUrl + '/api/billing/opd/referral', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: name, mobile: phone })
+                    });
+                } catch(e) {
+                    console.error('Error saving referral data', e);
+                }
+                
+                let text = name;
+                if (phone) text += ` (${phone})`;
+                
+                const type = document.getElementById('editReferralTypeSelect').value;
+                if (type === 'External') {
+                    const sel = $('#editRefNameSelect');
+                    if (sel.length) {
+                        const newOption = new Option(text, text, true, true);
+                        sel.append(newOption).trigger('change');
+                    }
+                } else {
+                    document.getElementById('editRefNameText').value = text;
+                }
+            }
+            
+            if (btn) { btn.innerText = originalText; btn.disabled = false; }
+            document.getElementById('editExtRefName').value = '';
+            document.getElementById('editExtRefPhone').value = '';
+            toggleEditExternalRefCard();
         }
 
         function updateAdmission() {
@@ -2475,14 +2732,27 @@ window.closeViewAdmissionModalOnBackdrop = function(e) {
                 }
             });
 
+            const btn = document.querySelector('#editAdmissionModal button.btn-primary');
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Updating...';
+            }
+
             IPD.ajax(`admissions?id=${admissionId}`, 'PUT', formData)
                 .then(response => {
-                    IPD.toast('Admission updated successfully!', 'success');
+                    IPD.toast('✅ Admission updated successfully!', 'success');
                     $('#editAdmissionModal').addClass('hidden');
                     admissionsTable.ajax.reload();
                 })
                 .catch(error => {
                     IPD.toast(error.message || 'Failed to update admission', 'error');
+                })
+                .finally(() => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = origHtml;
+                    }
                 });
         }
         

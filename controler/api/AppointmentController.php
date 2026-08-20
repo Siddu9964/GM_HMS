@@ -162,37 +162,34 @@ class AppointmentController extends BaseController
 
     /**
      * POST /api/appointments
-     * Create new appointment
+     * Create new appointment(s)
      */
     public function create()
     {
         $this->restrictMethod('POST');
 
-        // Validation Schema
-        $schema = [
-            'required' => ['patient_id', 'doctor_id', 'appointment_date', 'appointment_time'],
-            'properties' => [
-                'patient_id' => ['type' => 'string'],
-                'patient_name' => ['type' => 'string'],
-                'doctor_id' => ['type' => 'string'],
-                'phone' => ['type' => 'string'],
-                'email' => ['type' => 'string'],
-                'appointment_date' => ['type' => 'string'], // format: YYYY-MM-DD
-                'appointment_time' => ['type' => 'string'],
-                'reason' => ['type' => 'string'],
-                'notes' => ['type' => 'string'],
-                'status' => ['type' => 'string'],
-                'consultation_fee' => ['type' => 'string'], // or number, but input often string
-                'discount' => ['type' => 'string'],
-                'total_amount' => ['type' => 'string'],
-                'payment_status' => ['type' => 'string'],
-                'payment_mode' => ['type' => 'string']
-            ]
-        ];
-
-        $data = $this->getJsonInput($schema);
+        $data = $this->getJsonInput();
 
         try {
+            // Support Batch Creation (Multiple Doctors)
+            if (isset($data['appointments']) && is_array($data['appointments'])) {
+                $createdList = [];
+                foreach ($data['appointments'] as $aptData) {
+                    if (empty($aptData['patient_id']) || empty($aptData['doctor_id']) || empty($aptData['appointment_date']) || empty($aptData['appointment_time'])) {
+                        continue;
+                    }
+                    $appointmentId = $this->model->createAppointment($aptData);
+                    $createdList[] = $this->model->getAppointmentById($appointmentId);
+                }
+                if (empty($createdList)) {
+                    $this->respondBadRequest('No valid doctor appointments provided');
+                    return;
+                }
+                $this->respondSuccess($createdList, count($createdList) . ' appointments scheduled successfully');
+                return;
+            }
+
+            // Single appointment flow
             $appointmentId = $this->model->createAppointment($data);
             $appointment = $this->model->getAppointmentById($appointmentId);
 

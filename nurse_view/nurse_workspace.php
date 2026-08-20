@@ -20,6 +20,7 @@ $nurseName = $_SESSION['full_name'] ?? ($_SESSION['username'] ?? 'Nurse');
 require_once __DIR__ . '/../core/Autoloader.php';
 
 $allDoctors = [];
+$allFloors = [];
 $allWards = [];
 $assignedPatients = [];
 $nurseWard = null;
@@ -33,10 +34,15 @@ try {
         while ($r = $res->fetch_assoc()) $allDoctors[] = $r['full_name'];
     }
     
-    $resWards = $conn->query("SELECT DISTINCT room_type FROM hospital_beds WHERE room_type IS NOT NULL AND room_type != '' ORDER BY room_type ASC");
+    $resFloors = $conn->query("SELECT DISTINCT floor_number, floor_name FROM hospital_beds WHERE floor_name IS NOT NULL AND floor_name != '' ORDER BY floor_number ASC, floor_name ASC");
+    if ($resFloors) {
+        while ($r = $resFloors->fetch_assoc()) $allFloors[] = $r;
+    }
+
+    $resWards = $conn->query("SELECT DISTINCT ward_name FROM hospital_beds WHERE ward_name IS NOT NULL AND ward_name != '' ORDER BY ward_name ASC");
     if ($resWards) {
         while ($r = $resWards->fetch_assoc()) {
-            $allWards[] = $r['room_type'];
+            $allWards[] = $r['ward_name'];
         }
     }
     
@@ -722,23 +728,32 @@ html, body {
     padding: 4px;
 }
 
-/* Floating Toast */
+/* Centered Floating Toast */
 #toast {
     position: fixed;
-    top: 24px;
-    right: 24px;
-    background: var(--gm-primary);
-    color: #f3efe6;
-    padding: 14px 22px;
-    border-radius: 10px;
-    font-size: 0.88rem;
-    font-weight: 700;
-    z-index: 9999;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #ffffff;
+    color: var(--gm-primary);
+    padding: 22px 30px;
+    border-radius: 16px;
+    font-size: 1rem;
+    font-weight: 800;
+    z-index: 999999;
     display: none;
-    box-shadow: 0 10px 30px rgba(31, 107, 74, 0.25);
-    max-width: 400px;
-    line-height: 1.4;
-    border: 1.5px solid rgba(243, 239, 230, 0.3);
+    box-shadow: 0 20px 60px rgba(31, 107, 74, 0.4);
+    min-width: 320px;
+    max-width: 520px;
+    line-height: 1.5;
+    border: 2px solid var(--gm-primary);
+    text-align: center;
+    animation: modalZoomIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalZoomIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
 /* Sticky Save Bottom Bar */
@@ -810,6 +825,195 @@ html, body {
 .select2-container--default.select2-container--focus .select2-selection--single {
     border-color: var(--gm-primary);
     background-color: #ffffff;
+}
+
+/* ── Enhanced Ward & Bed Transfer Styles ── */
+.tr-compare-box {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    background: #fdfbf7;
+    border: 1.5px dashed var(--gm-border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+.tr-loc-card {
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1.5px solid var(--gm-border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 2px 6px rgba(31, 107, 74, 0.04);
+}
+.tr-loc-card.current {
+    border-left: 4px solid #64748b;
+}
+.tr-loc-card.target {
+    border-left: 4px solid var(--gm-primary);
+    background: #fcfdfc;
+}
+.tr-loc-title {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gm-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.tr-loc-val {
+    font-size: 0.96rem;
+    font-weight: 800;
+    color: var(--gm-primary);
+}
+.tr-loc-meta {
+    font-size: 0.76rem;
+    color: var(--gm-text-body);
+    font-weight: 600;
+}
+.tr-bed-grid-container {
+    margin-top: 12px;
+    margin-bottom: 16px;
+    background: #ffffff;
+    border: 1.5px solid var(--gm-border);
+    border-radius: 12px;
+    padding: 14px;
+}
+.tr-bed-grid-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.tr-bed-legend {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+.tr-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.tr-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+.tr-bed-cards-wrap {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+    gap: 10px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 4px;
+}
+.tr-bed-card {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--gm-border);
+    background: #ffffff;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+.tr-bed-card.available {
+    border-color: #16a34a;
+    background: #f0fdf4;
+}
+.tr-bed-card.available:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(22, 163, 74, 0.25);
+    border-width: 2px;
+}
+.tr-bed-card.available.selected {
+    border-color: var(--gm-primary);
+    background: var(--gm-primary);
+    color: #ffffff !important;
+    box-shadow: 0 6px 18px rgba(31, 107, 74, 0.4);
+}
+.tr-bed-card.available.selected .tr-bed-no,
+.tr-bed-card.available.selected .tr-bed-sub,
+.tr-bed-card.available.selected .tr-bed-price {
+    color: #ffffff !important;
+}
+.tr-bed-card.occupied {
+    border-color: #fca5a5;
+    background: #fef2f2;
+    opacity: 0.75;
+    cursor: not-allowed;
+}
+.tr-bed-card.reserved {
+    border-color: #fde68a;
+    background: #fffbeb;
+    opacity: 0.75;
+    cursor: not-allowed;
+}
+.tr-bed-card.blocked, .tr-bed-card.maintenance {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+.tr-bed-no {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--gm-primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.tr-bed-sub {
+    font-size: 0.73rem;
+    color: var(--gm-text-muted);
+    font-weight: 600;
+}
+.tr-bed-price {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--gm-primary-dark);
+}
+.emergency-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff1f2;
+    border: 1.5px solid #fecdd3;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.emergency-toggle-wrap.active {
+    background: #ffe4e6;
+    border-color: #e11d48;
+    box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.25);
+}
+.tr-hist-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.tr-hist-filter input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--gm-border);
+    border-radius: 6px;
+    font-size: 0.78rem;
+    background: var(--gm-bg);
 }
 
 /* ============================================================
@@ -889,10 +1093,8 @@ html, body {
         grid-template-columns: 1fr;
     }
     #toast {
-        left: 16px;
-        right: 16px;
-        top: 16px;
-        max-width: calc(100% - 32px);
+        width: 90vw;
+        max-width: 480px;
     }
 }
 </style>
@@ -1149,45 +1351,156 @@ html, body {
         </div>
 
         <!-- 5. Ward Transfer -->
-        <div class="card-new ws-sec cat-doctor" id="s-tr">
+        <div class="card-new full-width ws-sec cat-doctor" id="s-tr">
           <div class="card-title-new">
-            <span><i class="fas fa-bed"></i> 5. Ward / Bed Transfer</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <i class="fas fa-bed"></i> 5. Ward / Bed Transfer Module
+              <span class="chip-mini"><i class="fas fa-sync-alt"></i> Real-Time Availability</span>
+            </div>
+            <button type="button" class="btn-edit-log" onclick="refreshBeds()" style="padding:4px 10px; font-size:0.75rem;">
+              <i class="fas fa-redo"></i> Refresh Bed Status
+            </button>
           </div>
           <div class="split-card card-body" id="f-tr">
             <div class="split-left">
-              <div class="fg">
-                <div class="fmg"><label>Transfer Date & Time</label><input type="datetime-local" name="transfer_date"></div>
-                <div class="fmg">
-                  <label>From Ward</label>
-                  <select name="from_ward">
-                    <option value="">-- Select Ward --</option>
-                    <?php foreach($allWards as $ward): ?>
-                      <option value="<?php echo htmlspecialchars($ward); ?>"><?php echo htmlspecialchars($ward); ?></option>
-                    <?php endforeach; ?>
-                  </select>
+              
+              <!-- Side-by-Side Comparison Preview -->
+              <div class="tr-compare-box" id="tr-compare-box">
+                <div class="tr-loc-card current">
+                  <div class="tr-loc-title">
+                    <span><i class="fas fa-map-marker-alt"></i> Current Bed Location</span>
+                    <span class="badge" style="background:#f1f5f9; color:#475569;">Active</span>
+                  </div>
+                  <div class="tr-loc-val" id="tr-curr-val">Select a patient</div>
+                  <div class="tr-loc-meta" id="tr-curr-meta">Floor: – | Ward: – | Room: –</div>
                 </div>
-                <div class="fmg">
-                  <label>To Ward</label>
-                  <select name="to_ward">
-                    <option value="">-- Select Ward --</option>
-                    <?php foreach($allWards as $ward): ?>
-                      <option value="<?php echo htmlspecialchars($ward); ?>"><?php echo htmlspecialchars($ward); ?></option>
-                    <?php endforeach; ?>
-                  </select>
+                <div class="tr-loc-card target">
+                  <div class="tr-loc-title">
+                    <span><i class="fas fa-arrow-right"></i> Target Bed Location</span>
+                    <span class="badge" id="tr-target-status-badge" style="background:#f0fdf4; color:#16a34a;">Not Selected</span>
+                  </div>
+                  <div class="tr-loc-val" id="tr-target-val">Select floor, ward & bed below</div>
+                  <div class="tr-loc-meta" id="tr-target-meta">Charge: – / day</div>
                 </div>
-                <div class="fmg" style="grid-column: 1 / -1;"><label>Reason for Transfer</label><input type="text" name="transfer_remarks" placeholder="e.g. Upgraded to ICU, Shifted to Room..."></div>
               </div>
-              <button class="btn-sv-out btn-sv" data-ct="ward_transfer" data-f="f-tr"><i class="fas fa-plus"></i> Add Transfer</button>
+
+              <!-- Location Selectors -->
+              <div class="fg">
+                <div class="fmg">
+                  <label><i class="fas fa-layer-group"></i> 1. Select Floor <span style="color:#dc2626;">*</span></label>
+                  <select name="floor_name" id="tr-floor" onchange="onTrFloorChange()">
+                    <option value="">-- Select Floor --</option>
+                    <?php foreach($allFloors as $fl): ?>
+                      <option value="<?php echo htmlspecialchars($fl['floor_name']); ?>"><?php echo htmlspecialchars($fl['floor_name'] . ' (Floor ' . $fl['floor_number'] . ')'); ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="fmg">
+                  <label><i class="fas fa-hospital-alt"></i> 2. Select Ward <span style="color:#dc2626;">*</span></label>
+                  <select name="ward_name" id="tr-ward" onchange="onTrWardChange()">
+                    <option value="">-- Select Ward --</option>
+                    <?php foreach($allWards as $ward): ?>
+                      <option value="<?php echo htmlspecialchars($ward); ?>"><?php echo htmlspecialchars($ward); ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="fmg">
+                  <label><i class="fas fa-door-open"></i> 3. Room Type <span style="color:#dc2626;">*</span></label>
+                  <select name="room_type" id="tr-room-type" onchange="onTrRoomTypeChange()">
+                    <option value="">-- Select Room Type --</option>
+                  </select>
+                </div>
+                <div class="fmg">
+                  <label><i class="fas fa-calendar-alt"></i> Transfer Date & Time <span style="color:#dc2626;">*</span></label>
+                  <input type="datetime-local" name="transfer_date" id="tr-date">
+                </div>
+              </div>
+
+              <!-- Interactive Bed Availability Grid -->
+              <div class="tr-bed-grid-container" id="tr-bed-grid-wrap">
+                <div class="tr-bed-grid-header">
+                  <div style="font-weight: 800; font-size: 0.85rem; color: var(--gm-primary);">
+                    <i class="fas fa-procedures"></i> Available Beds in Selected Room Type <span style="color:#dc2626;">*</span>
+                  </div>
+                  <div class="tr-bed-legend">
+                    <span class="tr-legend-item"><span class="tr-legend-dot" style="background:#16a34a;"></span> Available</span>
+                    <span class="tr-legend-item"><span class="tr-legend-dot" style="background:#dc2626;"></span> Occupied</span>
+                    <span class="tr-legend-item"><span class="tr-legend-dot" style="background:#f59e0b;"></span> Reserved</span>
+                    <span class="tr-legend-item"><span class="tr-legend-dot" style="background:#94a3b8;"></span> Blocked</span>
+                  </div>
+                </div>
+
+                <div class="tr-bed-cards-wrap" id="tr-bed-cards">
+                  <div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--gm-text-muted); font-size:0.84rem;">
+                    <i class="fas fa-info-circle"></i> Please select Floor, Ward, and Room Type to view available beds.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hidden Target Bed Tracking Inputs -->
+              <input type="hidden" name="new_bed_id" id="tr-target-bed-id">
+              <input type="hidden" id="tr-target-bed-no">
+              <input type="hidden" id="tr-target-room-no">
+              <input type="hidden" id="tr-target-rate">
+
+              <!-- Clinical Reason & Emergency Toggle -->
+              <div class="fg" style="margin-top: 10px;">
+                <div class="fmg" style="grid-column: 1 / -1;">
+                  <label><i class="fas fa-comment-medical"></i> Reason for Transfer <span style="color:#dc2626;">*</span></label>
+                  <input type="text" name="transfer_remarks" id="tr-remarks" placeholder="e.g. Upgraded to ICU due to SpO2 drop, Step-down to General Room, Patient Request..." required>
+                </div>
+                <div class="fmg">
+                  <label>Nurse Signature</label>
+                  <input type="text" name="nurse_sign" id="tr-nurse-sign" readonly>
+                </div>
+                <div class="fmg">
+                  <label>Priority Setting</label>
+                  <div class="emergency-toggle-wrap" id="tr-emergency-wrap" onclick="toggleEmergencyCheckbox()">
+                    <input type="checkbox" name="is_emergency" id="tr-emergency" onchange="toggleEmergencyStyle(this)" style="width:18px; height:18px; cursor:pointer;">
+                    <span style="font-weight: 700; font-size: 0.82rem; color: #e11d48; display:flex; align-items:center; gap:6px;">
+                      <i class="fas fa-ambulance"></i> Emergency / High-Priority Transfer
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div style="display: flex; gap: 10px; align-items: center; margin-top: 14px;">
+                <button type="button" class="btn-sv-out" id="btn-init-transfer" onclick="openTransferConfirmModal()" style="background:var(--gm-primary); color:#f3efe6; border-color:var(--gm-primary);">
+                  <i class="fas fa-exchange-alt"></i> Execute Patient Transfer
+                </button>
+                <button type="button" class="btn-cancel-edit" id="btn-reset-tr" onclick="resetTransferForm()" style="margin:0; display:inline-flex;">
+                  <i class="fas fa-undo"></i> Reset Form
+                </button>
+              </div>
+
             </div>
+
+            <!-- Transfer History Table -->
             <div class="split-right">
-              <div class="ht-title"><i class="fas fa-history"></i> Transfer Logs</div>
-              <div class="ht-wrap">
+              <div class="ht-title" style="display:flex; justify-content:space-between; align-items:center;">
+                <span><i class="fas fa-history"></i> Complete Transfer History</span>
+              </div>
+              <div class="tr-hist-filter">
+                <i class="fas fa-search" style="color:var(--gm-text-muted); font-size:0.8rem;"></i>
+                <input type="text" id="tr-log-search" placeholder="Filter history by date, ward, bed, nurse, reason..." oninput="filterTransferHistory(this.value)">
+              </div>
+              <div class="ht-wrap" style="max-height: 380px;">
                 <table class="ht">
-                  <thead><tr><th>Date</th><th>From</th><th>To</th><th>Reason</th><th>Action</th></tr></thead>
-                  <tbody id="h-tr"><tr class="et"><td colspan="5">No records yet.</td></tr></tbody>
+                  <thead>
+                    <tr>
+                      <th>Transfer Date</th>
+                      <th>From Bed</th>
+                      <th>To Bed</th>
+                      <th>Reason</th>
+                      <th>Nurse</th>
+                    </tr>
+                  </thead>
+                  <tbody id="h-tr"><tr class="et"><td colspan="5">No transfer records yet.</td></tr></tbody>
                 </table>
               </div>
             </div>
+
           </div>
         </div>
 
@@ -1437,18 +1750,120 @@ html, body {
   </div><!-- /content-wrapper -->
 </div><!-- /main-layout -->
 
-<!-- Discharge Modal -->
-<div id="dis-modal" style="position:fixed;inset:0;background:rgba(31, 107, 74, 0.4);backdrop-filter:blur(4px);z-index:9000;display:none;align-items:center;justify-content:center">
-  <div style="background:#ffffff;border-radius:14px;max-width:420px;width:90%;overflow:hidden;box-shadow:0 25px 50px rgba(31, 107, 74, 0.25);border:1.5px solid var(--gm-border);">
-    <div style="background:var(--gm-primary);padding:16px 20px;font-weight:800;font-size:0.95rem;color:#f3efe6;display:flex;align-items:center;gap:10px;">
-      <i class="fas fa-bell"></i> Send Discharge Notification
+<!-- Multi-Department Discharge Clearance Modal -->
+<div id="dis-modal" style="position:fixed;inset:0;background:rgba(15, 35, 25, 0.6);backdrop-filter:blur(4px);z-index:9000;display:none;align-items:center;justify-content:center;">
+  <div style="background:#ffffff;border-radius:16px;max-width:560px;width:92%;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.35);border:2px solid var(--gm-primary);animation:modalZoomIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);max-height:90vh;display:flex;flex-direction:column;">
+    <div style="background:var(--gm-primary);padding:16px 22px;font-weight:800;font-size:1.05rem;color:#f3efe6;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <span style="display:flex; align-items:center; gap:8px;"><i class="fas fa-bell"></i> Multi-Department Discharge Clearance</span>
+      <button type="button" onclick="closeDischargeModal()" style="background:none;border:none;color:#f3efe6;font-size:1.2rem;cursor:pointer;padding:2px 6px;"><i class="fas fa-times"></i></button>
     </div>
-    <div style="padding:20px;font-size:0.9rem;color:var(--gm-text-body);line-height:1.6">
-      Are you sure you want to notify Admin and Billing that this patient is ready for discharge clearance?
+    
+    <div style="padding:20px 22px;overflow-y:auto;flex:1;">
+      <!-- Patient Summary -->
+      <div style="background:#f8fafc;border:1.5px solid var(--gm-border);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+        <div style="font-weight:800;color:var(--gm-primary);font-size:1.02rem;" id="dis-modal-pt-name">Patient Name</div>
+        <div style="font-size:0.8rem;color:var(--gm-text-muted);margin-top:2px;" id="dis-modal-pt-meta">PID: – | IP#: – | Bed: –</div>
+      </div>
+
+      <!-- Live Clearance Status Tracker (Visible if initiated) -->
+      <div id="dis-status-tracker" style="display:none;margin-bottom:16px;background:#fdfbf7;border:1.5px dashed var(--gm-border);border-radius:12px;padding:12px 14px;">
+        <div style="font-size:0.75rem;font-weight:800;color:var(--gm-primary);text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+          <span><i class="fas fa-tasks"></i> Live Clearance Status</span>
+          <span class="badge" id="dis-overall-status-badge" style="background:#fef3c7;color:#b45309;">Pending Clearance</span>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;margin-bottom:10px;">
+          <!-- Reception -->
+          <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:0.68rem;font-weight:700;color:#64748b;text-transform:uppercase;">Reception / Billing</div>
+            <div id="dis-status-reception" style="font-weight:800;font-size:0.8rem;margin-top:2px;color:#f59e0b;">⏳ Pending</div>
+          </div>
+          <!-- Pharmacy -->
+          <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:0.68rem;font-weight:700;color:#64748b;text-transform:uppercase;">Pharmacy</div>
+            <div id="dis-status-pharmacy" style="font-weight:800;font-size:0.8rem;margin-top:2px;color:#f59e0b;">⏳ Pending</div>
+          </div>
+          <!-- Lab -->
+          <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:0.68rem;font-weight:700;color:#64748b;text-transform:uppercase;">Laboratory</div>
+            <div id="dis-status-lab" style="font-weight:800;font-size:0.8rem;margin-top:2px;color:#f59e0b;">⏳ Pending</div>
+          </div>
+        </div>
+
+        <!-- Queries Box (if any query raised) -->
+        <div id="dis-queries-container" style="display:none;background:#fff1f2;border:1px solid #fecdd3;border-radius:8px;padding:10px;font-size:0.8rem;">
+          <div style="font-weight:800;color:#e11d48;margin-bottom:4px;"><i class="fas fa-exclamation-triangle"></i> Department Queries / Notes:</div>
+          <div id="dis-queries-list" style="color:#9f1239;line-height:1.4;"></div>
+        </div>
+      </div>
+
+      <!-- Department Notification Workflow Details -->
+      <div style="font-size:0.82rem;color:var(--gm-text-body);margin-bottom:14px;line-height:1.5;">
+        <strong style="color:var(--gm-primary);"><i class="fas fa-share-alt"></i> Automated Clearance Routing:</strong>
+        <ul style="margin:6px 0 0 16px;padding:0;color:var(--gm-text-muted);font-size:0.8rem;">
+          <li><strong>Reception / Billing:</strong> Verifies IPD bill settlements, deposits & bed release.</li>
+          <li><strong>Pharmacy:</strong> Verifies unbilled medications & unused medicine returns.</li>
+          <li><strong>Laboratory:</strong> Verifies all pending diagnostic test reports are completed.</li>
+          <li><strong>Admin Dashboard:</strong> Live tracking until all 3 departments approve.</li>
+        </ul>
+      </div>
+
+      <!-- Nurse Notes -->
+      <div class="fmg">
+        <label><i class="fas fa-sticky-note"></i> Clinical Discharge Notes / Instructions (Optional)</label>
+        <textarea id="dis-nurse-notes" rows="2" placeholder="e.g. Patient stable, vitals normal, consultant Dr. Anand advised discharge..."></textarea>
+      </div>
     </div>
-    <div style="padding:14px 20px;background:var(--gm-bg);border-top:1px solid var(--gm-border);display:flex;gap:10px;justify-content:flex-end">
-      <button onclick="closeDischargeModal()" style="padding:8px 16px;border-radius:8px;font-weight:700;font-size:0.84rem;border:1.5px solid var(--gm-border);background:#ffffff;color:var(--gm-primary);cursor:pointer">Cancel</button>
-      <button id="dis-btn" onclick="doDischarge()" style="padding:8px 18px;border-radius:8px;font-weight:700;font-size:0.84rem;border:none;background:var(--gm-primary);color:#f3efe6;cursor:pointer"><i class="fas fa-check"></i> Yes, Notify</button>
+
+    <div style="padding:14px 22px;background:#f8fafc;border-top:1px solid var(--gm-border);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;">
+      <button type="button" onclick="closeDischargeModal()" style="padding:8px 16px;border-radius:8px;font-weight:700;font-size:0.84rem;border:1.5px solid var(--gm-border);background:#ffffff;color:var(--gm-primary);cursor:pointer">Close</button>
+      <button type="button" id="dis-btn" onclick="doDischarge()" style="padding:8px 20px;border-radius:8px;font-weight:800;font-size:0.86rem;border:none;background:var(--gm-primary);color:#f3efe6;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+        <i class="fas fa-paper-plane"></i> <span id="dis-btn-label">Dispatch Multi-Department Clearance</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Ward Transfer Confirmation Modal -->
+<div id="tr-confirm-modal" style="position:fixed;inset:0;background:rgba(15, 35, 25, 0.6);backdrop-filter:blur(4px);z-index:9000;display:none;align-items:center;justify-content:center">
+  <div style="background:#ffffff;border-radius:16px;max-width:540px;width:92%;overflow:hidden;box-shadow:0 25px 60px rgba(0, 0, 0, 0.35);border:2px solid var(--gm-primary);animation:modalZoomIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);">
+    <div style="background:var(--gm-primary);padding:16px 22px;font-weight:800;font-size:1.05rem;color:#f3efe6;display:flex;align-items:center;justify-content:space-between;">
+      <span style="display:flex; align-items:center; gap:8px;"><i class="fas fa-exchange-alt"></i> Confirm Patient Bed Transfer</span>
+      <span id="tr-modal-emergency-badge" style="display:none; background:#dc2626; color:#ffffff; font-size:0.72rem; padding:4px 9px; border-radius:6px; font-weight:800;">
+        <i class="fas fa-ambulance"></i> EMERGENCY TRANSFER
+      </span>
+    </div>
+    <div style="padding:22px;font-size:0.9rem;color:var(--gm-text-body);line-height:1.5;">
+      <div style="margin-bottom:14px; background:#f8fafc; border:1px solid var(--gm-border); border-radius:10px; padding:12px 14px;">
+        <div style="font-weight:800; color:var(--gm-primary); font-size:1rem; margin-bottom:4px;" id="tr-modal-pt-name">Patient Name</div>
+        <div style="font-size:0.8rem; color:var(--gm-text-muted);" id="tr-modal-pt-details">PID: – | IP: –</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+        <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:8px; padding:10px;">
+          <div style="font-size:0.7rem; font-weight:800; color:#991b1b; text-transform:uppercase;">From (Current Bed)</div>
+          <div style="font-weight:800; color:#7f1d1d; font-size:0.88rem; margin-top:2px;" id="tr-modal-from-val">–</div>
+        </div>
+        <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:10px;">
+          <div style="font-size:0.7rem; font-weight:800; color:#166534; text-transform:uppercase;">To (New Bed)</div>
+          <div style="font-weight:800; color:#14532d; font-size:0.88rem; margin-top:2px;" id="tr-modal-to-val">–</div>
+        </div>
+      </div>
+
+      <div style="background:var(--gm-bg); border-radius:8px; padding:10px 12px; font-size:0.84rem; margin-bottom:14px;">
+        <strong>Reason for Transfer:</strong> <span id="tr-modal-reason-val">–</span>
+      </div>
+
+      <p style="margin:0; font-size:0.8rem; color:var(--gm-text-muted); line-height:1.4;">
+        <i class="fas fa-info-circle"></i> Once confirmed:
+        <br>• The previous bed will automatically be released (Status: Available).
+        <br>• The new bed will become Occupied by this patient.
+        <br>• Real-time notification will be dispatched to duty nurses on the target floor and ward.
+      </p>
+    </div>
+    <div style="padding:14px 22px;background:#f8fafc;border-top:1px solid var(--gm-border);display:flex;gap:10px;justify-content:flex-end">
+      <button type="button" onclick="closeTransferConfirmModal()" style="padding:9px 16px;border-radius:8px;font-weight:700;font-size:0.85rem;border:1.5px solid var(--gm-border);background:#ffffff;color:var(--gm-primary);cursor:pointer">Cancel</button>
+      <button type="button" id="tr-confirm-btn" onclick="executeBedTransfer()" style="padding:9px 20px;border-radius:8px;font-weight:800;font-size:0.88rem;border:none;background:var(--gm-primary);color:#f3efe6;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><i class="fas fa-check-circle"></i> Confirm & Execute Transfer</button>
     </div>
   </div>
 </div>
@@ -1554,6 +1969,7 @@ function selectPatient(p){
   if(wi&&(p.room_type||p.room_number))wi.value=`${p.room_type||''}/${p.room_number||''}`;
   
   autoFill();
+  initTransferForm();
   loadAllRecords();
 }
 
@@ -1740,13 +2156,8 @@ async function loadAllRecords(){
     const d=(await r.json())?.data||{};
     
     // 1. Ward Transfers
-    rH('h-tr', d.ward_transfer || [], r => `
-      <td>${r.transfer_date || r.date || r.created_date || ''}</td>
-      <td>${r.from_ward || ''}</td>
-      <td>${r.to_ward || ''}</td>
-      <td>${r.transfer_remarks || r.remarks || ''}</td>
-      <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-tr", ${JSON.stringify(r)})' title="Edit transfer"><i class="fas fa-edit"></i> Edit</button></td>
-    `, 5);
+    currentTransferLogs = d.ward_transfer || [];
+    renderTransferHistory(currentTransferLogs);
 
     // 2. Consultant Visits
     rH('h-vi', d.consultant_visits || [], r => `
@@ -2068,26 +2479,641 @@ function cancelEdit(formId){
   if (cancelBtn) cancelBtn.style.display = 'none';
 }
 
-/* ── Discharge ── */
-function openDischargeModal(){document.getElementById('dis-modal').style.display='flex';}
-function closeDischargeModal(){document.getElementById('dis-modal').style.display='none';}
-async function doDischarge(){
-  if(!cp)return;
-  const b=document.getElementById('dis-btn'); b.innerHTML='<i class="fas fa-spinner fa-spin"></i>'; b.disabled=true;
-  const fd=new FormData(); fd.append('patient_id',cp.patient_id); fd.append('admission_id',cp.admission_id || '');
-  try{const r=await fetch('api/send_discharge_notification.php',{method:'POST',body:fd});const res=await r.json();showToast(res.success?(res.message||'Notification sent!'):'Error: '+res.message,!res.success);}
-  catch{showToast('Network error!',true);}
-  finally{b.innerHTML='<i class="fas fa-check"></i> Yes, Notify';b.disabled=false;closeDischargeModal();}
+/* ── Enhanced Ward & Bed Transfer Functions ── */
+let currentTransferLogs = [];
+let currentLoadedBeds = [];
+
+function initTransferForm() {
+  if (!cp) return;
+
+  // 1. Populate Current Location
+  const currBedNo = cp.bed_number || cp.room_number || 'N/A';
+  const currWard = cp.ward_name || cp.ward || cp.room_type || 'General Ward';
+  const currRoomType = cp.room_type || 'Ward';
+  const currFloor = cp.floor_name || 'Main Floor';
+
+  const currValEl = document.getElementById('tr-curr-val');
+  if (currValEl) currValEl.textContent = `${currWard} • ${currRoomType} (Bed ${currBedNo})`;
+
+  const currMetaEl = document.getElementById('tr-curr-meta');
+  if (currMetaEl) currMetaEl.textContent = `Floor: ${currFloor} | Bed ID: ${cp.bed_id || 'N/A'}`;
+
+  // 2. Reset Target Location
+  resetTransferForm();
+
+  // 3. Populate Floor if match exists
+  const floorSelect = document.getElementById('tr-floor');
+  if (floorSelect && cp.floor_name) {
+    Array.from(floorSelect.options).forEach(opt => {
+      if (opt.value === cp.floor_name) opt.selected = true;
+    });
+    onTrFloorChange();
+  }
 }
 
-/* ── Floating Toast ── */
-function showToast(msg,err=false){
-  const t=document.getElementById('toast');
-  t.innerHTML=msg; 
-  t.style.background=err?'#dc2626':'#1f6b4a';
-  t.style.display='block'; 
+async function onTrFloorChange() {
+  const floor = document.getElementById('tr-floor').value;
+  const wardSelect = document.getElementById('tr-ward');
+  const roomTypeSelect = document.getElementById('tr-room-type');
+  const bedCardsWrap = document.getElementById('tr-bed-cards');
+
+  wardSelect.innerHTML = '<option value="">-- Select Ward --</option>';
+  roomTypeSelect.innerHTML = '<option value="">-- Select Room Type --</option>';
+  if (bedCardsWrap) {
+    bedCardsWrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--gm-text-muted); font-size:0.84rem;"><i class="fas fa-info-circle"></i> Please select Ward and Room Type to view beds.</div>';
+  }
+  clearSelectedTargetBed();
+
+  if (!floor) return;
+
+  try {
+    const res = await fetch(`api/get_ward_hierarchy.php?action=wards&floor=${encodeURIComponent(floor)}`);
+    const json = await res.json();
+    if (json.success && Array.isArray(json.data)) {
+      json.data.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w;
+        opt.textContent = w;
+        wardSelect.appendChild(opt);
+      });
+      // If patient is in this floor, pre-select ward
+      if (cp && cp.ward_name && json.data.includes(cp.ward_name)) {
+        wardSelect.value = cp.ward_name;
+        onTrWardChange();
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching wards:', err);
+  }
+}
+
+async function onTrWardChange() {
+  const floor = document.getElementById('tr-floor').value;
+  const ward = document.getElementById('tr-ward').value;
+  const roomTypeSelect = document.getElementById('tr-room-type');
+  const bedCardsWrap = document.getElementById('tr-bed-cards');
+
+  roomTypeSelect.innerHTML = '<option value="">-- Select Room Type --</option>';
+  if (bedCardsWrap) {
+    bedCardsWrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--gm-text-muted); font-size:0.84rem;"><i class="fas fa-info-circle"></i> Please select Room Type to view available beds.</div>';
+  }
+  clearSelectedTargetBed();
+
+  if (!ward) return;
+
+  try {
+    const res = await fetch(`api/get_ward_hierarchy.php?action=room_types&floor=${encodeURIComponent(floor)}&ward=${encodeURIComponent(ward)}`);
+    const json = await res.json();
+    if (json.success && Array.isArray(json.data)) {
+      json.data.forEach(rt => {
+        const opt = document.createElement('option');
+        opt.value = rt;
+        opt.textContent = rt;
+        roomTypeSelect.appendChild(opt);
+      });
+      // If room types available, auto-load beds if single option
+      if (json.data.length === 1) {
+        roomTypeSelect.value = json.data[0];
+        onTrRoomTypeChange();
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching room types:', err);
+  }
+}
+
+async function onTrRoomTypeChange() {
+  loadBeds();
+}
+
+async function loadBeds() {
+  const floor = document.getElementById('tr-floor').value;
+  const ward = document.getElementById('tr-ward').value;
+  const roomType = document.getElementById('tr-room-type').value;
+  const bedCardsWrap = document.getElementById('tr-bed-cards');
+
+  if (!floor || !ward || !roomType) {
+    if (bedCardsWrap) {
+      bedCardsWrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--gm-text-muted); font-size:0.84rem;"><i class="fas fa-info-circle"></i> Please select Floor, Ward, and Room Type to view available beds.</div>';
+    }
+    clearSelectedTargetBed();
+    return;
+  }
+
+  if (bedCardsWrap) {
+    bedCardsWrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:24px; color:var(--gm-primary);"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:8px; font-weight:700;">Loading real-time bed availability...</p></div>';
+  }
+
+  try {
+    const res = await fetch(`api/get_ward_hierarchy.php?action=beds&floor=${encodeURIComponent(floor)}&ward=${encodeURIComponent(ward)}&room_type=${encodeURIComponent(roomType)}`);
+    const json = await res.json();
+    if (json.success && Array.isArray(json.data)) {
+      currentLoadedBeds = json.data;
+      renderBedCards(json.data);
+    } else {
+      bedCardsWrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--gm-text-muted);">No beds found for this room type.</div>';
+    }
+  } catch (err) {
+    console.error('Error loading beds:', err);
+    bedCardsWrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:#dc2626;"><i class="fas fa-exclamation-triangle"></i> Failed to load beds. Click Refresh to retry.</div>';
+  }
+}
+
+function refreshBeds() {
+  const floor = document.getElementById('tr-floor').value;
+  const ward = document.getElementById('tr-ward').value;
+  const roomType = document.getElementById('tr-room-type').value;
+  if (!floor || !ward || !roomType) {
+    showToast('Please select Floor, Ward, and Room Type first.', true);
+    return;
+  }
+  loadBeds();
+  showToast('🔄 Bed availability refreshed!');
+}
+
+function renderBedCards(beds) {
+  const wrap = document.getElementById('tr-bed-cards');
+  if (!wrap) return;
+
+  if (!beds.length) {
+    wrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--gm-text-muted);">No beds configured in this section.</div>';
+    return;
+  }
+
+  const selectedBedId = document.getElementById('tr-target-bed-id').value;
+
+  wrap.innerHTML = beds.map(b => {
+    const rawStatus = (b.bed_status || 'Available').trim();
+    const statusLower = rawStatus.toLowerCase();
+    const isCurrent = cp && parseInt(b.bed_id) === parseInt(cp.bed_id);
+    const isAvailable = (statusLower === 'available' || statusLower === 'vacant') && !isCurrent;
+    const isSelected = selectedBedId && parseInt(selectedBedId) === parseInt(b.bed_id);
+
+    let cardClass = 'tr-bed-card ';
+    let statusBadge = '';
+    let clickAttr = '';
+
+    if (isCurrent) {
+      cardClass += 'occupied';
+      statusBadge = '<span class="badge" style="background:#f1f5f9; color:#475569; font-size:0.68rem;">Current Bed</span>';
+    } else if (isAvailable) {
+      cardClass += 'available' + (isSelected ? ' selected' : '');
+      statusBadge = '<span class="badge" style="background:#dcfce7; color:#15803d; font-size:0.68rem;"><i class="fas fa-check"></i> Available</span>';
+      clickAttr = `onclick='selectTargetBed(${JSON.stringify(b)})'`;
+    } else if (statusLower === 'occupied') {
+      cardClass += 'occupied';
+      const ptInfo = b.occupied_by_patient ? `<br><small style="color:#b91c1c;">${b.occupied_by_patient}</small>` : '';
+      statusBadge = `<span class="badge" style="background:#fee2e2; color:#b91c1c; font-size:0.68rem;">Occupied</span>${ptInfo}`;
+    } else if (statusLower === 'reserved') {
+      cardClass += 'reserved';
+      statusBadge = '<span class="badge" style="background:#fef3c7; color:#b45309; font-size:0.68rem;">Reserved</span>';
+    } else {
+      cardClass += 'blocked';
+      statusBadge = `<span class="badge" style="background:#e2e8f0; color:#475569; font-size:0.68rem;">${rawStatus}</span>`;
+    }
+
+    const rate = b.total_bed_amount || b.amount_per_day || 0;
+
+    return `
+      <div class="${cardClass}" id="bed-card-${b.bed_id}" ${clickAttr} title="${isAvailable ? 'Click to select bed ' + b.bed_number : rawStatus}">
+        <div class="tr-bed-no">
+          <span><i class="fas fa-bed"></i> Bed ${b.bed_number}</span>
+          ${isSelected ? '<i class="fas fa-check-circle" style="color:#ffffff;"></i>' : ''}
+        </div>
+        <div class="tr-bed-sub">Room: ${b.room_number || b.room_name || '-'}</div>
+        <div class="tr-bed-price">₹${rate}/day</div>
+        <div style="margin-top:2px;">${statusBadge}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectTargetBed(bed) {
+  // Update hidden inputs
+  document.getElementById('tr-target-bed-id').value = bed.bed_id;
+  document.getElementById('tr-target-bed-no').value = bed.bed_number;
+  document.getElementById('tr-target-room-no').value = bed.room_number || '';
+  document.getElementById('tr-target-rate').value = bed.total_bed_amount || bed.amount_per_day || 0;
+
+  // Update visual selection
+  document.querySelectorAll('.tr-bed-card').forEach(c => c.classList.remove('selected'));
+  const activeCard = document.getElementById(`bed-card-${bed.bed_id}`);
+  if (activeCard) activeCard.classList.add('selected');
+
+  // Update target preview card
+  const targetValEl = document.getElementById('tr-target-val');
+  if (targetValEl) targetValEl.textContent = `${bed.ward_name} • ${bed.room_type} (Bed ${bed.bed_number})`;
+
+  const targetMetaEl = document.getElementById('tr-target-meta');
+  if (targetMetaEl) {
+    const rate = bed.total_bed_amount || bed.amount_per_day || 0;
+    targetMetaEl.textContent = `Floor: ${bed.floor_name || 'N/A'} | Room: ${bed.room_number || '-'} | ₹${rate}/day`;
+  }
+
+  const badgeEl = document.getElementById('tr-target-status-badge');
+  if (badgeEl) {
+    badgeEl.textContent = `✓ Selected: Bed ${bed.bed_number}`;
+    badgeEl.style.background = '#dcfce7';
+    badgeEl.style.color = '#15803d';
+  }
+
+  const f = document.getElementById('f-tr');
+  if (f) f.classList.add('is-dirty');
+
+  showToast(`✅ Bed ${bed.bed_number} selected for transfer.`);
+}
+
+function clearSelectedTargetBed() {
+  document.getElementById('tr-target-bed-id').value = '';
+  document.getElementById('tr-target-bed-no').value = '';
+  document.getElementById('tr-target-room-no').value = '';
+  document.getElementById('tr-target-rate').value = '';
+
+  const targetValEl = document.getElementById('tr-target-val');
+  if (targetValEl) targetValEl.textContent = 'Select floor, ward & bed below';
+
+  const targetMetaEl = document.getElementById('tr-target-meta');
+  if (targetMetaEl) targetMetaEl.textContent = 'Charge: – / day';
+
+  const badgeEl = document.getElementById('tr-target-status-badge');
+  if (badgeEl) {
+    badgeEl.textContent = 'Not Selected';
+    badgeEl.style.background = '#f1f5f9';
+    badgeEl.style.color = '#64748b';
+  }
+}
+
+function resetTransferForm() {
+  clearSelectedTargetBed();
+  document.getElementById('tr-remarks').value = '';
+  document.getElementById('tr-emergency').checked = false;
+  toggleEmergencyStyle(document.getElementById('tr-emergency'));
+
+  const floorSelect = document.getElementById('tr-floor');
+  if (floorSelect) floorSelect.value = '';
+  const wardSelect = document.getElementById('tr-ward');
+  if (wardSelect) wardSelect.innerHTML = '<option value="">-- Select Ward --</option>';
+  const roomTypeSelect = document.getElementById('tr-room-type');
+  if (roomTypeSelect) roomTypeSelect.innerHTML = '<option value="">-- Select Room Type --</option>';
+
+  const bedCardsWrap = document.getElementById('tr-bed-cards');
+  if (bedCardsWrap) {
+    bedCardsWrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--gm-text-muted); font-size:0.84rem;"><i class="fas fa-info-circle"></i> Please select Floor, Ward, and Room Type to view available beds.</div>';
+  }
+
+  autoFill(document.getElementById('f-tr'));
+}
+
+function toggleEmergencyStyle(cb) {
+  const wrap = document.getElementById('tr-emergency-wrap');
+  if (wrap) {
+    if (cb.checked) {
+      wrap.classList.add('active');
+    } else {
+      wrap.classList.remove('active');
+    }
+  }
+}
+
+function toggleEmergencyCheckbox() {
+  const cb = document.getElementById('tr-emergency');
+  if (cb && event.target !== cb) {
+    cb.checked = !cb.checked;
+    toggleEmergencyStyle(cb);
+  }
+}
+
+function openTransferConfirmModal() {
+  if (!cp) {
+    showToast('Please select an admitted patient first!', true);
+    return;
+  }
+
+  const newBedId = document.getElementById('tr-target-bed-id').value;
+  if (!newBedId) {
+    showToast('Please select an available target bed from the grid!', true);
+    return;
+  }
+
+  const remarks = document.getElementById('tr-remarks').value.trim();
+  if (!remarks) {
+    showToast('Please enter the reason for transfer!', true);
+    document.getElementById('tr-remarks').focus();
+    return;
+  }
+
+  const trDate = document.getElementById('tr-date').value;
+  if (!trDate) {
+    showToast('Please specify the transfer date and time!', true);
+    return;
+  }
+
+  const isEmergency = document.getElementById('tr-emergency').checked;
+
+  // Populate Modal Summary
+  document.getElementById('tr-modal-pt-name').textContent = `${cp.first_name} ${cp.last_name || ''}`;
+  document.getElementById('tr-modal-pt-details').textContent = `PID: ${cp.patient_id} | IP#: ${cp.admission_id || 'N/A'} | Age/Sex: ${cp.age || '-'}Y / ${cp.sex || '-'}`;
+
+  const currBedNo = cp.bed_number || cp.room_number || 'N/A';
+  const currWard = cp.ward_name || cp.ward || cp.room_type || 'General Ward';
+  document.getElementById('tr-modal-from-val').textContent = `${currWard} (Bed ${currBedNo})`;
+
+  document.getElementById('tr-modal-to-val').textContent = document.getElementById('tr-target-val').textContent;
+  document.getElementById('tr-modal-reason-val').textContent = remarks;
+
+  const emergBadge = document.getElementById('tr-modal-emergency-badge');
+  if (emergBadge) emergBadge.style.display = isEmergency ? 'inline-flex' : 'none';
+
+  document.getElementById('tr-confirm-modal').style.display = 'flex';
+}
+
+function closeTransferConfirmModal() {
+  document.getElementById('tr-confirm-modal').style.display = 'none';
+}
+
+async function executeBedTransfer() {
+  if (!cp) return;
+
+  const newBedId = document.getElementById('tr-target-bed-id').value;
+  const remarks = document.getElementById('tr-remarks').value.trim();
+  const trDate = document.getElementById('tr-date').value;
+  const isEmergency = document.getElementById('tr-emergency').checked ? 1 : 0;
+
+  const btn = document.getElementById('tr-confirm-btn');
+  const origHtml = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Executing Transfer...';
+  btn.disabled = true;
+
+  try {
+    const payload = {
+      patient_id: cp.patient_id,
+      admission_id: cp.admission_id || '',
+      new_bed_id: parseInt(newBedId),
+      transfer_date: trDate,
+      transfer_remarks: remarks,
+      is_emergency: isEmergency
+    };
+
+    const res = await fetch('api/transfer_bed.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      showToast(`✅ ${data.message || 'Patient transferred successfully!'}`);
+
+      // 1. Update active patient object
+      cp.bed_id = data.data.bed_id;
+      cp.floor_name = data.data.floor_name;
+      cp.ward_name = data.data.ward_name;
+      cp.room_type = data.data.room_type;
+      cp.room_number = data.data.room_number;
+      cp.bed_number = data.data.bed_number;
+
+      // 2. Update Sticky Banner Chips
+      const chipsEl = document.getElementById('pt-chips');
+      if (chipsEl) {
+        chipsEl.innerHTML = [
+          { ic: 'fa-id-card', l: 'PID', v: cp.patient_id },
+          { ic: 'fa-file-invoice', l: 'IP#', v: cp.admission_id || 'N/A' },
+          { ic: 'fa-bed', l: 'Bed', v: `${cp.ward_name || cp.room_type} - Bed ${cp.bed_number || cp.room_number}` },
+          { ic: 'fa-user', l: 'Age/Sex', v: `${cp.age || '?'}Y / ${cp.sex || '?'}` },
+          { ic: 'fa-tint', l: 'Blood', v: cp.blood_group || 'N/A' }
+        ].map(c => `<span class="ptchip"><i class="fas ${c.ic}"></i><strong>${c.l}:</strong> ${c.v}</span>`).join('');
+      }
+
+      // 3. Close Modal & Reset Form
+      closeTransferConfirmModal();
+      initTransferForm();
+
+      // 4. Reload Transfer Logs & Global Records
+      loadAllRecords();
+
+      // 5. Reload bed grid if still looking at the same section
+      loadBeds();
+
+      // 6. Immediately trigger notification fetch
+      if (typeof fetchNurseNotifications === 'function') {
+        fetchNurseNotifications();
+      }
+
+    } else {
+      showToast(`❌ Transfer Failed: ${data.message || 'Unknown error'}`, true);
+    }
+  } catch (err) {
+    console.error('Transfer execution error:', err);
+    showToast('Network error during transfer.', true);
+  } finally {
+    btn.innerHTML = origHtml;
+    btn.disabled = false;
+  }
+}
+
+function renderTransferHistory(logs) {
+  const tb = document.getElementById('h-tr');
+  if (!tb) return;
+  if (!logs || !logs.length) {
+    tb.innerHTML = '<tr class="et"><td colspan="5">No transfer records yet.</td></tr>';
+    return;
+  }
+
+  tb.innerHTML = [...logs].reverse().map(r => {
+    const fromTxt = (r.from_ward || r.from_bed || '-') + (r.from_bed_no ? ` (Bed ${r.from_bed_no})` : '');
+    const toTxt = (r.to_ward || r.to_bed || '-') + (r.to_bed_no ? ` (Bed ${r.to_bed_no})` : '');
+    const isEmerg = r.is_emergency == 1;
+    const dt = (r.transfer_date || r.date || r.created_date || '').replace('T', ' ');
+
+    return `
+      <tr>
+        <td><strong>${dt}</strong></td>
+        <td><small style="color:var(--gm-text-muted);">${r.from_floor ? r.from_floor + ' • ' : ''}</small>${fromTxt}</td>
+        <td><strong style="color:var(--gm-primary);">${toTxt}</strong><br><small style="color:var(--gm-text-muted);">${r.to_floor ? r.to_floor + ' • ' : ''}${r.to_room_type || ''}</small></td>
+        <td>
+          ${r.transfer_remarks || r.remarks || '-'}
+          ${isEmerg ? '<br><span class="badge" style="background:#fee2e2; color:#dc2626; font-size:0.7rem; font-weight:800; border-color:#fca5a5;"><i class="fas fa-ambulance"></i> EMERGENCY</span>' : ''}
+        </td>
+        <td><small style="color:var(--gm-text-muted);">${r.created_by_name || r.nurse_name || r.nurse_sign || '-'}</small></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function filterTransferHistory(q) {
+  q = (q || '').toLowerCase().trim();
+  if (!q) {
+    renderTransferHistory(currentTransferLogs);
+    return;
+  }
+  const filtered = currentTransferLogs.filter(r => {
+    const str = `${r.transfer_date || ''} ${r.from_ward || ''} ${r.to_ward || ''} ${r.from_bed_no || ''} ${r.to_bed_no || ''} ${r.transfer_remarks || ''} ${r.created_by_name || ''} ${r.to_floor || ''} ${r.to_room_type || ''}`.toLowerCase();
+    return str.includes(q);
+  });
+  renderTransferHistory(filtered);
+}
+
+/* ── Multi-Department Discharge Clearance ── */
+async function openDischargeModal() {
+  if (!cp) {
+    showToast('Please select an admitted patient first!', true);
+    return;
+  }
+
+  // Populate patient info
+  const ptNameEl = document.getElementById('dis-modal-pt-name');
+  if (ptNameEl) ptNameEl.textContent = `${cp.first_name} ${cp.last_name || ''}`;
+
+  const ptMetaEl = document.getElementById('dis-modal-pt-meta');
+  if (ptMetaEl) {
+    const bedTxt = `${cp.ward_name || cp.room_type || 'Ward'} (Bed ${cp.bed_number || cp.room_number || '–'})`;
+    ptMetaEl.textContent = `PID: ${cp.patient_id} | IP#: ${cp.admission_id || 'N/A'} | Location: ${bedTxt} | Doctor: Dr. ${cp.doctor_name || 'Consultant'}`;
+  }
+
+  // Clear notes input
+  const notesEl = document.getElementById('dis-nurse-notes');
+  if (notesEl) notesEl.value = '';
+
+  // Check live clearance status
+  await fetchDischargeStatusForModal();
+
+  document.getElementById('dis-modal').style.display = 'flex';
+}
+
+function closeDischargeModal() {
+  document.getElementById('dis-modal').style.display = 'none';
+}
+
+async function fetchDischargeStatusForModal() {
+  if (!cp) return;
+
+  const trackerEl = document.getElementById('dis-status-tracker');
+  const badgeEl = document.getElementById('dis-overall-status-badge');
+  const btnLabelEl = document.getElementById('dis-btn-label');
+  const qContainer = document.getElementById('dis-queries-container');
+  const qList = document.getElementById('dis-queries-list');
+
+  try {
+    const res = await fetch(`/GM_HMS/api/discharge_clearance.php?action=status&admission_id=${encodeURIComponent(cp.admission_id || '')}&patient_id=${encodeURIComponent(cp.patient_id)}`);
+    const json = await res.json();
+
+    if (json.success && json.has_clearance && json.data) {
+      const d = json.data;
+      if (trackerEl) trackerEl.style.display = 'block';
+
+      // Update badge
+      if (badgeEl) {
+        badgeEl.textContent = d.overall_status || 'Pending Clearance';
+        if (d.overall_status === 'All Cleared') {
+          badgeEl.style.background = '#dcfce7'; badgeEl.style.color = '#15803d';
+        } else if (d.overall_status === 'Queries Raised') {
+          badgeEl.style.background = '#fee2e2'; badgeEl.style.color = '#dc2626';
+        } else {
+          badgeEl.style.background = '#fef3c7'; badgeEl.style.color = '#b45309';
+        }
+      }
+
+      // Department status chips
+      const setDeptStatus = (elId, status, by) => {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        if (status === 'Approved') {
+          el.innerHTML = `<span style="color:#16a34a;"><i class="fas fa-check-circle"></i> Cleared</span>${by ? `<br><small style="color:#64748b;font-size:0.65rem;">by ${by}</small>` : ''}`;
+        } else if (status === 'Query') {
+          el.innerHTML = `<span style="color:#dc2626;"><i class="fas fa-exclamation-triangle"></i> Query</span>`;
+        } else {
+          el.innerHTML = `<span style="color:#f59e0b;"><i class="fas fa-clock"></i> Pending</span>`;
+        }
+      };
+
+      setDeptStatus('dis-status-reception', d.reception_status, d.reception_by);
+      setDeptStatus('dis-status-pharmacy', d.pharmacy_status, d.pharmacy_by);
+      setDeptStatus('dis-status-lab', d.lab_status, d.lab_by);
+
+      // Queries
+      if (json.queries && json.queries.length > 0) {
+        if (qContainer) qContainer.style.display = 'block';
+        if (qList) {
+          qList.innerHTML = json.queries.map(q => `
+            <div style="margin-bottom:6px;padding-bottom:4px;border-bottom:1px dashed #fecdd3;">
+              <strong>[${q.department.toUpperCase()}] ${q.user_name || 'Staff'}:</strong> ${q.query_text}
+              <span class="badge" style="float:right;font-size:0.65rem;background:${q.status==='Resolved'?'#dcfce7':'#fee2e2'};color:${q.status==='Resolved'?'#15803d':'#b91c1c'};">${q.status}</span>
+            </div>
+          `).join('');
+        }
+      } else {
+        if (qContainer) qContainer.style.display = 'none';
+      }
+
+      if (btnLabelEl) btnLabelEl.textContent = 'Re-send / Update Multi-Department Request';
+
+    } else {
+      if (trackerEl) trackerEl.style.display = 'none';
+      if (btnLabelEl) btnLabelEl.textContent = 'Dispatch Multi-Department Clearance';
+    }
+  } catch (err) {
+    console.error('Error fetching discharge status:', err);
+    if (trackerEl) trackerEl.style.display = 'none';
+  }
+}
+
+async function doDischarge() {
+  if (!cp) return;
+  const b = document.getElementById('dis-btn');
+  const origHtml = b.innerHTML;
+  b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Dispatching Clearance...';
+  b.disabled = true;
+
+  const notes = document.getElementById('dis-nurse-notes') ? document.getElementById('dis-nurse-notes').value.trim() : '';
+
+  const payload = {
+    action: 'initiate',
+    patient_id: cp.patient_id,
+    admission_id: cp.admission_id || '',
+    nurse_notes: notes,
+    nurse_name: NN
+  };
+
+  try {
+    const r = await fetch('/GM_HMS/api/discharge_clearance.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const res = await r.json();
+
+    if (res.success) {
+      showToast(`✅ ${res.message || 'Multi-department clearance request dispatched!'}`);
+      closeDischargeModal();
+    } else {
+      showToast(`❌ Error: ${res.message || 'Failed to dispatch request'}`, true);
+    }
+  } catch (err) {
+    console.error('Discharge request error:', err);
+    showToast('Network error while sending discharge notification.', true);
+  } finally {
+    b.innerHTML = origHtml;
+    b.disabled = false;
+  }
+}
+
+/* ── Centered Floating Toast with High-Contrast Visible Text ── */
+function showToast(msg, err=false){
+  const t = document.getElementById('toast');
+  t.style.background = '#ffffff';
+  t.style.color = '#23342b';
+  t.style.border = err ? '2.5px solid #dc2626' : '2.5px solid #1f6b4a';
+  t.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.35)';
+  t.innerHTML = `
+    <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:8px; font-size:1.15rem; font-weight:800; color:${err ? '#dc2626' : '#1f6b4a'};">
+        <i class="fas ${err ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> ${err ? 'Notice / Error' : 'Record Saved Successfully'}
+    </div>
+    <div style="font-size:0.92rem; font-weight:700; color:#23342b; line-height:1.5;">${msg}</div>
+  `;
+  t.style.display = 'block'; 
   clearTimeout(t._t); 
-  t._t=setTimeout(()=>t.style.display='none',4500);
+  t._t = setTimeout(() => t.style.display = 'none', 4500);
 }
 
 /* ── Initialize ── */

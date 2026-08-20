@@ -832,6 +832,13 @@ $overlappingAssignmentsJson = json_encode($overlappingAssignments);
             box-shadow: 0 4px 10px rgba(31, 107, 74, 0.12); 
         }
 
+        .s-slot.drag-over {
+            background: var(--gm-primary-mid) !important;
+            border-color: var(--gm-primary) !important;
+            transform: scale(1.03);
+            box-shadow: 0 4px 14px rgba(31, 107, 74, 0.25) !important;
+        }
+
         body.nurse-selected .s-slot:not(.has-nurse) { 
             border-color: var(--gm-primary) !important; 
             box-shadow: 0 0 0 2px var(--gm-primary-light); 
@@ -1276,20 +1283,21 @@ $overlappingAssignmentsJson = json_encode($overlappingAssignments);
         }
 
         /* Floating Toast */
-        #toast-overlay { position: fixed; top: 24px; right: 24px; z-index: 9999; pointer-events: none; }
+        #toast-overlay { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 99999; pointer-events: none; }
         #toast { 
-            background: var(--gm-primary); 
-            color: #f3efe6; 
-            border-radius: 10px; 
-            padding: 14px 22px; 
-            box-shadow: 0 10px 30px rgba(31, 107, 74, 0.3); 
+            background: #ffffff; 
+            color: var(--gm-primary); 
+            border-radius: 14px; 
+            padding: 18px 28px; 
+            box-shadow: 0 20px 60px rgba(31, 107, 74, 0.35); 
             display: none; 
             align-items: center; 
-            gap: 10px; 
-            font-size: 0.88rem; 
-            font-weight: 700; 
+            gap: 12px; 
+            font-size: 0.95rem; 
+            font-weight: 800; 
             pointer-events: all; 
-            border: 1.5px solid rgba(243, 239, 230, 0.3);
+            border: 2px solid var(--gm-primary);
+            animation: modalZoomIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         /* Responsive Breakpoints */
@@ -1936,36 +1944,61 @@ function setupDnD(){
         if(c){
             draggedNurseId = c.dataset.id;
             c.style.opacity = '.4';
-            e.dataTransfer.effectAllowed = 'copyMove';
-            e.dataTransfer.setData('text/plain', draggedNurseId);
+            if(e.dataTransfer) {
+                e.dataTransfer.effectAllowed = 'copyMove';
+                try {
+                    e.dataTransfer.setData('text/plain', draggedNurseId);
+                    e.dataTransfer.setData('text', draggedNurseId);
+                } catch(ex){}
+            }
         } 
     });
+    
     document.addEventListener('dragend', e => { 
         const c = e.target.closest('.nurse-card'); 
         if(c){
             c.style.opacity = '1';
-            setTimeout(() => { draggedNurseId = null; }, 200); 
         } 
+        document.querySelectorAll('.s-slot.drag-over, .wo-slot.drag-over').forEach(el => el.classList.remove('drag-over'));
+        setTimeout(() => { draggedNurseId = null; }, 300); 
     });
+
+    document.addEventListener('dragenter', e => {
+        const s = e.target.closest('.s-slot, .wo-slot');
+        if(s){
+            e.preventDefault();
+            s.classList.add('drag-over');
+        }
+    });
+
     document.addEventListener('dragover', e => { 
         const s = e.target.closest('.s-slot, .wo-slot'); 
         if(s){
             e.preventDefault(); 
-            e.dataTransfer.dropEffect = 'copy';
+            if(e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
             s.classList.add('drag-over'); 
         }
     });
+
     document.addEventListener('dragleave', e => { 
         const s = e.target.closest('.s-slot, .wo-slot'); 
-        if(s) s.classList.remove('drag-over'); 
+        if(s && (!e.relatedTarget || !s.contains(e.relatedTarget))){
+            s.classList.remove('drag-over'); 
+        }
     });
+
     document.addEventListener('drop', e => { 
         const s = e.target.closest('.s-slot, .wo-slot'); 
         if(s){ 
             e.preventDefault();
             s.classList.remove('drag-over'); 
-            const nId = e.dataTransfer.getData('text/plain') || draggedNurseId;
-            if(nId) assign(nId, s.id); 
+            let nId = draggedNurseId;
+            if(!nId && e.dataTransfer) {
+                nId = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text');
+            }
+            if(nId) {
+                assign(nId, s.id); 
+            }
         } 
     });
 }
@@ -1974,6 +2007,8 @@ function setupDnD(){
 function assign(nurseId, slotId, isInit=false){
     const nurse = MOCK_NURSES.find(n => n.id == nurseId);
     if(!nurse) return;
+    
+    const dbId = nurseId.toString().replace('n_', '');
     
     // 1. Check Nurse Leave Status
     if(nurse.status === 'On Leave'){ 
@@ -2059,18 +2094,8 @@ function assign(nurseId, slotId, isInit=false){
                 continue;
             }
 
-            // B. Check if this Room Slot is ALREADY assigned to another nurse
-            if(assignments[tgt] && assignments[tgt].length > 0 && !assignments[tgt].some(n => n.id == nurseId)) {
-                if(!isInit && !conflictOccurred) {
-                    const currentNurse = assignments[tgt][0].name;
-                    showValidationModal({
-                        title: 'Room Already Assigned',
-                        message: `This floor and room are already assigned to a nurse for the selected date range. Please change the From Date, To Date, or select a different room.`,
-                        details: `<strong>Current Slot Occupant:</strong> <strong>${currentNurse}</strong><br>&bull; Room: <strong>${wardDisplayName}</strong><br>&bull; Shift: <strong>${shiftLabel}</strong> on <strong>${targetDateStr}</strong>`,
-                        type: 'error'
-                    });
-                    conflictOccurred = true;
-                }
+            // B. Check if this specific nurse is ALREADY added to this slot
+            if(assignments[tgt] && assignments[tgt].some(n => n.id == nurseId)) {
                 continue;
             }
 
@@ -2100,21 +2125,19 @@ function assign(nurseId, slotId, isInit=false){
                 continue;
             }
 
-            // D. Check Overlapping External Database Schedules
-            const extRoomConflict = OVERLAPPING_ASSIGNMENTS.find(o => 
-                o.floor_name === currentFloorName &&
-                o.ward_name === ward?.ward_name &&
-                o.room_type === currentRoomType &&
+            // D. Check Overlapping External Database Schedules for this same nurse
+            const extNurseConflict = OVERLAPPING_ASSIGNMENTS.find(o => 
+                o.nurse_id == dbId &&
                 o.shift_date === targetFullDate &&
-                o.shift_type === shiftLabel
+                o.shift_type === shiftLabel &&
+                (o.ward_name !== ward?.ward_name || o.floor_name !== currentFloorName)
             );
 
-            if(extRoomConflict) {
+            if(extNurseConflict) {
                 if(!isInit && !conflictOccurred) {
                     showValidationModal({
-                        title: 'Room Already Assigned in Overlap',
-                        message: `This floor and room are already assigned to a nurse for the selected date range. Please change the From Date, To Date, or select a different room.`,
-                        details: `<strong>External Schedule Conflict:</strong><br>&bull; Assigned To: <strong>${extRoomConflict.nurse_name}</strong><br>&bull; Date: <strong>${targetDateStr} (${shiftLabel})</strong>`,
+                        title: 'Nurse Double-Booked in External Schedule',
+                        message: `Nurse <strong>${nurse.name}</strong> is already assigned to <strong>${extNurseConflict.ward_name || 'another ward'} (${extNurseConflict.floor_name || ''})</strong> on <strong>${targetDateStr} (${shiftLabel})</strong> in an existing schedule.`,
                         type: 'error'
                     });
                     conflictOccurred = true;
@@ -2481,9 +2504,14 @@ function toast(msg, isErr=false) {
     const msgEl = document.getElementById('toast-msg');
     const icon = document.getElementById('toast-icon');
     
-    t.style.background = isErr ? '#dc2626' : 'var(--gm-primary)';
+    t.style.background = '#ffffff';
+    t.style.border = isErr ? '2.5px solid #dc2626' : '2.5px solid #1f6b4a';
     icon.className = isErr ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
+    icon.style.color = isErr ? '#dc2626' : '#1f6b4a';
+    icon.style.fontSize = '1.3rem';
     msgEl.textContent = msg;
+    msgEl.style.color = '#23342b';
+    msgEl.style.fontWeight = '700';
     
     t.style.display = 'flex';
     clearTimeout(t._timer);

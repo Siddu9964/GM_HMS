@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Inpatient Clinical Kardex (K-Sheet) - GM HMS</title>
-    <link rel="stylesheet" href="/GM_HMS/assets/css/gm-theme.css?v=1787115505">
+    <link rel="stylesheet" href="/GM_HMS/assets/css/gm-theme.css?v=1787211525">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/GM_HMS/assets/css/k_sheet_view.css?v=1787115505">
+    <link rel="stylesheet" href="/GM_HMS/assets/css/k_sheet_view.css?v=1787211525">
 </head>
 <body>
 <div class="main-layout">
@@ -99,14 +99,6 @@
                     <span>My Shift</span>
                 </a>
 
-                                <a href="shift_assignment.php" class="sidebar-link" data-page="shift_assignment">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Shift Assignment</span>
-                </a>
-                <a href="all_shift_assignments.php" class="sidebar-link" data-page="all_shift_assignments">
-                    <i class="fas fa-list-alt"></i>
-                    <span>All Assigned Shifts</span>
-                </a>
                 
                 <!-- Ward Management Section -->
                 <div style="margin-top: 1.5rem; margin-bottom: 0.5rem;">
@@ -123,10 +115,6 @@
 
 
 
-                                <a href="reports.php" class="sidebar-link" data-page="reports">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Reports</span>
-                </a>
                             </div>
 
             <!-- Quick Actions -->
@@ -138,12 +126,6 @@
                 </button>
             </div>
 
-                        <div style="padding: 0 1rem 1rem 1rem;">
-                <a href="/GM_HMS/view/admin_dashboard.php" class="sidebar-link" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; justify-content: center; border: 1px solid rgba(239, 68, 68, 0.2);">
-                    <i class="fas fa-arrow-left" style="color: #ef4444; margin-right: 5px;"></i>
-                    <span>Exit to Admin</span>
-                </a>
-            </div>
                     </nav>
     </div>
 </aside>
@@ -352,169 +334,117 @@
                 </h2>
             </div>
             <div class="header-actions">
-                                    <button class="btn-modern" onclick="window.location.href='nurse_workspace.php'">
-                        <i class="fas fa-edit"></i> Edit in Workspace
-                    </button>
-                    <button class="btn-modern" onclick="window.location.href='k_sheet_view.php?clear=1'">
-                        <i class="fas fa-users"></i> Change Patient
-                    </button>
-                    <button class="btn-modern btn-primary" onclick="window.print()">
-                        <i class="fas fa-print"></i> Print Official K-Sheet
-                    </button>
                             </div>
         </div>
 
-        
-            <!-- ============================================================
-                 OFFICIAL HOSPITAL KARDEX SHEET (K-SHEET) CONTAINER
-                 ============================================================ -->
-            <div class="ksheet-hospital-sheet">
-                
-                <table class="k-print-container-table">
-                    <!-- Repeating Header on Every Printed Page -->
-                    <thead>
-                        <tr>
-                            <td>
-                                <!-- 1. Official GM Hospitals Brand Header -->
-                                <div class="hospital-kheader">
-                                    <div class="gm-brand-group">
-                                        <div class="gm-hosp-title">GM HOSPITALS</div>
-                                        <div class="gm-hosp-sub">
-                                            <span class="gm-sub-line"></span>
-                                            <span class="gm-sub-text">Nagarabhavi | Basaveshwaranagar</span>
-                                            <span class="gm-sub-line"></span>
-                                        </div>
-                                        <div class="hk-doc-title">DEPARTMENT OF NURSING SERVICES • INPATIENT CLINICAL KARDEX RECORD (K-SHEET)</div>
-                                    </div>
-                                    <div class="hk-meta-box">
-                                        <div class="hk-meta-item"><strong>FORM:</strong> IPD-KS-2026</div>
-                                        <div class="hk-meta-item"><strong>BRANCH:</strong> BASAVESHWARANAGAR</div>
-                                        <div class="hk-meta-item"><strong>GENERATED:</strong> 19-Aug-2026 06:58</div>
-                                    </div>
-                                </div>
-
-                                <!-- 2. Patient Demographics Matrix -->
-                                <div class="hospital-pt-matrix">
-                                    <div class="matrix-cell pt-name-cell">
-                                        <span class="m-lbl">PATIENT FULL NAME</span>
-                                        <div class="m-val-strong"><i class="fas fa-user"></i> Lavanya  K</div>
-                                        <div class="m-val-sub">27 Y / Female • Blood: <strong>A+</strong></div>
-                                    </div>
-                                    <div class="matrix-cell">
-                                        <span class="m-lbl">UHID / PATIENT ID</span>
-                                        <div class="m-val font-mono">PID-20260810-003</div>
-                                    </div>
-                                    <div class="matrix-cell">
-                                        <span class="m-lbl">IP ADMISSION NO</span>
-                                        <div class="m-val font-mono">ADM-20260810-0002</div>
-                                    </div>
-                                    <div class="matrix-cell">
-                                        <span class="m-lbl">WARD / BED / ROOM</span>
-                                        <div class="m-val">General Ward / 1104</div>
-                                    </div>
-                                    <div class="matrix-cell">
-                                        <span class="m-lbl">ATTENDING CONSULTANT</span>
-                                        <div class="m-val">Dr. Dr Bhanupraksh</div>
-                                    </div>
-                                    <div class="matrix-cell">
-                                        <span class="m-lbl">ADMISSION DATE & TIME</span>
-                                        <div class="m-val">10-Aug-2026 00:00</div>
-                                    </div>
-                                    <div class="matrix-cell">
-                                        <span class="m-lbl">CLINICAL STATUS</span>
-                                        <div class="m-val status-badge-admitted"><i class="fas fa-check-circle"></i> ACTIVE INPATIENT</div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    </thead>
-                    
-                    <!-- Table Body: Contains all Flowsheet Sections -->
-                    <tbody>
-                        <tr>
-                            <td>
-
-                
-                <!-- ============================================================
-                     CLINICAL FLOWSHEETS (ALL 19 HOSPITAL RECORD SECTIONS)
-                     ============================================================ -->
-
-                <!-- 1. BP & Vital Signs Flowsheet -->
-                
-                <!-- 2. GRBS (Diabetic Monitoring) Flowsheet -->
-                
-                <!-- 3. Consultant Visits & Clinical Rounds -->
-                
-                <!-- 4. Bed / Ward Transfers Log -->
-                
-                <!-- 5. Inpatient MAR / Pharmacy Orders -->
-                
-                <!-- 6. Diagnostic Laboratory Investigations -->
-                
-                <!-- 7. Radiology & Diagnostic Imaging -->
-                
-                <!-- 8. Other Diagnostic Tests -->
-                
-                <!-- 9. Nebulization Therapy Flowsheet -->
-                
-                <!-- 10. Dialysis Therapy Flowsheet -->
-                
-                <!-- 11. Oxygen Therapy Flowsheet -->
-                
-                <!-- 12. Ventilator Support Flowsheet -->
-                
-                <!-- 13. Blood Transfusion Flowsheet -->
-                
-                <!-- 14. Nurses Shift Care Notes -->
-                
-                <!-- 15. Clinical Nursing Notes -->
-                
-                <!-- 16. Procedures -->
-                
-                <!-- 17. Pharmacy Returns -->
-                
-                <!-- 18. Billing Items -->
-                
-                <!-- 19. Clinical Attachments -->
-                
-                <!-- If no clinical entries exist for this patient -->
-                                <div class="ksheet-empty-state">
-                    <i class="fas fa-notes-medical" style="font-size: 3rem; color: #1F6B4A; opacity: 0.4; margin-bottom: 14px;"></i>
-                    <h3 style="color: #1F6B4A; margin-bottom: 6px; font-weight: 800;">No Clinical Entries Recorded Yet</h3>
-                    <p style="color: #527967; font-size: 0.88rem; max-width: 500px; margin: 0 auto 20px;">
-                        This inpatient currently has no active K-Sheet flowsheets logged. Enter vitals, consultant rounds, pharmacy orders, or nursing notes in the workspace.
-                    </p>
-                    <button class="btn-modern btn-primary" onclick="window.location.href='nurse_workspace.php'">
-                        <i class="fas fa-plus"></i> Open Nurse Workspace
-                    </button>
-                </div>
-                
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <!-- 3. Official Hospital Verification Sign-Off Footer (Only on Final Page) -->
-                <div class="hospital-signoff-grid">
-                    <div class="signoff-box">
-                        <div class="signoff-role">STAFF NURSE IN-CHARGE</div>
-                        <div class="signoff-line"></div>
-                        <div class="signoff-meta">Name & Signature / Date</div>
+                    <!-- Patient List Selection View -->
+            <div class="nopt-dashboard">
+                <div class="dash-header">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.3rem; font-weight: 800; color: #1F6B4A; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-hospital-user"></i> Active Inpatients Kardex Directory
+                            <span class="badge-chip">3 Admitted</span>
+                        </h3>
+                        <p style="margin: 4px 0 0 0; font-size: 0.84rem; color: #527967;">
+                            Select an admitted inpatient to view their full official medical Kardex flowsheet.
+                        </p>
                     </div>
-                    <div class="signoff-box">
-                        <div class="signoff-role">ATTENDING CONSULTANT / RMO</div>
-                        <div class="signoff-line"></div>
-                        <div class="signoff-meta">Dr. Dr Bhanupraksh / Signature</div>
-                    </div>
-                    <div class="signoff-box">
-                        <div class="signoff-role">NURSING SUPERINTENDENT</div>
-                        <div class="signoff-line"></div>
-                        <div class="signoff-meta">Hospital Verification Stamp</div>
+
+                    <div class="search-box-wrap">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="patientFilterInput" placeholder="Filter by Name, PID, IP#, Ward/Bed..." onkeyup="filterPatientCards()">
                     </div>
                 </div>
+                
+                <div class="bento-grid" id="patientsContainer">
+                                        <div class="patient-bento-card" data-search="kariya d pid-20260819-002 adm-20260820-0001 double sharing room 1101" onclick="window.location.href='k_sheet_view.php?patient_id=PID-20260819-002&admission_id=ADM-20260820-0001'">
+                        <div class="bento-header">
+                            <div class="avatar">KD</div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #1F6B4A;">Kariya D</h3>
+                                <span style="font-size: 0.8rem; color: #527967; font-weight: 600;">Age: 18 • Male</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div>
+                                <span style="display:block; font-size:0.72rem; text-transform:uppercase; color: #527967; font-weight: 700;">Patient ID</span>
+                                <strong style="color: #1F6B4A;">PID-20260819-002</strong>
+                            </div>
+                            <div>
+                                <span style="display:block; font-size:0.72rem; text-transform:uppercase; color: #527967; font-weight: 700;">IP Admission #</span>
+                                <strong style="color: #1F6B4A;">ADM-20260820-0001</strong>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; margin-left: auto; flex-wrap: wrap;">
+                            <span class="badge-chip"><i class="fas fa-bed"></i> Double Sharing Room - 1101</span>
+                            <span class="badge-chip"><i class="fas fa-user-md"></i> Dr. Dr Deevish</span>
+                        </div>
+                    </div>
+                                        <div class="patient-bento-card" data-search="kitti t v pid-20260819-003 adm-20260819-0002 double sharing room 1101" onclick="window.location.href='k_sheet_view.php?patient_id=PID-20260819-003&admission_id=ADM-20260819-0002'">
+                        <div class="bento-header">
+                            <div class="avatar">KT</div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #1F6B4A;">kitti T V</h3>
+                                <span style="font-size: 0.8rem; color: #527967; font-weight: 600;">Age: 26 • Male</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div>
+                                <span style="display:block; font-size:0.72rem; text-transform:uppercase; color: #527967; font-weight: 700;">Patient ID</span>
+                                <strong style="color: #1F6B4A;">PID-20260819-003</strong>
+                            </div>
+                            <div>
+                                <span style="display:block; font-size:0.72rem; text-transform:uppercase; color: #527967; font-weight: 700;">IP Admission #</span>
+                                <strong style="color: #1F6B4A;">ADM-20260819-0002</strong>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; margin-left: auto; flex-wrap: wrap;">
+                            <span class="badge-chip"><i class="fas fa-bed"></i> Double Sharing Room - 1101</span>
+                            <span class="badge-chip"><i class="fas fa-user-md"></i> Dr. Dr Ramesh SS</span>
+                        </div>
+                    </div>
+                                        <div class="patient-bento-card" data-search="darshan d pid-20260819-001 adm-20260819-0001 deluxe room 1104" onclick="window.location.href='k_sheet_view.php?patient_id=PID-20260819-001&admission_id=ADM-20260819-0001'">
+                        <div class="bento-header">
+                            <div class="avatar">DD</div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #1F6B4A;">Darshan D</h3>
+                                <span style="font-size: 0.8rem; color: #527967; font-weight: 600;">Age: 27 • Male</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div>
+                                <span style="display:block; font-size:0.72rem; text-transform:uppercase; color: #527967; font-weight: 700;">Patient ID</span>
+                                <strong style="color: #1F6B4A;">PID-20260819-001</strong>
+                            </div>
+                            <div>
+                                <span style="display:block; font-size:0.72rem; text-transform:uppercase; color: #527967; font-weight: 700;">IP Admission #</span>
+                                <strong style="color: #1F6B4A;">ADM-20260819-0001</strong>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center; margin-left: auto; flex-wrap: wrap;">
+                            <span class="badge-chip"><i class="fas fa-bed"></i> Deluxe Room - 1104</span>
+                            <span class="badge-chip"><i class="fas fa-user-md"></i> Dr. Dr Ramesh SS</span>
+                        </div>
+                    </div>
+                                        
+                                    </div>
+            </div>
 
-            </div><!-- /ksheet-hospital-sheet -->
-
+            <script>
+            function filterPatientCards() {
+                const query = document.getElementById('patientFilterInput').value.toLowerCase().trim();
+                const cards = document.querySelectorAll('#patientsContainer .patient-bento-card');
+                cards.forEach(card => {
+                    const searchData = card.getAttribute('data-search') || '';
+                    if (searchData.includes(query)) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+            </script>
+            
         
     </div><!-- /content-wrapper -->
 </div><!-- /main-layout -->

@@ -28,7 +28,22 @@ class IpdPayment extends BaseModel {
             return ['success' => false, 'message' => 'Amount must be greater than zero'];
         }
 
+        // Duplicate submission prevention within 5 seconds
+        $recentDuplicate = $this->fetchOne(
+            "SELECT payment_id FROM ipd_payment 
+             WHERE bill_id = ? AND amount = ? AND payment_type = ? AND payment_mode = ? 
+               AND created_at >= (NOW() - INTERVAL 5 SECOND) 
+             LIMIT 1",
+            [$data['bill_id'], $amount, strtoupper($data['payment_type']), strtoupper($data['payment_mode'])]
+        );
+        if ($recentDuplicate) {
+            require_once __DIR__ . '/IpdBillingMaster.php';
+            $summary = (new IpdBillingMaster())->recalculateMaster($data['bill_id'], $data['created_by'] ?? 'system');
+            return ['success' => true, 'message' => 'Payment already recorded (duplicate ignored)', 'financial' => $summary];
+        }
+
         $now = date('Y-m-d H:i:s');
+        $isIns = (strtoupper($data['payment_mode']) === 'INSURANCE') ? 1 : 0;
         $this->db->insert('ipd_payment', [
             'bill_id'       => $data['bill_id'],
             'admission_id'  => $data['admission_id'],
@@ -38,7 +53,7 @@ class IpdPayment extends BaseModel {
             'payment_mode'  => strtoupper($data['payment_mode']),
             'amount'        => $amount,
             'reference_no'  => $data['reference_no']  ?? null,
-            'is_insurance'  => 0,
+            'is_insurance'  => $isIns,
             'verified_status'      => ($data['payment_mode'] === 'CASH' ? 'VERIFIED' : 'PENDING'),
             'refund_reason'        => null,
             'original_payment_id'  => null,
@@ -47,6 +62,18 @@ class IpdPayment extends BaseModel {
             'created_by'    => $data['created_by'] ?? 'system',
             'created_at'    => $now,
         ]);
+
+        if ($isIns) {
+            $insRow = $this->fetchOne("SELECT insurance_id, received_amount, approved_amount FROM ipd_insurance WHERE bill_id = ?", [$data['bill_id']]);
+            if ($insRow) {
+                $newReceived = (float)$insRow['received_amount'] + $amount;
+                $pending     = max(0, (float)$insRow['approved_amount'] - $newReceived);
+                $this->db->update('ipd_insurance',
+                    ['received_amount' => $newReceived, 'pending_amount' => $pending, 'updated_at' => $now],
+                    '`insurance_id` = ?', [$insRow['insurance_id']]
+                );
+            }
+        }
 
         // Recalculate master
         require_once __DIR__ . '/IpdBillingMaster.php';

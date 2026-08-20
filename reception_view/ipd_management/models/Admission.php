@@ -568,14 +568,24 @@ class Admission extends BaseModel {
                     }
                 }
 
+                // Get valid schema columns
+                $schema = $this->db->fetchAll("DESCRIBE ipd_admissions");
+                $validColumns = array_column($schema, 'Field');
+
                 // Populate bed details for admission update
                 $data['ward'] = $bedDetails['ward_name'];
                 $data['floor_number'] = $bedDetails['floor_number'];
                 $data['floor_name'] = $bedDetails['floor_name'];
                 $data['ward_name'] = $bedDetails['ward_name'];
-                $data['ward_type'] = $bedDetails['ward_type'];
                 $data['room_no'] = $bedDetails['room_number'];
                 $data['room_name'] = $bedDetails['room_name'];
+                if (in_array('room_type', $validColumns)) $data['room_type'] = $bedDetails['room_type'];
+                if (in_array('ward_type', $validColumns)) $data['ward_type'] = $bedDetails['room_type'];
+                if (in_array('amount_per_day', $validColumns)) $data['amount_per_day'] = $bedDetails['amount_per_day'];
+                if (in_array('nursig_charge', $validColumns)) $data['nursig_charge'] = $bedDetails['nursig_charge'];
+                if (in_array('doctor_charge', $validColumns)) $data['doctor_charge'] = $bedDetails['doctor_charge'];
+                if (in_array('service_charge', $validColumns)) $data['service_charge'] = $bedDetails['service_charge'];
+                $data['bed_id'] = $newBedId;
 
                 // Allocate new bed
                 try {
@@ -587,27 +597,34 @@ class Admission extends BaseModel {
                     throw new Exception("Could not allocate new bed: " . $e->getMessage());
                 }
                 
-                // Update admission
-                $result = $this->update($id, $data);
-                
-                if ($result === 0) {
-                    throw new Exception('No changes were made to the admission record');
+                // Filter data to valid columns
+                $filteredData = [];
+                foreach ($data as $field => $value) {
+                    if (in_array($field, $validColumns)) {
+                        $filteredData[$field] = $value;
+                    }
                 }
+
+                // Update admission
+                $result = $this->update($id, $filteredData);
                 
                 $this->commit();
                 $transactionStarted = false;
-                return $result;
+                return true;
             } else {
-                // No bed change, just update
-                unset($data['bed_id']); // Don't update bed_id if not changing
-                unset($data['bed_id']); // Also unset bed_id
-                $result = $this->update($id, $data);
+                // No bed change, get valid columns and filter
+                $schema = $this->db->fetchAll("DESCRIBE ipd_admissions");
+                $validColumns = array_column($schema, 'Field');
                 
-                if ($result === 0) {
-                    throw new Exception('No changes were made to the admission record');
+                $filteredData = [];
+                foreach ($data as $field => $value) {
+                    if (in_array($field, $validColumns)) {
+                        $filteredData[$field] = $value;
+                    }
                 }
-                
-                return $result;
+
+                $result = $this->update($id, $filteredData);
+                return true;
             }
         } catch (Exception $e) {
             if ($transactionStarted) {

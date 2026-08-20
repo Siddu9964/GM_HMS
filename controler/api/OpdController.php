@@ -132,17 +132,21 @@ class OpdController extends BaseController
                                ELSE a.appointment_status 
                            END as appointment_status, 
                            p.patient_id, p.first_name, p.last_name, p.age, p.sex, p.phone,
-                           d.doctor_id, d.full_name as doctor_name, d.specialization, d.room_number
+                           COALESCE(NULLIF(a.specialization, ''), NULLIF(d.specialization, ''), 'General Medicine') as department,
+                           d.doctor_id, d.full_name as doctor_name, d.specialization, d.room_number,
+                           c.vital_signs, c.consultation_id, c.status as consult_status
                     FROM appointments a
                 JOIN patient p ON a.patient_id = p.patient_id
                 LEFT JOIN doctors d ON a.doctor_id = d.doctor_id
+                LEFT JOIN consultations c ON a.appointment_id COLLATE utf8mb4_unicode_ci = c.appointment_id
                 WHERE a.appointment_date = CURDATE() AND (a.appointment_type = 'OPD' OR a.appointment_type IS NULL)";
 
             $params = [];
 
             // SECURITY: Filter by Doctor ID if logged in as Doctor
-            if (session_status() === PHP_SESSION_NONE)
+            if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
                 session_start();
+            }
             if (isset($_SESSION['role']) && $_SESSION['role'] === 'Doctor' && isset($_SESSION['user_id'])) {
                 $sql .= " AND a.doctor_id = ?";
                 $params[] = $_SESSION['user_id'];
@@ -560,11 +564,19 @@ class OpdController extends BaseController
 
             // Total OPD Today
             $res = $this->db->fetchOne("SELECT count(*) as cnt FROM appointments WHERE appointment_date = CURDATE() AND (appointment_type = 'OPD' OR appointment_type IS NULL)", []);
-            $stats['total_opd'] = $res['cnt'];
+            $stats['total_opd'] = (int)($res['cnt'] ?? 0);
+
+            // Waiting in Queue Today
+            $res = $this->db->fetchOne("SELECT count(*) as cnt FROM appointments WHERE appointment_date = CURDATE() AND (appointment_type = 'OPD' OR appointment_type IS NULL) AND (appointment_status = '1' OR appointment_status = 'Pending' OR appointment_status = 'Scheduled')", []);
+            $stats['waiting_opd'] = (int)($res['cnt'] ?? 0);
+
+            // Completed Today
+            $res = $this->db->fetchOne("SELECT count(*) as cnt FROM appointments WHERE appointment_date = CURDATE() AND (appointment_type = 'OPD' OR appointment_type IS NULL) AND (appointment_status = '0' OR appointment_status = 'Completed')", []);
+            $stats['completed_opd'] = (int)($res['cnt'] ?? 0);
 
             // Doctors Active
             $res = $this->db->fetchOne("SELECT count(*) as cnt FROM doctors WHERE status = 'Active'");
-            $stats['active_doctors'] = $res['cnt'];
+            $stats['active_doctors'] = (int)($res['cnt'] ?? 0);
 
             // Revenue Today (from invoice)
             $res = $this->db->fetchOne("SELECT sum(amount) as total FROM opd_invoice WHERE date = ?", [$today]);

@@ -140,10 +140,10 @@ class AdmissionsController extends BaseController {
         try {
             $result = $this->model->updateAdmission($slNo, $data);
             
-            if ($result > 0) {
+            if ($result !== false) {
                 $this->success(['admission_id' => $id], 'Admission updated successfully');
             } else {
-                $this->error('Failed to update admission or no changes made', 400);
+                $this->error('Failed to update admission', 400);
             }
         } catch (Exception $e) {
             $this->error($e->getMessage(), 400);

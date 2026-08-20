@@ -606,7 +606,7 @@ if (!isset($_SESSION['user_id'])) {
             } else {
                 div.style.opacity = '0.55';
                 div.style.cursor = 'not-allowed';
-                div.onclick = () => alert('Selected medicine is currently out of stock!');
+                div.onclick = () => showCenterMessage(false, 'Out of Stock', 'Selected medicine is currently out of stock!');
             }
             suggestionsBox.appendChild(div);
         });
@@ -631,7 +631,7 @@ if (!isset($_SESSION['user_id'])) {
             if (existing.qty < maxStock) {
                 existing.qty += 1;
             } else {
-                alert('Cannot exceed available stock of ' + maxStock);
+                showCenterMessage(false, 'Stock Limit', 'Cannot exceed available stock of ' + maxStock);
             }
         } else {
             cart.push({
@@ -652,7 +652,7 @@ if (!isset($_SESSION['user_id'])) {
             let newQty = parseInt(qty) || 1;
             if (newQty < 1) newQty = 1;
             if (newQty > item.stock) {
-                alert('Cannot exceed available stock of ' + item.stock);
+                showCenterMessage(false, 'Stock Limit', 'Cannot exceed available stock of ' + item.stock);
                 newQty = item.stock;
             }
             item.qty = newQty;

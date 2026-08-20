@@ -186,14 +186,19 @@ class AppointmentModel
                 ? $data['patient_name'] 
                 : ($patient ? ($patient['first_name'] . ' ' . $patient['last_name']) : 'Unknown');
 
-            // Prevent multiple appointments for the same patient on the same day
+            // Prevent duplicate appointment at the EXACT SAME time slot with the same doctor
             $existing = $this->db->fetchOne(
-                "SELECT appointment_id FROM appointments WHERE patient_id = ? AND appointment_date = ? AND appointment_status != 'Cancelled'",
-                [$data['patient_id'], $data['appointment_date']]
+                "SELECT appointment_id FROM appointments 
+                 WHERE patient_id = ? 
+                   AND doctor_id = ? 
+                   AND appointment_date = ? 
+                   AND appointment_time = ? 
+                   AND appointment_status != 'Cancelled'",
+                [$data['patient_id'], $data['doctor_id'], $data['appointment_date'], $data['appointment_time']]
             );
             
             if ($existing) {
-                throw new Exception("Patient already has an appointment scheduled on this date.");
+                throw new Exception("Patient already has an appointment scheduled with this doctor at this exact time slot ({$data['appointment_time']}). Please select a different time slot.");
             }
 
             $doctor = $this->db->fetchOne(
@@ -239,39 +244,6 @@ class AppointmentModel
                 $data['payment_status'] ?? 'Pending',
                 $data['payment_mode'] ?? 'Cash'
             ]);
-
-            // Create billing if amount > 0
-            if (($data['total_amount'] ?? 0) > 0) {
-                try {
-                    $billingModel = new OpdBillingModel();
-                    $billId = $billingModel->createBill([
-                        'patient_id' => $data['patient_id'],
-                        'doctor_id' => $data['doctor_id'],
-                        'appointment_id' => $appointmentId,
-                        'created_by' => 'system_apt'
-                    ], [
-                        [
-                            'item_type' => 'Consultation',
-                            'item_name' => 'Consultation Fee',
-                            'unit_price' => floatval($data['consultation_fee'] ?? $data['total_amount']),
-                            'quantity' => 1,
-                            'is_taxable' => true,
-                            'tax_percentage' => 0,
-                            'discount_amount' => floatval($data['discount'] ?? 0)
-                        ]
-                    ]);
-
-                    if (($data['payment_status'] ?? 'Pending') === 'Paid') {
-                        $billingModel->recordPayment($billId, [
-                            'amount' => floatval($data['total_amount']),
-                            'payment_mode' => $data['payment_mode'] ?? 'Cash',
-                            'notes' => 'Paid at registration'
-                        ]);
-                    }
-                } catch (\Exception $e) {
-                    error_log("Billing warning during appointment creation: " . $e->getMessage());
-             }
-            }
 
             $this->db->commit();
             return $appointmentId;

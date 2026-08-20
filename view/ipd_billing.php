@@ -708,19 +708,143 @@ try {
                                 </div>
                             </div>
 
-                            <!-- Payment History Section -->
+                            <!-- Payment History & Inline Record Payment Section -->
                             <div class="panel-card" id="paymentHistoryCard">
                                 <div class="panel-card-head">
                                     <div class="panel-card-title">
-                                        <i data-lucide="credit-card"></i> Payment History
+                                        <i data-lucide="credit-card"></i> Record Payment & Payment History
                                         <span class="item-count-badge blue-badge" id="payCountBadge">0</span>
                                     </div>
                                     <div class="panel-card-actions">
-                                        <button class="btn-add-payment" onclick="billing.openPaymentModal('PARTIAL')">
-                                            <i data-lucide="plus-circle"></i> Record Payment
-                                        </button>
                                         <button class="btn-ins-receipt" id="btnInsReceipt" onclick="billing.openInsuranceReceiptModal()" style="display:none;">
                                             <i data-lucide="shield"></i> Insurance Receipt
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- ── INLINE RECORD PAYMENT FORM (ALWAYS VISIBLE BY DEFAULT) ── -->
+                                <div class="inline-payment-container" style="padding: 16px; background: #ffffff; border-bottom: 1.5px solid #1f6b4a;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(31,107,74,0.15);">
+                                        <div style="font-weight: 800; color: #1f6b4a; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                                            <i data-lucide="plus-circle" style="width: 18px; height: 18px;"></i> Quick Record Payment
+                                        </div>
+                                        <div style="font-size: 0.85rem; color: #1f6b4a; font-weight: 700; background: #e6f0eb; padding: 4px 12px; border-radius: 12px; border: 1px solid rgba(31,107,74,0.2);">
+                                            Current Balance Due: <span id="inlinePayBalanceVal" style="font-weight: 800; color: #1f6b4a;">₹0.00</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="bm-form-row two-col" style="margin-bottom: 12px;">
+                                        <div class="bm-form-group" style="margin-bottom: 0;">
+                                            <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Payment Date <span class="req">*</span></label>
+                                            <input type="date" id="inlinePayDate" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a; font-weight: 600;">
+                                        </div>
+                                        <div class="bm-form-group" style="margin-bottom: 0;">
+                                            <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Payment Type <span class="req">*</span></label>
+                                            <div class="pay-type-group" id="inlinePayTypeGroup">
+                                                <button class="pay-type-btn" data-type="ADVANCE">Advance</button>
+                                                <button class="pay-type-btn active" data-type="PARTIAL">Partial</button>
+                                                <button class="pay-type-btn" data-type="FINAL">Final</button>
+                                                <button class="pay-type-btn refund-btn" data-type="REFUND">Refund</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bm-form-group" style="margin-bottom: 12px;">
+                                        <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Payment Mode <span class="req">*</span></label>
+                                        <div class="pay-mode-group" id="inlinePayModeGroup">
+                                            <button class="pay-mode-btn active" data-mode="CASH"><i data-lucide="banknote"></i> Cash</button>
+                                            <button class="pay-mode-btn" data-mode="UPI"><i data-lucide="smartphone"></i> UPI</button>
+                                            <button class="pay-mode-btn" data-mode="CARD"><i data-lucide="credit-card"></i> Card</button>
+                                            <button class="pay-mode-btn" data-mode="BANK"><i data-lucide="landmark"></i> Bank</button>
+                                            <button class="pay-mode-btn" data-mode="CHEQUE"><i data-lucide="receipt"></i> Cheque</button>
+                                            <button class="pay-mode-btn" data-mode="INSURANCE"><i data-lucide="shield"></i> Insurance</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Insurance / TPA Sub-section (Shown when Insurance mode is selected) -->
+                                    <div id="inlineInsuranceBlock" style="display:none; background: rgba(31,107,74,0.05); border: 1.5px dashed #1f6b4a; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                                        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
+                                            <label style="font-size: 11px; font-weight: 800; color: #1f6b4a; text-transform: uppercase; margin: 0;">Sponsor Type <span class="req">*</span>:</label>
+                                            <div class="pay-type-group" id="inlineSponsorTypeGroup" style="display: flex; gap: 6px;">
+                                                <button type="button" class="pay-type-btn active" data-sponsor-type="INSURANCE" style="padding: 4px 14px; min-height: 32px; font-size: 12px;"><i data-lucide="shield"></i> Insurance</button>
+                                                <button type="button" class="pay-type-btn" data-sponsor-type="TPA" style="padding: 4px 14px; min-height: 32px; font-size: 12px;"><i data-lucide="building-2"></i> TPA</button>
+                                            </div>
+                                        </div>
+
+                                        <div style="position: relative;">
+                                            <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">
+                                                <span id="inlineSponsorLabel">Insurance Company Name</span> <span class="req">*</span>
+                                                <span style="background: #1f6b4a; color: #f3efe6; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 700;"><i class="fas fa-search"></i> Advance Search</span>
+                                            </label>
+                                            <input type="text" id="inlineSponsorSearchInput" placeholder="Type to search Insurance company (e.g. Star Health, HDFC ERGO...)" autocomplete="off" style="width: 100%; height: 38px; padding: 0 10px; border: 1.5px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a; font-weight: 700;">
+                                            <input type="hidden" id="inlineSelectedSponsorName">
+                                            <div id="inlineSponsorResults" style="display:none; position:absolute; left:0; right:0; top:100%; z-index:100; background:#ffffff; border:1.5px solid #1f6b4a; border-radius:6px; max-height:220px; overflow-y:auto; box-shadow:0 4px 12px rgba(31,107,74,0.15); margin-top:2px;"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bm-form-row two-col" style="margin-bottom: 12px;">
+                                        <div class="bm-form-group" style="margin-bottom: 0;">
+                                            <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Amount (₹) <span class="req">*</span></label>
+                                            <div style="position:relative;">
+                                                <input type="number" id="inlinePayAmount" min="0.01" step="0.01" placeholder="0.00" oninput="billing.updateInlinePayPreview()" style="width: 100%; height: 38px; padding: 0 50px 0 10px; border: 1px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a; font-weight: 800; font-size: 15px;">
+                                                <button class="btn-full-amount" id="btnInlineFullAmount" onclick="billing.fillInlineFullAmount()" title="Fill full balance" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; background: #1f6b4a; color: #f3efe6; border: none; font-weight: 700; cursor: pointer;">Full</button>
+                                            </div>
+                                        </div>
+                                        <div class="bm-form-group" id="inlinePayRefGroup" style="margin-bottom: 0; display:none;">
+                                            <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Reference No.</label>
+                                            <input type="text" id="inlinePayRef" placeholder="UPI txn / Cheque no." style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a; font-weight: 600;">
+                                        </div>
+                                    </div>
+
+                                    <!-- Refund extra fields -->
+                                    <div id="inlineRefundExtraFields" style="display:none; margin-bottom: 12px;">
+                                        <div class="bm-form-row two-col">
+                                            <div class="bm-form-group" style="margin-bottom: 0;">
+                                                <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Refund Reason <span class="req">*</span></label>
+                                                <input type="text" id="inlineRefundReason" placeholder="Reason for refund (required)" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a;">
+                                            </div>
+                                            <div class="bm-form-group" style="margin-bottom: 0;">
+                                                <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Authorized By <span class="req">*</span></label>
+                                                <input type="text" id="inlineRefundApprovedBy" placeholder="Manager / Doctor name" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Discount / Concession row -->
+                                    <div class="bm-form-row two-col" style="margin-bottom: 12px;">
+                                        <div class="bm-form-group" style="margin-bottom: 0;">
+                                            <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">
+                                                Discount / Concession
+                                                <span style="font-size: 10px; opacity: 0.8; font-weight: 500; text-transform: none;">(₹ or %)</span>
+                                            </label>
+                                            <div style="display: flex; gap: 8px;">
+                                                <div style="position: relative; width: 60%;">
+                                                    <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #1f6b4a; font-weight: 700;">₹</span>
+                                                    <input type="number" id="inlinePayDiscount" min="0" step="0.01" placeholder="0.00" oninput="billing.calcInlineDiscountAmt()" style="width: 100%; height: 38px; padding: 0 10px 0 22px; border: 1px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a; font-weight: 700; font-size: 14px;">
+                                                </div>
+                                                <div style="position: relative; width: 40%;">
+                                                    <input type="number" id="inlinePayDiscountPct" min="0" max="100" step="0.1" placeholder="0" oninput="billing.calcInlineDiscountPct()" style="width: 100%; height: 38px; padding: 0 22px 0 8px; border: 1px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a; font-weight: 700; font-size: 14px;">
+                                                    <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: #1f6b4a; font-weight: 700;">%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="bm-form-group" style="margin-bottom: 0;">
+                                            <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Discount Reason</label>
+                                            <input type="text" id="inlinePayDiscountReason" placeholder="Reason (e.g. Concession, Staff)" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a; font-weight: 600;">
+                                        </div>
+                                    </div>
+
+                                    <div class="bm-form-group" style="margin-bottom: 14px;">
+                                        <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Remarks</label>
+                                        <input type="text" id="inlinePayRemarks" placeholder="Optional notes" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a; font-weight: 600;">
+                                    </div>
+
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(31,107,74,0.15);">
+                                        <div style="font-size: 13px; color: #1f6b4a; font-weight: 600;">
+                                            Balance after payment: <strong id="inlinePayAfterVal" style="color: #166534; font-size: 15px; font-weight: 800;">—</strong>
+                                        </div>
+                                        <button class="bm-btn bm-btn-primary" id="btnSaveInlinePayment" onclick="billing.saveInlinePayment()" style="background: #1f6b4a; color: #f3efe6; padding: 10px 24px; border-radius: 6px; font-weight: 800; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; box-shadow: 0 2px 8px rgba(31,107,74,0.25);">
+                                            <i data-lucide="check-circle-2" style="width: 18px; height: 18px;"></i> Record Payment
                                         </button>
                                     </div>
                                 </div>
@@ -728,6 +852,7 @@ try {
                                     <table class="billing-items-table" id="paymentsTable">
                                         <thead>
                                             <tr>
+                                                <th style="width: 50px; text-align: center;">#</th>
                                                 <th>Date</th>
                                                 <th>Type</th>
                                                 <th>Mode</th>
@@ -738,7 +863,7 @@ try {
                                         </thead>
                                         <tbody id="paymentsTableBody">
                                             <tr class="empty-row" id="paymentsEmptyRow">
-                                                <td colspan="6">
+                                                <td colspan="7">
                                                     <div class="table-empty-state">
                                                         <i data-lucide="wallet"></i>
                                                         <p>No payments recorded yet</p>
@@ -1657,6 +1782,28 @@ try {
                     <button class="pay-mode-btn" data-mode="CARD"><i data-lucide="credit-card"></i> Card</button>
                     <button class="pay-mode-btn" data-mode="BANK"><i data-lucide="landmark"></i> Bank</button>
                     <button class="pay-mode-btn" data-mode="CHEQUE"><i data-lucide="receipt"></i> Cheque</button>
+                    <button class="pay-mode-btn" data-mode="INSURANCE"><i data-lucide="shield"></i> Insurance</button>
+                </div>
+            </div>
+
+            <!-- Insurance / TPA Sub-section for Modal -->
+            <div id="modalInsuranceBlock" style="display:none; background: rgba(31,107,74,0.05); border: 1.5px dashed #1f6b4a; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
+                    <label style="font-size: 11px; font-weight: 800; color: #1f6b4a; text-transform: uppercase; margin: 0;">Sponsor Type <span class="req">*</span>:</label>
+                    <div class="pay-type-group" id="modalSponsorTypeGroup" style="display: flex; gap: 6px;">
+                        <button type="button" class="pay-type-btn active" data-sponsor-type="INSURANCE" style="padding: 4px 14px; min-height: 32px; font-size: 12px;"><i data-lucide="shield"></i> Insurance</button>
+                        <button type="button" class="pay-type-btn" data-sponsor-type="TPA" style="padding: 4px 14px; min-height: 32px; font-size: 12px;"><i data-lucide="building-2"></i> TPA</button>
+                    </div>
+                </div>
+
+                <div style="position: relative;">
+                    <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">
+                        <span id="modalSponsorLabel">Insurance Company Name</span> <span class="req">*</span>
+                        <span style="background: #1f6b4a; color: #f3efe6; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 700;"><i class="fas fa-search"></i> Advance Search</span>
+                    </label>
+                    <input type="text" id="modalSponsorSearchInput" placeholder="Type to search Insurance company (e.g. Star Health, HDFC ERGO...)" autocomplete="off" style="width: 100%; height: 38px; padding: 0 10px; border: 1.5px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a; font-weight: 700;">
+                    <input type="hidden" id="modalSelectedSponsorName">
+                    <div id="modalSponsorResults" style="display:none; position:absolute; left:0; right:0; top:100%; z-index:100; background:#ffffff; border:1.5px solid #1f6b4a; border-radius:6px; max-height:220px; overflow-y:auto; box-shadow:0 4px 12px rgba(31,107,74,0.15); margin-top:2px;"></div>
                 </div>
             </div>
             <div class="bm-form-row two-col">
@@ -1683,6 +1830,27 @@ try {
                     <input type="text" id="refundApprovedBy" placeholder="Manager / Doctor name">
                 </div>
             </div>
+            <!-- Discount / Concession row for Modal -->
+            <div class="bm-form-row two-col" style="margin-bottom: 12px;">
+                <div class="bm-form-group">
+                    <label>Discount / Concession (₹ or %)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <div style="position: relative; width: 60%;">
+                            <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-weight: 700;">₹</span>
+                            <input type="number" id="modalPayDiscount" min="0" step="0.01" placeholder="0.00" oninput="billing.calcModalDiscountAmt()" style="padding-left: 22px;">
+                        </div>
+                        <div style="position: relative; width: 40%;">
+                            <input type="number" id="modalPayDiscountPct" min="0" max="100" step="0.1" placeholder="0" oninput="billing.calcModalDiscountPct()" style="padding-right: 22px;">
+                            <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-weight: 700;">%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bm-form-group">
+                    <label>Discount Reason</label>
+                    <input type="text" id="modalPayDiscountReason" placeholder="Reason (e.g. Concession, Management)">
+                </div>
+            </div>
+
             <div class="bm-form-group">
                 <label>Remarks</label>
                 <input type="text" id="payRemarks" placeholder="Optional notes">

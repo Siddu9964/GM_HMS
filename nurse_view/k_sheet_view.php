@@ -468,8 +468,8 @@ try {
                             <thead>
                                 <tr>
                                     <th>Transfer Timestamp</th>
-                                    <th>Shifted From Ward/Bed</th>
-                                    <th>Shifted To Ward/Bed</th>
+                                    <th>Shifted From (Location)</th>
+                                    <th>Shifted To (Destination)</th>
                                     <th>Clinical Reason / Remarks</th>
                                     <th>Transfer Nurse</th>
                                 </tr>
@@ -480,13 +480,31 @@ try {
                                     if (strpos($tDate, 'T') !== false) {
                                         $tDate = str_replace('T', ' ', $tDate);
                                     }
+                                    $fromTxt = ($v['from_ward'] ?? $v['from_bed'] ?? '-') . (!empty($v['from_bed_no']) ? ' (Bed ' . $v['from_bed_no'] . ')' : '');
+                                    $toTxt = ($v['to_ward'] ?? $v['to_bed'] ?? '-') . (!empty($v['to_bed_no']) ? ' (Bed ' . $v['to_bed_no'] . ')' : '');
+                                    $isEmerg = !empty($v['is_emergency']) && $v['is_emergency'] == 1;
                                 ?>
                                 <tr>
                                     <td><strong><?php echo htmlspecialchars($tDate); ?></strong></td>
-                                    <td><?php echo htmlspecialchars($v['from_ward'] ?? $v['from_bed'] ?? '-'); ?></td>
-                                    <td><strong style="color: #1F6B4A;"><?php echo htmlspecialchars($v['to_ward'] ?? $v['to_bed'] ?? '-'); ?></strong></td>
-                                    <td><?php echo htmlspecialchars($v['transfer_remarks'] ?? $v['remarks'] ?? $v['reason'] ?? '-'); ?></td>
-                                    <td><small style="color:#527967;"><?php echo htmlspecialchars($v['created_by_name'] ?? $v['nurse_sign'] ?? $v['transferred_by'] ?? '-'); ?></small></td>
+                                    <td>
+                                        <?php if (!empty($v['from_floor'])): ?><small style="color:#527967;"><?php echo htmlspecialchars($v['from_floor']); ?> • </small><?php endif; ?>
+                                        <span><?php echo htmlspecialchars($fromTxt); ?></span>
+                                    </td>
+                                    <td>
+                                        <strong style="color: #1F6B4A;"><?php echo htmlspecialchars($toTxt); ?></strong>
+                                        <?php if (!empty($v['to_floor']) || !empty($v['to_room_type'])): ?>
+                                            <br><small style="color:#527967;"><?php echo htmlspecialchars(trim(($v['to_floor'] ?? '') . ' • ' . ($v['to_room_type'] ?? ''), ' •')); ?></small>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php echo htmlspecialchars($v['transfer_remarks'] ?? $v['remarks'] ?? $v['reason'] ?? '-'); ?>
+                                        <?php if ($isEmerg): ?>
+                                            <br><span style="display:inline-flex; align-items:center; gap:4px; background:#fee2e2; color:#dc2626; font-size:0.7rem; font-weight:800; padding:2px 6px; border-radius:4px; border:1px solid #fca5a5; margin-top:2px;">
+                                                <i class="fas fa-ambulance"></i> EMERGENCY
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><small style="color:#527967; font-weight:600;"><?php echo htmlspecialchars($v['created_by_name'] ?? $v['nurse_name'] ?? $v['nurse_sign'] ?? $v['transferred_by'] ?? '-'); ?></small></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>

@@ -138,7 +138,7 @@ if (!$billId) { echo "No Bill ID provided."; exit(); }
                GST NO: 29AAFCP8756N3ZE</p>
         </div>
 
-        <div class="bill-title">Bill of Supply</div>
+        <div class="bill-title">Interim Bill / Statement of Account</div>
 
         <div class="meta-grid-top" id="metaTop"></div>
         <div class="meta-grid-details" id="metaDetails"></div>
@@ -146,12 +146,9 @@ if (!$billId) { echo "No Bill ID provided."; exit(); }
         <table class="items-table">
             <thead>
                 <tr>
-                    <th style="width:15%">Date</th>
-                    <th style="width:40%">Particulars</th>
-                    <th style="width:10%">HSN/SAC</th>
-                    <th style="width:10%" class="right">Unit</th>
-                    <th style="width:10%" class="right">Unit Amt.</th>
-                    <th style="width:15%" class="right">Service Amt</th>
+                    <th style="width:10%">Sl.No</th>
+                    <th style="width:65%">Particulars / Service Category</th>
+                    <th style="width:25%" class="right">Amount (₹)</th>
                 </tr>
             </thead>
             <tbody id="itemsBody"></tbody>
@@ -234,63 +231,100 @@ function renderBill(b) {
             <div class="meta-row"><div class="meta-label">Patient Name</div><div class="meta-val">: ${b.patient_name || ''}</div></div>
             <div class="meta-row"><div class="meta-label">Address</div><div class="meta-val">: ${b.address || ''}</div></div>
             <div class="meta-row"><div class="meta-label">Billing Category</div><div class="meta-val">: ${b.bill_type || 'GENERAL'}</div></div>
-            <div class="meta-row"><div class="meta-label">Discharged Bed</div><div class="meta-val">: ${b.ward_name || ''}/${b.room_name || ''}/${b.bed_number || ''}</div></div>
+            <div class="meta-row"><div class="meta-label">Ward / Bed</div><div class="meta-val">: ${b.ward_name || ''}/${b.room_name || ''}/${b.bed_number || ''}</div></div>
             <div class="meta-row"><div class="meta-label">Primary Dr.</div><div class="meta-val">: ${b.doctor_name || ''}</div></div>
         </div>
         <div>
             <div class="meta-row"><div class="meta-label">Age/Sex/Mobile No</div><div class="meta-val">: ${b.age||''} / ${b.sex||''} / ${b.phone||''}</div></div>
             <div class="meta-row"><div class="meta-label">Admission Date</div><div class="meta-val">: ${fmtDate(b.admission_date)}</div></div>
-            <div class="meta-row"><div class="meta-label">Discharge Date</div><div class="meta-val">: ${b.discharge_date ? fmtDate(b.discharge_date) : 'Not Discharged'}</div></div>
-            <div class="meta-row"><div class="meta-label">Sponsor Name</div><div class="meta-val">: ${b.insurance_company_id || 'SELF'}</div></div>
+            <div class="meta-row"><div class="meta-label">Discharge Date</div><div class="meta-val">: ${b.discharge_date ? fmtDate(b.discharge_date) : 'Under Treatment (Admitted)'}</div></div>
+            <div class="meta-row"><div class="meta-label">Sponsor Name</div><div class="meta-val">: ${b.sponsor || b.insurance_company_name || b.insurance_company_id || 'SELF'}</div></div>
         </div>
     `;
 
-    // Items Grouping
+    // Financial Summary Category Breakdown
+    const catMap = {
+        'ROOM_RENT':         { name: 'Room Rent & Bed Charges', amt: parseFloat(b.room_charges || 0) },
+        'DOCTOR_VISIT':      { name: 'Doctor Consultation & Round Visits', amt: parseFloat(b.doctor_charges || 0) },
+        'LAB':               { name: 'Laboratory Investigations', amt: parseFloat(b.lab_charges || 0) },
+        'RADIOLOGY':         { name: 'Radiology & Imaging Services', amt: parseFloat(b.radiology_charges || 0) },
+        'PHARMACY':          { name: 'Pharmacy Medicines & Drugs', amt: parseFloat(b.pharmacy_charges || 0) },
+        'OT':                { name: 'Operation Theatre (OT) Charges', amt: parseFloat(b.ot_charges || 0) },
+        'PROCEDURE':         { name: 'Hospital Procedures & Nursing Care', amt: parseFloat(b.procedure_charges || 0) },
+        'DIALYSIS':          { name: 'Dialysis Services', amt: 0 },
+        'OXYGEN':            { name: 'Oxygen Therapy', amt: 0 },
+        'VENTILATION':       { name: 'Ventilator Support', amt: 0 },
+        'BLOOD_TRANSFUSION': { name: 'Blood Transfusion Charges', amt: 0 },
+        'WARD_TRANSFER':     { name: 'Ward Transfer Charges', amt: 0 },
+        'CONSUMABLE':        { name: 'Medical Consumables & Disposables', amt: parseFloat(b.consumable_charges || 0) },
+        'OTHER':             { name: 'Other & Miscellaneous Services', amt: parseFloat(b.other_charges || 0) }
+    };
+
+    // Aggregate from individual items to ensure complete coverage
     const items = b.items || [];
-    const grouped = {};
-    items.forEach(it => {
-        let type = it.charge_type;
-        if(type === 'ROOM_RENT') type = 'BED CHARGES';
-        else if(type === 'DOCTOR_VISIT') type = 'DOCTOR FEE';
-        if(!grouped[type]) grouped[type] = [];
-        grouped[type].push(it);
-    });
+    if (items.length > 0) {
+        const itemTotals = {};
+        items.forEach(it => {
+            if (it.status !== 'CANCELLED') {
+                let cType = it.charge_type || 'OTHER';
+                if (cType === 'MISC') cType = 'OTHER';
+                itemTotals[cType] = (itemTotals[cType] || 0) + parseFloat(it.total_amount || it.total_price || 0);
+            }
+        });
+
+        for (const [type, sum] of Object.entries(itemTotals)) {
+            if (catMap[type]) {
+                if (catMap[type].amt === 0 || isNaN(catMap[type].amt)) {
+                    catMap[type].amt = sum;
+                }
+            } else {
+                catMap[type] = { name: type.replace(/_/g, ' '), amt: sum };
+            }
+        }
+    }
+
+    // Filter active categories with amount > 0
+    let activeCategories = Object.values(catMap).filter(c => c.amt > 0);
+    
+    // If no charges yet, show placeholder
+    if (activeCategories.length === 0) {
+        activeCategories = [
+            { name: 'Room Rent & Bed Charges', amt: 0 },
+            { name: 'Doctor Consultation & Round Visits', amt: 0 },
+            { name: 'Laboratory Investigations', amt: 0 },
+            { name: 'Pharmacy Medicines & Drugs', amt: 0 }
+        ];
+    }
 
     let html = '';
-    for(const [type, list] of Object.entries(grouped)) {
-        html += `<tr><td colspan="6" class="group-header">${type}</td></tr>`;
-        
-        let typeTotal = 0;
-        list.forEach(it => {
-            typeTotal += parseFloat(it.total_amount || it.total_price || 0);
-            html += `
-            <tr>
-                <td>${fmtDateOnly(it.charge_date || it.created_at)}</td>
-                <td>${it.description || it.item_name}</td>
-                <td></td>
-                <td class="right">${it.quantity || '1.00'}</td>
-                <td class="right">${fmt(it.unit_price)}</td>
-                <td class="right">${fmt(it.total_amount || it.total_price)}</td>
-            </tr>`;
-        });
-        
+    let slNo = 1;
+    let computedGross = 0;
+
+    activeCategories.forEach(cat => {
+        computedGross += cat.amt;
         html += `
-        <tr>
-            <td colspan="4"></td>
-            <td style="border-top:1px solid #000; border-bottom:1px solid #000;"></td>
-            <td class="right" style="border-top:1px solid #000; border-bottom:1px solid #000; font-weight:bold;">${fmt(typeTotal)}</td>
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+            <td style="padding: 9px 5px; font-weight: bold;">${slNo++}</td>
+            <td style="padding: 9px 5px; font-weight: 600;">${cat.name}</td>
+            <td class="right" style="padding: 9px 5px; font-weight: bold;">${fmt(cat.amt)}</td>
         </tr>`;
-    }
-    
+    });
+
     document.getElementById('itemsBody').innerHTML = html;
 
-    // Totals
+    // Totals Section
+    const subtotal = parseFloat(b.subtotal) || computedGross;
+    const discount = parseFloat(b.discount_amount) || 0;
+    const grandTotal = parseFloat(b.grand_total) || Math.max(0, subtotal - discount);
+    const amountPaid = parseFloat(b.amount_paid) || 0;
+    const balanceDue = parseFloat(b.balance_due) || Math.max(0, grandTotal - amountPaid);
+
     document.getElementById('totalsBox').innerHTML = `
-        <div class="total-row"><span>Total Gross Amount</span><span>${fmt(b.subtotal)}</span></div>
-        <div class="total-row"><span>Discount</span><span>${fmt(b.discount_amount)}</span></div>
-        <div class="total-row"><span>Net Amount</span><span>${fmt(b.grand_total)}</span></div>
-        <div class="total-row"><span>Advance/Paid</span><span>${fmt(b.amount_paid)}</span></div>
-        <div class="total-row grand"><span>Balance Due</span><span>${fmt(b.balance_due)}</span></div>
+        <div class="total-row"><span>Total Gross Amount</span><span>${fmt(subtotal)}</span></div>
+        <div class="total-row"><span>Discount</span><span>${fmt(discount)}</span></div>
+        <div class="total-row" style="font-weight: 600;"><span>Net Amount</span><span>${fmt(grandTotal)}</span></div>
+        <div class="total-row" style="color: #166534; font-weight: 600;"><span>Advance / Total Paid</span><span>${fmt(amountPaid)}</span></div>
+        <div class="total-row grand"><span>Balance Due</span><span>${fmt(balanceDue)}</span></div>
     `;
 }
 

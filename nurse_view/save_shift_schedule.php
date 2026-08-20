@@ -54,21 +54,9 @@ try {
             continue;
         }
 
-        // 1. Room Duplicate Check (same floor, ward, room, date, shift)
-        $roomSlotKey = $fName . '|' . $wName . '|' . $rType . '|' . $sDate . '|' . $sType;
-        if (isset($occupiedSlots[$roomSlotKey]) && $occupiedSlots[$roomSlotKey]['nurse_id'] !== $nId) {
-            echo json_encode([
-                'status' => 'error',
-                'message' => "This floor and room are already assigned to a nurse for the selected date range. Please change the From Date, To Date, or select a different room."
-            ]);
-            if(isset($conn)) $conn->rollback();
-            exit;
-        }
-        $occupiedSlots[$roomSlotKey] = ['nurse_id' => $nId, 'nurse_name' => $nName];
-
-        // 2. Nurse Duplicate Check (same nurse on same date & shift in multiple rooms)
+        // Nurse Duplicate Check (same nurse on same date & shift in multiple rooms)
         $nurseSlotKey = $nId . '|' . $sDate . '|' . $sType;
-        if (isset($nurseDutySlots[$nurseSlotKey])) {
+        if (isset($nurseDutySlots[$nurseSlotKey]) && $nurseDutySlots[$nurseSlotKey]['ward_name'] !== $wName) {
             $prevLoc = $nurseDutySlots[$nurseSlotKey]['ward_name'] ?: 'another ward';
             echo json_encode([
                 'status' => 'error',
@@ -80,7 +68,7 @@ try {
         $nurseDutySlots[$nurseSlotKey] = ['ward_name' => $wName, 'floor_name' => $fName];
     }
 
-    // Check overlapping external schedules in database
+    // Check overlapping external schedules in database for the same nurse
     $stmtCheckOverlap = $conn->prepare("
         SELECT floor_name, ward_name, room_type, start_date, end_date, shift_data
         FROM shift_schedules
@@ -102,23 +90,12 @@ try {
                 if ($extDate >= $startDate && $extDate <= $endDate) {
                     $extFloor = $overlapRow['floor_name'];
                     $extWard = $overlapRow['ward_name'];
-                    $extRoomType = $overlapRow['room_type'];
                     $extType = $extShift['shift_type'];
                     $extNurseId = $extShift['nurse_id'];
                     $extNurseName = $extShift['nurse_name'];
 
-                    $targetKey = $extFloor . '|' . $extWard . '|' . $extRoomType . '|' . $extDate . '|' . $extType;
-                    if (isset($occupiedSlots[$targetKey])) {
-                        echo json_encode([
-                            'status' => 'error',
-                            'message' => "This floor and room are already assigned to a nurse for the selected date range. Please change the From Date, To Date, or select a different room."
-                        ]);
-                        if(isset($conn)) $conn->rollback();
-                        exit;
-                    }
-
                     $nurseKey = $extNurseId . '|' . $extDate . '|' . $extType;
-                    if (isset($nurseDutySlots[$nurseKey])) {
+                    if (isset($nurseDutySlots[$nurseKey]) && $nurseDutySlots[$nurseKey]['ward_name'] !== $extWard) {
                         echo json_encode([
                             'status' => 'error',
                             'message' => "Nurse {$extNurseName} is already assigned to {$extWard} ({$extFloor}) on {$extDate} in an overlapping schedule. Please resolve the schedule conflict."

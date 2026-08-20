@@ -18,6 +18,15 @@ const billing = (function () {
     window.allAdmittedPatientsList = [];
     window.currentPatientSort = { col: 'admission_date', asc: false };
 
+    let currentInlinePayType = 'PARTIAL';
+    let currentInlinePayMode = 'CASH';
+    let currentInlineSponsorType = 'INSURANCE';
+    let currentModalSponsorType = 'INSURANCE';
+    let inlineSponsorSearchDebounce = null;
+    let modalSponsorSearchDebounce = null;
+    let isSavingInlinePayment = false;
+    let isSavingModalPayment = false;
+
     const API_URL = window.BILLING_API || '/GM_HMS/api/';
     const USER_ROLE = window.USER_ROLE || 'Receptionist';
 
@@ -28,6 +37,8 @@ const billing = (function () {
         initSearch();
         initShortcuts();
         initCloseClick();
+        initInlinePayment();
+        initSponsorSearch();
         loadAllAdmittedPatients();
     }
 
@@ -294,6 +305,9 @@ const billing = (function () {
         document.getElementById('btnAddCharge').disabled = isLocked;
         document.querySelector('.btn-room-rent').disabled = isLocked;
         document.querySelector('.fs-btn-discount').disabled = isLocked;
+
+        // Update Inline Payment Form
+        updateInlinePaymentUI();
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -539,16 +553,18 @@ const billing = (function () {
             if (pay.payment_mode === 'INSURANCE') modeIcon = 'shield';
 
             const isRefund = pay.payment_type === 'REFUND';
+            const status = pay.verified_status || 'VERIFIED';
+            const isVerified = (status === 'VERIFIED');
 
             html += `
                 <tr style="border-bottom: 1px solid rgba(31, 107, 74, 0.2); color: #1f6b4a;">
-                    <td style="padding: 10px 14px; font-weight: 700;">${index + 1}</td>
+                    <td style="padding: 10px 14px; font-weight: 700; text-align: center; width: 50px;">${index + 1}</td>
                     <td style="padding: 10px 14px; font-weight: 600;">${dateStr}</td>
                     <td style="padding: 10px 14px;"><span style="background: #f3efe6; color: #1f6b4a; border: 1px solid #1f6b4a; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">${pay.payment_type}</span></td>
                     <td style="padding: 10px 14px; font-weight: 600;"><i class="fas ${modeIcon} pay-mode-icon" style="color: #1f6b4a; margin-right: 4px;"></i> ${pay.payment_mode}</td>
                     <td style="padding: 10px 14px; font-weight: 800; color: #1f6b4a;">${isRefund ? '-' : ''}₹${amount}</td>
                     <td style="padding: 10px 14px; opacity: 0.85;">${pay.reference_no || '—'}</td>
-                    <td style="padding: 10px 14px;"><span style="background: #1f6b4a; color: #f3efe6; border: 1px solid #1f6b4a; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem;">${pay.verified_status === 'VERIFIED' ? '✓' : '⏳'} ${pay.verified_status}</span></td>
+                    <td style="padding: 10px 14px;"><span style="background: ${isVerified ? '#1f6b4a' : '#d97706'}; color: #f3efe6; border: 1px solid ${isVerified ? '#1f6b4a' : '#d97706'}; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">${isVerified ? '✓' : '⏳'} ${status}</span></td>
                 </tr>
             `;
         });
@@ -2672,15 +2688,19 @@ const billing = (function () {
         if (!currentMaster) return;
 
         document.getElementById('payDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('payAmount').value = '';
+        const bal = parseFloat(currentMaster.balance_due) || 0;
+        document.getElementById('payAmount').value = bal > 0 ? bal.toFixed(2) : '';
         document.getElementById('payRef').value = '';
         document.getElementById('payRemarks').value = '';
 
-        const bal = parseFloat(currentMaster.balance_due);
         document.getElementById('payBalanceVal').textContent = `₹${bal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
         // Smart Type Suggestion
-        if (parseFloat(currentMaster.amount_paid) === 0) suggestedType = 'ADVANCE';
+        if (parseFloat(currentMaster.amount_paid) === 0) {
+            suggestedType = 'ADVANCE';
+        } else if (bal <= 0) {
+            suggestedType = 'FINAL';
+        }
 
         document.querySelectorAll('.pay-type-btn').forEach(b => {
             b.classList.remove('active');
@@ -2694,9 +2714,46 @@ const billing = (function () {
         });
         currentPayMode = 'CASH';
 
+        const curDiscAmt = parseFloat(currentMaster.discount_amount) || 0;
+        const curDiscPct = parseFloat(currentMaster.discount_percentage) || 0;
+        const curNotes = currentMaster.notes || '';
+        if (document.getElementById('modalPayDiscount')) document.getElementById('modalPayDiscount').value = curDiscAmt > 0 ? curDiscAmt.toFixed(2) : '';
+        if (document.getElementById('modalPayDiscountPct')) document.getElementById('modalPayDiscountPct').value = curDiscPct > 0 ? curDiscPct.toFixed(1) : '';
+        if (document.getElementById('modalPayDiscountReason')) document.getElementById('modalPayDiscountReason').value = curNotes;
+
         togglePaymentFields();
         updatePayPreview();
         openModal('modalPayment');
+    }
+
+    function calcModalDiscountAmt() {
+        if (!currentMaster) return;
+        const sub = parseFloat(currentMaster.subtotal) || 0;
+        const amt = parseFloat(document.getElementById('modalPayDiscount').value) || 0;
+        if (sub > 0 && amt <= sub) {
+            document.getElementById('modalPayDiscountPct').value = ((amt / sub) * 100).toFixed(1);
+        } else if (amt > sub) {
+            document.getElementById('modalPayDiscount').value = sub.toFixed(2);
+            document.getElementById('modalPayDiscountPct').value = '100';
+        } else {
+            document.getElementById('modalPayDiscountPct').value = '';
+        }
+        updatePayPreview();
+    }
+
+    function calcModalDiscountPct() {
+        if (!currentMaster) return;
+        const sub = parseFloat(currentMaster.subtotal) || 0;
+        const pct = parseFloat(document.getElementById('modalPayDiscountPct').value) || 0;
+        if (pct >= 0 && pct <= 100) {
+            document.getElementById('modalPayDiscount').value = (sub * pct / 100).toFixed(2);
+        } else if (pct > 100) {
+            document.getElementById('modalPayDiscountPct').value = '100';
+            document.getElementById('modalPayDiscount').value = sub.toFixed(2);
+        } else {
+            document.getElementById('modalPayDiscount').value = '';
+        }
+        updatePayPreview();
     }
 
     // Event delegation for Pay Type
@@ -2724,8 +2781,9 @@ const billing = (function () {
     function togglePaymentFields() {
         const refGrp = document.getElementById('payRefGroup');
         const refInp = document.getElementById('payRef');
+        const insBlock = document.getElementById('modalInsuranceBlock');
 
-        if (currentPayMode === 'CASH') {
+        if (currentPayMode === 'CASH' || currentPayMode === 'INSURANCE') {
             refGrp.style.display = 'none';
         } else {
             refGrp.style.display = 'block';
@@ -2733,6 +2791,15 @@ const billing = (function () {
             if (currentPayMode === 'CARD') refInp.placeholder = 'Card Auth Code / Last 4 digits';
             if (currentPayMode === 'BANK') refInp.placeholder = 'NEFT/RTGS UTR';
             if (currentPayMode === 'CHEQUE') refInp.placeholder = 'Cheque No. & Bank Name';
+        }
+
+        if (insBlock) {
+            if (currentPayMode === 'INSURANCE') {
+                insBlock.style.display = 'block';
+                fetchSponsors('', currentModalSponsorType, 'modalSponsorResults', 'modalSponsorSearchInput', 'modalSelectedSponsorName');
+            } else {
+                insBlock.style.display = 'none';
+            }
         }
 
         const refExtra = document.getElementById('refundExtraFields');
@@ -2745,7 +2812,14 @@ const billing = (function () {
 
     function fillFullAmount() {
         if (!currentMaster) return;
-        document.getElementById('payAmount').value = currentMaster.balance_due;
+        const sub = parseFloat(currentMaster.subtotal) || 0;
+        const disc = parseFloat(document.getElementById('modalPayDiscount')?.value) || parseFloat(currentMaster.discount_amount) || 0;
+        const effectiveGrand = Math.max(0, sub - disc);
+        const paid = parseFloat(currentMaster.amount_paid) || 0;
+        const insRcvd = parseFloat(currentMaster.insurance_received_amount) || 0;
+        const bal = Math.max(0, effectiveGrand - paid - insRcvd);
+
+        document.getElementById('payAmount').value = bal > 0 ? bal.toFixed(2) : '0.00';
         if (currentPayType === 'PARTIAL') {
             document.querySelectorAll('.pay-type-btn').forEach(b => {
                 b.classList.remove('active');
@@ -2757,9 +2831,17 @@ const billing = (function () {
     window.fillFullAmount = fillFullAmount;
 
     function updatePayPreview() {
+        if (!currentMaster) return;
+        const sub = parseFloat(currentMaster.subtotal) || 0;
+        const disc = parseFloat(document.getElementById('modalPayDiscount')?.value) || 0;
+        const effectiveGrand = Math.max(0, sub - disc);
+        const paid = parseFloat(currentMaster.amount_paid) || 0;
+        const insRcvd = parseFloat(currentMaster.insurance_received_amount) || 0;
+        const bal = Math.max(0, effectiveGrand - paid - insRcvd);
+
         const amt = parseFloat(document.getElementById('payAmount').value) || 0;
-        const bal = parseFloat(currentMaster.balance_due);
         const preview = document.getElementById('payAfterVal');
+        if (!preview) return;
 
         if (currentPayType === 'REFUND') {
             preview.textContent = `₹${(bal + amt).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
@@ -2780,16 +2862,40 @@ const billing = (function () {
     }
 
     async function savePayment() {
-        const amt = parseFloat(document.getElementById('payAmount').value) || 0;
-        if (amt <= 0) { showToast('Enter valid amount', 'warning'); return; }
+        if (isSavingModalPayment) return;
 
-        if (currentPayMode !== 'CASH' && !document.getElementById('payRef').value.trim()) {
+        const amt = parseFloat(document.getElementById('payAmount').value) || 0;
+        const discAmt = parseFloat(document.getElementById('modalPayDiscount')?.value) || 0;
+        const discPct = parseFloat(document.getElementById('modalPayDiscountPct')?.value) || 0;
+        const discReason = document.getElementById('modalPayDiscountReason')?.value.trim() || '';
+
+        const curMasterDiscAmt = parseFloat(currentMaster.discount_amount) || 0;
+        const isDiscountChanged = (discAmt !== curMasterDiscAmt);
+
+        if (amt <= 0 && !isDiscountChanged) {
+            showToast('Enter valid amount or discount', 'warning'); return;
+        }
+
+        if (isDiscountChanged && discAmt > 0 && !discReason) {
+            showToast('Discount reason is required', 'warning'); return;
+        }
+
+        if (amt > 0 && currentPayMode !== 'CASH' && currentPayMode !== 'INSURANCE' && !document.getElementById('payRef').value.trim()) {
             showToast('Reference No. is required for non-cash modes', 'warning'); return;
+        }
+
+        let sponsorName = null;
+        if (amt > 0 && currentPayMode === 'INSURANCE') {
+            sponsorName = document.getElementById('modalSelectedSponsorName')?.value || document.getElementById('modalSponsorSearchInput')?.value.trim();
+            if (!sponsorName) {
+                showToast('Please select or search an Insurance / TPA sponsor', 'warning');
+                return;
+            }
         }
 
         let refundReason = null;
         let approvedBy = null;
-        if (currentPayType === 'REFUND') {
+        if (amt > 0 && currentPayType === 'REFUND') {
             refundReason = document.getElementById('refundReason').value.trim();
             approvedBy = document.getElementById('refundApprovedBy').value.trim();
             if (!refundReason || !approvedBy) {
@@ -2797,47 +2903,555 @@ const billing = (function () {
             }
         }
 
+        isSavingModalPayment = true;
         const btn = document.getElementById('btnSavePayment');
-        btn.classList.add('loading');
+        if (btn) {
+            btn.disabled = true;
+            btn.classList.add('loading');
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.7';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        }
 
         try {
-            const action = currentPayType === 'REFUND' ? 'refund' : 'pay';
-            const res = await fetch(`${API_URL}ipd-payment`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: action,
-                    bill_id: currentBillId,
-                    admission_id: currentAdmissionId,
-                    patient_id: currentPatientId,
-                    payment_date: document.getElementById('payDate').value,
-                    payment_type: currentPayType,
-                    payment_mode: currentPayMode,
-                    amount: amt,
-                    reference_no: document.getElementById('payRef').value,
-                    remarks: document.getElementById('payRemarks').value,
-                    refund_reason: refundReason,
-                    approved_by: approvedBy
-                })
-            });
-            const json = await res.json();
-
-            if (json.success) {
-                showToast('Payment recorded successfully', 'success');
-                closeModal('modalPayment');
-
-                currentMaster = { ...currentMaster, ...json.data.financial };
-                updateWorkspaceUI();
-                loadPayments();
-            } else {
-                showToast(json.message, 'error');
+            // Apply discount if changed
+            if (isDiscountChanged) {
+                const discRes = await fetch(`${API_URL}ipd-billing-master`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'discount',
+                        bill_id: currentBillId,
+                        discount_amount: discAmt,
+                        discount_percentage: discPct,
+                        reason: discReason
+                    })
+                });
+                const discJson = await discRes.json();
+                if (discJson.success) {
+                    currentMaster = discJson.data;
+                } else {
+                    showToast(discJson.message || 'Failed to update discount', 'error');
+                    return;
+                }
             }
+
+            if (amt > 0) {
+                const action = currentPayType === 'REFUND' ? 'refund' : 'pay';
+                const res = await fetch(`${API_URL}ipd-payment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: action,
+                        bill_id: currentBillId,
+                        admission_id: currentAdmissionId,
+                        patient_id: currentPatientId,
+                        payment_date: document.getElementById('payDate').value,
+                        payment_type: currentPayType,
+                        payment_mode: currentPayMode,
+                        amount: amt,
+                        reference_no: document.getElementById('payRef').value,
+                        remarks: sponsorName ? `Sponsor: ${sponsorName} (${currentModalSponsorType})` + (document.getElementById('payRemarks').value ? ` | ${document.getElementById('payRemarks').value}` : '') : document.getElementById('payRemarks').value,
+                        refund_reason: refundReason,
+                        approved_by: approvedBy
+                    })
+                });
+                const json = await res.json();
+
+                if (json.success) {
+                    showToast('Payment recorded successfully', 'success');
+                    closeModal('modalPayment');
+
+                    currentMaster = { ...currentMaster, ...json.data.financial };
+                } else {
+                    showToast(json.message, 'error');
+                }
+            } else if (isDiscountChanged) {
+                showToast('Discount updated successfully', 'success');
+                closeModal('modalPayment');
+            }
+
+            updateWorkspaceUI();
+            loadPayments();
         } catch (e) {
-            showToast('Error saving payment', 'error');
+            showToast('Error saving payment/discount', 'error');
         } finally {
-            btn.classList.remove('loading');
+            isSavingModalPayment = false;
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+                btn.style.pointerEvents = 'auto';
+                btn.style.opacity = '1';
+                btn.innerHTML = '<i data-lucide="check-circle-2"></i> Record Payment';
+                if (window.lucide) lucide.createIcons();
+            }
         }
     };
+
+    // ─────────────────────────────────────────────────────────────
+    // INLINE PAYMENT (ALWAYS VISIBLE BY DEFAULT IN WORKSPACE)
+    // ─────────────────────────────────────────────────────────────
+    function initInlinePayment() {
+        const typeGrp = document.getElementById('inlinePayTypeGroup');
+        if (typeGrp) {
+            typeGrp.addEventListener('click', function (e) {
+                const btn = e.target.closest('.pay-type-btn');
+                if (btn) {
+                    typeGrp.querySelectorAll('.pay-type-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentInlinePayType = btn.dataset.type;
+                    toggleInlinePaymentFields();
+                    updateInlinePayPreview();
+                }
+            });
+        }
+
+        const modeGrp = document.getElementById('inlinePayModeGroup');
+        if (modeGrp) {
+            modeGrp.addEventListener('click', function (e) {
+                const btn = e.target.closest('.pay-mode-btn');
+                if (btn) {
+                    modeGrp.querySelectorAll('.pay-mode-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentInlinePayMode = btn.dataset.mode;
+                    toggleInlinePaymentFields();
+                }
+            });
+        }
+    }
+
+    function toggleInlinePaymentFields() {
+        const refGrp = document.getElementById('inlinePayRefGroup');
+        const refInp = document.getElementById('inlinePayRef');
+        const insBlock = document.getElementById('inlineInsuranceBlock');
+        if (!refGrp || !refInp) return;
+
+        if (currentInlinePayMode === 'CASH' || currentInlinePayMode === 'INSURANCE') {
+            refGrp.style.display = 'none';
+        } else {
+            refGrp.style.display = 'block';
+            if (currentInlinePayMode === 'UPI') refInp.placeholder = 'UPI Txn ID (e.g. PhonePe)';
+            if (currentInlinePayMode === 'CARD') refInp.placeholder = 'Card Auth Code / Last 4 digits';
+            if (currentInlinePayMode === 'BANK') refInp.placeholder = 'NEFT/RTGS UTR';
+            if (currentInlinePayMode === 'CHEQUE') refInp.placeholder = 'Cheque No. & Bank Name';
+        }
+
+        if (insBlock) {
+            if (currentInlinePayMode === 'INSURANCE') {
+                insBlock.style.display = 'block';
+                fetchSponsors('', currentInlineSponsorType, 'inlineSponsorResults', 'inlineSponsorSearchInput', 'inlineSelectedSponsorName');
+            } else {
+                insBlock.style.display = 'none';
+            }
+        }
+
+        const refExtra = document.getElementById('inlineRefundExtraFields');
+        if (refExtra) {
+            refExtra.style.display = (currentInlinePayType === 'REFUND') ? 'block' : 'none';
+        }
+    }
+
+    function calcInlineDiscountAmt() {
+        if (!currentMaster) return;
+        const sub = parseFloat(currentMaster.subtotal) || 0;
+        const amt = parseFloat(document.getElementById('inlinePayDiscount').value) || 0;
+        if (sub > 0 && amt <= sub) {
+            document.getElementById('inlinePayDiscountPct').value = ((amt / sub) * 100).toFixed(1);
+        } else if (amt > sub) {
+            document.getElementById('inlinePayDiscount').value = sub.toFixed(2);
+            document.getElementById('inlinePayDiscountPct').value = '100';
+        } else {
+            document.getElementById('inlinePayDiscountPct').value = '';
+        }
+        updateInlinePayPreview();
+    }
+
+    function calcInlineDiscountPct() {
+        if (!currentMaster) return;
+        const sub = parseFloat(currentMaster.subtotal) || 0;
+        const pct = parseFloat(document.getElementById('inlinePayDiscountPct').value) || 0;
+        if (pct >= 0 && pct <= 100) {
+            document.getElementById('inlinePayDiscount').value = (sub * pct / 100).toFixed(2);
+        } else if (pct > 100) {
+            document.getElementById('inlinePayDiscountPct').value = '100';
+            document.getElementById('inlinePayDiscount').value = sub.toFixed(2);
+        } else {
+            document.getElementById('inlinePayDiscount').value = '';
+        }
+        updateInlinePayPreview();
+    }
+
+    function fillInlineFullAmount() {
+        if (!currentMaster) return;
+        const sub = parseFloat(currentMaster.subtotal) || 0;
+        const disc = parseFloat(document.getElementById('inlinePayDiscount')?.value) || parseFloat(currentMaster.discount_amount) || 0;
+        const effectiveGrand = Math.max(0, sub - disc);
+        const paid = parseFloat(currentMaster.amount_paid) || 0;
+        const insRcvd = parseFloat(currentMaster.insurance_received_amount) || 0;
+        const bal = Math.max(0, effectiveGrand - paid - insRcvd);
+
+        document.getElementById('inlinePayAmount').value = bal > 0 ? bal.toFixed(2) : '0.00';
+        if (currentInlinePayType === 'PARTIAL') {
+            const typeGrp = document.getElementById('inlinePayTypeGroup');
+            if (typeGrp) {
+                typeGrp.querySelectorAll('.pay-type-btn').forEach(b => {
+                    b.classList.remove('active');
+                    if (b.dataset.type === 'FINAL') { b.classList.add('active'); currentInlinePayType = 'FINAL'; }
+                });
+            }
+        }
+        updateInlinePayPreview();
+    }
+
+    function updateInlinePayPreview() {
+        if (!currentMaster) return;
+        const sub = parseFloat(currentMaster.subtotal) || 0;
+        const disc = parseFloat(document.getElementById('inlinePayDiscount')?.value) || 0;
+        const effectiveGrand = Math.max(0, sub - disc);
+        const paid = parseFloat(currentMaster.amount_paid) || 0;
+        const insRcvd = parseFloat(currentMaster.insurance_received_amount) || 0;
+        const bal = Math.max(0, effectiveGrand - paid - insRcvd);
+
+        const amt = parseFloat(document.getElementById('inlinePayAmount').value) || 0;
+        const preview = document.getElementById('inlinePayAfterVal');
+        if (!preview) return;
+
+        if (currentInlinePayType === 'REFUND') {
+            preview.textContent = `₹${(bal + amt).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            preview.style.color = '#dc2626';
+        } else {
+            const newBal = bal - amt;
+            preview.textContent = `₹${Math.max(0, newBal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            if (newBal < 0) {
+                preview.textContent += ` (Overpayment: ₹${Math.abs(newBal).toFixed(2)})`;
+                preview.style.color = '#d97706';
+            } else if (newBal === 0) {
+                preview.textContent += ' ✅';
+                preview.style.color = '#166534';
+            } else {
+                preview.style.color = '#1f6b4a';
+            }
+        }
+    }
+
+    function updateInlinePaymentUI() {
+        if (!currentMaster) return;
+        const balEl = document.getElementById('inlinePayBalanceVal');
+        const bal = parseFloat(currentMaster.balance_due) || 0;
+        if (balEl) balEl.textContent = `₹${bal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+        const dateInp = document.getElementById('inlinePayDate');
+        if (dateInp && !dateInp.value) {
+            dateInp.value = new Date().toISOString().split('T')[0];
+        }
+
+        // Populate Discount fields
+        const curDiscAmt = parseFloat(currentMaster.discount_amount) || 0;
+        const curDiscPct = parseFloat(currentMaster.discount_percentage) || 0;
+        const curNotes = currentMaster.notes || '';
+        if (document.getElementById('inlinePayDiscount')) document.getElementById('inlinePayDiscount').value = curDiscAmt > 0 ? curDiscAmt.toFixed(2) : '';
+        if (document.getElementById('inlinePayDiscountPct')) document.getElementById('inlinePayDiscountPct').value = curDiscPct > 0 ? curDiscPct.toFixed(1) : '';
+        if (document.getElementById('inlinePayDiscountReason')) document.getElementById('inlinePayDiscountReason').value = curNotes;
+
+        // Smart Suggestion
+        let suggested = 'PARTIAL';
+        if (parseFloat(currentMaster.amount_paid) === 0) suggested = 'ADVANCE';
+        else if (bal <= 0) suggested = 'FINAL';
+
+        const typeGrp = document.getElementById('inlinePayTypeGroup');
+        if (typeGrp) {
+            typeGrp.querySelectorAll('.pay-type-btn').forEach(b => {
+                b.classList.remove('active');
+                if (b.dataset.type === suggested) b.classList.add('active');
+            });
+            currentInlinePayType = suggested;
+        }
+
+        toggleInlinePaymentFields();
+        updateInlinePayPreview();
+    }
+
+    async function saveInlinePayment() {
+        if (!currentMaster || isSavingInlinePayment) return;
+
+        const amt = parseFloat(document.getElementById('inlinePayAmount').value) || 0;
+        const discAmt = parseFloat(document.getElementById('inlinePayDiscount')?.value) || 0;
+        const discPct = parseFloat(document.getElementById('inlinePayDiscountPct')?.value) || 0;
+        const discReason = document.getElementById('inlinePayDiscountReason')?.value.trim() || '';
+
+        const curMasterDiscAmt = parseFloat(currentMaster.discount_amount) || 0;
+        const isDiscountChanged = (discAmt !== curMasterDiscAmt);
+
+        if (amt <= 0 && !isDiscountChanged) {
+            showToast('Enter a valid payment amount or discount', 'warning');
+            return;
+        }
+
+        if (isDiscountChanged && discAmt > 0 && !discReason) {
+            showToast('Discount reason is required', 'warning');
+            return;
+        }
+
+        if (amt > 0 && currentInlinePayMode !== 'CASH' && currentInlinePayMode !== 'INSURANCE' && !document.getElementById('inlinePayRef').value.trim()) {
+            showToast('Reference No. is required for non-cash modes', 'warning');
+            return;
+        }
+
+        let sponsorName = null;
+        if (amt > 0 && currentInlinePayMode === 'INSURANCE') {
+            sponsorName = document.getElementById('inlineSelectedSponsorName')?.value || document.getElementById('inlineSponsorSearchInput')?.value.trim();
+            if (!sponsorName) {
+                showToast('Please select or search an Insurance / TPA sponsor from the list', 'warning');
+                return;
+            }
+        }
+
+        let refundReason = null;
+        let approvedBy = null;
+        if (amt > 0 && currentInlinePayType === 'REFUND') {
+            refundReason = document.getElementById('inlineRefundReason').value.trim();
+            approvedBy = document.getElementById('inlineRefundApprovedBy').value.trim();
+            if (!refundReason || !approvedBy) {
+                showToast('Refund reason and approval auth required', 'warning'); return;
+            }
+        }
+
+        isSavingInlinePayment = true;
+        const btn = document.getElementById('btnSaveInlinePayment');
+        if (btn) {
+            btn.disabled = true;
+            btn.classList.add('loading');
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.7';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i> Processing...';
+        }
+
+        try {
+            // 1. If discount changed, apply it first
+            if (isDiscountChanged) {
+                const discRes = await fetch(`${API_URL}ipd-billing-master`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'discount',
+                        bill_id: currentBillId,
+                        discount_amount: discAmt,
+                        discount_percentage: discPct,
+                        reason: discReason
+                    })
+                });
+                const discJson = await discRes.json();
+                if (discJson.success) {
+                    currentMaster = discJson.data;
+                } else {
+                    showToast(discJson.message || 'Failed to update discount', 'error');
+                    return;
+                }
+            }
+
+            // 2. If payment amount is provided, record payment
+            if (amt > 0) {
+                const action = currentInlinePayType === 'REFUND' ? 'refund' : 'pay';
+                const res = await fetch(`${API_URL}ipd-payment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: action,
+                        bill_id: currentBillId,
+                        admission_id: currentAdmissionId,
+                        patient_id: currentPatientId,
+                        payment_date: document.getElementById('inlinePayDate').value,
+                        payment_type: currentInlinePayType,
+                        payment_mode: currentInlinePayMode,
+                        amount: amt,
+                        reference_no: document.getElementById('inlinePayRef').value,
+                        remarks: sponsorName ? `Sponsor: ${sponsorName} (${currentInlineSponsorType})` + (document.getElementById('inlinePayRemarks').value ? ` | ${document.getElementById('inlinePayRemarks').value}` : '') : document.getElementById('inlinePayRemarks').value,
+                        refund_reason: refundReason,
+                        approved_by: approvedBy
+                    })
+                });
+                const json = await res.json();
+
+                if (json.success) {
+                    showToast('Payment recorded successfully', 'success');
+                    // Reset payment fields
+                    document.getElementById('inlinePayAmount').value = '';
+                    document.getElementById('inlinePayRef').value = '';
+                    document.getElementById('inlinePayRemarks').value = '';
+                    if (document.getElementById('inlineSponsorSearchInput')) document.getElementById('inlineSponsorSearchInput').value = '';
+                    if (document.getElementById('inlineSelectedSponsorName')) document.getElementById('inlineSelectedSponsorName').value = '';
+                    if (document.getElementById('inlineRefundReason')) document.getElementById('inlineRefundReason').value = '';
+                    if (document.getElementById('inlineRefundApprovedBy')) document.getElementById('inlineRefundApprovedBy').value = '';
+
+                    currentMaster = { ...currentMaster, ...json.data.financial };
+                } else {
+                    showToast(json.message || 'Failed to record payment', 'error');
+                }
+            } else if (isDiscountChanged) {
+                showToast('Discount applied successfully', 'success');
+            }
+
+            updateWorkspaceUI();
+            loadPayments();
+        } catch (e) {
+            console.error(e);
+            showToast('Network error while recording payment/discount', 'error');
+        } finally {
+            isSavingInlinePayment = false;
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+                btn.style.pointerEvents = 'auto';
+                btn.style.opacity = '1';
+                btn.innerHTML = '<i data-lucide="check-circle-2" style="width: 18px; height: 18px;"></i> Record Payment';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // SPONSOR / INSURANCE / TPA ADVANCE SEARCH
+    // ─────────────────────────────────────────────────────────────
+    function initSponsorSearch() {
+        // Inline Sponsor Type Selection
+        const inTypeGrp = document.getElementById('inlineSponsorTypeGroup');
+        if (inTypeGrp) {
+            inTypeGrp.addEventListener('click', function(e) {
+                const btn = e.target.closest('.pay-type-btn');
+                if (btn) {
+                    inTypeGrp.querySelectorAll('.pay-type-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentInlineSponsorType = btn.dataset.sponsorType;
+                    const lbl = document.getElementById('inlineSponsorLabel');
+                    const inp = document.getElementById('inlineSponsorSearchInput');
+                    if (currentInlineSponsorType === 'TPA') {
+                        if (lbl) lbl.textContent = 'TPA Provider Name';
+                        if (inp) inp.placeholder = 'Type to search TPA provider (e.g. Medi Assist, Vidal Health...)';
+                    } else {
+                        if (lbl) lbl.textContent = 'Insurance Company Name';
+                        if (inp) inp.placeholder = 'Type to search Insurance company (e.g. Star Health, HDFC ERGO...)';
+                    }
+                    if (inp) inp.value = '';
+                    const hid = document.getElementById('inlineSelectedSponsorName');
+                    if (hid) hid.value = '';
+                    fetchSponsors('', currentInlineSponsorType, 'inlineSponsorResults', 'inlineSponsorSearchInput', 'inlineSelectedSponsorName');
+                }
+            });
+        }
+
+        // Modal Sponsor Type Selection
+        const modTypeGrp = document.getElementById('modalSponsorTypeGroup');
+        if (modTypeGrp) {
+            modTypeGrp.addEventListener('click', function(e) {
+                const btn = e.target.closest('.pay-type-btn');
+                if (btn) {
+                    modTypeGrp.querySelectorAll('.pay-type-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentModalSponsorType = btn.dataset.sponsorType;
+                    const lbl = document.getElementById('modalSponsorLabel');
+                    const inp = document.getElementById('modalSponsorSearchInput');
+                    if (currentModalSponsorType === 'TPA') {
+                        if (lbl) lbl.textContent = 'TPA Provider Name';
+                        if (inp) inp.placeholder = 'Type to search TPA provider (e.g. Medi Assist, Vidal Health...)';
+                    } else {
+                        if (lbl) lbl.textContent = 'Insurance Company Name';
+                        if (inp) inp.placeholder = 'Type to search Insurance company (e.g. Star Health, HDFC ERGO...)';
+                    }
+                    if (inp) inp.value = '';
+                    const hid = document.getElementById('modalSelectedSponsorName');
+                    if (hid) hid.value = '';
+                    fetchSponsors('', currentModalSponsorType, 'modalSponsorResults', 'modalSponsorSearchInput', 'modalSelectedSponsorName');
+                }
+            });
+        }
+
+        // Inline Sponsor Search Input
+        const inInp = document.getElementById('inlineSponsorSearchInput');
+        if (inInp) {
+            inInp.addEventListener('focus', function() {
+                fetchSponsors(this.value.trim(), currentInlineSponsorType, 'inlineSponsorResults', 'inlineSponsorSearchInput', 'inlineSelectedSponsorName');
+            });
+            inInp.addEventListener('input', function() {
+                clearTimeout(inlineSponsorSearchDebounce);
+                const q = this.value.trim();
+                inlineSponsorSearchDebounce = setTimeout(() => {
+                    fetchSponsors(q, currentInlineSponsorType, 'inlineSponsorResults', 'inlineSponsorSearchInput', 'inlineSelectedSponsorName');
+                }, 200);
+            });
+        }
+
+        // Modal Sponsor Search Input
+        const modInp = document.getElementById('modalSponsorSearchInput');
+        if (modInp) {
+            modInp.addEventListener('focus', function() {
+                fetchSponsors(this.value.trim(), currentModalSponsorType, 'modalSponsorResults', 'modalSponsorSearchInput', 'modalSelectedSponsorName');
+            });
+            modInp.addEventListener('input', function() {
+                clearTimeout(modalSponsorSearchDebounce);
+                const q = this.value.trim();
+                modalSponsorSearchDebounce = setTimeout(() => {
+                    fetchSponsors(q, currentModalSponsorType, 'modalSponsorResults', 'modalSponsorSearchInput', 'modalSelectedSponsorName');
+                }, 200);
+            });
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#inlineInsuranceBlock')) {
+                const res = document.getElementById('inlineSponsorResults');
+                if (res) res.style.display = 'none';
+            }
+            if (!e.target.closest('#modalInsuranceBlock')) {
+                const res = document.getElementById('modalSponsorResults');
+                if (res) res.style.display = 'none';
+            }
+        });
+    }
+
+    async function fetchSponsors(query, type, resultsContainerId, inputId, hiddenId) {
+        const container = document.getElementById(resultsContainerId);
+        if (!container) return;
+
+        try {
+            const res = await fetch(`${API_URL}ipd-catalog-search?type=${encodeURIComponent(type)}&q=${encodeURIComponent(query)}`);
+            const json = await res.json();
+            const items = json.data || [];
+
+            if (items.length > 0) {
+                let html = '';
+                items.forEach(item => {
+                    const safeName = (item.name || '').replace(/'/g, "\\'");
+                    const typeLabel = item.sponsor_type || type;
+                    html += `
+                        <div class="sponsor-result-item" onclick="billing.selectSponsor('${safeName}', '${inputId}', '${hiddenId}', '${resultsContainerId}')" style="padding: 10px 12px; border-bottom: 1px solid rgba(31,107,74,0.1); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s;" onmouseover="this.style.background='rgba(31,107,74,0.08)'" onmouseout="this.style.background='transparent'">
+                            <div>
+                                <strong style="color: #1f6b4a; font-size: 13px;"><i class="fas ${typeLabel === 'TPA' ? 'fa-building' : 'fa-shield-alt'}" style="margin-right: 6px;"></i>${item.name}</strong>
+                                ${item.tpa_name ? `<br><small style="color: #64748b; font-size: 11px;">TPA: ${item.tpa_name}</small>` : ''}
+                            </div>
+                            <span style="background: #e6f0eb; color: #1f6b4a; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 10px; text-transform: uppercase;">${typeLabel}</span>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+                container.style.display = 'block';
+            } else {
+                container.innerHTML = `<div style="padding: 12px; text-align: center; color: #64748b; font-size: 12px;">No matching ${type} sponsors found in sponsors_data.</div>`;
+                container.style.display = 'block';
+            }
+        } catch (e) {
+            console.error('Error fetching sponsors:', e);
+        }
+    }
+
+    function selectSponsor(name, inputId, hiddenId, resultsId) {
+        const inp = document.getElementById(inputId);
+        const hid = document.getElementById(hiddenId);
+        const res = document.getElementById(resultsId);
+
+        if (inp) inp.value = name;
+        if (hid) hid.value = name;
+        if (res) res.style.display = 'none';
+    }
 
     // ── 4. INSURANCE RECEIPT ──
     async function openInsuranceReceiptModal() {
@@ -2914,10 +3528,6 @@ const billing = (function () {
     // ── 5. APPLY DISCOUNT ──
     function openDiscountModal() {
         if (!currentMaster) return;
-        if (USER_ROLE === 'Receptionist') {
-            showToast('Only admins or finance managers can modify discounts', 'warning');
-            return;
-        }
 
         const sub = parseFloat(currentMaster.subtotal);
         document.getElementById('discSubtotalDisplay').textContent = `₹${sub.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
@@ -3720,6 +4330,13 @@ const billing = (function () {
         fillFullAmount,
         updatePayPreview,
         savePayment,
+        // Inline Payment
+        fillInlineFullAmount,
+        updateInlinePayPreview,
+        saveInlinePayment,
+        // Sponsor Search
+        selectSponsor,
+        fetchSponsors,
         // Ins Receipt
         openInsuranceReceiptModal,
         fillInsFullAmount,
@@ -3729,6 +4346,10 @@ const billing = (function () {
         calcDiscountPct,
         calcDiscountAmt,
         saveDiscount,
+        calcInlineDiscountAmt,
+        calcInlineDiscountPct,
+        calcModalDiscountAmt,
+        calcModalDiscountPct,
         // Status
         openStatusModal,
         saveStatus,

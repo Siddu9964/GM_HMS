@@ -211,6 +211,165 @@
         --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     }
 
+    /* ── Navbar Centered Modals ── */
+    .nurse-navbar ~ .modal-overlay,
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 35, 25, 0.55);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+        padding: 20px;
+    }
+
+    .profile-card-modal {
+        background: #ffffff;
+        border-radius: 18px;
+        border: 2px solid rgba(31, 107, 74, 0.25);
+        box-shadow: 0 20px 50px rgba(31, 107, 74, 0.25);
+        width: 100%;
+        max-width: 440px;
+        overflow: hidden;
+        position: relative;
+        animation: modalZoomIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalZoomIn {
+        from { opacity: 0; transform: scale(0.92); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    .profile-card-header {
+        background: linear-gradient(135deg, #1f6b4a 0%, #144d34 100%);
+        height: 90px;
+        position: relative;
+    }
+
+    .close-modal {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        font-size: 1.2rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+    }
+
+    .close-modal:hover {
+        background: rgba(255, 255, 255, 0.35);
+    }
+
+    .profile-card-content {
+        padding: 0 24px 24px 24px;
+        text-align: center;
+        position: relative;
+    }
+
+    .profile-card-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: 4px solid #ffffff;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+        margin: -40px auto 10px auto;
+        overflow: hidden;
+        background: #ffffff;
+    }
+
+    .profile-card-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .profile-card-name {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #1f6b4a;
+        margin: 0 0 2px 0;
+    }
+
+    .profile-card-role {
+        font-size: 0.8rem;
+        color: #718096;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+
+    .profile-card-details {
+        text-align: left;
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-bottom: 18px;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .detail-item:last-child {
+        border-bottom: none;
+    }
+
+    .detail-item i {
+        color: #1f6b4a;
+        font-size: 1rem;
+        width: 20px;
+        text-align: center;
+    }
+
+    .detail-text span {
+        display: block;
+        font-size: 0.72rem;
+        color: #718096;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+
+    .detail-text strong {
+        font-size: 0.88rem;
+        color: #2d3748;
+    }
+
+    .profile-card-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+
+    .profile-card-actions button,
+    .profile-card-actions a {
+        flex: 1;
+        padding: 9px 16px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.88rem;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: all 0.15s;
+    }
+
     .nurse-navbar {
         background: rgba(255, 255, 255, .9) !important;
         backdrop-filter: blur(12px) !important;
@@ -656,44 +815,48 @@
     let knownNotifs = new Set();
     let isFirstLoad = true;
     
-    function showNotificationToast(title, message) {
+    function showNotificationToast(title, message, priority = 'normal') {
+        const isHigh = priority === 'high' || (title && title.includes('EMERGENCY'));
         const toast = document.createElement('div');
         toast.style.position = 'fixed';
-        toast.style.bottom = '20px';
-        toast.style.right = '20px';
-        toast.style.backgroundColor = '#1f6b4a';
-        toast.style.color = 'white';
-        toast.style.padding = '15px 20px';
-        toast.style.borderRadius = '8px';
-        toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-        toast.style.zIndex = '99999';
+        toast.style.top = '50%';
+        toast.style.left = '50%';
+        toast.style.transform = 'translate(-50%, -50%) scale(0.9)';
+        toast.style.backgroundColor = isHigh ? '#fff1f2' : '#ffffff';
+        toast.style.color = isHigh ? '#9f1239' : '#1f6b4a';
+        toast.style.padding = '24px 30px';
+        toast.style.borderRadius = '16px';
+        toast.style.border = isHigh ? '3px solid #e11d48' : '2px solid #1f6b4a';
+        toast.style.boxShadow = isHigh ? '0 20px 60px rgba(225, 29, 72, 0.45)' : '0 20px 60px rgba(31, 107, 74, 0.35)';
+        toast.style.zIndex = '999999';
         toast.style.display = 'flex';
         toast.style.flexDirection = 'column';
-        toast.style.gap = '5px';
-        toast.style.minWidth = '300px';
-        toast.style.transform = 'translateY(100px)';
+        toast.style.gap = '10px';
+        toast.style.minWidth = '360px';
+        toast.style.maxWidth = '500px';
+        toast.style.textAlign = 'center';
         toast.style.opacity = '0';
-        toast.style.transition = 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+        toast.style.transition = 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)';
         
         toast.innerHTML = `
-            <div style="font-weight: bold; font-size: 1.05rem; display: flex; align-items: center; gap: 8px;">
-                <i class="fas fa-bell"></i> ${title}
+            <div style="font-weight: 800; font-size: 1.15rem; color: ${isHigh ? '#e11d48' : '#1f6b4a'}; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fas ${isHigh ? 'fa-ambulance' : 'fa-bell'}" style="font-size: 1.4rem;"></i> ${title}
             </div>
-            <div style="font-size: 0.9rem; opacity: 0.9;">${message}</div>
+            <div style="font-size: 0.94rem; color: #1e293b; line-height: 1.5; font-weight: 600;">${message}</div>
         `;
         
         document.body.appendChild(toast);
         
         setTimeout(() => {
-            toast.style.transform = 'translateY(0)';
+            toast.style.transform = 'translate(-50%, -50%) scale(1)';
             toast.style.opacity = '1';
-        }, 100);
+        }, 50);
         
         setTimeout(() => {
-            toast.style.transform = 'translateY(100px)';
+            toast.style.transform = 'translate(-50%, -50%) scale(0.9)';
             toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 300);
-        }, 5000);
+            setTimeout(() => toast.remove(), 250);
+        }, isHigh ? 6000 : 4000);
     }
     
     async function fetchNurseNotifications() {
@@ -721,7 +884,7 @@
                     const newNotifs = data.filter(n => !knownNotifs.has(n.notification_id));
                     newNotifs.forEach((n, index) => {
                         setTimeout(() => {
-                            showNotificationToast(n.title || 'New Notification', n.message || '');
+                            showNotificationToast(n.title || 'New Notification', n.message || '', n.priority || 'normal');
                         }, index * 800); // stagger them slightly if multiple arrive
                     });
                 }
