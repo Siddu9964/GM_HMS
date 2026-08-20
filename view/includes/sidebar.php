@@ -11,11 +11,19 @@ $request_uri = $_SERVER['REQUEST_URI'];
 
 // Fetch dynamic unread discharge notifications count
 try {
-    $notifConn = new mysqli('localhost', 'root', '', 'hmsc_basaveshwranagara');
-    $notifCountResult = $notifConn->query("SELECT COUNT(*) as count FROM discharge_notifications WHERE status = 'Pending'");
-    $notifCountRow = $notifCountResult->fetch_assoc();
-    $unreadNotifCount = $notifCountRow['count'] ?? 0;
-    $notifConn->close();
+    if (class_exists('GM_HMS\Database\SecureDatabase')) {
+        $db = GM_HMS\Database\SecureDatabase::getInstance();
+        $notifConn = $db->getConnection();
+        $notifCountResult = $notifConn->query("SELECT COUNT(*) as count FROM discharge_notifications WHERE status = 'Pending'");
+        $notifCountRow = $notifCountResult ? $notifCountResult->fetch_assoc() : null;
+        $unreadNotifCount = $notifCountRow['count'] ?? 0;
+    } else {
+        $notifConn = new mysqli('localhost', 'root', '', 'hmsc_basaveshwranagara');
+        $notifCountResult = $notifConn->query("SELECT COUNT(*) as count FROM discharge_notifications WHERE status = 'Pending'");
+        $notifCountRow = $notifCountResult ? $notifCountResult->fetch_assoc() : null;
+        $unreadNotifCount = $notifCountRow['count'] ?? 0;
+        $notifConn->close();
+    }
 } catch (Throwable $e) {
     $unreadNotifCount = 0;
 }

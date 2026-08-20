@@ -13,18 +13,28 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-$patientId = $_POST['patient_id'] ?? '';
-$admissionId = $_POST['admission_id'] ?? '';
+$jsonInput = [];
+$rawBody = file_get_contents('php://input');
+if (!empty($rawBody)) {
+    $decoded = json_decode($rawBody, true);
+    if (is_array($decoded)) {
+        $jsonInput = $decoded;
+    }
+}
+$params = array_merge($_GET, $_POST, $jsonInput);
 
-if (empty($patientId) || empty($admissionId)) {
+$patientId = $params['patient_id'] ?? '';
+$admissionId = $params['admission_id'] ?? '';
+
+if (empty($patientId)) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Missing required parameters (patient_id, admission_id)']);
+    echo json_encode(['success' => false, 'message' => 'Missing required parameter: patient_id']);
     exit();
 }
 
 try {
     $controller = new DischargeClearanceController();
-    $result = $controller->initiateClearance($_POST);
+    $result = $controller->initiateClearance($params);
     echo json_encode($result);
 } catch (Throwable $e) {
     http_response_code(500);

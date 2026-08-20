@@ -814,8 +814,114 @@ if (!isset($basePath)) {
     </div>
 </div>
 
+<!-- Reception Center Discharge Clearance Reminder Modal (Auto 5-min repeating popup) -->
+<div id="recDischargeCenterModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 35, 25, 0.65); backdrop-filter: blur(5px); z-index: 99998; align-items: center; justify-content: center;">
+  <div style="background: #ffffff; border-radius: 18px; max-width: 520px; width: 92%; overflow: hidden; box-shadow: 0 25px 70px rgba(0,0,0,0.4); border: 2.5px solid #d97706;">
+    <div style="background: linear-gradient(135deg, #d97706, #b45309); padding: 16px 20px; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.05rem;">
+        <i class="fas fa-file-invoice-dollar" style="font-size: 1.3rem;"></i>
+        <span>Action Required: Reception Discharge Clearance</span>
+      </div>
+      <button type="button" onclick="snoozeRecReminder()" style="background: none; border: none; color: #ffffff; font-size: 1.4rem; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <div style="padding: 20px; text-align: left;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; background: #fffbeb; border: 1.5px solid #fde68a; padding: 12px 14px; border-radius: 12px;">
+        <div style="width: 42px; height: 42px; border-radius: 10px; background: #d97706; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div style="font-size: 0.84rem; color: #92400e; line-height: 1.45;">
+          <strong>Discharge clearance initiated by Nursing Station.</strong><br>
+          Please review IPD billing settlements, advance deposit adjustments, or raise a billing query.
+        </div>
+      </div>
+
+      <div id="rec-reminder-patient-list" style="max-height: 220px; overflow-y: auto; margin-bottom: 14px;"></div>
+
+      <p style="margin: 0 0 14px 0; font-size: 0.76rem; color: #64748b; line-height: 1.4;">
+        <i class="fas fa-clock"></i> This alert will pop up every 5 minutes until reception clearance feedback is submitted.
+      </p>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button type="button" onclick="snoozeRecReminder()" style="padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 0.82rem; border: 1.5px solid #cbd5e1; background: #f8fafc; color: #475569; cursor: pointer;">
+          <i class="fas fa-clock"></i> Remind in 5 Min
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Universal Center Feedback / Success Popup Modal -->
+<div id="centerFeedbackModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(5px); z-index: 100000; align-items: center; justify-content: center;">
+  <div style="background: #ffffff; border-radius: 20px; max-width: 440px; width: 90%; overflow: hidden; box-shadow: 0 25px 70px rgba(0,0,0,0.35); text-align: center; border: 1.5px solid #e2e8f0;">
+    <div id="center-feedback-header" style="background: #1f6b4a; padding: 22px 20px 16px; color: #ffffff;">
+      <div id="center-feedback-icon" style="width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.22); display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 8px;">
+        <i class="fas fa-check"></i>
+      </div>
+      <div id="center-feedback-title" style="font-size: 1.15rem; font-weight: 800;">Clearance Updated</div>
+    </div>
+    <div style="padding: 22px 24px;">
+      <p id="center-feedback-msg" style="font-size: 0.92rem; color: #334155; line-height: 1.5; margin: 0 0 20px 0; font-weight: 600;">
+        Clearance status updated successfully.
+      </p>
+      <button type="button" id="center-feedback-btn" onclick="closeCenterFeedbackModal()" style="padding: 10px 32px; background: #1f6b4a; color: #ffffff; font-weight: 800; font-size: 0.88rem; border: none; border-radius: 10px; cursor: pointer; min-width: 120px; box-shadow: 0 4px 14px rgba(31,107,74,0.3);">
+        OK
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 let currentRecClearance = null;
+let recReminderSnoozedUntil = 0;
+const REC_REMINDER_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+let centerFeedbackTimer = null;
+
+function showCenterFeedback(msg, type = 'success', title = '') {
+  const modal = document.getElementById('centerFeedbackModal');
+  if (!modal) {
+    alert(msg);
+    return;
+  }
+  const header = document.getElementById('center-feedback-header');
+  const icon = document.getElementById('center-feedback-icon');
+  const titleEl = document.getElementById('center-feedback-title');
+  const msgEl = document.getElementById('center-feedback-msg');
+  const btn = document.getElementById('center-feedback-btn');
+
+  if (type === 'success') {
+    header.style.background = '#1f6b4a';
+    icon.innerHTML = '<i class="fas fa-check"></i>';
+    titleEl.textContent = title || 'Clearance Approved';
+    if (btn) btn.style.background = '#1f6b4a';
+  } else if (type === 'error') {
+    header.style.background = '#dc2626';
+    icon.innerHTML = '<i class="fas fa-times"></i>';
+    titleEl.textContent = title || 'Update Failed';
+    if (btn) btn.style.background = '#dc2626';
+  } else {
+    header.style.background = '#d97706';
+    icon.innerHTML = '<i class="fas fa-exclamation"></i>';
+    titleEl.textContent = title || 'Attention';
+    if (btn) btn.style.background = '#d97706';
+  }
+
+  const cleanMsg = (msg || '').replace(/^[✅❌⚠️\s]+/, '');
+  msgEl.textContent = cleanMsg;
+
+  modal.style.display = 'flex';
+
+  if (centerFeedbackTimer) clearTimeout(centerFeedbackTimer);
+  centerFeedbackTimer = setTimeout(() => {
+    closeCenterFeedbackModal();
+  }, 6000);
+}
+
+function closeCenterFeedbackModal() {
+  const modal = document.getElementById('centerFeedbackModal');
+  if (modal) modal.style.display = 'none';
+  if (centerFeedbackTimer) clearTimeout(centerFeedbackTimer);
+}
 
 function closeRecClearanceModal() {
     document.getElementById('recClearanceModal').style.display = 'none';
@@ -864,6 +970,49 @@ function openRecClearanceModal(clearanceData) {
     document.getElementById('recClearanceModal').style.display = 'flex';
 }
 
+function openRecClearanceFromReminder(item) {
+    const centerModal = document.getElementById('recDischargeCenterModal');
+    if (centerModal) centerModal.style.display = 'none';
+    openRecClearanceModal(item);
+}
+
+function snoozeRecReminder() {
+    const centerModal = document.getElementById('recDischargeCenterModal');
+    if (centerModal) centerModal.style.display = 'none';
+    recReminderSnoozedUntil = Date.now() + REC_REMINDER_INTERVAL_MS;
+}
+
+function checkAndShowRecDischargeReminder(items) {
+    const pendingForRec = (items || []).filter(item => item.reception_status === 'Pending');
+    const centerModal = document.getElementById('recDischargeCenterModal');
+    if (!centerModal) return;
+
+    if (pendingForRec.length > 0) {
+        const now = Date.now();
+        if (now >= recReminderSnoozedUntil) {
+            const listEl = document.getElementById('rec-reminder-patient-list');
+            if (listEl) {
+                listEl.innerHTML = pendingForRec.map(item => `
+                    <div style="background:#ffffff; border:1.5px solid #fed7aa; border-radius:10px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                        <div>
+                            <div style="font-weight:800; font-size:0.92rem; color:#1e293b;"><i class="fas fa-user-injured text-warning"></i> ${item.patient_name || 'Patient'}</div>
+                            <div style="font-size:0.74rem; color:#64748b; margin-top:2px;">
+                                ${item.bed_info || 'Ward'} • IP: <strong>${item.admission_id}</strong>
+                            </div>
+                        </div>
+                        <button type="button" onclick='openRecClearanceFromReminder(${JSON.stringify(item)})' style="padding:6px 12px; font-size:0.76rem; font-weight:800; background:#1f6b4a; color:#ffffff; border:none; border-radius:8px; cursor:pointer; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">
+                            <i class="fas fa-clipboard-check"></i> Review & Clear
+                        </button>
+                    </div>
+                `).join('');
+            }
+            centerModal.style.display = 'flex';
+        }
+    } else {
+        centerModal.style.display = 'none';
+    }
+}
+
 async function submitRecClearance(action) {
     if (!currentRecClearance) return;
 
@@ -871,16 +1020,17 @@ async function submitRecClearance(action) {
     const queryText = document.getElementById('rec-query-text').value.trim();
 
     if (action === 'query' && !queryText) {
-        alert('Please enter query / settlement issue details.');
+        showCenterFeedback('Please enter query / settlement issue details before submitting.', 'warning', 'Query Details Required');
         return;
     }
 
     const payload = {
         action: 'update_clearance',
+        status_action: action,
+        clearance_action: action,
         clearance_id: currentRecClearance.clearance_id,
         admission_id: currentRecClearance.admission_id,
         department: 'reception',
-        action: action,
         notes: notes,
         query_text: queryText
     };
@@ -893,14 +1043,16 @@ async function submitRecClearance(action) {
         });
         const data = await res.json();
         if (data.success) {
-            alert(data.message || 'Clearance status updated!');
             closeRecClearanceModal();
+            snoozeRecReminder();
+            showCenterFeedback(data.message || 'Reception clearance approved successfully!', 'success', action === 'query' ? 'Query Submitted' : 'Clearance Approved');
             fetchReceptionDischargeClearances();
         } else {
-            alert('Error: ' + (data.message || 'Failed to update'));
+            showCenterFeedback(data.message || 'Failed to update reception clearance.', 'error', 'Error');
         }
     } catch(err) {
         console.error('Error submitting clearance:', err);
+        showCenterFeedback('Network error while updating reception clearance.', 'error', 'Network Error');
     }
 }
 
@@ -931,6 +1083,7 @@ async function fetchReceptionDischargeClearances() {
                     </div>
                 `).join('');
             }
+            checkAndShowRecDischargeReminder(json.data);
         } else {
             if (badge) badge.style.display = 'none';
             if (list) {
@@ -941,6 +1094,7 @@ async function fetchReceptionDischargeClearances() {
                     </div>
                 `;
             }
+            checkAndShowRecDischargeReminder([]);
         }
     } catch(err) {
         console.error('Error fetching reception clearances:', err);
@@ -949,7 +1103,7 @@ async function fetchReceptionDischargeClearances() {
 
 document.addEventListener('DOMContentLoaded', function() {
     fetchReceptionDischargeClearances();
-    setInterval(fetchReceptionDischargeClearances, 12000);
+    setInterval(fetchReceptionDischargeClearances, 10000);
 });
 <?php
 // Dynamically calculate the project root URL relative to the web root

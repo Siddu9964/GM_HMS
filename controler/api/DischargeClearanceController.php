@@ -93,6 +93,23 @@ class DischargeClearanceController {
                 INDEX (admission_id),
                 INDEX (status)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+            $this->conn->query("CREATE TABLE IF NOT EXISTS notifications (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                notification_id VARCHAR(50) UNIQUE NOT NULL,
+                recipient_id VARCHAR(50) NOT NULL,
+                recipient_type VARCHAR(50) DEFAULT 'staff',
+                title VARCHAR(255) NOT NULL,
+                message TEXT NOT NULL,
+                category VARCHAR(50) DEFAULT 'system',
+                priority VARCHAR(50) DEFAULT 'normal',
+                action_url VARCHAR(255) NULL,
+                is_read TINYINT(1) DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                INDEX (recipient_id),
+                INDEX (recipient_type),
+                INDEX (is_read)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
         } catch (Throwable $e) {
             error_log("DischargeClearanceController ensureTables error: " . $e->getMessage());
         }
@@ -108,14 +125,33 @@ class DischargeClearanceController {
         $nurseId     = trim($params['nurse_id'] ?? ($_SESSION['user_id'] ?? ''));
         $nurseName   = trim($params['nurse_name'] ?? ($_SESSION['full_name'] ?? ($_SESSION['username'] ?? 'Nurse')));
 
-        if (empty($patientId) || empty($admissionId)) {
-            return ['success' => false, 'message' => 'Patient ID and Admission ID are required.'];
+        if (empty($patientId)) {
+            return ['success' => false, 'message' => 'Patient ID is required.'];
+        }
+
+        // Auto-resolve admission_id if not supplied
+        if (empty($admissionId)) {
+            try {
+                $stmt = $this->conn->prepare("SELECT admission_id FROM ipd_admissions WHERE patient_id = ? AND status IN ('Active', 'Admitted') ORDER BY id DESC LIMIT 1");
+                $stmt->bind_param("s", $patientId);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                if ($r = $res->fetch_assoc()) {
+                    $admissionId = $r['admission_id'];
+                }
+                $stmt->close();
+            } catch (Throwable $e) {}
+        }
+
+        if (empty($admissionId)) {
+            $admissionId = 'ADM-' . $patientId;
         }
 
         // Fetch patient details & bed info
         $patientName = 'Patient';
         $bedInfo     = 'Inpatient Bed';
         $doctorName  = 'Attending Consultant';
+        $doctorId    = null;
 
         try {
             $stmt = $this->conn->prepare("SELECT first_name, last_name FROM patient WHERE patient_id = ? LIMIT 1");
@@ -129,17 +165,21 @@ class DischargeClearanceController {
         } catch (Throwable $e) {}
 
         try {
-            $stmt = $this->conn->prepare("SELECT room_type, ward_name, ward, room_number, bed_number, doctor_name FROM ipd_admissions WHERE admission_id = ? OR patient_id = ? ORDER BY id DESC LIMIT 1");
+            $stmt = $this->conn->prepare("SELECT ia.room_type, ia.ward_name, ia.ward, ia.room_no, ia.room_number, ia.bed_id, ia.admitting_doctor_id, ia.doctor_name, d.full_name as doc_full_name, b.bed_number, b.ward_name as b_ward 
+                FROM ipd_admissions ia 
+                LEFT JOIN doctors d ON ia.admitting_doctor_id = d.doctor_id 
+                LEFT JOIN hospital_beds b ON ia.bed_id = b.sl_no 
+                WHERE ia.admission_id = ? OR ia.patient_id = ? 
+                ORDER BY ia.id DESC LIMIT 1");
             $stmt->bind_param("ss", $admissionId, $patientId);
             $stmt->execute();
             $res = $stmt->get_result();
             if ($r = $res->fetch_assoc()) {
-                $ward = $r['ward_name'] ?: ($r['ward'] ?: ($r['room_type'] ?: 'Ward'));
-                $bed  = $r['bed_number'] ?: ($r['room_number'] ?: 'Bed');
+                $ward = $r['b_ward'] ?: ($r['ward_name'] ?: ($r['ward'] ?: ($r['room_type'] ?: 'Ward')));
+                $bed  = $r['bed_number'] ?: ($r['room_number'] ?: ($r['room_no'] ?: ($r['bed_id'] ?: 'Bed')));
                 $bedInfo = "{$ward} - Bed {$bed}";
-                if (!empty($r['doctor_name'])) {
-                    $doctorName = $r['doctor_name'];
-                }
+                $doctorName = $r['doc_full_name'] ?: ($r['doctor_name'] ?: 'Attending Consultant');
+                $doctorId   = $r['admitting_doctor_id'] ?: null;
             }
             $stmt->close();
         } catch (Throwable $e) {}
@@ -192,7 +232,7 @@ class DischargeClearanceController {
         } catch (Throwable $e) {}
 
         // Send multi-module system notifications into `notifications` table
-        $this->dispatchSystemNotifications($clearanceId, $patientName, $patientId, $admissionId, $bedInfo, $nurseName);
+        $this->dispatchSystemNotifications($clearanceId, $patientName, $patientId, $admissionId, $bedInfo, $nurseName, $doctorId);
 
         return [
             'success' => true,
@@ -205,39 +245,56 @@ class DischargeClearanceController {
     }
 
     /**
-     * Dispatch notifications to Reception, Pharmacy, Lab, and Admin
+     * Dispatch notifications to Reception, Pharmacy, Lab, Admin, and Doctor
      */
-    private function dispatchSystemNotifications(string $clearanceId, string $patientName, string $patientId, string $admissionId, string $bedInfo, string $nurseName): void {
+    private function dispatchSystemNotifications(string $clearanceId, string $patientName, string $patientId, string $admissionId, string $bedInfo, string $nurseName, ?string $doctorId = null): void {
         $notifs = [
             [
                 'recipient_type' => 'staff',
                 'recipient_id'   => 'RECEPTION',
                 'title'          => '📋 Discharge Clearance Request: ' . $patientName,
-                'message'        => "Patient {$patientName} ({$bedInfo}) is ready for discharge. Please review IPD billing & approve clearance.",
+                'message'        => "Patient {$patientName} ({$bedInfo}, IP: {$admissionId}) is ready for discharge. Please review IPD billing & approve clearance.",
                 'action_url'     => '/reception_view/ipd_management/views/discharge/index.php'
             ],
             [
                 'recipient_type' => 'staff',
                 'recipient_id'   => 'PHARMACY',
                 'title'          => '💊 Discharge Pharmacy Clearance: ' . $patientName,
-                'message'        => "Patient {$patientName} ({$bedInfo}) is being discharged. Please verify medicine returns & clearance.",
+                'message'        => "Patient {$patientName} ({$bedInfo}, IP: {$admissionId}) is being discharged. Please verify medicine returns & clearance.",
                 'action_url'     => '/pharmacy_view/sales.php'
             ],
             [
                 'recipient_type' => 'staff',
                 'recipient_id'   => 'LABORATORY',
                 'title'          => '🔬 Discharge Lab Clearance: ' . $patientName,
-                'message'        => "Patient {$patientName} ({$bedInfo}) is being discharged. Please verify pending lab/diagnostic reports.",
+                'message'        => "Patient {$patientName} ({$bedInfo}, IP: {$admissionId}) is being discharged. Please verify pending lab/diagnostic reports.",
                 'action_url'     => '/laboratory_view/dashboard.php'
             ],
             [
                 'recipient_type' => 'admin',
                 'recipient_id'   => 'ADMIN',
                 'title'          => '🏥 Discharge Clearance Initiated: ' . $patientName,
-                'message'        => "Discharge clearance started by Nurse {$nurseName} for {$patientName} ({$bedInfo}). Awaiting departmental approvals.",
+                'message'        => "Discharge clearance started by Nurse {$nurseName} for {$patientName} ({$bedInfo}, IP: {$admissionId}). Awaiting departmental approvals.",
                 'action_url'     => '/view/admin_dashboard.php'
+            ],
+            [
+                'recipient_type' => 'staff',
+                'recipient_id'   => 'staff',
+                'title'          => '📋 Discharge Clearance Initiated: ' . $patientName,
+                'message'        => "Discharge clearance initiated for {$patientName} ({$bedInfo}, IP: {$admissionId}).",
+                'action_url'     => 'nurse_workspace.php'
             ]
         ];
+
+        if (!empty($doctorId)) {
+            $notifs[] = [
+                'recipient_type' => 'doctor',
+                'recipient_id'   => (string)$doctorId,
+                'title'          => '📋 Patient Discharge Clearance: ' . $patientName,
+                'message'        => "Discharge clearance initiated for your patient {$patientName} ({$bedInfo}).",
+                'action_url'     => 'doctor_dashboard.php'
+            ];
+        }
 
         foreach ($notifs as $n) {
             try {
@@ -246,7 +303,9 @@ class DischargeClearanceController {
                 $stmt->bind_param("ssssss", $notifId, $n['recipient_id'], $n['recipient_type'], $n['title'], $n['message'], $n['action_url']);
                 $stmt->execute();
                 $stmt->close();
-            } catch (Throwable $e) {}
+            } catch (Throwable $e) {
+                error_log("Notification insert error: " . $e->getMessage());
+            }
         }
     }
 
@@ -340,11 +399,12 @@ class DischargeClearanceController {
             'my_pending' => 0
         ];
 
+        $deptCol = in_array($module, ['reception', 'pharmacy', 'lab', 'admin']) ? "{$module}_status" : "reception_status";
         $resCounts = $this->conn->query("SELECT 
             COUNT(CASE WHEN overall_status = 'Pending Clearance' THEN 1 END) as pending_cnt,
             COUNT(CASE WHEN overall_status = 'All Cleared' THEN 1 END) as cleared_cnt,
             COUNT(CASE WHEN overall_status = 'Queries Raised' THEN 1 END) as queries_cnt,
-            COUNT(CASE WHEN {$module}_status = 'Pending' AND overall_status != 'Completed' THEN 1 END) as my_cnt
+            COUNT(CASE WHEN {$deptCol} = 'Pending' AND overall_status != 'Completed' THEN 1 END) as my_cnt
             FROM discharge_clearances WHERE overall_status != 'Completed'");
         
         if ($resCounts && $cRow = $resCounts->fetch_assoc()) {
@@ -370,7 +430,10 @@ class DischargeClearanceController {
         $admissionId = trim($params['admission_id'] ?? '');
         $patientId   = trim($params['patient_id'] ?? '');
         $department  = strtolower(trim($params['department'] ?? ''));
-        $action      = strtolower(trim($params['action'] ?? 'approve')); // 'approve' or 'query'
+        $action      = strtolower(trim($params['status_action'] ?? ($params['clearance_action'] ?? ($params['action'] ?? 'approve'))));
+        if (in_array($action, ['update', 'update_clearance', 'update-clearance'])) {
+            $action = strtolower(trim($params['status_action'] ?? ($params['clearance_action'] ?? ($params['dept_action'] ?? 'approve'))));
+        }
         $userName    = trim($params['user_name'] ?? ($_SESSION['full_name'] ?? ($_SESSION['username'] ?? ucfirst($department) . ' Staff')));
         $userId      = trim($params['user_id'] ?? ($_SESSION['user_id'] ?? ''));
         $queryText   = trim($params['query_text'] ?? '');

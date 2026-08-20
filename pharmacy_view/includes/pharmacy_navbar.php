@@ -134,8 +134,114 @@ $userRole = $_SESSION['role']     ?? 'pharmacy';
   </div>
 </div>
 
+<!-- Pharmacy Center Discharge Clearance Reminder Modal (Auto 5-min repeating popup) -->
+<div id="phDischargeCenterModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 35, 25, 0.65); backdrop-filter: blur(5px); z-index: 99998; align-items: center; justify-content: center;">
+  <div style="background: #ffffff; border-radius: 18px; max-width: 520px; width: 92%; overflow: hidden; box-shadow: 0 25px 70px rgba(0,0,0,0.4); border: 2.5px solid #d97706;">
+    <div style="background: linear-gradient(135deg, #d97706, #b45309); padding: 16px 20px; color: #ffffff; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.05rem;">
+        <i class="fas fa-pills" style="font-size: 1.3rem;"></i>
+        <span>Action Required: Pharmacy Discharge Clearance</span>
+      </div>
+      <button type="button" onclick="snoozePhReminder()" style="background: none; border: none; color: #ffffff; font-size: 1.4rem; cursor: pointer; line-height: 1;">&times;</button>
+    </div>
+
+    <div style="padding: 20px; text-align: left;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; background: #fffbeb; border: 1.5px solid #fde68a; padding: 12px 14px; border-radius: 12px;">
+        <div style="width: 42px; height: 42px; border-radius: 10px; background: #d97706; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div style="font-size: 0.84rem; color: #92400e; line-height: 1.45;">
+          <strong>Discharge clearance initiated by Nursing Station.</strong><br>
+          Please verify medicine returns, unbilled medicines, or raise an issue query.
+        </div>
+      </div>
+
+      <div id="ph-reminder-patient-list" style="max-height: 220px; overflow-y: auto; margin-bottom: 14px;"></div>
+
+      <p style="margin: 0 0 14px 0; font-size: 0.76rem; color: #64748b; line-height: 1.4;">
+        <i class="fas fa-clock"></i> This alert will pop up every 5 minutes until pharmacy clearance feedback is submitted.
+      </p>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button type="button" onclick="snoozePhReminder()" style="padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 0.82rem; border: 1.5px solid #cbd5e1; background: #f8fafc; color: #475569; cursor: pointer;">
+          <i class="fas fa-clock"></i> Remind in 5 Min
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Universal Center Feedback / Success Popup Modal -->
+<div id="centerFeedbackModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(5px); z-index: 100000; align-items: center; justify-content: center;">
+  <div style="background: #ffffff; border-radius: 20px; max-width: 440px; width: 90%; overflow: hidden; box-shadow: 0 25px 70px rgba(0,0,0,0.35); text-align: center; border: 1.5px solid #e2e8f0;">
+    <div id="center-feedback-header" style="background: #1f6b4a; padding: 22px 20px 16px; color: #ffffff;">
+      <div id="center-feedback-icon" style="width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.22); display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 8px;">
+        <i class="fas fa-check"></i>
+      </div>
+      <div id="center-feedback-title" style="font-size: 1.15rem; font-weight: 800;">Clearance Updated</div>
+    </div>
+    <div style="padding: 22px 24px;">
+      <p id="center-feedback-msg" style="font-size: 0.92rem; color: #334155; line-height: 1.5; margin: 0 0 20px 0; font-weight: 600;">
+        Clearance status updated successfully.
+      </p>
+      <button type="button" id="center-feedback-btn" onclick="closeCenterFeedbackModal()" style="padding: 10px 32px; background: #1f6b4a; color: #ffffff; font-weight: 800; font-size: 0.88rem; border: none; border-radius: 10px; cursor: pointer; min-width: 120px; box-shadow: 0 4px 14px rgba(31,107,74,0.3);">
+        OK
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 let currentPhClearance = null;
+let phReminderSnoozedUntil = 0;
+const PH_REMINDER_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+let centerFeedbackTimer = null;
+
+function showCenterFeedback(msg, type = 'success', title = '') {
+  const modal = document.getElementById('centerFeedbackModal');
+  if (!modal) {
+    alert(msg);
+    return;
+  }
+  const header = document.getElementById('center-feedback-header');
+  const icon = document.getElementById('center-feedback-icon');
+  const titleEl = document.getElementById('center-feedback-title');
+  const msgEl = document.getElementById('center-feedback-msg');
+  const btn = document.getElementById('center-feedback-btn');
+
+  if (type === 'success') {
+    header.style.background = '#1f6b4a';
+    icon.innerHTML = '<i class="fas fa-check"></i>';
+    titleEl.textContent = title || 'Clearance Approved';
+    if (btn) btn.style.background = '#1f6b4a';
+  } else if (type === 'error') {
+    header.style.background = '#dc2626';
+    icon.innerHTML = '<i class="fas fa-times"></i>';
+    titleEl.textContent = title || 'Update Failed';
+    if (btn) btn.style.background = '#dc2626';
+  } else {
+    header.style.background = '#d97706';
+    icon.innerHTML = '<i class="fas fa-exclamation"></i>';
+    titleEl.textContent = title || 'Attention';
+    if (btn) btn.style.background = '#d97706';
+  }
+
+  const cleanMsg = (msg || '').replace(/^[✅❌⚠️\s]+/, '');
+  msgEl.textContent = cleanMsg;
+
+  modal.style.display = 'flex';
+
+  if (centerFeedbackTimer) clearTimeout(centerFeedbackTimer);
+  centerFeedbackTimer = setTimeout(() => {
+    closeCenterFeedbackModal();
+  }, 6000);
+}
+
+function closeCenterFeedbackModal() {
+  const modal = document.getElementById('centerFeedbackModal');
+  if (modal) modal.style.display = 'none';
+  if (centerFeedbackTimer) clearTimeout(centerFeedbackTimer);
+}
 
 function closePhClearanceModal() {
   document.getElementById('phClearanceModal').style.display = 'none';
@@ -182,22 +288,66 @@ function openPhClearanceModal(item) {
   document.getElementById('phClearanceModal').style.display = 'flex';
 }
 
+function openPhClearanceFromReminder(item) {
+  const centerModal = document.getElementById('phDischargeCenterModal');
+  if (centerModal) centerModal.style.display = 'none';
+  openPhClearanceModal(item);
+}
+
+function snoozePhReminder() {
+  const centerModal = document.getElementById('phDischargeCenterModal');
+  if (centerModal) centerModal.style.display = 'none';
+  phReminderSnoozedUntil = Date.now() + PH_REMINDER_INTERVAL_MS;
+}
+
+function checkAndShowPhDischargeReminder(items) {
+  const pendingForPh = (items || []).filter(item => item.pharmacy_status === 'Pending');
+  const centerModal = document.getElementById('phDischargeCenterModal');
+  if (!centerModal) return;
+
+  if (pendingForPh.length > 0) {
+    const now = Date.now();
+    if (now >= phReminderSnoozedUntil) {
+      const listEl = document.getElementById('ph-reminder-patient-list');
+      if (listEl) {
+        listEl.innerHTML = pendingForPh.map(item => `
+          <div style="background:#ffffff; border:1.5px solid #fed7aa; border-radius:10px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <div>
+              <div style="font-weight:800; font-size:0.92rem; color:#1e293b;"><i class="fas fa-user-injured text-warning"></i> ${item.patient_name || 'Patient'}</div>
+              <div style="font-size:0.74rem; color:#64748b; margin-top:2px;">
+                ${item.bed_info || 'Ward'} • IP: <strong>${item.admission_id}</strong>
+              </div>
+            </div>
+            <button type="button" onclick='openPhClearanceFromReminder(${JSON.stringify(item)})' style="padding:6px 12px; font-size:0.76rem; font-weight:800; background:#1f6b4a; color:#ffffff; border:none; border-radius:8px; cursor:pointer; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">
+              <i class="fas fa-clipboard-check"></i> Review & Clear
+            </button>
+          </div>
+        `).join('');
+      }
+      centerModal.style.display = 'flex';
+    }
+  } else {
+    centerModal.style.display = 'none';
+  }
+}
+
 async function submitPhClearance(action) {
   if (!currentPhClearance) return;
   const notes = document.getElementById('ph-clearance-notes').value.trim();
   const queryText = document.getElementById('ph-query-text').value.trim();
 
   if (action === 'query' && !queryText) {
-    alert('Please enter query / medication issue details.');
+    showCenterFeedback('Please enter query / medication issue details before submitting.', 'warning', 'Query Details Required');
     return;
   }
 
   const payload = {
     action: 'update_clearance',
+    status_action: action,
+    clearance_action: action,
     clearance_id: currentPhClearance.clearance_id,
     admission_id: currentPhClearance.admission_id,
     department: 'pharmacy',
-    action: action,
     notes: notes,
     query_text: queryText
   };
@@ -210,14 +360,16 @@ async function submitPhClearance(action) {
     });
     const data = await res.json();
     if (data.success) {
-      alert(data.message || 'Pharmacy clearance status updated!');
       closePhClearanceModal();
+      snoozePhReminder();
+      showCenterFeedback(data.message || 'Pharmacy clearance approved successfully!', 'success', action === 'query' ? 'Query Submitted' : 'Clearance Approved');
       fetchPharmacyNotifications();
     } else {
-      alert('Error: ' + (data.message || 'Failed to update'));
+      showCenterFeedback(data.message || 'Failed to update pharmacy clearance.', 'error', 'Error');
     }
   } catch(err) {
     console.error('Error submitting pharmacy clearance:', err);
+    showCenterFeedback('Network error while updating pharmacy clearance.', 'error', 'Network Error');
   }
 }
 
@@ -247,9 +399,11 @@ async function fetchPharmacyNotifications() {
           </div>
         `).join('');
       }
+      checkAndShowPhDischargeReminder(d.data);
     } else {
       if (countBadge) countBadge.style.display = 'none';
       if (list) list.innerHTML = '<div class="text-center text-muted py-3" style="font-size:.82rem;">No pending discharge clearances</div>';
+      checkAndShowPhDischargeReminder([]);
     }
   } catch(e) {
     if (list) list.innerHTML = '<div class="text-center text-muted py-3">Error loading</div>';
@@ -258,6 +412,6 @@ async function fetchPharmacyNotifications() {
 
 document.addEventListener('DOMContentLoaded', () => {
   fetchPharmacyNotifications();
-  setInterval(fetchPharmacyNotifications, 12000);
+  setInterval(fetchPharmacyNotifications, 10000);
 });
 </script>

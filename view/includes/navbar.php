@@ -6,11 +6,19 @@ if (!isset($basePath)) {
 
 // Fetch dynamic unread discharge clearances count
 try {
-    $notifConn = new mysqli('localhost', 'root', '', 'hmsc_basaveshwranagara');
-    $notifCountResult = $notifConn->query("SELECT COUNT(*) as count FROM discharge_clearances WHERE overall_status != 'Completed'");
-    $notifCountRow = $notifCountResult ? $notifCountResult->fetch_assoc() : null;
-    $unreadNotifCount = $notifCountRow['count'] ?? 0;
-    $notifConn->close();
+    if (class_exists('GM_HMS\Database\SecureDatabase')) {
+        $db = GM_HMS\Database\SecureDatabase::getInstance();
+        $notifConn = $db->getConnection();
+        $notifCountResult = $notifConn->query("SELECT COUNT(*) as count FROM discharge_clearances WHERE overall_status != 'Completed'");
+        $notifCountRow = $notifCountResult ? $notifCountResult->fetch_assoc() : null;
+        $unreadNotifCount = $notifCountRow['count'] ?? 0;
+    } else {
+        $notifConn = new mysqli('localhost', 'root', '', 'hmsc_basaveshwranagara');
+        $notifCountResult = $notifConn->query("SELECT COUNT(*) as count FROM discharge_clearances WHERE overall_status != 'Completed'");
+        $notifCountRow = $notifCountResult ? $notifCountResult->fetch_assoc() : null;
+        $unreadNotifCount = $notifCountRow['count'] ?? 0;
+        $notifConn->close();
+    }
 } catch (Throwable $e) {
     $unreadNotifCount = 0;
 }
@@ -118,6 +126,26 @@ try {
             </form>
         </div>
     </div>
+</div>
+
+<!-- Universal Center Feedback / Success Popup Modal -->
+<div id="centerFeedbackModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(5px); z-index: 100000; align-items: center; justify-content: center;">
+  <div style="background: #ffffff; border-radius: 20px; max-width: 440px; width: 90%; overflow: hidden; box-shadow: 0 25px 70px rgba(0,0,0,0.35); text-align: center; border: 1.5px solid #e2e8f0;">
+    <div id="center-feedback-header" style="background: #1f6b4a; padding: 22px 20px 16px; color: #ffffff;">
+      <div id="center-feedback-icon" style="width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.22); display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 8px;">
+        <i class="fas fa-check"></i>
+      </div>
+      <div id="center-feedback-title" style="font-size: 1.15rem; font-weight: 800;">Clearance Updated</div>
+    </div>
+    <div style="padding: 22px 24px;">
+      <p id="center-feedback-msg" style="font-size: 0.92rem; color: #334155; line-height: 1.5; margin: 0 0 20px 0; font-weight: 600;">
+        Clearance status updated successfully.
+      </p>
+      <button type="button" id="center-feedback-btn" onclick="closeCenterFeedbackModal()" style="padding: 10px 32px; background: #1f6b4a; color: #ffffff; font-weight: 800; font-size: 0.88rem; border: none; border-radius: 10px; cursor: pointer; min-width: 120px; box-shadow: 0 4px 14px rgba(31,107,74,0.3);">
+        OK
+      </button>
+    </div>
+  </div>
 </div>
 
 <style>
@@ -327,6 +355,55 @@ async function fetchAdminDischargeClearances() {
     }
 }
 
+var centerFeedbackTimer = null;
+function showCenterFeedback(msg, type, title) {
+  type = type || 'success';
+  title = title || '';
+  var modal = document.getElementById('centerFeedbackModal');
+  if (!modal) {
+    alert(msg);
+    return;
+  }
+  var header = document.getElementById('center-feedback-header');
+  var icon = document.getElementById('center-feedback-icon');
+  var titleEl = document.getElementById('center-feedback-title');
+  var msgEl = document.getElementById('center-feedback-msg');
+  var btn = document.getElementById('center-feedback-btn');
+
+  if (type === 'success') {
+    header.style.background = '#1f6b4a';
+    icon.innerHTML = '<i class="fas fa-check"></i>';
+    titleEl.textContent = title || 'Discharge Finalized';
+    if (btn) btn.style.background = '#1f6b4a';
+  } else if (type === 'error') {
+    header.style.background = '#dc2626';
+    icon.innerHTML = '<i class="fas fa-times"></i>';
+    titleEl.textContent = title || 'Action Failed';
+    if (btn) btn.style.background = '#dc2626';
+  } else {
+    header.style.background = '#d97706';
+    icon.innerHTML = '<i class="fas fa-exclamation"></i>';
+    titleEl.textContent = title || 'Attention';
+    if (btn) btn.style.background = '#d97706';
+  }
+
+  var cleanMsg = (msg || '').replace(/^[✅❌⚠️\s]+/, '');
+  msgEl.textContent = cleanMsg;
+
+  modal.style.display = 'flex';
+
+  if (centerFeedbackTimer) clearTimeout(centerFeedbackTimer);
+  centerFeedbackTimer = setTimeout(function() {
+    closeCenterFeedbackModal();
+  }, 6000);
+}
+
+function closeCenterFeedbackModal() {
+  var modal = document.getElementById('centerFeedbackModal');
+  if (modal) modal.style.display = 'none';
+  if (centerFeedbackTimer) clearTimeout(centerFeedbackTimer);
+}
+
 async function confirmAdminDischarge(clearanceId, admissionId) {
     if (!confirm('Confirm final discharge clearance for this patient? All department approvals will be finalized.')) return;
     
@@ -344,14 +421,14 @@ async function confirmAdminDischarge(clearanceId, admissionId) {
         });
         var data = await res.json();
         if (data.success) {
-            alert('✅ ' + (data.message || 'Patient discharge finalized by Admin!'));
+            showCenterFeedback(data.message || 'Patient discharge finalized by Admin!', 'success', 'Discharge Finalized');
             fetchAdminDischargeClearances();
         } else {
-            alert('Error: ' + (data.message || 'Failed to finalize'));
+            showCenterFeedback(data.message || 'Failed to finalize discharge', 'error', 'Error');
         }
     } catch (e) {
         console.error(e);
-        alert('Network error finalizing discharge.');
+        showCenterFeedback('Network error finalizing discharge.', 'error', 'Network Error');
     }
 }
 

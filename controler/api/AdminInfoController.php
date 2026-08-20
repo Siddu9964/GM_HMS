@@ -276,17 +276,17 @@ class AdminInfoController extends BaseController {
         try {
             // Query detailed bed statistics from hospital_beds table
             $sql = "SELECT 
-                        ward_name,
-                        ward_type,
-                        room_name,
-                        room_category,
+                        COALESCE(ward_name, 'General Ward') as ward_name,
+                        COALESCE(room_type, 'General') as ward_type,
+                        COALESCE(room_name, CONCAT('Room ', room_number)) as room_name,
+                        COALESCE(floor_name, room_type, 'Standard') as room_category,
                         COUNT(*) as total_beds,
                         SUM(CASE WHEN bed_status = 'Occupied' THEN 1 ELSE 0 END) as occupied_beds,
                         SUM(CASE WHEN bed_status = 'Available' THEN 1 ELSE 0 END) as available_beds,
                         SUM(CASE WHEN bed_status = 'Blocked' THEN 1 ELSE 0 END) as blocked_beds,
                         SUM(CASE WHEN bed_status = 'Maintenance' THEN 1 ELSE 0 END) as maintenance_beds
                     FROM hospital_beds
-                    GROUP BY ward_name, ward_type, room_name, room_category
+                    GROUP BY ward_name, room_type, room_name, floor_name
                     ORDER BY ward_name, room_name";
             
             $bedStats = $this->db->fetchAll($sql);

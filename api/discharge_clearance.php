@@ -10,7 +10,6 @@ use GM_HMS\Controllers\api\DischargeClearanceController;
 $controller = new DischargeClearanceController();
 
 $method = $_SERVER['REQUEST_METHOD'];
-$action = $_GET['action'] ?? ($_POST['action'] ?? 'status');
 
 // Read JSON input if provided
 $jsonInput = [];
@@ -22,6 +21,8 @@ if (!empty($rawBody)) {
     }
 }
 $params = array_merge($_GET, $_POST, $jsonInput);
+$action = $params['action'] ?? ($_GET['action'] ?? ($_POST['action'] ?? 'status'));
+
 
 try {
     switch ($action) {
@@ -51,6 +52,8 @@ try {
             echo json_encode($result);
             break;
 
+        case 'approve':
+        case 'query':
         case 'update':
         case 'update_clearance':
         case 'update-clearance':
@@ -58,6 +61,9 @@ try {
                 http_response_code(405);
                 echo json_encode(['success' => false, 'message' => 'POST required for update']);
                 exit;
+            }
+            if ($action === 'approve' || $action === 'query') {
+                $params['status_action'] = $action;
             }
             $result = $controller->updateDepartmentClearance($params);
             echo json_encode($result);
