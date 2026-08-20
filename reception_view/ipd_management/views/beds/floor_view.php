@@ -11,153 +11,235 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <link rel="stylesheet" href="../../public/assets/css/ipd_main.css">
     <style>
+        :root {
+            --em: #1f6b4a;
+            --em-d: #144d34;
+            --em-l: #e8f5ef;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-lt: #64748b;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            background-color: var(--bg);
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        .dashboard-container {
+            padding: clamp(12px, 2.5vw, 24px);
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .dashboard-header h1 {
+            font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+            font-weight: 800;
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .dashboard-header h1 i { color: var(--em); }
+        .dashboard-header p {
+            font-size: clamp(0.75rem, 1.1vw, 0.875rem);
+            color: var(--text-lt);
+            margin: 4px 0 0;
+        }
+        .dashboard-header .btn {
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
         .floor-section {
             background: white;
             border-radius: 1.25rem;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            border-left: 6px solid #1f6b4a;
+            padding: clamp(1rem, 2vw, 2rem);
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+            border-left: 6px solid var(--em);
+            border-top: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
         }
         
         .floor-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
             padding-bottom: 1rem;
-            border-bottom: 2px solid #e2e8f0;
+            border-bottom: 2px solid var(--border);
+            flex-wrap: wrap;
+            gap: 12px;
         }
         
         .floor-title {
-            font-size: 1.75rem;
+            font-size: clamp(1.15rem, 1.8vw, 1.5rem);
             font-weight: 800;
-            color: #1e293b;
+            color: var(--text);
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.75rem;
         }
+        .floor-title i { color: var(--em); }
         
         .floor-stats {
-            display: flex;
-            gap: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(4, auto);
+            gap: 0.75rem;
+            flex-wrap: wrap;
         }
         
         .floor-stat {
             text-align: center;
-            padding: 0.5rem 1rem;
+            padding: 0.4rem 0.8rem;
             background: #f8fafc;
-            border-radius: 0.75rem;
+            border-radius: 0.6rem;
+            border: 1px solid var(--border);
+            min-width: 70px;
         }
         
         .floor-stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1e293b;
+            font-size: clamp(1.1rem, 1.6vw, 1.35rem);
+            font-weight: 800;
+            color: var(--text);
+            line-height: 1.1;
         }
         
         .floor-stat-label {
-            font-size: 0.75rem;
-            color: #64748b;
+            font-size: 0.65rem;
+            color: var(--text-lt);
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            font-weight: 700;
+            margin-top: 2px;
         }
         
         .ward-section {
             background: #f8fafc;
             border-radius: 1rem;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border: 2px solid #e2e8f0;
+            padding: clamp(0.75rem, 1.5vw, 1.25rem);
+            margin-bottom: 1.25rem;
+            border: 1.5px solid var(--border);
         }
         
         .ward-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+            gap: 8px;
         }
         
         .ward-name {
-            font-size: 1.25rem;
+            font-size: clamp(1rem, 1.4vw, 1.15rem);
             font-weight: 700;
-            color: #1e293b;
+            color: var(--text);
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
+        .ward-name i { color: var(--em); font-size: 0.95rem; }
         
         .ward-info {
-            font-size: 0.875rem;
-            color: #64748b;
+            font-size: 0.8rem;
+            color: var(--text-lt);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
         }
         
         .room-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 0.75rem;
+            margin-top: 0.75rem;
         }
         
         .room-card {
             background: white;
             border-radius: 0.75rem;
-            padding: 1rem;
-            border: 2px solid #e2e8f0;
-            transition: all 0.3s;
+            padding: 0.85rem;
+            border: 1.5px solid var(--border);
+            transition: all 0.25s ease;
         }
         
         .room-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-color: var(--em);
         }
         
         .room-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.75rem;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid var(--border);
+            gap: 6px;
         }
         
         .room-number {
             font-weight: 700;
-            color: #1e293b;
-            font-size: 1rem;
+            color: var(--text);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
+        .room-number i { color: var(--em); font-size: 0.85rem; }
         
         .room-category {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.625rem;
-            background: #dbeafe;
-            color: #144d34;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            background: #e8f5ef;
+            color: var(--em);
             border-radius: 0.375rem;
-            font-weight: 600;
+            font-weight: 700;
+            white-space: nowrap;
         }
         
         .beds-in-room {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 0.4rem;
         }
         
         .bed-mini {
-            flex: 1;
-            min-width: 100px;
-            padding: 0.75rem;
+            padding: 0.5rem 0.4rem;
             border-radius: 0.5rem;
             text-align: center;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
-            border: 2px solid transparent;
+            border: 1.5px solid transparent;
+            min-width: 0;
         }
         
         .bed-mini:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            transform: scale(1.04);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
         }
         
         .bed-mini.available {
@@ -185,69 +267,131 @@
         }
         
         .bed-mini-number {
-            font-size: 0.75rem;
-            font-weight: 700;
-            margin-bottom: 0.25rem;
+            font-size: 0.72rem;
+            font-weight: 800;
+            margin-bottom: 0.15rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .bed-mini-status {
-            font-size: 0.625rem;
+            font-size: 0.6rem;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .legend {
             display: flex;
-            gap: 1.5rem;
+            gap: 1.25rem;
             justify-content: center;
-            padding: 1.5rem;
+            align-items: center;
+            padding: 1rem 1.5rem;
             background: white;
             border-radius: 1rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            flex-wrap: wrap;
         }
         
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
+            gap: 0.4rem;
+            font-size: 0.8rem;
             font-weight: 600;
+            white-space: nowrap;
         }
         
         .legend-color {
-            width: 24px;
-            height: 24px;
-            border-radius: 0.375rem;
+            width: 18px;
+            height: 18px;
+            border-radius: 0.3rem;
             border: 2px solid;
+            flex-shrink: 0;
         }
         
         .auto-refresh {
             position: fixed;
-            bottom: 2rem;
-            right: 2rem;
+            bottom: 1.5rem;
+            right: 1.5rem;
             background: white;
-            padding: 1rem 1.5rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 0.6rem 1rem;
+            border-radius: 2rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            border: 1px solid var(--border);
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            font-size: 0.875rem;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-lt);
             z-index: 1000;
+            backdrop-filter: blur(8px);
         }
         
         .refresh-indicator {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             background: #10b981;
             border-radius: 50%;
             animation: pulse 2s infinite;
+            flex-shrink: 0;
         }
         
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.85); }
+        }
+
+        /* Mobile Breakpoints */
+        @media (max-width: 768px) {
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .dashboard-header .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            .floor-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .floor-stats {
+                width: 100%;
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .ward-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .legend {
+                justify-content: flex-start;
+                padding: 0.75rem 1rem;
+                gap: 0.75rem 1rem;
+            }
+            .room-grid {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            }
+            .auto-refresh {
+                bottom: 1rem;
+                right: 1rem;
+                padding: 0.4rem 0.75rem;
+                font-size: 0.7rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .room-grid {
+                grid-template-columns: 1fr;
+            }
+            .beds-in-room {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
     </style>
 </head>
