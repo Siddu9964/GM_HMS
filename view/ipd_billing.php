@@ -77,6 +77,57 @@ try {
             font-weight: 800 !important;
         }
 
+        .phc-name-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+
+        .phc-clearance-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .clearance-pill-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.73rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            border: 1.5px solid transparent;
+            text-decoration: none;
+        }
+        .clearance-pill-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+        }
+
+        .dept-badge-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2.5px 8px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+        }
+        .dept-badge-btn:hover {
+            transform: translateY(-1px);
+        }
+
         .phc-meta {
             color: #1f6b4a !important;
             opacity: 0.9;
@@ -548,11 +599,18 @@ try {
                                     <div class="phc-meta" id="phcExtraInfo" style="display:none; margin-top: 6px;"></div>
                                 </div>
                             </div>
-                            <div class="phc-right">
-                                <div class="phc-bill-card">
-                                    <div class="phc-bill-no" id="phcBillNo">BILL-0000</div>
-                                    <div class="phc-billing-status" id="phcBillingStatus"></div>
+                            <div class="phc-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                                <!-- Clearance Status Badges & Bill Status (Above buttons) -->
+                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
+                                    <!-- Discharge Clearance Multi-Module Badges -->
+                                    <div class="phc-clearance-wrap" id="phcClearanceContainer"></div>
+
+                                    <div class="phc-bill-card" style="margin: 0; display: flex; align-items: center; gap: 6px;">
+                                        <div class="phc-bill-no" id="phcBillNo" style="margin-bottom: 0;">BILL-0000</div>
+                                        <div class="phc-billing-status" id="phcBillingStatus"></div>
+                                    </div>
                                 </div>
+
                                 <div class="phc-actions">
                                     <button class="phc-btn phc-btn-print" onclick="billing.printInterim()" title="Interim Bill">
                                         <i data-lucide="printer"></i> Interim
@@ -2171,6 +2229,95 @@ try {
                 <button class="bm-btn bm-btn-danger" id="btnConfirmCancelCharge" onclick="billing.confirmCancelCharge()">
                     <i class="fas fa-times-circle"></i> Yes, Cancel Charge
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Discharge Clearance Detail & Multi-Department Breakdown -->
+<div class="billing-modal-overlay" id="modalClearanceDetail">
+    <div class="billing-modal" style="max-width: 680px; width: 95%;">
+        <div class="bm-head" style="background: #1f6b4a; color: #ffffff;">
+            <div class="bm-title" style="color: #ffffff; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-clipboard-check"></i> Multi-Department Discharge Clearance Matrix
+            </div>
+            <button class="bm-close" style="color: #ffffff;" onclick="billing.closeModal('modalClearanceDetail')">&times;</button>
+        </div>
+        <div class="bm-body" style="padding: 20px; max-height: 80vh; overflow-y: auto;">
+            <!-- Patient summary -->
+            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color: #1f6b4a;" id="cdPtName">Patient Name</div>
+                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;" id="cdPtDetails">PID: - | Admission: - | Ward & Bed: -</div>
+                </div>
+                <div id="cdOverallStatusBadge"></div>
+            </div>
+
+            <!-- Nurse Initiation Info -->
+            <div id="cdNurseSection" style="background: #fdfbf7; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.82rem;">
+                <div style="color: #475569; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+                    <span><i class="fas fa-user-nurse" style="color:#1f6b4a;"></i> Initiated by: <strong id="cdNurseName">Nurse</strong></span>
+                    <span id="cdInitiatedAt" style="color:#94a3b8; font-size:0.75rem;"></span>
+                </div>
+                <div id="cdNurseNotesWrap" style="margin-top: 6px; color: #334155; display:none;">
+                    <strong>Nurse Notes:</strong> <span id="cdNurseNotes"></span>
+                </div>
+            </div>
+
+            <!-- 3 Department Cards Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                <!-- Reception Card -->
+                <div id="cdRecCard" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: left;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 0.78rem; font-weight: 800; color: #1e293b;"><i class="fas fa-file-invoice-dollar" style="color:#1f6b4a;"></i> Reception</span>
+                        <span id="cdRecStatus" style="font-size: 0.7rem; font-weight: 800;">Pending</span>
+                    </div>
+                    <div style="font-size: 0.72rem; color: #64748b;" id="cdRecBy">By: -</div>
+                    <div style="font-size: 0.68rem; color: #94a3b8;" id="cdRecAt">-</div>
+                    <div id="cdRecNotes" style="font-size: 0.72rem; color: #334155; margin-top: 6px; padding: 4px 6px; background: #f8fafc; border-radius: 6px; display: none;"></div>
+                    <div id="cdRecQuery" style="font-size: 0.72rem; color: #991b1b; margin-top: 6px; padding: 4px 6px; background: #fee2e2; border-radius: 6px; display: none;"></div>
+                </div>
+
+                <!-- Pharmacy Card -->
+                <div id="cdPhCard" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: left;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 0.78rem; font-weight: 800; color: #1e293b;"><i class="fas fa-pills" style="color:#1f6b4a;"></i> Pharmacy</span>
+                        <span id="cdPhStatus" style="font-size: 0.7rem; font-weight: 800;">Pending</span>
+                    </div>
+                    <div style="font-size: 0.72rem; color: #64748b;" id="cdPhBy">By: -</div>
+                    <div style="font-size: 0.68rem; color: #94a3b8;" id="cdPhAt">-</div>
+                    <div id="cdPhNotes" style="font-size: 0.72rem; color: #334155; margin-top: 6px; padding: 4px 6px; background: #f8fafc; border-radius: 6px; display: none;"></div>
+                    <div id="cdPhQuery" style="font-size: 0.72rem; color: #991b1b; margin-top: 6px; padding: 4px 6px; background: #fee2e2; border-radius: 6px; display: none;"></div>
+                </div>
+
+                <!-- Laboratory Card -->
+                <div id="cdLabCard" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: left;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 0.78rem; font-weight: 800; color: #1e293b;"><i class="fas fa-microscope" style="color:#1f6b4a;"></i> Laboratory</span>
+                        <span id="cdLabStatus" style="font-size: 0.7rem; font-weight: 800;">Pending</span>
+                    </div>
+                    <div style="font-size: 0.72rem; color: #64748b;" id="cdLabBy">By: -</div>
+                    <div style="font-size: 0.68rem; color: #94a3b8;" id="cdLabAt">-</div>
+                    <div id="cdLabNotes" style="font-size: 0.72rem; color: #334155; margin-top: 6px; padding: 4px 6px; background: #f8fafc; border-radius: 6px; display: none;"></div>
+                    <div id="cdLabQuery" style="font-size: 0.72rem; color: #991b1b; margin-top: 6px; padding: 4px 6px; background: #fee2e2; border-radius: 6px; display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Admin Final Confirmation Section (if all cleared) -->
+            <div id="cdAdminActionSection" style="display:none; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px; padding: 14px; margin-bottom: 16px; text-align: center;">
+                <div style="font-weight: 800; font-size: 0.95rem; color: #15803d; margin-bottom: 6px;">
+                    🎉 All 3 Departments Have Cleared Discharge!
+                </div>
+                <p style="font-size: 0.8rem; color: #166534; margin: 0 0 10px 0;">
+                    Reception/Billing, Pharmacy, and Laboratory approvals are complete. Admin can now confirm final discharge clearance.
+                </p>
+                <button type="button" onclick="billing.confirmAdminDischargeFromModal()" style="padding: 8px 24px; background: #16a34a; color: #ffffff; font-weight: 800; font-size: 0.85rem; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(22,163,74,0.3);">
+                    <i class="fas fa-check-double"></i> Confirm Final Discharge
+                </button>
+            </div>
+
+            <div class="bm-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+                <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalClearanceDetail')">Close</button>
             </div>
         </div>
     </div>

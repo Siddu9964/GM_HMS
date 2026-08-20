@@ -40,6 +40,14 @@ const billing = (function () {
         initInlinePayment();
         initSponsorSearch();
         loadAllAdmittedPatients();
+
+        // Check if admission_id or patient_id passed in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlAdm = urlParams.get('admission_id');
+        const urlPat = urlParams.get('patient_id');
+        if (urlAdm) {
+            loadAdmission(urlAdm, urlPat || '');
+        }
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -223,6 +231,9 @@ const billing = (function () {
         const stStr = m.billing_status || 'DRAFT';
         bStatus.textContent = stStr.replace('_', ' ');
         bStatus.style.color = stStr === 'FINALIZED' ? '#166534' : (stStr === 'CANCELLED' ? '#991b1b' : '#0369a1');
+
+        // Load Multi-Module Discharge Clearance Status
+        loadPatientClearanceStatus(m.admission_id, m.patient_id);
 
         // Toggle Insurance Button
         const btnIns = document.getElementById('btnInsuranceInfo');
@@ -3830,6 +3841,191 @@ const billing = (function () {
         }
     };
 
+    // ── DISCHARGE CLEARANCE STATUS & MODAL ──
+    async function loadPatientClearanceStatus(admissionId, patientId) {
+        const container = document.getElementById('phcClearanceContainer');
+        if (!container) return;
+        container.innerHTML = '<span style="font-size:0.7rem; color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Checking clearances...</span>';
+
+        try {
+            const res = await fetch(`/GM_HMS/api/discharge_clearance.php?action=status&admission_id=${encodeURIComponent(admissionId || '')}&patient_id=${encodeURIComponent(patientId || '')}`);
+            const json = await res.json();
+
+            if (json.success && json.has_clearance && json.data) {
+                const d = json.data;
+                window.currentClearanceData = d;
+                window.currentClearanceQueries = json.queries || [];
+
+                let overallBg = '#fef3c7', overallCol = '#92400e', overallBorder = '#fde68a', overallIcon = 'fa-clock';
+                if (d.overall_status === 'All Cleared') {
+                    overallBg = '#dcfce7'; overallCol = '#15803d'; overallBorder = '#86efac'; overallIcon = 'fa-check-double';
+                } else if (d.overall_status === 'Queries Raised') {
+                    overallBg = '#fee2e2'; overallCol = '#991b1b'; overallBorder = '#fca5a5'; overallIcon = 'fa-exclamation-triangle';
+                } else if (d.overall_status === 'Completed') {
+                    overallBg = '#dcfce7'; overallCol = '#15803d'; overallBorder = '#86efac'; overallIcon = 'fa-check-circle';
+                }
+
+                const getDeptConfig = (status, deptName, iconClass, queryText, clearedBy) => {
+                    let bg = '#fffbeb', col = '#b45309', border = '#fde68a', label = status || 'Pending';
+                    if (status === 'Approved') {
+                        bg = '#dcfce7'; col = '#15803d'; border = '#86efac';
+                    } else if (status === 'Query') {
+                        bg = '#fee2e2'; col = '#b91c1c'; border = '#fca5a5';
+                    }
+                    const tooltip = `${deptName}: ${label}${clearedBy ? ' (by ' + clearedBy + ')' : ''}${queryText ? ' - Query: ' + queryText : ''}`;
+                    return `
+                        <span class="dept-badge-btn" onclick="billing.openClearanceDetailModal()" style="background:${bg}; color:${col}; border-color:${border};" title="${tooltip}">
+                            <i class="fas ${iconClass}"></i> ${deptName}: <strong style="font-weight:800;">${label}</strong>
+                        </span>
+                    `;
+                };
+
+                const rHtml = getDeptConfig(d.reception_status, 'Reception', 'fa-file-invoice-dollar', d.reception_query, d.reception_by);
+                const pHtml = getDeptConfig(d.pharmacy_status, 'Pharmacy', 'fa-pills', d.pharmacy_query, d.pharmacy_by);
+                const lHtml = getDeptConfig(d.lab_status, 'Lab', 'fa-microscope', d.lab_query, d.lab_by);
+
+                container.innerHTML = `
+                    <span class="clearance-pill-btn" onclick="billing.openClearanceDetailModal()" style="background:${overallBg}; color:${overallCol}; border-color:${overallBorder};" title="Click to view full clearance breakdown">
+                        <i class="fas ${overallIcon}"></i> ${d.overall_status || 'Pending Clearance'}
+                    </span>
+                    ${rHtml}
+                    ${pHtml}
+                    ${lHtml}
+                `;
+            } else {
+                window.currentClearanceData = null;
+                window.currentClearanceQueries = [];
+                container.innerHTML = `
+                    <span class="dept-badge-btn" style="background:#f1f5f9; color:#64748b; border-color:#cbd5e1;" title="Discharge clearance not yet requested by Nursing Station">
+                        <i class="fas fa-info-circle"></i> Clearance: Not Initiated
+                    </span>
+                `;
+            }
+        } catch (e) {
+            console.error('Error fetching clearance status:', e);
+            container.innerHTML = '';
+        }
+    }
+
+    function openClearanceDetailModal() {
+        const d = window.currentClearanceData;
+        if (!d) {
+            showToast('No active discharge clearance record for this patient.', 'info');
+            return;
+        }
+
+        document.getElementById('cdPtName').textContent = d.patient_name || (currentMaster ? currentMaster.patient_name : 'Patient');
+        document.getElementById('cdPtDetails').textContent = `PID: ${d.patient_id || (currentMaster ? currentMaster.patient_id : '-')} | Admission: ${d.admission_id || (currentMaster ? currentMaster.admission_id : '-')} | ${d.bed_info || (currentMaster ? currentMaster.ward_name : '')}`;
+
+        // Overall status badge
+        const badgeEl = document.getElementById('cdOverallStatusBadge');
+        let overallBg = '#fef3c7', overallCol = '#92400e', overallBorder = '#fde68a';
+        if (d.overall_status === 'All Cleared' || d.overall_status === 'Completed') {
+            overallBg = '#dcfce7'; overallCol = '#15803d'; overallBorder = '#86efac';
+        } else if (d.overall_status === 'Queries Raised') {
+            overallBg = '#fee2e2'; overallCol = '#991b1b'; overallBorder = '#fca5a5';
+        }
+        badgeEl.innerHTML = `<span style="padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 0.8rem; background: ${overallBg}; color: ${overallCol}; border: 1.5px solid ${overallBorder};">${d.overall_status}</span>`;
+
+        // Nurse info
+        document.getElementById('cdNurseName').textContent = d.nurse_name || 'Nursing Station';
+        document.getElementById('cdInitiatedAt').textContent = d.created_at ? new Date(d.created_at).toLocaleString() : '';
+        const notesWrap = document.getElementById('cdNurseNotesWrap');
+        const notesEl = document.getElementById('cdNurseNotes');
+        if (d.nurse_notes) {
+            notesEl.textContent = d.nurse_notes;
+            notesWrap.style.display = 'block';
+        } else {
+            notesWrap.style.display = 'none';
+        }
+
+        // Department cards helper
+        const renderDeptCard = (deptKey, deptName, status, clearedBy, clearedAt, notes, query) => {
+            const statusEl = document.getElementById(`cd${deptKey}Status`);
+            const byEl = document.getElementById(`cd${deptKey}By`);
+            const atEl = document.getElementById(`cd${deptKey}At`);
+            const notesEl = document.getElementById(`cd${deptKey}Notes`);
+            const queryEl = document.getElementById(`cd${deptKey}Query`);
+            const cardEl = document.getElementById(`cd${deptKey}Card`);
+
+            statusEl.textContent = status || 'Pending';
+            if (status === 'Approved') {
+                statusEl.style.color = '#15803d';
+                cardEl.style.borderColor = '#86efac';
+                cardEl.style.background = '#f0fdf4';
+            } else if (status === 'Query') {
+                statusEl.style.color = '#b91c1c';
+                cardEl.style.borderColor = '#fca5a5';
+                cardEl.style.background = '#fef2f2';
+            } else {
+                statusEl.style.color = '#b45309';
+                cardEl.style.borderColor = '#fde68a';
+                cardEl.style.background = '#fffbeb';
+            }
+
+            byEl.textContent = clearedBy ? `By: ${clearedBy}` : 'By: Pending action';
+            atEl.textContent = clearedAt ? new Date(clearedAt).toLocaleString() : 'Time: -';
+
+            if (notes) {
+                notesEl.textContent = `Notes: ${notes}`;
+                notesEl.style.display = 'block';
+            } else {
+                notesEl.style.display = 'none';
+            }
+
+            if (query) {
+                queryEl.textContent = `Query: ${query}`;
+                queryEl.style.display = 'block';
+            } else {
+                queryEl.style.display = 'none';
+            }
+        };
+
+        renderDeptCard('Rec', 'Reception', d.reception_status, d.reception_by, d.reception_at, d.reception_notes, d.reception_query);
+        renderDeptCard('Ph', 'Pharmacy', d.pharmacy_status, d.pharmacy_by, d.pharmacy_at, d.pharmacy_notes, d.pharmacy_query);
+        renderDeptCard('Lab', 'Laboratory', d.lab_status, d.lab_by, d.lab_at, d.lab_notes, d.lab_query);
+
+        // Admin action section
+        const adminSec = document.getElementById('cdAdminActionSection');
+        if (d.overall_status === 'All Cleared' && d.admin_status !== 'Confirmed') {
+            adminSec.style.display = 'block';
+        } else {
+            adminSec.style.display = 'none';
+        }
+
+        openModal('modalClearanceDetail');
+    }
+
+    async function confirmAdminDischargeFromModal() {
+        const d = window.currentClearanceData;
+        if (!d) return;
+
+        if (!confirm('Confirm final discharge clearance for this patient? All department approvals will be finalized.')) return;
+
+        try {
+            const res = await fetch('/GM_HMS/api/discharge_clearance.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'admin_confirm',
+                    clearance_id: d.clearance_id,
+                    admission_id: d.admission_id
+                })
+            });
+            const json = await res.json();
+            if (json.success) {
+                showToast(json.message || 'Discharge finalized by Admin!', 'success');
+                closeModal('modalClearanceDetail');
+                loadPatientClearanceStatus(d.admission_id, d.patient_id);
+            } else {
+                showToast(json.message || 'Failed to finalize discharge', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Network error finalizing discharge.', 'error');
+        }
+    }
+
     // ── 7. CANCEL CHARGE ──
     let chargeToCancel = null;
     function openCancelChargeModal(itemId, category, desc, date, amount) {
@@ -4370,10 +4566,13 @@ const billing = (function () {
         printInterim,
         printFinal,
         printReceipt,
-        // Discharge
+        // Discharge & Clearances
         dischargePatient,
         submitDischarge,
         openDischargeHistory,
+        loadPatientClearanceStatus,
+        openClearanceDetailModal,
+        confirmAdminDischargeFromModal,
         filterPatientsTable,
         sortPatientsTable,
         closeWorkspace
