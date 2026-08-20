@@ -737,6 +737,17 @@ if (!isset($basePath)) {
                         </button>
                     </div>
                     <small style="color: #64748b; font-size: 0.75rem;">Minimum 8 characters</small>
+                </div>
+                <div id="change-pw-msg" style="display:none; padding:10px; border-radius:8px; font-size:0.875rem; margin-bottom:10px;"></div>
+                <div class="profile-card-actions">
+                    <button type="button" onclick="toggleChangePasswordModal()" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Reception Discharge Clearance Action Modal -->
 <div id="recClearanceModal" class="navbar-modal-overlay" style="display: none; z-index: 10003; align-items: center; justify-content: center; position: fixed; inset: 0; background: rgba(15, 35, 25, 0.6); backdrop-filter: blur(4px);">
     <div class="profile-card-modal" style="max-width: 580px; width: 92%; max-height: 90vh; display: flex; flex-direction: column; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.35); border: 2px solid #1f6b4a;">
@@ -802,8 +813,6 @@ if (!isset($basePath)) {
         </div>
     </div>
 </div>
-
-</style>
 
 <script>
 let currentRecClearance = null;
