@@ -146,8 +146,12 @@ class NurseShiftModel
         
         $params = [];
         if ($currentWard && !empty($currentWard['floor_name']) && !empty($currentWard['ward_name'])) {
-            $sql .= " AND COALESCE(b.floor_name, ia.floor_name) = ? AND COALESCE(b.ward_name, ia.ward_name, ia.ward) = ?";
+            $sql .= " AND (b.floor_name = ? OR (b.floor_name IS NULL AND ia.floor_name = ?)) 
+                      AND (b.ward_name = ? OR (b.ward_name IS NULL AND (ia.ward_name = ? OR ia.ward = ?)))";
             $params[] = $currentWard['floor_name'];
+            $params[] = $currentWard['floor_name'];
+            $params[] = $currentWard['ward_name'];
+            $params[] = $currentWard['ward_name'];
             $params[] = $currentWard['ward_name'];
         }
         
@@ -193,8 +197,12 @@ class NurseShiftModel
                 
         $params = [];
         if ($currentWard && !empty($currentWard['floor_name']) && !empty($currentWard['ward_name'])) {
-            $sql .= " AND COALESCE(b.floor_name, ia.floor_name) = ? AND COALESCE(b.ward_name, ia.ward_name, ia.ward) = ?";
+            $sql .= " AND (b.floor_name = ? OR (b.floor_name IS NULL AND ia.floor_name = ?)) 
+                      AND (b.ward_name = ? OR (b.ward_name IS NULL AND (ia.ward_name = ? OR ia.ward = ?)))";
             $params[] = $currentWard['floor_name'];
+            $params[] = $currentWard['floor_name'];
+            $params[] = $currentWard['ward_name'];
+            $params[] = $currentWard['ward_name'];
             $params[] = $currentWard['ward_name'];
         }
         
