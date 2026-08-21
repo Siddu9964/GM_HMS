@@ -206,8 +206,13 @@ abstract class BaseController {
      * @return string|null Token
      */
     private function getBearerToken() {
-        $headers = getallheaders();
-        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+        $headers = [];
+        if (function_exists('getallheaders')) {
+            $headers = getallheaders();
+        } elseif (function_exists('apache_request_headers')) {
+            $headers = apache_request_headers();
+        }
+        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
         
         if (preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
             return $matches[1];
