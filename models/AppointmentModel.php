@@ -57,19 +57,19 @@ class AppointmentModel
                        COALESCE(d.full_name, obm.last_doctor) as doctor_name,
                        d.specialization
                 FROM appointments a 
-                RIGHT JOIN patient p ON a.patient_id COLLATE utf8mb4_unicode_ci = p.patient_id 
-                LEFT JOIN doctors d ON a.doctor_id COLLATE utf8mb4_unicode_ci = d.doctor_id
+                RIGHT JOIN patient p ON BINARY a.patient_id = BINARY p.patient_id 
+                LEFT JOIN doctors d ON BINARY a.doctor_id = BINARY d.doctor_id
                 LEFT JOIN (
                     SELECT obm1.patient_id, obm1.doctor_name as last_doctor, 
-                           obm1.status as last_status, obm1.bill_date as last_date, 
+                           obm1.payment_status as last_status, obm1.bill_date as last_date, 
                            obm1.bill_time as last_time
                     FROM opd_billing_master obm1
                     JOIN (
                         SELECT patient_id, MAX(bill_id) as max_bill_id 
                         FROM opd_billing_master 
                         GROUP BY patient_id
-                    ) obm2 ON obm1.bill_id = obm2.max_bill_id
-                ) obm ON p.patient_id = obm.patient_id
+                    ) obm2 ON BINARY obm1.bill_id = BINARY obm2.max_bill_id
+                ) obm ON BINARY p.patient_id = BINARY obm.patient_id
                 WHERE 1=1";
         $params = [];
 
@@ -130,7 +130,7 @@ class AppointmentModel
         return $this->db->fetchOne(
             "SELECT a.*, d.department_id 
              FROM appointments a 
-             LEFT JOIN doctors d ON a.doctor_id COLLATE utf8mb4_unicode_ci = d.doctor_id 
+             LEFT JOIN doctors d ON BINARY a.doctor_id = BINARY d.doctor_id 
              WHERE a.appointment_id = ?",
             [$appointmentId]
         );

@@ -333,9 +333,9 @@ class OpdBillingModel
                            COALESCE(obm.doctor_name, d.full_name, a.doctor_name) AS doctor_name,
                            d.specialization
                     FROM opd_billing_master obm
-                    LEFT JOIN appointments a ON obm.appointment_id COLLATE utf8mb4_unicode_ci = a.appointment_id
-                    LEFT JOIN patient p ON obm.patient_id COLLATE utf8mb4_unicode_ci = p.patient_id
-                    LEFT JOIN doctors d ON obm.doctor_id COLLATE utf8mb4_unicode_ci = d.doctor_id
+                    LEFT JOIN appointments a ON BINARY obm.appointment_id = BINARY a.appointment_id
+                    LEFT JOIN patient p ON BINARY obm.patient_id = BINARY p.patient_id
+                    LEFT JOIN doctors d ON BINARY obm.doctor_id = BINARY d.doctor_id
                     WHERE obm.bill_id = ?", [$billId]);
 
         if (!$bill)
@@ -370,9 +370,9 @@ class OpdBillingModel
                     d.specialization,
                     (SELECT receipt_id FROM payment_receipts WHERE bill_id = obm.bill_id ORDER BY (amount = obm.grand_total) DESC, receipt_id DESC LIMIT 1) AS primary_receipt_id
                 FROM opd_billing_master obm
-                LEFT JOIN appointments a ON obm.appointment_id COLLATE utf8mb4_unicode_ci = a.appointment_id
-                LEFT JOIN patient p ON obm.patient_id COLLATE utf8mb4_unicode_ci = p.patient_id
-                LEFT JOIN doctors d ON obm.doctor_id COLLATE utf8mb4_unicode_ci = d.doctor_id
+                LEFT JOIN appointments a ON BINARY obm.appointment_id = BINARY a.appointment_id
+                LEFT JOIN patient p ON BINARY obm.patient_id = BINARY p.patient_id
+                LEFT JOIN doctors d ON BINARY obm.doctor_id = BINARY d.doctor_id
                 WHERE 1=1";
         $params = [];
 
@@ -612,8 +612,8 @@ class OpdBillingModel
         $regCheck = $this->db->fetchOne(
             "SELECT obi.item_id 
              FROM opd_billing_master obm
-             JOIN opd_billing_items obi ON obm.bill_id COLLATE utf8mb4_unicode_ci = obi.bill_id COLLATE utf8mb4_unicode_ci
-             WHERE obm.patient_id COLLATE utf8mb4_unicode_ci = ? 
+             JOIN opd_billing_items obi ON BINARY obm.bill_id = BINARY obi.bill_id
+             WHERE BINARY obm.patient_id = BINARY ? 
                AND (obi.item_type = 'Registration Fee' OR LOWER(obi.item_name) LIKE '%registration%')
              LIMIT 1",
             [$patientId]
@@ -628,7 +628,7 @@ class OpdBillingModel
             $currentApt = $this->db->fetchOne(
                 "SELECT d.consultation_fee, a.appointment_date, a.doctor_id, d.full_name as doctor_name 
                  FROM appointments a
-                 JOIN doctors d ON a.doctor_id COLLATE utf8mb4_unicode_ci = d.doctor_id COLLATE utf8mb4_unicode_ci
+                 JOIN doctors d ON BINARY a.doctor_id = BINARY d.doctor_id
                  WHERE a.appointment_id = ?",
                 [$currentAppointmentId]
             );
@@ -645,8 +645,8 @@ class OpdBillingModel
             $latest = $this->db->fetchOne(
                 "SELECT a.appointment_date, a.doctor_id, d.full_name as doctor_name, d.consultation_fee 
                  FROM appointments a
-                 JOIN doctors d ON a.doctor_id COLLATE utf8mb4_unicode_ci = d.doctor_id COLLATE utf8mb4_unicode_ci
-                 WHERE a.patient_id COLLATE utf8mb4_unicode_ci = ? 
+                 JOIN doctors d ON BINARY a.doctor_id = BINARY d.doctor_id
+                 WHERE BINARY a.patient_id = BINARY ? 
                  ORDER BY a.appointment_date DESC, a.appointment_time DESC 
                  LIMIT 1",
                 [$patientId]
@@ -664,8 +664,8 @@ class OpdBillingModel
         // 3. Fetch ONLY PENDING/UNPAID non-cancelled appointments for this patient on this target date
         $sqlDateApts = "SELECT a.appointment_id, a.doctor_id, d.full_name as doctor_name, d.consultation_fee, a.appointment_date 
                         FROM appointments a
-                        JOIN doctors d ON a.doctor_id COLLATE utf8mb4_unicode_ci = d.doctor_id COLLATE utf8mb4_unicode_ci
-                        WHERE a.patient_id COLLATE utf8mb4_unicode_ci = ? 
+                        JOIN doctors d ON BINARY a.doctor_id = BINARY d.doctor_id
+                        WHERE BINARY a.patient_id = BINARY ? 
                           AND a.appointment_date = ? 
                           AND a.appointment_status != 'Cancelled'
                           AND (a.payment_status IS NULL OR a.payment_status = 'Pending' OR a.payment_status = '')
@@ -681,9 +681,9 @@ class OpdBillingModel
                 $sameDocBill = $this->db->fetchOne(
                     "SELECT obm.bill_date 
                      FROM opd_billing_master obm 
-                     JOIN opd_billing_items obi ON obm.bill_id COLLATE utf8mb4_unicode_ci = obi.bill_id COLLATE utf8mb4_unicode_ci
-                     WHERE obm.patient_id COLLATE utf8mb4_unicode_ci = ? 
-                       AND (obm.doctor_id COLLATE utf8mb4_unicode_ci = ? OR obm.doctor_name COLLATE utf8mb4_unicode_ci = ? OR LOCATE(?, obi.item_name) > 0)
+                     JOIN opd_billing_items obi ON BINARY obm.bill_id = BINARY obi.bill_id
+                     WHERE BINARY obm.patient_id = BINARY ? 
+                       AND (BINARY obm.doctor_id = BINARY ? OR BINARY obm.doctor_name = BINARY ? OR LOCATE(?, obi.item_name) > 0)
                        AND obm.bill_date <= ?
                      ORDER BY obm.bill_date DESC, obm.bill_time DESC LIMIT 1",
                     [$patientId, $docId, $docName, $docName, $targetDate]
@@ -717,9 +717,9 @@ class OpdBillingModel
             $sameDocBill = $this->db->fetchOne(
                 "SELECT obm.bill_date 
                  FROM opd_billing_master obm 
-                 JOIN opd_billing_items obi ON obm.bill_id COLLATE utf8mb4_unicode_ci = obi.bill_id COLLATE utf8mb4_unicode_ci
-                 WHERE obm.patient_id COLLATE utf8mb4_unicode_ci = ? 
-                   AND (obm.doctor_id COLLATE utf8mb4_unicode_ci = ? OR obm.doctor_name COLLATE utf8mb4_unicode_ci = ? OR LOCATE(?, obi.item_name) > 0)
+                 JOIN opd_billing_items obi ON BINARY obm.bill_id = BINARY obi.bill_id
+                 WHERE BINARY obm.patient_id = BINARY ? 
+                   AND (BINARY obm.doctor_id = BINARY ? OR BINARY obm.doctor_name = BINARY ? OR LOCATE(?, obi.item_name) > 0)
                    AND obm.bill_date <= ?
                  ORDER BY obm.bill_date DESC, obm.bill_time DESC LIMIT 1",
                 [$patientId, $currentDocId, $currentDocName, $currentDocName, $targetDate]
@@ -776,20 +776,20 @@ class OpdBillingModel
                         SELECT patient_id, MAX(appointment_date) as max_date, MAX(appointment_id) as max_id
                         FROM appointments
                         GROUP BY patient_id
-                    ) a2 ON a1.patient_id = a2.patient_id AND a1.appointment_id = a2.max_id
-                ) a ON p.patient_id = a.patient_id
+                    ) a2 ON BINARY a1.patient_id = BINARY a2.patient_id AND BINARY a1.appointment_id = BINARY a2.max_id
+                ) a ON BINARY p.patient_id = BINARY a.patient_id
                 LEFT JOIN (
                     -- Get latest bill per patient
                     SELECT obm1.patient_id, obm1.doctor_id as last_doctor_id, obm1.doctor_name as last_doctor_name, 
-                           obm1.status as last_status, obm1.bill_date as last_date, obm1.bill_time as last_time
+                           obm1.payment_status as last_status, obm1.bill_date as last_date, obm1.bill_time as last_time
                     FROM opd_billing_master obm1
                     JOIN (
                         SELECT patient_id, MAX(bill_id) as max_bill_id 
                         FROM opd_billing_master 
                         GROUP BY patient_id
-                    ) obm2 ON obm1.bill_id = obm2.max_bill_id
-                ) obm ON p.patient_id = obm.patient_id
-                LEFT JOIN doctors d ON d.doctor_id = COALESCE(a.doctor_id, obm.last_doctor_id)
+                    ) obm2 ON BINARY obm1.bill_id = BINARY obm2.max_bill_id
+                ) obm ON BINARY p.patient_id = BINARY obm.patient_id
+                LEFT JOIN doctors d ON BINARY d.doctor_id = BINARY COALESCE(a.doctor_id, obm.last_doctor_id)
                 WHERE (
                     p.patient_id LIKE ? OR
                     p.phone LIKE ? OR
@@ -1131,30 +1131,30 @@ class OpdBillingModel
 
             $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
 
-            // Base query with joins
+            // Base query with joins (using BINARY comparison to prevent collation / charset mismatches across tables)
             $baseFrom = "
                 FROM opd_billing_master obm
-                LEFT JOIN appointments a ON obm.appointment_id COLLATE utf8mb4_unicode_ci = a.appointment_id
-                LEFT JOIN patient p ON obm.patient_id COLLATE utf8mb4_unicode_ci = p.patient_id
+                LEFT JOIN appointments a ON BINARY obm.appointment_id = BINARY a.appointment_id
+                LEFT JOIN patient p ON BINARY obm.patient_id = BINARY p.patient_id
                 LEFT JOIN doctors d ON (
-                    (obm.doctor_id IS NOT NULL AND obm.doctor_id != '' AND obm.doctor_id COLLATE utf8mb4_unicode_ci = d.doctor_id)
+                    (obm.doctor_id IS NOT NULL AND obm.doctor_id != '' AND BINARY obm.doctor_id = BINARY d.doctor_id)
                     OR (obm.doctor_name IS NOT NULL AND obm.doctor_name != '' AND (
-                        d.full_name COLLATE utf8mb4_unicode_ci = obm.doctor_name 
+                        BINARY d.full_name = BINARY obm.doctor_name 
                         OR obm.doctor_name LIKE CONCAT('%', d.full_name, '%')
                         OR d.full_name LIKE CONCAT('%', obm.doctor_name, '%')
                     ))
                 )
-                LEFT JOIN departments dept ON d.department_id = dept.department_id
+                LEFT JOIN departments dept ON BINARY d.department_id = BINARY dept.department_id
                 LEFT JOIN (
                     SELECT bill_id, GROUP_CONCAT(DISTINCT item_type SEPARATOR ', ') as item_type, COUNT(*) as item_count
                     FROM opd_billing_items 
                     GROUP BY bill_id
-                ) obi_dept ON obm.bill_id = obi_dept.bill_id
+                ) obi_dept ON BINARY obm.bill_id = BINARY obi_dept.bill_id
                 LEFT JOIN (
                     SELECT bill_id, MAX(receipt_id) as receipt_id, MAX(payment_date) as payment_date, MAX(payment_time) as payment_time, MAX(payment_method) as payment_method, SUM(amount) as amount
                     FROM payment_receipts
                     GROUP BY bill_id
-                ) pr ON obm.bill_id = pr.bill_id
+                ) pr ON BINARY obm.bill_id = BINARY pr.bill_id
             ";
 
             // Count total records for pagination
@@ -1345,7 +1345,7 @@ class OpdBillingModel
                     COALESCE(dept.department_name, d.specialization, 'General Medicine') as department,
                     COALESCE(d.specialization, dept.department_name, 'General Medicine') as specialization
                 FROM doctors d
-                LEFT JOIN departments dept ON d.department_id = dept.department_id
+                LEFT JOIN departments dept ON BINARY d.department_id = BINARY dept.department_id
             ") ?: [];
 
             $docLookup = [];

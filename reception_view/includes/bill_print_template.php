@@ -21,8 +21,8 @@ try {
         SELECT obm.*, p.first_name, p.last_name, p.phone as patient_phone, p.age, p.sex,
                d.full_name as doctor_name, d.specialization
         FROM opd_billing_master obm
-        LEFT JOIN patient p ON obm.patient_id COLLATE utf8mb4_unicode_ci = p.patient_id
-        LEFT JOIN doctors d ON obm.doctor_id COLLATE utf8mb4_unicode_ci = d.doctor_id
+        LEFT JOIN patient p ON obm.patient_id = p.patient_id
+        LEFT JOIN doctors d ON obm.doctor_id = d.doctor_id
         WHERE obm.bill_id = ?
     ", [$billId]);
 
@@ -31,11 +31,11 @@ try {
         $bill = $db->fetchOne("
             SELECT obm.*, a.patient_name as first_name, '' as last_name, a.phone as patient_phone, 
                    '' as age, '' as sex, d.full_name as doctor_name, d.specialization
-            FROM opd_billing_master obm
-            LEFT JOIN appointments a ON obm.appointment_id COLLATE utf8mb4_unicode_ci = a.appointment_id
-            LEFT JOIN doctors d ON obm.doctor_id COLLATE utf8mb4_unicode_ci = d.doctor_id
-            WHERE obm.bill_id = ?
-        ", [$billId]);
+        FROM opd_billing_master obm
+        LEFT JOIN appointments a ON obm.appointment_id = a.appointment_id
+        LEFT JOIN doctors d ON obm.doctor_id = d.doctor_id
+        WHERE obm.bill_id = ?
+    ", [$billId]);
     }
 
     if (!$bill) {

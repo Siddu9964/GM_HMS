@@ -27,15 +27,15 @@ class PatientModel
         $offset = ($page - 1) * $limit;
 
         $sql = "SELECT DISTINCT p.*, 
-                (SELECT appointment_status FROM appointments WHERE patient_id COLLATE utf8mb4_general_ci = p.patient_id COLLATE utf8mb4_general_ci ORDER BY appointment_date DESC, appointment_time DESC LIMIT 1) as latest_appointment_status,
-                (SELECT status FROM consultations WHERE patient_id COLLATE utf8mb4_general_ci = p.patient_id COLLATE utf8mb4_general_ci ORDER BY consultation_date DESC, consultation_time DESC LIMIT 1) as latest_consultation_status,
-                (SELECT d.full_name FROM appointments a JOIN doctors d ON a.doctor_id = d.doctor_id WHERE a.patient_id COLLATE utf8mb4_general_ci = p.patient_id COLLATE utf8mb4_general_ci ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT 1) as doctor_name,
-                (SELECT a.doctor_id FROM appointments a WHERE a.patient_id COLLATE utf8mb4_general_ci = p.patient_id COLLATE utf8mb4_general_ci ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT 1) as doctor_id
+                (SELECT appointment_status FROM appointments WHERE BINARY patient_id = BINARY p.patient_id ORDER BY appointment_date DESC, appointment_time DESC LIMIT 1) as latest_appointment_status,
+                (SELECT status FROM consultations WHERE BINARY patient_id = BINARY p.patient_id ORDER BY consultation_date DESC, consultation_time DESC LIMIT 1) as latest_consultation_status,
+                (SELECT d.full_name FROM appointments a JOIN doctors d ON a.doctor_id = d.doctor_id WHERE BINARY a.patient_id = BINARY p.patient_id ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT 1) as doctor_name,
+                (SELECT a.doctor_id FROM appointments a WHERE BINARY a.patient_id = BINARY p.patient_id ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT 1) as doctor_id
                 FROM patient p";
 
         // Join with appointments if filtering by doctor
         if (!empty($filters['doctor_id'])) {
-            $sql .= " INNER JOIN appointments a ON p.patient_id COLLATE utf8mb4_general_ci = a.patient_id COLLATE utf8mb4_general_ci";
+            $sql .= " INNER JOIN appointments a ON BINARY p.patient_id = BINARY a.patient_id";
         }
 
         $sql .= " WHERE 1=1";
@@ -130,7 +130,7 @@ class PatientModel
 
         // Join with appointments if filtering by doctor
         if (!empty($filters['doctor_id'])) {
-            $sql .= " INNER JOIN appointments a ON p.patient_id COLLATE utf8mb4_general_ci = a.patient_id COLLATE utf8mb4_general_ci";
+            $sql .= " INNER JOIN appointments a ON BINARY p.patient_id = BINARY a.patient_id";
         }
 
         $sql .= " WHERE 1=1";
@@ -216,8 +216,8 @@ class PatientModel
     public function searchPatients($query)
     {
         $sql = "SELECT p.*,
-                (SELECT d.full_name FROM appointments a JOIN doctors d ON a.doctor_id = d.doctor_id WHERE a.patient_id COLLATE utf8mb4_general_ci = p.patient_id COLLATE utf8mb4_general_ci ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT 1) as doctor_name,
-                (SELECT a.doctor_id FROM appointments a WHERE a.patient_id COLLATE utf8mb4_general_ci = p.patient_id COLLATE utf8mb4_general_ci ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT 1) as doctor_id
+                (SELECT d.full_name FROM appointments a JOIN doctors d ON a.doctor_id = d.doctor_id WHERE BINARY a.patient_id = BINARY p.patient_id ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT 1) as doctor_name,
+                (SELECT a.doctor_id FROM appointments a WHERE BINARY a.patient_id = BINARY p.patient_id ORDER BY a.appointment_date DESC, a.appointment_time DESC LIMIT 1) as doctor_id
                 FROM patient p 
                 WHERE p.first_name LIKE ? 
                    OR p.last_name LIKE ? 
