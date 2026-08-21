@@ -591,4 +591,106 @@ class OpdBillingController extends BaseController {
             $this->handleException($e);
         }
     }
+
+    /**
+     * GET /api/billing/receipts
+     * Advanced Receipts Query Engine with Multi-Filtering & KPI Breakdown
+     */
+    public function getReceiptsList() {
+        $this->restrictMethod('GET');
+        $this->requireAuth();
+
+        try {
+            $filters = [
+                'search'          => $_GET['search'] ?? ($_GET['q'] ?? null),
+                'date_preset'     => $_GET['date_preset'] ?? null,
+                'date_from'       => $_GET['date_from'] ?? null,
+                'date_to'         => $_GET['date_to'] ?? null,
+                'created_by'      => $_GET['created_by'] ?? null,
+                'department'      => $_GET['department'] ?? null,
+                'doctor'          => $_GET['doctor'] ?? null,
+                'payment_status'  => $_GET['payment_status'] ?? null,
+                'payment_mode'    => $_GET['payment_mode'] ?? null,
+                'has_outstanding' => $_GET['has_outstanding'] ?? null,
+                'high_value'      => $_GET['high_value'] ?? null,
+                'sort_by'         => $_GET['sort_by'] ?? 'date_desc',
+                'page'            => (int)($_GET['page'] ?? 1),
+                'limit'           => (int)($_GET['limit'] ?? 25)
+            ];
+
+            $result = $this->model->getAdvancedReceipts($filters);
+            $this->respondSuccess($result);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    /**
+     * GET /api/billing/receipts/shift-handover
+     * Hourly Shift Handover & Reconciliation Report
+     */
+    public function getShiftHandoverReport() {
+        $this->restrictMethod('GET');
+        $this->requireAuth();
+
+        try {
+            $date = $_GET['date'] ?? date('Y-m-d');
+            $cashier = $_GET['cashier'] ?? null;
+
+            $filters = [
+                'date_from'   => $date,
+                'date_to'     => $date,
+                'created_by'  => $cashier,
+                'limit'       => 500
+            ];
+
+            $result = $this->model->getAdvancedReceipts($filters);
+            $this->respondSuccess([
+                'report_date'     => $date,
+                'cashier'         => $cashier ?: 'All Cashiers',
+                'summary'         => $result['summary_kpis'],
+                'hourly_shift'    => $result['hourly_shift'],
+                'payment_modes'   => $result['breakdowns']['payment_mode'] ?? [],
+                'staff_summary'   => $result['breakdowns']['staff'] ?? []
+            ]);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    /**
+     * POST /api/billing/receipts/refund
+     * Cancel or Refund Bill/Receipt with reason & audit logging
+     */
+    public function cancelOrRefundReceipt() {
+        $this->restrictMethod('POST');
+        $this->requireAuth();
+
+        try {
+            $input = $this->getJsonInput();
+            $billId = trim($input['bill_id'] ?? '');
+            $action = trim($input['action'] ?? 'cancel'); // 'cancel' or 'refund'
+            $reason = trim($input['reason'] ?? '');
+            $refundAmount = floatval($input['refund_amount'] ?? 0);
+
+            if (empty($billId)) {
+                $this->respondBadRequest('Bill ID is required');
+            }
+            if (empty($reason)) {
+                $this->respondBadRequest('Reason for cancellation/refund is required');
+            }
+
+            $userId = $this->currentUser['username'] ?? ($this->currentUser['full_name'] ?? 'admin');
+            $success = $this->model->cancelOrRefundBill($billId, $action, $reason, $userId, $refundAmount);
+
+            if ($success) {
+                $this->respondSuccess(null, ucfirst($action) . ' processed successfully for ' . $billId);
+            } else {
+                $this->respondServerError('Failed to process ' . $action);
+            }
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
 }
+

@@ -2129,54 +2129,54 @@ try {
 
 <!-- MODAL: Discharge Patient -->
 <div class="billing-modal-overlay" id="modalDischarge">
-    <div class="billing-modal" style="max-width:600px;">
-        <div class="bm-head" style="background:var(--amber-500);">
-            <div class="bm-title" style="color:white;"><i data-lucide="sign-out"></i> Discharge Patient</div>
-            <button class="bm-close" style="color:white;" onclick="billing.closeModal('modalDischarge')"><i data-lucide="x"></i></button>
+    <div class="billing-modal" style="max-width:620px; max-height:90vh; display:flex; flex-direction:column; background:#f3efe6; border:1.5px solid #1f6b4a; border-radius:12px; box-shadow:0 10px 30px rgba(31,107,74,0.25);">
+        <div class="bm-head" style="background:#1f6b4a; color:#f3efe6; padding:16px 20px; border-radius:10px 10px 0 0; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+            <div class="bm-title" style="color:#f3efe6; font-size:1.1rem; font-weight:800; display:flex; align-items:center; gap:8px;"><i data-lucide="log-out"></i> Discharge Patient</div>
+            <button class="bm-close" style="color:#f3efe6; background:transparent; border:none; cursor:pointer;" onclick="billing.closeModal('modalDischarge')"><i data-lucide="x"></i></button>
         </div>
-        <div class="bm-body">
-            <form id="dischargeFormLocal">
+        <div class="bm-body" style="overflow-y:auto; flex:1; padding:20px; max-height:calc(90vh - 130px);">
+            <form id="dischargeFormLocal" onsubmit="event.preventDefault(); billing.submitDischarge();">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                     <div class="bm-form-group">
-                        <label>Discharge Date & Time *</label>
-                        <input type="datetime-local" id="dsDate" class="bm-input" required>
+                        <label style="font-size:12px; font-weight:700; color:#1f6b4a; text-transform:uppercase; margin-bottom:4px; display:block;">Discharge Date & Time <span class="req">*</span></label>
+                        <input type="datetime-local" id="dsDate" class="bm-input" required style="width:100%; height:40px; padding:0 10px; border:1.5px solid #1f6b4a; border-radius:8px; background:#f3efe6; color:#1f6b4a; font-weight:600;">
                     </div>
                     <div class="bm-form-group">
-                        <label>Discharge Type *</label>
-                        <select id="dsType" class="bm-input" required>
+                        <label style="font-size:12px; font-weight:700; color:#1f6b4a; text-transform:uppercase; margin-bottom:4px; display:block;">Discharge Type <span class="req">*</span></label>
+                        <select id="dsType" class="bm-input" required style="width:100%; height:40px; padding:0 10px; border:1.5px solid #1f6b4a; border-radius:8px; background:#f3efe6; color:#1f6b4a; font-weight:600;">
                             <option value="Normal">Normal</option>
-                            <option value="Against Medical Advice">Against Medical Advice</option>
+                            <option value="Against Medical Advice">Against Medical Advice (LAMA)</option>
                             <option value="Transferred">Transferred</option>
                             <option value="Deceased">Deceased</option>
                         </select>
                     </div>
                     <div class="bm-form-group">
-                        <label>Follow-up Date</label>
-                        <input type="date" id="dsFollowup" class="bm-input">
+                        <label style="font-size:12px; font-weight:700; color:#1f6b4a; text-transform:uppercase; margin-bottom:4px; display:block;">Follow-up Date</label>
+                        <input type="date" id="dsFollowup" class="bm-input" style="width:100%; height:40px; padding:0 10px; border:1.5px solid #1f6b4a; border-radius:8px; background:#f3efe6; color:#1f6b4a; font-weight:600;">
                     </div>
                 </div>
                 
-                <div class="bm-form-group" style="margin-bottom: 15px;">
-                    <label>Final Diagnosis</label>
-                    <textarea id="dsDiagnosis" class="bm-input" rows="2" placeholder="e.g. Acute appendicitis"></textarea>
+                <div class="bm-form-group" style="margin-bottom: 14px;">
+                    <label style="font-size:12px; font-weight:700; color:#1f6b4a; text-transform:uppercase; margin-bottom:4px; display:block;">Final Diagnosis</label>
+                    <textarea id="dsDiagnosis" class="bm-input" rows="2" placeholder="e.g. Acute appendicitis, Hypertension resolved..." style="width:100%; padding:8px 10px; border:1.5px solid #1f6b4a; border-radius:8px; background:#f3efe6; color:#1f6b4a; font-size:13px;"></textarea>
                 </div>
                 
-                <div class="bm-form-group" style="margin-bottom: 15px;">
-                    <label>Discharge Summary</label>
-                    <textarea id="dsSummary" class="bm-input" rows="3" placeholder="Condition at discharge, main events during stay..."></textarea>
+                <div class="bm-form-group" style="margin-bottom: 14px;">
+                    <label style="font-size:12px; font-weight:700; color:#1f6b4a; text-transform:uppercase; margin-bottom:4px; display:block;">Discharge Summary</label>
+                    <textarea id="dsSummary" class="bm-input" rows="3" placeholder="Condition at discharge, main clinical events during stay..." style="width:100%; padding:8px 10px; border:1.5px solid #1f6b4a; border-radius:8px; background:#f3efe6; color:#1f6b4a; font-size:13px;"></textarea>
                 </div>
                 
-                <div class="bm-form-group" style="margin-bottom: 15px;">
-                    <label>Medications Prescribed</label>
-                    <textarea id="dsMeds" class="bm-input" rows="2" placeholder="List of discharge medications..."></textarea>
+                <div class="bm-form-group" style="margin-bottom: 10px;">
+                    <label style="font-size:12px; font-weight:700; color:#1f6b4a; text-transform:uppercase; margin-bottom:4px; display:block;">Medications Prescribed</label>
+                    <textarea id="dsMeds" class="bm-input" rows="2" placeholder="List of take-home discharge medications..." style="width:100%; padding:8px 10px; border:1.5px solid #1f6b4a; border-radius:8px; background:#f3efe6; color:#1f6b4a; font-size:13px;"></textarea>
                 </div>
             </form>
-            <div class="bm-footer" style="margin-top: 20px;">
-                <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalDischarge')">Cancel</button>
-                <button class="bm-btn" style="background:var(--amber-600); color:white; border:none;" id="btnSubmitDischarge" onclick="billing.submitDischarge()">
-                    <i data-lucide="check-circle-2"></i> Complete Discharge
-                </button>
-            </div>
+        </div>
+        <div class="bm-footer" style="padding:14px 20px; border-top:1.5px solid rgba(31,107,74,0.2); background:#f3efe6; display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-shrink:0; border-radius:0 0 12px 12px;">
+            <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalDischarge')" style="background:#f3efe6; color:#1f6b4a; border:1.5px solid #1f6b4a; font-weight:700; padding:9px 18px; border-radius:8px; cursor:pointer;">Cancel</button>
+            <button type="button" class="bm-btn bm-btn-primary" id="btnSubmitDischarge" onclick="billing.submitDischarge()" style="background:#1f6b4a; color:#f3efe6; border:1.5px solid #1f6b4a; font-weight:800; padding:10px 22px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(31,107,74,0.3);">
+                <i data-lucide="check-circle-2"></i> Complete Discharge
+            </button>
         </div>
     </div>
 </div>

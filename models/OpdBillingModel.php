@@ -1005,4 +1005,796 @@ class OpdBillingModel
             throw $e;
         }
     }
+
+    /**
+     * Advanced Receipts Query Engine
+     * Supports multidimensional filtering, pagination, KPI summaries, and shift handover breakdown
+     */
+    public function getAdvancedReceipts($filters = [])
+    {
+        try {
+            $conditions = [];
+            $params = [];
+
+            // 1. Date Range Handling (Presets & Custom)
+            $dateFrom = $filters['date_from'] ?? null;
+            $dateTo = $filters['date_to'] ?? null;
+            $preset = $filters['date_preset'] ?? null;
+
+            if ($preset) {
+                $today = date('Y-m-d');
+                switch ($preset) {
+                    case 'today':
+                        $dateFrom = $today;
+                        $dateTo = $today;
+                        break;
+                    case 'yesterday':
+                        $yesterday = date('Y-m-d', strtotime('-1 day'));
+                        $dateFrom = $yesterday;
+                        $dateTo = $yesterday;
+                        break;
+                    case 'this_week':
+                        $dateFrom = date('Y-m-d', strtotime('monday this week'));
+                        $dateTo = date('Y-m-d', strtotime('sunday this week'));
+                        break;
+                    case 'this_month':
+                        $dateFrom = date('Y-m-01');
+                        $dateTo = date('Y-m-t');
+                        break;
+                    case 'this_year':
+                        $dateFrom = date('Y-01-01');
+                        $dateTo = date('Y-12-31');
+                        break;
+                }
+            }
+
+            if (!empty($dateFrom) && !empty($dateTo)) {
+                $conditions[] = "obm.bill_date BETWEEN ? AND ?";
+                $params[] = $dateFrom;
+                $params[] = $dateTo;
+            } elseif (!empty($dateFrom)) {
+                $conditions[] = "obm.bill_date >= ?";
+                $params[] = $dateFrom;
+            } elseif (!empty($dateTo)) {
+                $conditions[] = "obm.bill_date <= ?";
+                $params[] = $dateTo;
+            }
+
+            // 2. Omni-Search (Bill ID, Receipt No, Patient ID, Patient Name, Mobile, Doctor, Appointment)
+            if (!empty($filters['search'])) {
+                $q = '%' . trim($filters['search']) . '%';
+                $conditions[] = "(
+                    obm.bill_id LIKE ? 
+                    OR obm.receipt_no LIKE ? 
+                    OR pr.receipt_id LIKE ? 
+                    OR obm.patient_id LIKE ? 
+                    OR obm.name LIKE ? 
+                    OR p.first_name LIKE ? 
+                    OR p.last_name LIKE ? 
+                    OR a.patient_name LIKE ? 
+                    OR obm.mobile LIKE ? 
+                    OR p.phone LIKE ? 
+                    OR a.phone LIKE ? 
+                    OR obm.appointment_id LIKE ? 
+                    OR obm.doctor_name LIKE ? 
+                    OR d.full_name LIKE ?
+                )";
+                for ($i = 0; $i < 14; $i++) {
+                    $params[] = $q;
+                }
+            }
+
+            // 3. User / Cashier Filter
+            if (!empty($filters['created_by'])) {
+                $conditions[] = "obm.created_by = ?";
+                $params[] = $filters['created_by'];
+            }
+
+            // 4. Department / Medical Specialization Filter
+            if (!empty($filters['department'])) {
+                $conditions[] = "(dept.department_name = ? OR d.specialization = ? OR obm.purpose = ? OR obi_dept.item_type = ?)";
+                $params[] = $filters['department'];
+                $params[] = $filters['department'];
+                $params[] = $filters['department'];
+                $params[] = $filters['department'];
+            }
+
+            // 5. Doctor Filter
+            if (!empty($filters['doctor'])) {
+                $conditions[] = "(obm.doctor_id = ? OR obm.doctor_name LIKE ? OR d.full_name LIKE ?)";
+                $params[] = $filters['doctor'];
+                $params[] = '%' . $filters['doctor'] . '%';
+                $params[] = '%' . $filters['doctor'] . '%';
+            }
+
+            // 6. Payment Status Filter
+            if (!empty($filters['payment_status'])) {
+                $conditions[] = "obm.payment_status = ?";
+                $params[] = $filters['payment_status'];
+            }
+
+            // 7. Payment Mode Filter
+            if (!empty($filters['payment_mode'])) {
+                $conditions[] = "obm.payment_mode = ?";
+                $params[] = $filters['payment_mode'];
+            }
+
+            // 8. Outstanding Balance Filter
+            if (!empty($filters['has_outstanding']) && $filters['has_outstanding'] !== 'false') {
+                $conditions[] = "obm.balance_due > 0";
+            }
+
+            // 9. High Value Filter (> 5000)
+            if (!empty($filters['high_value']) && $filters['high_value'] !== 'false') {
+                $conditions[] = "obm.grand_total >= 5000";
+            }
+
+            $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+
+            // Base query with joins
+            $baseFrom = "
+                FROM opd_billing_master obm
+                LEFT JOIN appointments a ON obm.appointment_id COLLATE utf8mb4_unicode_ci = a.appointment_id
+                LEFT JOIN patient p ON obm.patient_id COLLATE utf8mb4_unicode_ci = p.patient_id
+                LEFT JOIN doctors d ON (
+                    (obm.doctor_id IS NOT NULL AND obm.doctor_id != '' AND obm.doctor_id COLLATE utf8mb4_unicode_ci = d.doctor_id)
+                    OR (obm.doctor_name IS NOT NULL AND obm.doctor_name != '' AND (
+                        d.full_name COLLATE utf8mb4_unicode_ci = obm.doctor_name 
+                        OR obm.doctor_name LIKE CONCAT('%', d.full_name, '%')
+                        OR d.full_name LIKE CONCAT('%', obm.doctor_name, '%')
+                    ))
+                )
+                LEFT JOIN departments dept ON d.department_id = dept.department_id
+                LEFT JOIN (
+                    SELECT bill_id, GROUP_CONCAT(DISTINCT item_type SEPARATOR ', ') as item_type, COUNT(*) as item_count
+                    FROM opd_billing_items 
+                    GROUP BY bill_id
+                ) obi_dept ON obm.bill_id = obi_dept.bill_id
+                LEFT JOIN (
+                    SELECT bill_id, MAX(receipt_id) as receipt_id, MAX(payment_date) as payment_date, MAX(payment_time) as payment_time, MAX(payment_method) as payment_method, SUM(amount) as amount
+                    FROM payment_receipts
+                    GROUP BY bill_id
+                ) pr ON obm.bill_id = pr.bill_id
+            ";
+
+            // Count total records for pagination
+            $countSql = "SELECT COUNT(DISTINCT obm.bill_id) as total_count $baseFrom $whereClause";
+            $countRes = $this->db->fetchOne($countSql, $params);
+            $totalRecords = $countRes ? (int)$countRes['total_count'] : 0;
+
+            // Summary KPIs across the filtered dataset
+            $kpiSql = "
+                SELECT 
+                    COUNT(DISTINCT obm.bill_id) as total_bills,
+                    COALESCE(SUM(obm.grand_total), 0) as total_billing,
+                    COALESCE(SUM(obm.amount_paid), 0) as total_collected,
+                    COALESCE(SUM(obm.balance_due), 0) as total_pending,
+                    COALESCE(SUM(obm.discount_amount), 0) as total_discount,
+                    COALESCE(SUM(CASE WHEN obm.payment_status = 'Cancelled' THEN obm.grand_total ELSE 0 END), 0) as total_refunds,
+                    COUNT(CASE WHEN obm.payment_status = 'Paid' THEN 1 END) as paid_bills_count,
+                    COUNT(CASE WHEN obm.payment_status = 'Partial' THEN 1 END) as partial_bills_count,
+                    COUNT(CASE WHEN obm.payment_status = 'Pending' THEN 1 END) as pending_bills_count,
+                    COUNT(CASE WHEN obm.payment_status = 'Cancelled' THEN 1 END) as cancelled_bills_count
+                $baseFrom 
+                $whereClause
+            ";
+            $kpiRes = $this->db->fetchOne($kpiSql, $params) ?: [];
+            
+            $totalBills = (int)($kpiRes['total_bills'] ?? 0);
+            $totalBilling = (float)($kpiRes['total_billing'] ?? 0);
+            $totalCollected = (float)($kpiRes['total_collected'] ?? 0);
+            $avgBillValue = $totalBills > 0 ? round($totalBilling / $totalBills, 2) : 0;
+
+            // Today's Collection KPI for Quick Comparison
+            $todayStats = $this->db->fetchOne("
+                SELECT 
+                    COALESCE(SUM(amount_paid), 0) as today_collection,
+                    COUNT(*) as today_bills
+                FROM opd_billing_master 
+                WHERE bill_date = CURDATE() AND payment_status != 'Cancelled'
+            ") ?: ['today_collection' => 0, 'today_bills' => 0];
+
+            $summaryKPIs = [
+                'total_bills' => $totalBills,
+                'total_collection' => $totalCollected,
+                'total_pending' => (float)($kpiRes['total_pending'] ?? 0),
+                'total_discount' => (float)($kpiRes['total_discount'] ?? 0),
+                'total_refunds' => (float)($kpiRes['total_refunds'] ?? 0),
+                'avg_bill_value' => $avgBillValue,
+                'paid_bills_count' => (int)($kpiRes['paid_bills_count'] ?? 0),
+                'partial_bills_count' => (int)($kpiRes['partial_bills_count'] ?? 0),
+                'pending_bills_count' => (int)($kpiRes['pending_bills_count'] ?? 0),
+                'cancelled_bills_count' => (int)($kpiRes['cancelled_bills_count'] ?? 0),
+                'today_collection' => (float)($todayStats['today_collection'] ?? 0),
+                'today_bills' => (int)($todayStats['today_bills'] ?? 0)
+            ];
+
+            // Sorting logic
+            $sortBy = $filters['sort_by'] ?? 'date_desc';
+            $orderClause = "ORDER BY obm.bill_date DESC, obm.bill_time DESC, obm.bill_id DESC";
+            switch ($sortBy) {
+                case 'date_asc':
+                    $orderClause = "ORDER BY obm.bill_date ASC, obm.bill_time ASC, obm.bill_id ASC";
+                    break;
+                case 'amount_desc':
+                    $orderClause = "ORDER BY obm.grand_total DESC";
+                    break;
+                case 'amount_asc':
+                    $orderClause = "ORDER BY obm.grand_total ASC";
+                    break;
+                case 'patient_name':
+                    $orderClause = "ORDER BY patient_name ASC";
+                    break;
+            }
+
+            // Pagination limit and offset
+            $limit = isset($filters['limit']) ? (int)$filters['limit'] : 25;
+            if ($limit <= 0) $limit = 25;
+            if ($limit > 500) $limit = 500;
+            
+            $page = isset($filters['page']) ? (int)$filters['page'] : 1;
+            if ($page <= 0) $page = 1;
+            $offset = ($page - 1) * $limit;
+
+            // Fetch Main Data Records
+            $dataSql = "
+                SELECT 
+                    obm.bill_id,
+                    COALESCE(obm.receipt_no, pr.receipt_id, REPLACE(obm.bill_id, 'OPB-', 'ORC-'), REPLACE(obm.bill_id, 'BILL-', 'REC-')) as receipt_id,
+                    obm.patient_id,
+                    COALESCE(NULLIF(TRIM(CONCAT(p.first_name, ' ', IFNULL(p.last_name, ''))), ''), a.patient_name, obm.name, 'Walking Patient') AS patient_name,
+                    COALESCE(p.phone, a.phone, obm.mobile, '-') AS patient_phone,
+                    p.sex,
+                    p.age,
+                    p.blood_group,
+                    obm.bill_date,
+                    obm.bill_time,
+                    obm.created_at,
+                    obm.subtotal,
+                    obm.discount_amount,
+                    obm.discount_percentage,
+                    obm.taxable_amount,
+                    obm.tax_amount,
+                    obm.grand_total,
+                    obm.amount_paid,
+                    obm.balance_due,
+                    obm.payment_status,
+                    COALESCE(obm.payment_mode, pr.payment_method, 'Cash') as payment_mode,
+                    obm.created_by,
+                    obm.purpose,
+                    COALESCE(obm.doctor_name, d.full_name, a.doctor_name, 'Direct Service') as doctor_name,
+                    COALESCE(d.specialization, dept.department_name, 'General Medicine') as doctor_specialization,
+                    COALESCE(dept.department_name, d.specialization, 'General Medicine') as department_name,
+                    COALESCE(obi_dept.item_count, 1) as item_count,
+                    obm.notes
+                $baseFrom
+                $whereClause
+                GROUP BY obm.bill_id
+                $orderClause
+                LIMIT $limit OFFSET $offset
+            ";
+
+            $rows = $this->db->fetchAll($dataSql, $params) ?: [];
+
+            // Duplicate Detection Algorithm:
+            // Identify multiple bills for same patient on same date with exact same grand total
+            $duplicateCheckSql = "
+                SELECT patient_id, bill_date, grand_total, COUNT(*) as dup_count
+                FROM opd_billing_master
+                WHERE payment_status != 'Cancelled' AND patient_id IS NOT NULL AND patient_id != ''
+                GROUP BY patient_id, bill_date, grand_total
+                HAVING dup_count > 1
+            ";
+            $dupRows = $this->db->fetchAll($duplicateCheckSql) ?: [];
+            $dupMap = [];
+            foreach ($dupRows as $dr) {
+                $dupMap[$dr['patient_id'] . '_' . $dr['bill_date'] . '_' . number_format((float)$dr['grand_total'], 2)] = true;
+            }
+
+            foreach ($rows as &$r) {
+                $key = ($r['patient_id'] ?? '') . '_' . ($r['bill_date'] ?? '') . '_' . number_format((float)($r['grand_total'] ?? 0), 2);
+                $r['is_potential_duplicate'] = isset($dupMap[$key]);
+            }
+
+            // Breakdowns for Analytics & Filters
+            $deptBreakdown = $this->db->fetchAll("
+                SELECT 
+                    COALESCE(dept.department_name, d.specialization, 'General Medicine') as department,
+                    COUNT(DISTINCT obm.bill_id) as bills_count,
+                    SUM(obm.amount_paid) as collected_amount,
+                    SUM(obm.grand_total) as total_amount
+                $baseFrom
+                $whereClause
+                GROUP BY department
+                ORDER BY collected_amount DESC
+            ", $params) ?: [];
+
+            $modeBreakdown = $this->db->fetchAll("
+                SELECT 
+                    COALESCE(obm.payment_mode, 'Cash') as payment_mode,
+                    COUNT(DISTINCT obm.bill_id) as bills_count,
+                    SUM(obm.amount_paid) as collected_amount
+                $baseFrom
+                $whereClause
+                GROUP BY payment_mode
+                ORDER BY collected_amount DESC
+            ", $params) ?: [];
+
+            // 1. Staff Users and Role Lookup
+            $allUsers = $this->db->fetchAll("SELECT username, role FROM user") ?: [];
+            $userRoleMap = [];
+            foreach ($allUsers as $u) {
+                $userRoleMap[strtolower(trim($u['username']))] = $u['role'];
+            }
+
+            $allStaff = $this->db->fetchAll("SELECT username, designation, full_name, mobile_number FROM staff") ?: [];
+            $staffInfoMap = [];
+            foreach ($allStaff as $st) {
+                if (!empty($st['username'])) {
+                    $staffInfoMap[strtolower(trim($st['username']))] = $st;
+                }
+            }
+
+            // Fetch all doctors from database for exact individual lookup
+            $allDoctorsList = $this->db->fetchAll("
+                SELECT 
+                    d.doctor_id,
+                    d.full_name,
+                    d.qualification,
+                    d.room_number,
+                    COALESCE(dept.department_name, d.specialization, 'General Medicine') as department,
+                    COALESCE(d.specialization, dept.department_name, 'General Medicine') as specialization
+                FROM doctors d
+                LEFT JOIN departments dept ON d.department_id = dept.department_id
+            ") ?: [];
+
+            $docLookup = [];
+            foreach ($allDoctorsList as $docItem) {
+                $cKey = strtolower(preg_replace('/[^a-z0-9]/i', '', preg_replace('/^Dr\.?\s+/i', '', trim($docItem['full_name']))));
+                $docLookup[$cKey] = $docItem;
+                if (!empty($docItem['doctor_id'])) {
+                    $docLookup[strtolower(trim($docItem['doctor_id']))] = $docItem;
+                }
+            }
+
+            // Fetch filtered bills for individual doctor splitting, cashier itemization, and date-wise patient lists
+            $filteredBillsForDocs = $this->db->fetchAll("
+                SELECT 
+                    obm.bill_id,
+                    COALESCE(obm.receipt_no, pr.receipt_id, REPLACE(obm.bill_id, 'OPB-', 'ORC-')) as receipt_id,
+                    obm.patient_id,
+                    COALESCE(NULLIF(TRIM(CONCAT(p.first_name, ' ', IFNULL(p.last_name, ''))), ''), a.patient_name, obm.name, 'Walking Patient') AS patient_name,
+                    COALESCE(p.phone, a.phone, obm.mobile, '-') AS patient_phone,
+                    obm.bill_date,
+                    obm.bill_time,
+                    obm.doctor_id,
+                    obm.doctor_name,
+                    COALESCE(NULLIF(TRIM(obm.created_by), ''), 'System Admin') as created_by,
+                    obm.grand_total,
+                    obm.amount_paid,
+                    obm.balance_due,
+                    obm.discount_amount,
+                    COALESCE(obm.payment_mode, 'Cash') as payment_mode,
+                    COALESCE(obm.payment_status, 'Paid') as payment_status,
+                    obm.purpose,
+                    COALESCE(obi_dept.item_count, 1) as item_count
+                $baseFrom
+                $whereClause
+                GROUP BY obm.bill_id
+                ORDER BY obm.bill_date DESC, obm.bill_time DESC
+            ", $params) ?: [];
+
+            // Compute Cashier Shift Handover and Multi-Mode Breakdown from unique bills
+            $staffMap = [];
+            foreach ($filteredBillsForDocs as $fb) {
+                $cUser = $fb['created_by'];
+                $paid = (float)$fb['amount_paid'];
+                $billed = (float)$fb['grand_total'];
+                $due = (float)$fb['balance_due'];
+                $disc = (float)$fb['discount_amount'];
+                $mode = $fb['payment_mode'];
+                $bDate = $fb['bill_date'];
+                $bTime = $fb['bill_time'];
+
+                if (!isset($staffMap[$cUser])) {
+                    $sKey = strtolower(trim($cUser));
+                    $stInfo = $staffInfoMap[$sKey] ?? null;
+                    $staffMap[$cUser] = [
+                        'staff_username' => $cUser,
+                        'full_name' => $stInfo ? $stInfo['full_name'] : $cUser,
+                        'role' => $userRoleMap[$sKey] ?? ($stInfo ? $stInfo['designation'] : 'Receptionist'),
+                        'phone' => $stInfo ? $stInfo['mobile_number'] : '',
+                        'bills_count' => 0,
+                        'total_billed' => 0.0,
+                        'collected_amount' => 0.0,
+                        'pending_amount' => 0.0,
+                        'discount_amount' => 0.0,
+                        'cash_collected' => 0.0,
+                        'upi_collected' => 0.0,
+                        'card_collected' => 0.0,
+                        'other_collected' => 0.0,
+                        'shift_start_date' => $bDate,
+                        'shift_end_date' => $bDate,
+                        'shift_start_time' => $bTime,
+                        'shift_end_time' => $bTime,
+                        'bills_list' => []
+                    ];
+                }
+
+                $staffMap[$cUser]['bills_count']++;
+                $staffMap[$cUser]['total_billed'] += $billed;
+                $staffMap[$cUser]['collected_amount'] += $paid;
+                $staffMap[$cUser]['pending_amount'] += $due;
+                $staffMap[$cUser]['discount_amount'] += $disc;
+
+                if ($mode === 'Cash') {
+                    $staffMap[$cUser]['cash_collected'] += $paid;
+                } else if ($mode === 'UPI') {
+                    $staffMap[$cUser]['upi_collected'] += $paid;
+                } else if ($mode === 'Card') {
+                    $staffMap[$cUser]['card_collected'] += $paid;
+                } else {
+                    $staffMap[$cUser]['other_collected'] += $paid;
+                }
+
+                if ($bDate < $staffMap[$cUser]['shift_start_date'] || ($bDate == $staffMap[$cUser]['shift_start_date'] && $bTime < $staffMap[$cUser]['shift_start_time'])) {
+                    $staffMap[$cUser]['shift_start_date'] = $bDate;
+                    $staffMap[$cUser]['shift_start_time'] = $bTime;
+                }
+                if ($bDate > $staffMap[$cUser]['shift_end_date'] || ($bDate == $staffMap[$cUser]['shift_end_date'] && $bTime > $staffMap[$cUser]['shift_end_time'])) {
+                    $staffMap[$cUser]['shift_end_date'] = $bDate;
+                    $staffMap[$cUser]['shift_end_time'] = $bTime;
+                }
+
+                $staffMap[$cUser]['bills_list'][] = [
+                    'bill_id' => $fb['bill_id'],
+                    'receipt_id' => $fb['receipt_id'],
+                    'patient_id' => $fb['patient_id'],
+                    'patient_name' => $fb['patient_name'],
+                    'patient_phone' => $fb['patient_phone'],
+                    'doctor_name' => $fb['doctor_name'],
+                    'bill_date' => $fb['bill_date'],
+                    'bill_time' => $fb['bill_time'],
+                    'grand_total' => $billed,
+                    'amount_paid' => $paid,
+                    'balance_due' => $due,
+                    'discount_amount' => $disc,
+                    'payment_mode' => $mode,
+                    'payment_status' => $fb['payment_status'],
+                    'purpose' => $fb['purpose']
+                ];
+            }
+
+            $staffBreakdown = array_values($staffMap);
+            usort($staffBreakdown, function($a, $b) {
+                return $b['collected_amount'] <=> $a['collected_amount'];
+            });
+
+            // Fetch line items for the filtered bills
+            $billIds = array_column($filteredBillsForDocs, 'bill_id');
+            $itemsByBill = [];
+            if (!empty($billIds)) {
+                $inClause = implode(',', array_fill(0, count($billIds), '?'));
+                $rawItems = $this->db->fetchAll("
+                    SELECT bill_id, item_name, unit_price, total_price, bill_purpose, item_type
+                    FROM opd_billing_items
+                    WHERE bill_id IN ($inClause)
+                ", $billIds) ?: [];
+                foreach ($rawItems as $it) {
+                    $itemsByBill[$it['bill_id']][] = $it;
+                }
+            }
+
+            $docAgg = [];
+            $deptHierMap = [];
+
+            foreach ($filteredBillsForDocs as $b) {
+                $bId = $b['bill_id'];
+                $bDate = $b['bill_date'];
+                $rawNames = $b['doctor_name'] ?? '';
+                $nameParts = array_filter(array_map('trim', explode(',', $rawNames)));
+                if (empty($nameParts)) {
+                    $nameParts = ['Direct Hospital Service'];
+                }
+
+                $items = $itemsByBill[$bId] ?? [];
+                $grandTotal = (float)($b['grand_total'] ?? 0);
+                $totalPaidRatio = ($grandTotal > 0) ? ((float)$b['amount_paid'] / $grandTotal) : 1.0;
+                $totalDueRatio = ($grandTotal > 0) ? ((float)$b['balance_due'] / $grandTotal) : 0.0;
+                $totalDiscRatio = ($grandTotal > 0) ? ((float)$b['discount_amount'] / $grandTotal) : 0.0;
+
+                // Resolve all doctors on this bill
+                $resolvedDocs = [];
+                foreach ($nameParts as $singleName) {
+                    $clean = trim($singleName);
+                    $cleanKey = strtolower(preg_replace('/[^a-z0-9]/i', '', preg_replace('/^Dr\.?\s+/i', '', $clean)));
+                    
+                    $matched = $docLookup[$cleanKey] ?? null;
+                    if (!$matched) {
+                        foreach ($allDoctorsList as $cand) {
+                            $candKey = strtolower(preg_replace('/[^a-z0-9]/i', '', preg_replace('/^Dr\.?\s+/i', '', trim($cand['full_name']))));
+                            if (strpos($candKey, $cleanKey) !== false || strpos($cleanKey, $candKey) !== false) {
+                                $matched = $cand;
+                                break;
+                            }
+                        }
+                    }
+
+                    $dId = $matched ? $matched['doctor_id'] : ('DOC_' . $cleanKey);
+                    $dName = $matched ? $matched['full_name'] : $clean;
+                    $dDept = $matched ? $matched['department'] : 'General Medicine';
+                    $dSpec = $matched ? $matched['specialization'] : 'General Medicine';
+                    $dQual = $matched ? $matched['qualification'] : 'Consultant Specialist';
+                    $dRoom = $matched ? $matched['room_number'] : '';
+
+                    $resolvedDocs[$dId] = [
+                        'doctor_id' => $dId,
+                        'doctor_name' => $dName,
+                        'clean_key' => $cleanKey,
+                        'department' => $dDept,
+                        'specialization' => $dSpec,
+                        'qualification' => $dQual,
+                        'room_number' => $dRoom,
+                        'item_total' => 0.0,
+                        'item_names' => []
+                    ];
+                }
+
+                // Allocate line item fees to each respective doctor
+                if (count($resolvedDocs) === 1) {
+                    $dKey = array_key_first($resolvedDocs);
+                    $resolvedDocs[$dKey]['item_total'] = $grandTotal;
+                    $resolvedDocs[$dKey]['item_names'][] = $b['purpose'] ?: 'Clinical Consultation';
+                } else {
+                    $unassignedTotal = 0.0;
+                    foreach ($items as $it) {
+                        $itName = $it['item_name'] ?? '';
+                        $itPrice = (float)($it['total_price'] ?? $it['unit_price'] ?? 0);
+                        $itClean = strtolower(preg_replace('/[^a-z0-9]/i', '', preg_replace('/^Dr\.?\s+/i', '', $itName)));
+                        $matchedDoc = false;
+
+                        foreach ($resolvedDocs as $dId => &$rDoc) {
+                            if (strpos($itClean, $rDoc['clean_key']) !== false || strpos($itName, $rDoc['doctor_name']) !== false) {
+                                $rDoc['item_total'] += $itPrice;
+                                $rDoc['item_names'][] = $itName;
+                                $matchedDoc = true;
+                                break;
+                            }
+                        }
+                        unset($rDoc);
+
+                        if (!$matchedDoc) {
+                            $unassignedTotal += $itPrice;
+                        }
+                    }
+
+                    // Share unassigned charges (like Registration fee) equally across the bill's doctors
+                    if ($unassignedTotal > 0 && count($resolvedDocs) > 0) {
+                        $split = $unassignedTotal / count($resolvedDocs);
+                        foreach ($resolvedDocs as $dId => &$rDoc) {
+                            $rDoc['item_total'] += $split;
+                        }
+                        unset($rDoc);
+                    }
+                }
+
+                // Add each doctor's specific portion to aggregations
+                foreach ($resolvedDocs as $dId => $rDoc) {
+                    $docBilled = round($rDoc['item_total'], 2);
+                    $docCollected = round($docBilled * $totalPaidRatio, 2);
+                    $docDue = round($docBilled * $totalDueRatio, 2);
+                    $docDisc = round($docBilled * $totalDiscRatio, 2);
+
+                    if (!isset($docAgg[$dId])) {
+                        $docAgg[$dId] = [
+                            'doctor_id' => $dId,
+                            'doctor_name' => $rDoc['doctor_name'],
+                            'qualification' => $rDoc['qualification'],
+                            'room_number' => $rDoc['room_number'],
+                            'department' => $rDoc['department'],
+                            'specialization' => $rDoc['specialization'],
+                            'bills_count' => 0,
+                            'total_billed' => 0.0,
+                            'collected_amount' => 0.0,
+                            'pending_amount' => 0.0,
+                            'discount_amount' => 0.0,
+                            'dates' => []
+                        ];
+                    }
+
+                    $docAgg[$dId]['bills_count']++;
+                    $docAgg[$dId]['total_billed'] += $docBilled;
+                    $docAgg[$dId]['collected_amount'] += $docCollected;
+                    $docAgg[$dId]['pending_amount'] += $docDue;
+                    $docAgg[$dId]['discount_amount'] += $docDisc;
+
+                    if (!isset($docAgg[$dId]['dates'][$bDate])) {
+                        $docAgg[$dId]['dates'][$bDate] = [
+                            'date' => $bDate,
+                            'bills_count' => 0,
+                            'total_collected' => 0.0,
+                            'total_billed' => 0.0,
+                            'total_due' => 0.0,
+                            'total_discount' => 0.0,
+                            'bills' => []
+                        ];
+                    }
+
+                    $docAgg[$dId]['dates'][$bDate]['bills_count']++;
+                    $docAgg[$dId]['dates'][$bDate]['total_collected'] += $docCollected;
+                    $docAgg[$dId]['dates'][$bDate]['total_billed'] += $docBilled;
+                    $docAgg[$dId]['dates'][$bDate]['total_due'] += $docDue;
+                    $docAgg[$dId]['dates'][$bDate]['total_discount'] += $docDisc;
+                    $docAgg[$dId]['dates'][$bDate]['bills'][] = [
+                        'bill_id' => $bId,
+                        'receipt_id' => $b['receipt_id'],
+                        'patient_id' => $b['patient_id'],
+                        'patient_name' => $b['patient_name'],
+                        'patient_phone' => $b['patient_phone'],
+                        'bill_date' => $b['bill_date'],
+                        'bill_time' => $b['bill_time'],
+                        'grand_total' => $docBilled,
+                        'amount_paid' => $docCollected,
+                        'balance_due' => $docDue,
+                        'discount_amount' => $docDisc,
+                        'payment_mode' => $b['payment_mode'],
+                        'payment_status' => $b['payment_status'],
+                        'purpose' => !empty($rDoc['item_names']) ? implode(', ', $rDoc['item_names']) : $b['purpose']
+                    ];
+
+                    // Department Hierarchy Structure
+                    $dDept = $rDoc['department'];
+                    if (!isset($deptHierMap[$dDept])) {
+                        $deptHierMap[$dDept] = [
+                            'department_name' => $dDept,
+                            'total_revenue' => 0.0,
+                            'total_billed' => 0.0,
+                            'total_due' => 0.0,
+                            'total_bills' => 0,
+                            'doctors' => []
+                        ];
+                    }
+
+                    if (!isset($deptHierMap[$dDept]['doctors'][$dId])) {
+                        $deptHierMap[$dDept]['doctors'][$dId] = &$docAgg[$dId];
+                    }
+                }
+            }
+
+            // Convert and sort doctor breakdown
+            $doctorBreakdown = array_values($docAgg);
+            foreach ($doctorBreakdown as &$dItem) {
+                $dItem['avg_bill_amount'] = $dItem['bills_count'] > 0 ? round($dItem['total_billed'] / $dItem['bills_count'], 2) : 0;
+                $dItem['dates_list'] = array_values($dItem['dates']);
+                unset($dItem['bill_ids']);
+            }
+
+            usort($doctorBreakdown, function($a, $b) {
+                return $b['collected_amount'] <=> $a['collected_amount'];
+            });
+
+            // Convert department hierarchy
+            $departmentHierarchy = [];
+            foreach ($deptHierMap as $deptName => $deptData) {
+                $docArray = array_values($deptData['doctors']);
+                $depRevenue = array_reduce($docArray, fn($acc, $d) => $acc + (float)$d['collected_amount'], 0);
+                $depBilled = array_reduce($docArray, fn($acc, $d) => $acc + (float)$d['total_billed'], 0);
+                $depDue = array_reduce($docArray, fn($acc, $d) => $acc + (float)$d['pending_amount'], 0);
+                $depBills = array_reduce($docArray, fn($acc, $d) => $acc + (int)$d['bills_count'], 0);
+
+                $departmentHierarchy[] = [
+                    'department_name' => $deptName,
+                    'total_revenue' => $depRevenue,
+                    'total_billed' => $depBilled,
+                    'total_due' => $depDue,
+                    'total_bills' => $depBills,
+                    'doctors_count' => count($docArray),
+                    'doctors' => $docArray
+                ];
+            }
+
+            usort($departmentHierarchy, function($a, $b) {
+                return $b['total_revenue'] <=> $a['total_revenue'];
+            });
+
+            // Hourly Shift Handover Distribution (00:00 to 23:00)
+            $hourlySql = "
+                SELECT 
+                    HOUR(obm.bill_time) as hour_num,
+                    COUNT(DISTINCT obm.bill_id) as bills_count,
+                    SUM(obm.amount_paid) as total_collected,
+                    SUM(CASE WHEN obm.payment_mode = 'Cash' THEN obm.amount_paid ELSE 0 END) as cash_collected,
+                    SUM(CASE WHEN obm.payment_mode = 'UPI' THEN obm.amount_paid ELSE 0 END) as upi_collected,
+                    SUM(CASE WHEN obm.payment_mode = 'Card' THEN obm.amount_paid ELSE 0 END) as card_collected,
+                    SUM(CASE WHEN obm.payment_mode NOT IN ('Cash', 'UPI', 'Card') THEN obm.amount_paid ELSE 0 END) as other_collected
+                $baseFrom
+                $whereClause
+                GROUP BY hour_num
+                ORDER BY hour_num ASC
+            ";
+            $hourlyRaw = $this->db->fetchAll($hourlySql, $params) ?: [];
+            $hourlyMap = [];
+            foreach ($hourlyRaw as $hr) {
+                $hourlyMap[(int)$hr['hour_num']] = $hr;
+            }
+
+            $hourlyShift = [];
+            for ($h = 7; $h <= 22; $h++) { // Operating clinical hours 07:00 to 22:00
+                $label = sprintf("%02d:00 - %02d:00", $h, $h + 1);
+                $entry = $hourlyMap[$h] ?? null;
+                $hourlyShift[] = [
+                    'hour' => $h,
+                    'time_label' => $label,
+                    'bills_count' => $entry ? (int)$entry['bills_count'] : 0,
+                    'total_collected' => $entry ? (float)$entry['total_collected'] : 0.0,
+                    'cash_collected' => $entry ? (float)$entry['cash_collected'] : 0.0,
+                    'upi_collected' => $entry ? (float)$entry['upi_collected'] : 0.0,
+                    'card_collected' => $entry ? (float)$entry['card_collected'] : 0.0,
+                    'other_collected' => $entry ? (float)$entry['other_collected'] : 0.0,
+                ];
+            }
+
+            $totalPages = $totalRecords > 0 ? (int)ceil($totalRecords / $limit) : 1;
+
+            return [
+                'records' => $rows,
+                'pagination' => [
+                    'total_records' => $totalRecords,
+                    'total_pages' => $totalPages,
+                    'current_page' => $page,
+                    'limit' => $limit
+                ],
+                'summary_kpis' => $summaryKPIs,
+                'hourly_shift' => $hourlyShift,
+                'breakdowns' => [
+                    'department' => $deptBreakdown,
+                    'department_hierarchy' => $departmentHierarchy,
+                    'payment_mode' => $modeBreakdown,
+                    'staff' => $staffBreakdown,
+                    'doctor' => $doctorBreakdown
+                ]
+            ];
+
+        } catch (\Exception $e) {
+            error_log("Error in getAdvancedReceipts: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Cancel or Refund Bill with audit trail
+     */
+    public function cancelOrRefundBill($billId, $action, $reason, $userId, $refundAmount = 0)
+    {
+        try {
+            $this->db->beginTransaction();
+
+            $bill = $this->db->fetchOne("SELECT * FROM opd_billing_master WHERE bill_id = ?", [$billId]);
+            if (!$bill) {
+                throw new Exception("Bill not found: {$billId}");
+            }
+
+            $status = ($action === 'refund') ? 'Refunded' : 'Cancelled';
+            $auditNote = "Status changed to {$status} by {$userId}. Reason: {$reason}";
+            if ($refundAmount > 0) {
+                $auditNote .= ". Refunded Amount: ₹{$refundAmount}";
+            }
+
+            // Update master
+            $this->db->execute(
+                "UPDATE opd_billing_master SET payment_status = ?, notes = CONCAT(IFNULL(notes, ''), '\n[', CURRENT_TIMESTAMP, '] ', ?) WHERE bill_id = ?",
+                [$status, $auditNote, $billId]
+            );
+
+            // Log billing action
+            $this->logBillingAction($billId, $status, $auditNote);
+
+            $this->db->commit();
+            return true;
+        } catch (\Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
+    }
 }
+

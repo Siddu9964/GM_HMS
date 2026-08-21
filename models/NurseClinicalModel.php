@@ -79,11 +79,27 @@ class NurseClinicalModel {
             $nid = 'NOT-' . strtoupper(substr(uniqid(), -6));
             $title = "IPD Test Updated";
             $message = "A test has been added/updated for IPD Patient ({$patientId}).";
-            $this->db->execute(
-                "INSERT INTO notifications (notification_id, recipient_id, recipient_type, title, message, category, priority, action_url) 
-                 VALUES (?, 'staff', 'staff', ?, ?, 'lab_result', 'normal', 'ipd_test_orders.php')",
-                [$nid, $title, $message]
-            );
+            try {
+                $this->db->execute(
+                    "INSERT INTO notifications (notification_id, recipient_id, recipient_type, title, message, category, priority, action_url) 
+                     VALUES (?, 'staff', 'staff', ?, ?, 'lab_result', 'normal', 'ipd_test_orders.php')",
+                    [$nid, $title, $message]
+                );
+            } catch (\Throwable $ne) {}
+        }
+
+        if ($columnName === 'pharmacy_orders') {
+            // Insert Notification for Pharmacy
+            $nid = 'NOT-' . strtoupper(substr(uniqid(), -6));
+            $title = "IPD Pharmacy Order Added";
+            $message = "New medication order added for IPD Patient ({$patientId}).";
+            try {
+                $this->db->execute(
+                    "INSERT INTO notifications (notification_id, recipient_id, recipient_type, title, message, category, priority, action_url) 
+                     VALUES (?, 'pharmacy', 'role', ?, ?, 'pharmacy_order', 'normal', 'ip_orders.php')",
+                    [$nid, $title, $message]
+                );
+            } catch (\Throwable $ne) {}
         }
 
         return true;

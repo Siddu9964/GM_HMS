@@ -268,7 +268,7 @@ if (!isset($_SESSION['user_id'])) {
                 <!-- ─────────────────────────────────────────────────────────────
                      KPI SUMMARY METRICS BAR
                      ───────────────────────────────────────────────────────────── -->
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
                     <!-- Total Rooms -->
                     <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
                         <div class="flex items-center justify-between text-slate-400 text-xs font-bold uppercase tracking-wider">
@@ -289,7 +289,7 @@ if (!isset($_SESSION['user_id'])) {
                         </div>
                         <div class="mt-2 flex items-baseline justify-between">
                             <span class="text-2xl font-black text-emerald-700" id="kpiAvailable">0</span>
-                            <span class="text-[11px] font-extrabold text-emerald-600" id="kpiAvailablePct">0%</span>
+                            <span class="text-[11px] font-extrabold text-emerald-600 bg-emerald-100/80 px-2 py-0.5 rounded-full" id="kpiAvailablePct">0%</span>
                         </div>
                     </div>
 
@@ -301,7 +301,7 @@ if (!isset($_SESSION['user_id'])) {
                         </div>
                         <div class="mt-2 flex items-baseline justify-between">
                             <span class="text-2xl font-black text-rose-700" id="kpiOccupied">0</span>
-                            <span class="text-[11px] font-extrabold text-rose-600" id="kpiOccupiedPct">0%</span>
+                            <span class="text-[11px] font-extrabold text-rose-600 bg-rose-100/80 px-2 py-0.5 rounded-full" id="kpiOccupiedPct">0%</span>
                         </div>
                     </div>
 
@@ -313,19 +313,7 @@ if (!isset($_SESSION['user_id'])) {
                         </div>
                         <div class="mt-2 flex items-baseline justify-between">
                             <span class="text-2xl font-black text-amber-700" id="kpiMaintenance">0</span>
-                            <span class="text-[11px] font-bold text-amber-600" id="kpiMaintenancePct">0%</span>
-                        </div>
-                    </div>
-
-                    <!-- Reserved / Blocked -->
-                    <div class="bg-white p-4 rounded-2xl border border-sky-200/80 shadow-sm flex flex-col justify-between" style="background: linear-gradient(to bottom, #ffffff, #f0f9ff);">
-                        <div class="flex items-center justify-between text-sky-700 text-xs font-bold uppercase tracking-wider">
-                            <span>Reserved / Hold</span>
-                            <i class="fas fa-lock text-sky-400"></i>
-                        </div>
-                        <div class="mt-2 flex items-baseline justify-between">
-                            <span class="text-2xl font-black text-sky-700" id="kpiReserved">0</span>
-                            <span class="text-[11px] font-bold text-sky-600" id="kpiReservedPct">0%</span>
+                            <span class="text-[11px] font-extrabold text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full" id="kpiMaintenancePct">0%</span>
                         </div>
                     </div>
 
@@ -406,7 +394,7 @@ if (!isset($_SESSION['user_id'])) {
                                         <span class="w-2 h-2 rounded-full bg-rose-500"></span> Occupied
                                     </button>
                                     <button onclick="setStatusFilter('Maintenance')" id="filterStatus_Maintenance" class="status-tab px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition-all flex items-center gap-1.5">
-                                        <span class="w-2 h-2 rounded-full bg-amber-500"></span> Maint.
+                                        <span class="w-2 h-2 rounded-full bg-amber-500"></span> Maint. / Clean
                                     </button>
                                 </div>
                             </div>
@@ -449,14 +437,19 @@ if (!isset($_SESSION['user_id'])) {
                                 </div>
 
                                 <div id="panelDetailsContent" class="hidden p-5 space-y-5">
-                                    <!-- Quick 1-Click Status Bar -->
+                                    <!-- Change Bed Status Button Bar -->
                                     <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
                                         <label class="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2">Change Bed Status</label>
-                                        <div class="grid grid-cols-3 gap-1.5 text-xs font-bold">
-                                            <button onclick="quickUpdateStatus('Available')" class="py-1.5 px-2 rounded-xl bg-white hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-700 transition-all text-center">Available</button>
-                                            <button onclick="quickUpdateStatus('Cleaning')" class="py-1.5 px-2 rounded-xl bg-white hover:bg-amber-50 hover:text-amber-700 border border-slate-200 text-slate-700 transition-all text-center">Cleaning</button>
-                                            <button onclick="quickUpdateStatus('Maintenance')" class="py-1.5 px-2 rounded-xl bg-white hover:bg-amber-50 hover:text-amber-700 border border-slate-200 text-slate-700 transition-all text-center">Maint.</button>
+                                        <div class="grid grid-cols-3 gap-1.5 text-xs font-bold" id="panelQuickStatusButtons">
+                                            <button onclick="quickUpdateStatus('Available')" id="btnStatus_Available" class="py-1.5 px-2 rounded-xl bg-white hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 text-slate-700 transition-all text-center">Available</button>
+                                            <button onclick="quickUpdateStatus('Cleaning')" id="btnStatus_Cleaning" class="py-1.5 px-2 rounded-xl bg-white hover:bg-amber-50 hover:text-amber-700 border border-slate-200 text-slate-700 transition-all text-center">Cleaning</button>
+                                            <button onclick="quickUpdateStatus('Maintenance')" id="btnStatus_Maintenance" class="py-1.5 px-2 rounded-xl bg-white hover:bg-amber-50 hover:text-amber-700 border border-slate-200 text-slate-700 transition-all text-center">Maint.</button>
                                         </div>
+                                    </div>
+
+                                    <!-- Dynamic Release Action Card -->
+                                    <div id="panelStatusControlContainer">
+                                        <!-- Injected dynamically in selectBed() -->
                                     </div>
 
                                     <!-- Financial Breakdown -->
@@ -790,8 +783,6 @@ if (!isset($_SESSION['user_id'])) {
                             <option value="Occupied">Occupied</option>
                             <option value="Cleaning">Cleaning</option>
                             <option value="Maintenance">Maintenance</option>
-                            <option value="Reserved">Reserved</option>
-                            <option value="Blocked">Blocked</option>
                         </select>
                     </div>
 
@@ -867,14 +858,12 @@ if (!isset($_SESSION['user_id'])) {
             const available = allBeds.filter(b => (b.bed_status || 'Available') === 'Available').length;
             const occupied = allBeds.filter(b => b.bed_status === 'Occupied').length;
             const maintenance = allBeds.filter(b => ['Maintenance', 'Cleaning'].includes(b.bed_status)).length;
-            const reserved = allBeds.filter(b => ['Reserved', 'Blocked'].includes(b.bed_status)).length;
 
             const uniqueRooms = new Set(allBeds.map(b => `${b.room_number}_${b.ward_name}`)).size;
 
             const availPct = total > 0 ? Math.round((available / total) * 100) : 0;
             const occPct = total > 0 ? Math.round((occupied / total) * 100) : 0;
             const maintPct = total > 0 ? Math.round((maintenance / total) * 100) : 0;
-            const resPct = total > 0 ? Math.round((reserved / total) * 100) : 0;
 
             document.getElementById('kpiTotalRooms').textContent = uniqueRooms;
             document.getElementById('kpiTotalBedsLabel').textContent = `${total} Beds Total`;
@@ -884,8 +873,6 @@ if (!isset($_SESSION['user_id'])) {
             document.getElementById('kpiOccupiedPct').textContent = occPct + '%';
             document.getElementById('kpiMaintenance').textContent = maintenance;
             document.getElementById('kpiMaintenancePct').textContent = maintPct + '%';
-            document.getElementById('kpiReserved').textContent = reserved;
-            document.getElementById('kpiReservedPct').textContent = resPct + '%';
 
             document.getElementById('occupancyRate').textContent = occPct + '%';
             document.getElementById('occupancyBar').style.width = occPct + '%';
@@ -1125,15 +1112,13 @@ if (!isset($_SESSION['user_id'])) {
                     statusBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-200"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Occupied</span>`;
                 } else if (status === 'Available') {
                     statusBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Available</span>`;
-                } else if (['Maintenance', 'Cleaning'].includes(status)) {
-                    statusBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-200"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> ${status}</span>`;
                 } else {
-                    statusBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-sky-100 text-sky-800 border border-sky-200">${status}</span>`;
+                    statusBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-200"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> ${status}</span>`;
                 }
 
                 let patientHtml = `<span class="text-slate-400 font-normal italic">Vacant (No Patient)</span>`;
                 if (status === 'Occupied' && bed.patient_id) {
-                    const name = bed.patient_name || bed.patient_first_name || 'Admitted Patient';
+                    const name = bed.patient_name || (bed.patient_first_name ? `${bed.patient_first_name} ${bed.patient_last_name || ''}` : 'Admitted Patient');
                     patientHtml = `
                         <div class="flex items-center gap-2">
                             <div class="w-7 h-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs flex-shrink-0">
@@ -1145,6 +1130,8 @@ if (!isset($_SESSION['user_id'])) {
                             </div>
                         </div>
                     `;
+                } else if (['Maintenance', 'Cleaning'].includes(status)) {
+                    patientHtml = `<span class="text-amber-700 font-bold text-xs flex items-center gap-1"><i class="fas fa-tools text-[10px]"></i> In Turnover / Service</span>`;
                 }
 
                 const rent = Number(bed.amount_per_day || 0).toLocaleString('en-IN');
@@ -1176,7 +1163,7 @@ if (!isset($_SESSION['user_id'])) {
                     </td>
 
                     <td class="py-3 px-4">
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-mono font-black text-xs ${status === 'Occupied' ? 'bg-rose-50 text-rose-800 border border-rose-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'}">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl font-mono font-black text-xs ${status === 'Occupied' ? 'bg-rose-50 text-rose-800 border border-rose-200' : (status === 'Available' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200')}">
                             <i class="fas fa-bed text-[10px]"></i> ${bed.bed_number}
                         </span>
                     </td>
@@ -1209,25 +1196,36 @@ if (!isset($_SESSION['user_id'])) {
 
                     <td class="py-3 px-4 text-center">
                         <div class="inline-flex items-center gap-1.5">
-                            <button onclick="editBedRecord(${JSON.stringify(bed).replace(/"/g, '&quot;')})" class="p-1.5 bg-slate-100 hover:bg-[#1f6b4a] hover:text-white text-slate-700 rounded-lg transition-all" title="Edit Bed Specs & Pricing">
-                                <i class="fas fa-edit text-xs"></i>
-                            </button>
-
-                            ${status !== 'Occupied' ? `
-                                <button onclick="quickUpdateStatusOnTile(${bed.sl_no}, '${status === 'Available' ? 'Cleaning' : 'Available'}')" class="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg transition-all text-xs" title="Toggle Available / Cleaning">
-                                    <i class="fas fa-broom"></i>
+                            ${status === 'Occupied' ? `
+                                <button onclick="releaseBedById(${bed.sl_no}, '${bed.bed_number}')" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border border-emerald-200 rounded-xl transition-all text-xs font-bold flex items-center gap-1 shadow-xs" title="Release Bed & Mark Available">
+                                    <i class="fas fa-check-circle"></i> Release
                                 </button>
-                            ` : `
-                                <a href="/GM_HMS/view/ipd_billing.php?patient_id=${encodeURIComponent(bed.patient_id)}" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg transition-all text-xs font-bold" title="Open Billing">
-                                    <i class="fas fa-file-invoice-dollar"></i>
-                                </a>
-                            `}
-
-                            ${status !== 'Occupied' ? `
+                                ${bed.patient_id ? `
+                                    <a href="/GM_HMS/view/ipd_billing.php?patient_id=${encodeURIComponent(bed.patient_id)}" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg transition-all text-xs font-bold" title="Open IPD Billing">
+                                        <i class="fas fa-file-invoice-dollar"></i>
+                                    </a>
+                                ` : ''}
+                            ` : (['Maintenance', 'Cleaning'].includes(status) ? `
+                                <button onclick="quickUpdateStatusOnTile(${bed.sl_no}, 'Available')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all text-xs font-bold flex items-center gap-1 shadow-xs" title="Mark Clean & Available">
+                                    <i class="fas fa-check"></i> Make Available
+                                </button>
+                                <button onclick="editBedRecord(${JSON.stringify(bed).replace(/"/g, '&quot;')})" class="p-1.5 bg-slate-100 hover:bg-[#1f6b4a] hover:text-white text-slate-700 rounded-lg transition-all" title="Edit Bed Specs & Pricing">
+                                    <i class="fas fa-edit text-xs"></i>
+                                </button>
                                 <button onclick="deleteBedById(${bed.sl_no}, '${bed.bed_number}')" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-all" title="Delete Bed">
                                     <i class="fas fa-trash-alt text-xs"></i>
                                 </button>
-                            ` : ''}
+                            ` : `
+                                <button onclick="quickUpdateStatusOnTile(${bed.sl_no}, 'Cleaning')" class="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg transition-all text-xs" title="Mark for Cleaning">
+                                    <i class="fas fa-broom"></i>
+                                </button>
+                                <button onclick="editBedRecord(${JSON.stringify(bed).replace(/"/g, '&quot;')})" class="p-1.5 bg-slate-100 hover:bg-[#1f6b4a] hover:text-white text-slate-700 rounded-lg transition-all" title="Edit Bed Specs & Pricing">
+                                    <i class="fas fa-edit text-xs"></i>
+                                </button>
+                                <button onclick="deleteBedById(${bed.sl_no}, '${bed.bed_number}')" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-all" title="Delete Bed">
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                </button>
+                            `)}
                         </div>
                     </td>
                 `;
@@ -1334,8 +1332,7 @@ if (!isset($_SESSION['user_id'])) {
                         bedTile.id = `bedCard_${bed.sl_no}`;
                         bedTile.className = `bed-tile rounded-2xl p-4 cursor-pointer flex flex-col justify-between ${
                             status === 'Occupied' ? 'tile-occupied' :
-                            (status === 'Available' ? 'tile-available' :
-                            (['Maintenance', 'Cleaning'].includes(status) ? 'tile-maintenance' : 'tile-reserved'))
+                            (status === 'Available' ? 'tile-available' : 'tile-maintenance')
                         }`;
                         bedTile.onclick = (e) => {
                             if (e.target.closest('a') || e.target.closest('button')) return;
@@ -1373,18 +1370,25 @@ if (!isset($_SESSION['user_id'])) {
                                         </div>
                                     </div>
                                 </div>
-                                <div class="pt-3 border-t border-rose-200/70 flex items-center justify-between gap-2">
-                                    <div class="flex items-center gap-1.5">
-                                        <a href="/GM_HMS/view/ipd_billing.php?patient_id=${encodeURIComponent(bed.patient_id)}" class="px-2.5 py-1.5 bg-[#1f6b4a] hover:bg-[#154c34] text-white text-[11px] font-bold rounded-xl flex items-center gap-1 shadow-xs transition-all">
-                                            <i class="fas fa-file-invoice-dollar"></i> Bill
-                                        </a>
-                                        <a href="/GM_HMS/nurse_view/k_sheet_view.php?patient_id=${encodeURIComponent(bed.patient_id)}" class="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-bold rounded-xl flex items-center gap-1 transition-all">
-                                            <i class="fas fa-clipboard-list"></i> K-Sheet
-                                        </a>
+                                <div class="pt-3 border-t border-rose-200/70 flex items-center justify-between gap-1.5">
+                                    <div class="flex items-center gap-1">
+                                        ${bed.patient_id ? `
+                                            <a href="/GM_HMS/view/ipd_billing.php?patient_id=${encodeURIComponent(bed.patient_id)}" class="px-2 py-1.5 bg-[#1f6b4a] hover:bg-[#154c34] text-white text-[11px] font-bold rounded-xl flex items-center gap-1 shadow-xs transition-all" title="IPD Billing">
+                                                <i class="fas fa-file-invoice-dollar"></i> Bill
+                                            </a>
+                                            <a href="/GM_HMS/nurse_view/k_sheet_view.php?patient_id=${encodeURIComponent(bed.patient_id)}" class="px-2 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-bold rounded-xl flex items-center gap-1 transition-all" title="Nurse K-Sheet">
+                                                <i class="fas fa-clipboard-list"></i> K-Sheet
+                                            </a>
+                                        ` : ''}
                                     </div>
-                                    <button onclick="selectBed(${JSON.stringify(bed).replace(/"/g, '&quot;')})" class="p-1.5 text-slate-400 hover:text-slate-800" title="Inspect">
-                                        <i class="fas fa-chevron-right text-xs"></i>
-                                    </button>
+                                    <div class="flex items-center gap-1">
+                                        <button onclick="releaseBedById(${bed.sl_no}, '${bed.bed_number}')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 shadow-xs transition-all" title="Release Bed & Mark Available">
+                                            <i class="fas fa-check-circle"></i> Release Bed
+                                        </button>
+                                        <button onclick="selectBed(${JSON.stringify(bed).replace(/"/g, '&quot;')})" class="p-1.5 text-slate-400 hover:text-slate-800" title="Inspect">
+                                            <i class="fas fa-chevron-right text-xs"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             `;
                         } else if (status === 'Available') {
@@ -1405,7 +1409,7 @@ if (!isset($_SESSION['user_id'])) {
                                         </div>
                                         <div>
                                             <div class="font-extrabold text-xs text-emerald-900">Vacant • Ready</div>
-                                            <div class="text-[11px] text-slate-500 font-medium mt-0.5">Oxygen Point • Sanitized</div>
+                                            <div class="text-[11px] text-slate-500 font-medium mt-0.5">Sanitized & Ready for Admission</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1425,7 +1429,7 @@ if (!isset($_SESSION['user_id'])) {
                                     <div class="flex items-center justify-between border-b border-amber-200/70 pb-2.5 mb-3">
                                         <div class="flex items-center gap-2">
                                             <span class="font-black text-sm text-slate-900 tracking-tight flex items-center gap-1.5">
-                                                <i class="fas fa-broom text-amber-600"></i> ${bed.bed_number}
+                                                <i class="fas ${isCleaning ? 'fa-broom' : 'fa-tools'} text-amber-600"></i> ${bed.bed_number}
                                             </span>
                                             <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 uppercase">${status}</span>
                                         </div>
@@ -1437,7 +1441,7 @@ if (!isset($_SESSION['user_id'])) {
                                         </div>
                                         <div>
                                             <div class="font-extrabold text-xs text-amber-900">${isCleaning ? 'Sanitization in Progress' : 'Under Maintenance'}</div>
-                                            <div class="text-[11px] text-slate-500 font-medium mt-0.5">Not ready for admission</div>
+                                            <div class="text-[11px] text-slate-500 font-medium mt-0.5">Turnover in progress</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1476,13 +1480,74 @@ if (!isset($_SESSION['user_id'])) {
             let pillBg = 'bg-emerald-100 text-emerald-800';
             if (status === 'Occupied') pillBg = 'bg-rose-100 text-rose-800';
             else if (['Maintenance', 'Cleaning'].includes(status)) pillBg = 'bg-amber-100 text-amber-800';
-            else if (['Reserved', 'Blocked'].includes(status)) pillBg = 'bg-sky-100 text-sky-800';
 
             document.getElementById('panelBedTitle').textContent = `Bed ${bed.bed_number}`;
             document.getElementById('panelHeaderCategory').textContent = `${bed.room_type || 'General'} Bed`;
             document.getElementById('panelBedIdBadge').textContent = `#${bed.sl_no}`;
             document.getElementById('panelStatusPill').innerHTML = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${pillBg}">${status}</span>`;
             document.getElementById('panelLocationBreadcrumb').textContent = `${bed.floor_name || ('Floor ' + bed.floor_number)} > ${bed.ward_name} > Room ${bed.room_name || bed.room_number}`;
+
+            // Highlight active quick status button
+            ['Available', 'Cleaning', 'Maintenance'].forEach(st => {
+                const btn = document.getElementById(`btnStatus_${st}`);
+                if (btn) {
+                    if (status === st) {
+                        btn.className = 'py-1.5 px-2 rounded-xl bg-slate-900 text-white font-black shadow-xs transition-all text-center';
+                    } else {
+                        btn.className = 'py-1.5 px-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition-all text-center';
+                    }
+                }
+            });
+
+            // Render Dynamic Status & Release Action Bar
+            const statusContainer = document.getElementById('panelStatusControlContainer');
+            if (status === 'Occupied') {
+                statusContainer.innerHTML = `
+                    <div class="bg-rose-50/90 p-4 rounded-2xl border border-rose-200 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-black uppercase tracking-wider text-rose-800 flex items-center gap-1.5">
+                                <i class="fas fa-user-lock text-rose-600"></i> Bed Occupied / Discharged
+                            </span>
+                            <span class="text-[10px] font-bold bg-rose-200/80 text-rose-900 px-2 py-0.5 rounded-full">Requires Release</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600 leading-relaxed">
+                            Patient is assigned or has been discharged. Click below to release this bed and mark it Available for the next patient admission.
+                        </p>
+                        <button onclick="releaseBedById(${bed.sl_no}, '${bed.bed_number}')" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-800/20 transition-all">
+                            <i class="fas fa-check-circle text-sm"></i> Release Bed & Mark Available
+                        </button>
+                    </div>
+                `;
+            } else if (['Maintenance', 'Cleaning'].includes(status)) {
+                statusContainer.innerHTML = `
+                    <div class="bg-amber-50/90 p-4 rounded-2xl border border-amber-200 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-black uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
+                                <i class="fas fa-broom text-amber-600"></i> Sanitization / Maintenance
+                            </span>
+                            <span class="text-[10px] font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full">${status}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600 leading-relaxed">
+                            Turnover or servicing in progress. Click below once sanitization is completed to mark this bed Available.
+                        </p>
+                        <button onclick="quickUpdateStatusOnTile(${bed.sl_no}, 'Available')" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-800/20 transition-all">
+                            <i class="fas fa-check text-sm"></i> Mark Clean & Available
+                        </button>
+                    </div>
+                `;
+            } else {
+                statusContainer.innerHTML = `
+                    <div class="bg-emerald-50/80 p-3.5 rounded-2xl border border-emerald-200 flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-base flex-shrink-0">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div>
+                            <div class="font-extrabold text-xs text-emerald-900">Vacant & Ready</div>
+                            <div class="text-[11px] text-slate-500 font-medium">Available for immediate patient admission</div>
+                        </div>
+                    </div>
+                `;
+            }
 
             document.getElementById('panelPriceRent').textContent = `₹${Number(bed.amount_per_day||0).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
             document.getElementById('panelPriceNurse').textContent = `₹${Number(bed.nursig_charge||0).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
@@ -1521,25 +1586,34 @@ if (!isset($_SESSION['user_id'])) {
             }
         }
 
-        // ── 7. QUICK STATUS UPDATER ──
+        // ── 7. BED RELEASE & STATUS UPDATER ──
+        async function releaseBedById(sl_no, bedNum) {
+            if (!confirm(`Are you sure you want to release Bed ${bedNum} and mark it Available for the next patient?`)) {
+                return;
+            }
+            await executeStatusUpdate(sl_no, bedNum, 'Available');
+        }
+
         async function quickUpdateStatus(newStatus) {
             if (!currentBed) return;
-            await executeStatusUpdate(currentBed.sl_no, currentBed.bed_number, newStatus, currentBed.bed_status === 'Occupied');
+            if (newStatus === 'Available') {
+                await releaseBedById(currentBed.sl_no, currentBed.bed_number);
+            } else {
+                await executeStatusUpdate(currentBed.sl_no, currentBed.bed_number, newStatus);
+            }
         }
 
         async function quickUpdateStatusOnTile(sl_no, newStatus) {
             const bed = allBeds.find(b => b.sl_no == sl_no);
             if (!bed) return;
-            await executeStatusUpdate(sl_no, bed.bed_number, newStatus, bed.bed_status === 'Occupied');
+            if (newStatus === 'Available') {
+                await releaseBedById(sl_no, bed.bed_number);
+            } else {
+                await executeStatusUpdate(sl_no, bed.bed_number, newStatus);
+            }
         }
 
-        async function executeStatusUpdate(sl_no, bedNum, newStatus, isOccupied) {
-            if (isOccupied && newStatus === 'Available') {
-                if (!confirm(`Bed ${bedNum} currently has an occupied patient. Are you sure you want to mark it Available without formal discharge?`)) {
-                    return;
-                }
-            }
-
+        async function executeStatusUpdate(sl_no, bedNum, newStatus) {
             try {
                 const formData = new FormData();
                 formData.append('action', 'update_status');
@@ -1550,7 +1624,14 @@ if (!isset($_SESSION['user_id'])) {
                 const json = await res.json();
 
                 if (json.status === 'success') {
-                    showToast(`Bed ${bedNum} is now ${newStatus}`, 'success');
+                    showToast(json.message || `Bed ${bedNum} is now ${newStatus}`, 'success');
+                    if (currentBed && currentBed.sl_no == sl_no) {
+                        currentBed.bed_status = newStatus;
+                        if (newStatus === 'Available') {
+                            currentBed.patient_id = null;
+                            currentBed.patient_name = null;
+                        }
+                    }
                     fetchBeds();
                 } else {
                     showToast(json.message || 'Failed to change status', 'error');

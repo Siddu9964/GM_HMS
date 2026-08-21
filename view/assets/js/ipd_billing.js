@@ -3716,83 +3716,108 @@ const billing = (function () {
             return;
         }
 
-        // Set default date to now
+        // Set default date to now (local timezone string)
         const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.getElementById('dsDate').value = now.toISOString().slice(0, 16);
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const mins = String(now.getMinutes()).padStart(2, '0');
+        
+        const dsDateInput = document.getElementById('dsDate');
+        if (dsDateInput) {
+            dsDateInput.value = `${year}-${month}-${day}T${hours}:${mins}`;
+        }
         
         // Reset form
-        document.getElementById('dsType').value = 'Normal';
-        document.getElementById('dsFollowup').value = '';
-        document.getElementById('dsDiagnosis').value = '';
-        document.getElementById('dsSummary').value = '';
-        document.getElementById('dsMeds').value = '';
+        const dsType = document.getElementById('dsType'); if (dsType) dsType.value = 'Normal';
+        const dsFollowup = document.getElementById('dsFollowup'); if (dsFollowup) dsFollowup.value = '';
+        const dsDiagnosis = document.getElementById('dsDiagnosis'); if (dsDiagnosis) dsDiagnosis.value = '';
+        const dsSummary = document.getElementById('dsSummary'); if (dsSummary) dsSummary.value = '';
+        const dsMeds = document.getElementById('dsMeds'); if (dsMeds) dsMeds.value = '';
 
         openModal('modalDischarge');
     }
 
     async function submitDischarge() {
         const btn = document.getElementById('btnSubmitDischarge');
-        const dsDate = document.getElementById('dsDate').value;
+        const dsDate = document.getElementById('dsDate')?.value;
         if (!dsDate) {
             showToast('Discharge Date & Time is required', 'warning');
             return;
         }
 
-        btn.classList.add('loading');
-        
-        // Split date and time
-        const dateObj = new Date(dsDate);
-        const dateStr = dateObj.toISOString().split('T')[0];
-        const timeStr = dsDate.split('T')[1] + ':00';
+        if (!currentAdmissionId) {
+            showToast('No active admission selected', 'warning');
+            return;
+        }
 
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Discharging...';
+        }
+
+        // Safe extraction of date and time without timezone skew
+        const parts = dsDate.split('T');
+        const dateStr = parts[0] || (new Date().toISOString().split('T')[0]);
+        let timeStr = (parts[1] || '12:00:00');
+        if (timeStr.length === 5) timeStr += ':00';
+
+        const followUp = document.getElementById('dsFollowup')?.value;
         const payload = {
             admission_id: currentAdmissionId,
             discharge_date: dateStr,
             discharge_time: timeStr,
-            discharge_type: document.getElementById('dsType').value,
-            follow_up_date: document.getElementById('dsFollowup').value,
-            final_diagnosis: document.getElementById('dsDiagnosis').value,
-            discharge_summary: document.getElementById('dsSummary').value,
-            medications_prescribed: document.getElementById('dsMeds').value,
-            // Assuming current doctor is discharging them
-            discharged_by_doctor_id: currentMaster.admitting_doctor_id || 1 
+            discharge_type: document.getElementById('dsType')?.value || 'Normal',
+            follow_up_date: followUp ? followUp : null,
+            final_diagnosis: (document.getElementById('dsDiagnosis')?.value || '').trim(),
+            discharge_summary: (document.getElementById('dsSummary')?.value || '').trim(),
+            medications_prescribed: (document.getElementById('dsMeds')?.value || '').trim(),
+            discharged_by_doctor_id: (currentMaster && (currentMaster.doctor_id || currentMaster.admitting_doctor_id)) || 1 
         };
 
         try {
-            // 1. Create discharge record
-            const resRecord = await fetch('/GM_HMS/reception_view/ipd_management/public/api.php/api/discharge', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const dataRecord = await resRecord.json();
+            // 1. Create discharge summary record in discharge_details
+            try {
+                await fetch('/GM_HMS/reception_view/ipd_management/public/api.php/api/discharge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (errRec) {
+                console.warn('Discharge record logging warning:', errRec);
+            }
             
-            // 2. Discharge admission
+            // 2. Discharge admission and auto-release bed in hospital_beds
             const resAdmit = await fetch('/GM_HMS/reception_view/ipd_management/public/api.php/api/admissions?action=discharge', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     admission_id: currentAdmissionId,
-                    discharge_date: dateStr
+                    discharge_date: dateStr,
+                    discharge_time: timeStr
                 })
             });
             const dataAdmit = await resAdmit.json();
 
-            if (dataAdmit.success || dataRecord.success) {
-                showToast('Patient Discharged Successfully', 'success');
+            if (dataAdmit.success || (dataAdmit.status === 'success')) {
+                showToast('Patient Discharged & Bed Released Successfully', 'success');
                 closeModal('modalDischarge');
                 setTimeout(() => {
                     loadAdmission(currentAdmissionId, currentPatientId);
-                }, 1000);
+                }, 800);
             } else {
-                showToast(dataAdmit.message || 'Failed to discharge patient', 'error');
+                showToast(dataAdmit.message || dataAdmit.error || 'Failed to discharge patient', 'error');
             }
         } catch (e) {
             console.error(e);
-            showToast('An error occurred during discharge', 'error');
+            showToast('An error occurred during discharge submission', 'error');
         } finally {
-            btn.classList.remove('loading');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="check-circle-2"></i> Complete Discharge';
+                if (window.lucide) lucide.createIcons();
+            }
         }
     }
 

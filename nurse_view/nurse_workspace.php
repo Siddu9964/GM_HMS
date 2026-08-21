@@ -1868,6 +1868,61 @@ html, body {
   </div>
 </div>
 
+<!-- 8. Out of Stock Pharmacy Medicine Order Modal -->
+<div id="ph-oos-modal" style="position:fixed;inset:0;background:rgba(15, 35, 25, 0.6);backdrop-filter:blur(4px);z-index:9000;display:none;align-items:center;justify-content:center;">
+  <div style="background:#ffffff;border-radius:16px;max-width:520px;width:92%;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,0.35);border:2px solid #dc2626;animation:modalZoomIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);">
+    <div style="background:#dc2626;padding:16px 22px;font-weight:800;font-size:1.05rem;color:#ffffff;display:flex;align-items:center;justify-content:space-between;">
+      <span style="display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-exclamation-triangle"></i> Medicine Stock Alert
+      </span>
+      <button type="button" onclick="closeOosModal()" style="background:none;border:none;color:#ffffff;font-size:1.2rem;cursor:pointer;padding:2px 6px;"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div style="padding:22px;font-size:0.9rem;color:var(--gm-text-body);line-height:1.5;">
+      <!-- Primary Alert Banner -->
+      <div style="background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;padding:14px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+        <div style="width:42px;height:42px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;">
+          <i class="fas fa-box-open"></i>
+        </div>
+        <div>
+          <div style="font-weight:800;color:#991b1b;font-size:1.05rem;">Medicine is not available in stock.</div>
+          <div style="font-size:0.82rem;color:#7f1d1d;margin-top:2px;">Current pharmacy inventory stock is <strong>0 units</strong>.</div>
+        </div>
+      </div>
+
+      <!-- Medicine Details Box -->
+      <div style="background:#f8fafc;border:1px solid var(--gm-border);border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+        <div style="font-weight:800;color:var(--gm-primary);font-size:1.02rem;" id="oos-med-name">Medicine Name</div>
+        <div style="font-size:0.82rem;color:var(--gm-text-muted);margin-top:3px;" id="oos-med-meta">Batch: N/A | Available Stock: 0</div>
+      </div>
+
+      <!-- Option to Save Order Even When Out of Stock -->
+      <div style="background:#fffbeb;border:1.5px dashed #fcd34d;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:0.82rem;color:#92400e;line-height:1.4;">
+        <strong><i class="fas fa-info-circle"></i> Save Out-of-Stock Order Option:</strong>
+        <p style="margin:4px 0 0 0;">You can still proceed and save this medicine order. It will be recorded in the patient's K-Sheet and forwarded to the pharmacy department as an emergency indent / pending stock request.</p>
+      </div>
+
+      <div class="fg" style="grid-template-columns: 1fr 1fr; gap:12px;">
+        <div class="fmg">
+          <label><i class="fas fa-sort-numeric-up"></i> Order Quantity <span style="color:#dc2626;">*</span></label>
+          <input type="number" id="oos-med-qty" min="1" value="1" style="font-weight:700;">
+        </div>
+        <div class="fmg">
+          <label><i class="fas fa-comment-medical"></i> Clinical Note / Reason</label>
+          <input type="text" id="oos-med-note" placeholder="e.g. Urgent / Doctor prescribed">
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:14px 22px;background:#f8fafc;border-top:1px solid var(--gm-border);display:flex;gap:10px;justify-content:flex-end;">
+      <button type="button" onclick="closeOosModal()" style="padding:9px 16px;border-radius:8px;font-weight:700;font-size:0.85rem;border:1.5px solid var(--gm-border);background:#ffffff;color:var(--gm-primary);cursor:pointer">Cancel</button>
+      <button type="button" id="btn-confirm-oos" onclick="confirmAddOosToCart()" style="padding:9px 20px;border-radius:8px;font-weight:800;font-size:0.88rem;border:none;background:var(--gm-primary);color:#f3efe6;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+        <i class="fas fa-plus-circle"></i> Add to Order & Save
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -2251,7 +2306,9 @@ async function loadAllRecords(){
     const phHistory=d.pharmacy_orders||[];
     document.getElementById('h-ph').innerHTML=phHistory.length?phHistory.map(o=>{
       const i=o.data||o;
-      return `<tr><td>${o.created_date||i.date||''}</td><td><strong>${i.medicine||i.name||i.product_name||''}</strong></td><td>${i.batch||i.batch_no||'N/A'}</td><td>${i.qty||i.quantity||1}</td></tr>`;
+      const isOos = i.is_out_of_stock || (i.stock !== undefined && parseInt(i.stock) <= 0);
+      const oosBadge = isOos ? ' <span class="badge" style="background:#fee2e2;color:#dc2626;font-size:0.68rem;border-color:#fca5a5;"><i class="fas fa-exclamation-triangle"></i> Out of Stock</span>' : '';
+      return `<tr><td>${o.created_date||i.date||''}</td><td><strong>${i.medicine||i.name||i.product_name||''}</strong>${oosBadge}</td><td>${i.batch||i.batch_no||'N/A'}</td><td>${i.qty||i.quantity||1}</td></tr>`;
     }).join(''):'<tr class="et"><td colspan="4">No pharmacy orders yet.</td></tr>';
   }catch(er){console.error('loadAllRecords:',er);}
 }
@@ -2308,50 +2365,246 @@ async function saveTests(){
 }
 
 /* ── Pharmacy Cart ── */
-let phT=null;
-document.getElementById('ph-input').addEventListener('input',function(){
-  clearTimeout(phT); const q=this.value.trim(), res=document.getElementById('ph-results');
-  if(q.length<2){res.style.display='none';return;}
-  phT=setTimeout(()=>{
-    fetch('api/search_medicine.php?q='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{
-      res.innerHTML='';
-      const items=d.data||d.medicines||d||[];
-      if(Array.isArray(items)&&items.length>0){
-        items.forEach(item=>{
-          const el=document.createElement('div'); el.className='ph-item';
-          el.innerHTML=`<div><strong style="color:var(--gm-primary)">${item.name||item.medicine_name||item.product_name}</strong><br><small style="color:var(--gm-text-muted)">Batch: ${item.batch_number||'N/A'} | Stock: ${item.quantity||item.stock||item.available_stock||'?'}</small></div><span class="badge"><i class="fas fa-plus"></i> Add</span>`;
-          el.onclick=()=>addToPhCart(item); res.appendChild(el);
-        });
-      } else { res.innerHTML='<div style="padding:12px;text-align:center;color:var(--gm-text-muted);font-size:.82rem">No medicines found.</div>'; }
-      res.style.display='block';
-    });
-  },280);
-});
-document.addEventListener('click',e=>{if(!document.getElementById('ph-input').contains(e.target)&&!document.getElementById('ph-results').contains(e.target))document.getElementById('ph-results').style.display='none';});
+let phT = null;
+let pendingOosItem = null;
 
-function addToPhCart(item){
-  document.getElementById('ph-results').style.display='none'; document.getElementById('ph-input').value='';
-  const id=item.id||item.medicine_id||item.product_id;
-  const ex=phCart.find(x=>x.id===id);
-  if(ex)ex.qty++; else phCart.push({id,name:item.name||item.medicine_name||item.product_name,batch:item.batch_number||'',stock:item.quantity||item.stock||item.available_stock||'?',qty:1});
+function openOosModal(item) {
+  pendingOosItem = item;
+  const medName = item.name || item.medicine_name || item.product_name || 'Selected Medicine';
+  const batch = item.batch_number || item.batch || 'N/A';
+  const rawStock = item.available_stock !== undefined ? item.available_stock : (item.quantity !== undefined ? item.quantity : (item.stock !== undefined ? item.stock : 0));
+  const stock = parseInt(rawStock) || 0;
+  
+  const nameEl = document.getElementById('oos-med-name');
+  if (nameEl) nameEl.textContent = medName;
+  
+  const metaEl = document.getElementById('oos-med-meta');
+  if (metaEl) metaEl.innerHTML = `Batch: <strong>${batch}</strong> | Current Available Stock: <strong style="color:#dc2626;">${stock} units</strong>`;
+  
+  const qtyEl = document.getElementById('oos-med-qty');
+  if (qtyEl) qtyEl.value = 1;
+  
+  const noteEl = document.getElementById('oos-med-note');
+  if (noteEl) noteEl.value = '';
+  
+  const modal = document.getElementById('ph-oos-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeOosModal() {
+  const modal = document.getElementById('ph-oos-modal');
+  if (modal) modal.style.display = 'none';
+  pendingOosItem = null;
+}
+
+function confirmAddOosToCart() {
+  if (!pendingOosItem) return;
+  const qtyInput = document.getElementById('oos-med-qty');
+  const qty = Math.max(1, parseInt(qtyInput ? qtyInput.value : 1) || 1);
+  const noteInput = document.getElementById('oos-med-note');
+  const notes = noteInput ? noteInput.value.trim() : '';
+  
+  const id = pendingOosItem.id || pendingOosItem.medicine_id || pendingOosItem.product_id || ('OOS_' + Date.now());
+  const name = pendingOosItem.name || pendingOosItem.medicine_name || pendingOosItem.product_name || 'Medicine';
+  const batch = pendingOosItem.batch_number || pendingOosItem.batch || 'N/A';
+  
+  const ex = phCart.find(x => x.id === id);
+  if (ex) {
+    ex.qty += qty;
+    ex.is_out_of_stock = true;
+    if (notes) ex.notes = notes;
+  } else {
+    phCart.push({
+      id: id,
+      name: name,
+      batch: batch,
+      stock: 0,
+      qty: qty,
+      is_out_of_stock: true,
+      notes: notes
+    });
+  }
+  
+  closeOosModal();
   renderPhCart();
+  showToast(`⚠️ "${name}" (Out of stock) added to order.`);
 }
-function renderPhCart(){
-  const ca=document.getElementById('ph-cart');
-  if(!phCart.length){ca.innerHTML='';return;}
-  ca.innerHTML=phCart.map(m=>`<div class="cart-row"><div class="cart-row-n">${m.name} <span class="badge">Batch: ${m.batch||'N/A'}</span></div><input type="number" value="${m.qty}" min="1" onchange="phCart.find(x=>x.id==='${m.id}').qty=parseInt(this.value)||1;renderPhCart()"><button class="rm-btn" onclick="phCart=phCart.filter(x=>x.id!=='${m.id}');renderPhCart()"><i class="fas fa-trash-alt"></i></button></div>`).join('');
+
+function handlePhSelect(item) {
+  document.getElementById('ph-results').style.display = 'none';
+  document.getElementById('ph-input').value = '';
+  
+  const rawStock = item.available_stock !== undefined ? item.available_stock : (item.quantity !== undefined ? item.quantity : (item.stock !== undefined ? item.stock : 0));
+  const numStock = parseInt(rawStock) || 0;
+  
+  if (numStock <= 0) {
+    // Show Popup message that medicine is not available in stock, with option to save
+    openOosModal(item);
+  } else {
+    addToPhCart(item);
+  }
 }
-async function savePharmacy(){
-  if(!cp){showToast('No patient selected!',true);return;}
-  if(!phCart.length){showToast('Add at least one medicine.',true);return;}
-  const b=document.getElementById('ph-save-btn'); b.innerHTML='<i class="fas fa-spinner fa-spin"></i> Submitting...'; b.disabled=true;
-  try{
-    const r=await fetch('api/save_pharmacy_order.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({patient_id:cp.patient_id,admission_id:cp.admission_id || '',cart:phCart})});
-    const res=await r.json();
-    if(res.success){showToast('Pharmacy order submitted!');phCart=[];renderPhCart();loadAllRecords();}
-    else showToast('Error: '+(res.message||'Unknown'),true);
-  }catch{showToast('Network error!',true);}
-  finally{b.innerHTML='<i class="fas fa-paper-plane"></i> Submit Pharmacy Order';b.disabled=false;}
+
+document.getElementById('ph-input').addEventListener('input', function() {
+  clearTimeout(phT);
+  const q = this.value.trim();
+  const res = document.getElementById('ph-results');
+  if (q.length < 2) { res.style.display = 'none'; return; }
+  
+  phT = setTimeout(() => {
+    fetch('api/search_medicine.php?q=' + encodeURIComponent(q))
+      .then(r => r.json())
+      .then(d => {
+        res.innerHTML = '';
+        const items = d.data || d.medicines || d || [];
+        if (Array.isArray(items) && items.length > 0) {
+          items.forEach(item => {
+            const medName = item.name || item.medicine_name || item.product_name || 'Unknown';
+            const batch = item.batch_number || item.batch || 'N/A';
+            const rawStock = item.available_stock !== undefined ? item.available_stock : (item.quantity !== undefined ? item.quantity : (item.stock !== undefined ? item.stock : 0));
+            const stock = parseInt(rawStock) || 0;
+            const isOos = isNaN(stock) || stock <= 0;
+            
+            const el = document.createElement('div');
+            el.className = 'ph-item';
+            if (isOos) el.style.background = '#fffafa';
+            
+            el.innerHTML = `
+              <div>
+                <strong style="color:var(--gm-primary)">${medName}</strong>
+                <br>
+                <small style="color:${isOos ? '#dc2626' : 'var(--gm-text-muted)'}; font-weight:600;">
+                  Batch: ${batch} | Stock: ${isOos ? '<span style="color:#dc2626; font-weight:800;">0 (Out of Stock)</span>' : stock}
+                </small>
+              </div>
+              <span class="badge" style="${isOos ? 'background:#fee2e2; color:#dc2626; border-color:#fca5a5;' : 'background:var(--gm-primary-light); color:var(--gm-primary);'}">
+                <i class="fas ${isOos ? 'fa-exclamation-triangle' : 'fa-plus'}"></i> ${isOos ? 'Out of Stock' : 'Add'}
+              </span>
+            `;
+            el.onclick = () => handlePhSelect(item);
+            res.appendChild(el);
+          });
+        } else {
+          const safeQ = q.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          const safeQJs = q.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          res.innerHTML = `
+            <div style="padding:14px; text-align:center;">
+              <div style="color:var(--gm-text-muted); font-size:0.84rem; margin-bottom:8px;">
+                <i class="fas fa-search"></i> No matching medicines found in pharmacy catalog.
+              </div>
+              <button type="button" class="btn-sv-out" style="padding:6px 14px; font-size:0.8rem; margin:0 auto; display:inline-flex;" onclick="openOosModal({ name: '${safeQJs}', id: 'UNLISTED_' + Date.now(), available_stock: 0, batch_number: 'N/A' })">
+                <i class="fas fa-plus-circle"></i> Add "${safeQ}" as Out-of-Stock / Unlisted Order
+              </button>
+            </div>
+          `;
+        }
+        res.style.display = 'block';
+      });
+  }, 280);
+});
+
+document.addEventListener('click', e => {
+  if (!document.getElementById('ph-input').contains(e.target) && !document.getElementById('ph-results').contains(e.target)) {
+    document.getElementById('ph-results').style.display = 'none';
+  }
+});
+
+function addToPhCart(item) {
+  document.getElementById('ph-results').style.display = 'none';
+  document.getElementById('ph-input').value = '';
+  const id = item.id || item.medicine_id || item.product_id;
+  const ex = phCart.find(x => x.id === id);
+  const rawStock = item.available_stock !== undefined ? item.available_stock : (item.quantity !== undefined ? item.quantity : (item.stock !== undefined ? item.stock : 0));
+  const stock = parseInt(rawStock) || 0;
+  const medName = item.name || item.medicine_name || item.product_name;
+
+  if (ex) {
+    ex.qty++;
+  } else {
+    phCart.push({
+      id: id,
+      name: medName,
+      batch: item.batch_number || item.batch || 'N/A',
+      stock: stock,
+      qty: 1,
+      is_out_of_stock: stock <= 0
+    });
+  }
+  renderPhCart();
+  showToast(`✅ "${medName}" added to order.`);
+}
+
+function renderPhCart() {
+  const ca = document.getElementById('ph-cart');
+  if (!phCart.length) { ca.innerHTML = ''; return; }
+
+  let hasOos = false;
+  let rowsHtml = phCart.map(m => {
+    const isOos = m.is_out_of_stock || (parseInt(m.stock) <= 0);
+    if (isOos) hasOos = true;
+    const badgeHtml = isOos 
+      ? `<span class="badge" style="background:#fee2e2; color:#dc2626; border-color:#fca5a5;"><i class="fas fa-exclamation-triangle"></i> Out of Stock</span>`
+      : `<span class="badge">Batch: ${m.batch || 'N/A'} | Stock: ${m.stock}</span>`;
+    
+    return `
+      <div class="cart-row" style="${isOos ? 'border-left: 4px solid #dc2626; background:#fffafa;' : ''}">
+        <div class="cart-row-n">
+          <div>${m.name} ${badgeHtml}</div>
+          ${m.notes ? `<small style="color:#b91c1c; font-size:0.75rem; display:block; margin-top:2px;"><i class="fas fa-sticky-note"></i> ${m.notes}</small>` : ''}
+        </div>
+        <input type="number" value="${m.qty}" min="1" onchange="const item=phCart.find(x=>x.id==='${m.id}'); if(item){item.qty=parseInt(this.value)||1; renderPhCart();}">
+        <button class="rm-btn" onclick="phCart=phCart.filter(x=>x.id!=='${m.id}'); renderPhCart();" title="Remove"><i class="fas fa-trash-alt"></i></button>
+      </div>
+    `;
+  }).join('');
+
+  if (hasOos) {
+    rowsHtml += `
+      <div style="margin-top:8px; padding:8px 12px; background:#fffbeb; border:1px solid #fcd34d; border-radius:8px; font-size:0.78rem; color:#92400e; display:flex; align-items:center; gap:8px;">
+        <i class="fas fa-info-circle" style="color:#d97706; font-size:0.95rem;"></i>
+        <span><strong>Notice:</strong> Out-of-stock items will be recorded and forwarded to the pharmacy department as pending indents.</span>
+      </div>
+    `;
+  }
+
+  ca.innerHTML = rowsHtml;
+}
+
+async function savePharmacy() {
+  if (!cp) { showToast('No patient selected!', true); return; }
+  if (!phCart.length) { showToast('Add at least one medicine.', true); return; }
+  
+  const b = document.getElementById('ph-save-btn');
+  const origHtml = b.innerHTML;
+  b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+  b.disabled = true;
+  
+  try {
+    const oosCount = phCart.filter(x => x.is_out_of_stock || parseInt(x.stock) <= 0).length;
+    const r = await fetch('api/save_pharmacy_order.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ patient_id: cp.patient_id, admission_id: cp.admission_id || '', cart: phCart })
+    });
+    const res = await r.json();
+    if (res.success) {
+      let msg = res.message || 'Pharmacy order submitted!';
+      if (oosCount > 0) {
+        msg = `Pharmacy order submitted successfully (Includes ${oosCount} out-of-stock item(s) flagged for indent)!`;
+      }
+      showToast(`✅ ${msg}`);
+      phCart = [];
+      renderPhCart();
+      loadAllRecords();
+    } else {
+      showToast('Error: ' + (res.message || 'Unknown'), true);
+    }
+  } catch (err) {
+    showToast('Network error while saving pharmacy order!', true);
+  } finally {
+    b.innerHTML = origHtml;
+    b.disabled = false;
+  }
 }
 
 /* ── Edit Log & Cancel Edit ── */

@@ -678,16 +678,35 @@ class Admission extends BaseModel {
                 throw new Exception('Failed to update admission status');
             }
             
-            // Release bed if assigned
-            if ($admission['bed_id']) {
+            // Release bed and make it Available for next patient
+            if (!empty($admission['bed_id'])) {
                 try {
                     $this->query(
-                        "UPDATE hospital_beds SET bed_status = 'Available', patient_id = NULL, released_at = NOW() WHERE sl_no = ?",
+                        "UPDATE hospital_beds SET bed_status = 'Available', patient_id = NULL, admission_id = NULL, released_at = NOW() WHERE sl_no = ?",
                         [$admission['bed_id']]
                     );
                 } catch (Exception $e) {
-                    // Log but don't fail if bed table doesn't exist
-                    error_log("Could not release bed: " . $e->getMessage());
+                    error_log("Could not release bed by bed_id: " . $e->getMessage());
+                }
+            }
+            if (!empty($admission['admission_id'])) {
+                try {
+                    $this->query(
+                        "UPDATE hospital_beds SET bed_status = 'Available', patient_id = NULL, admission_id = NULL, released_at = NOW() WHERE admission_id = ?",
+                        [$admission['admission_id']]
+                    );
+                } catch (Exception $e) {
+                    error_log("Could not release bed by admission_id: " . $e->getMessage());
+                }
+            }
+            if (!empty($admission['patient_id'])) {
+                try {
+                    $this->query(
+                        "UPDATE hospital_beds SET bed_status = 'Available', patient_id = NULL, admission_id = NULL, released_at = NOW() WHERE patient_id = ?",
+                        [$admission['patient_id']]
+                    );
+                } catch (Exception $e) {
+                    error_log("Could not release bed by patient_id: " . $e->getMessage());
                 }
             }
             

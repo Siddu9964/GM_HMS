@@ -23,15 +23,15 @@ $action = $_POST['action'] ?? $_GET['action'] ?? 'create';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // ─────────────────────────────────────────────────────────────────────────────
-    // 1. QUICK STATUS UPDATE
+    // 1. QUICK STATUS UPDATE (Available, Occupied, Cleaning, Maintenance)
     // ─────────────────────────────────────────────────────────────────────────────
     if ($action === 'update_status') {
         $sl_no = intval($_POST['sl_no'] ?? 0);
         $new_status = trim($_POST['bed_status'] ?? '');
         
-        $validStatuses = ['Available', 'Occupied', 'Maintenance', 'Cleaning', 'Reserved', 'Blocked'];
+        $validStatuses = ['Available', 'Occupied', 'Cleaning', 'Maintenance', 'Reserved', 'Blocked'];
         if (!$sl_no || !in_array($new_status, $validStatuses)) {
-            echo json_encode(['status' => 'error', 'message' => 'Invalid bed ID or status']);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid bed status.']);
             exit;
         }
 
@@ -42,12 +42,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $updateData = ['bed_status' => $new_status];
-        if ($new_status === 'Available' && $bed['bed_status'] !== 'Occupied') {
+        if ($new_status === 'Available') {
+            // Releasing the bed makes it vacant, clears patient assignment, and records release timestamp
             $updateData['patient_id'] = null;
+            $updateData['admission_id'] = null;
+            $updateData['released_at'] = date('Y-m-d H:i:s');
         }
 
         $db->update('hospital_beds', $updateData, 'sl_no = ?', [$sl_no]);
-        echo json_encode(['status' => 'success', 'message' => "Bed status changed to {$new_status}"]);
+        $msg = $new_status === 'Available' 
+            ? "Bed {$bed['bed_number']} has been released and is now Available for new patient admissions."
+            : "Bed {$bed['bed_number']} status changed to {$new_status}.";
+            
+        echo json_encode(['status' => 'success', 'message' => $msg]);
         exit;
     }
 
@@ -201,7 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $doctor_charge    = floatval($_POST['doctor_charge'] ?? 0);
     $service_charge   = floatval($_POST['service_charge'] ?? 0);
     $total_bed_amount = $amount_per_day + $nursig_charge + $doctor_charge + $service_charge;
-    $bed_status       = trim($_POST['bed_status'] ?? 'Available');
+    $bed_status       = in_array(trim($_POST['bed_status'] ?? ''), ['Available', 'Occupied', 'Cleaning', 'Maintenance', 'Reserved', 'Blocked']) ? trim($_POST['bed_status']) : 'Available';
 
     if (empty($ward_name) || empty($room_number)) {
         echo json_encode(['status' => 'error', 'message' => 'Ward Name and Room Number are required.']);
@@ -236,6 +243,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'total_bed_amount' => $total_bed_amount,
             'bed_status'       => $bed_status
         ];
+
+        if ($bed_status === 'Available') {
+            $updatePayload['patient_id'] = null;
+            $updatePayload['admission_id'] = null;
+            $updatePayload['released_at'] = date('Y-m-d H:i:s');
+        }
 
         $db->update('hospital_beds', $updatePayload, 'sl_no = ?', [$sl_no]);
         echo json_encode(['status' => 'success', 'message' => 'Bed details and pricing updated successfully.']);

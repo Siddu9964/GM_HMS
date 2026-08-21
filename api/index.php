@@ -322,6 +322,11 @@ $router->add('POST', '#^/api/billing/opd/sponsor/?$#', 'GM_HMS\Controllers\api\O
 $router->add('GET', '#^/api/billing/opd/referral/search/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'searchReferrals');
 $router->add('GET', '#^/api/billing/opd/sponsor/search/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'searchSponsors');
 
+// Advanced Receipts Engine Routes
+$router->add('GET', '#^/api/billing/receipts/shift-handover/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'getShiftHandoverReport');
+$router->add('GET', '#^/api/billing/receipts/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'getReceiptsList');
+$router->add('POST', '#^/api/billing/receipts/refund/?$#', 'GM_HMS\Controllers\api\OpdBillingController', 'cancelOrRefundReceipt');
+
 // IPD Billing Routes
 $router->add('GET', '#^/api/new-ipd-billing/admission/([^/]+)/?$#', 'GM_HMS\Controllers\api\NewIpdBillingController', 'getAdmissionDetails');
 $router->add('POST', '#^/api/billing/ipd/?$#', 'GM_HMS\Controllers\api\IpdBillingController', 'createBill');
