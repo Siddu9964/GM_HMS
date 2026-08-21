@@ -444,21 +444,25 @@ register_shutdown_function(function () {
     }
 });
 
-$requestUri = $_SERVER['REQUEST_URI'];
-$requestMethod = $_SERVER['REQUEST_METHOD'];
+$requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 // Remove query string for routing
-$path = parse_url($requestUri, PHP_URL_PATH);
+$rawPath = parse_url($requestUri, PHP_URL_PATH) ?? '/';
+$path = $rawPath;
 
-// Robustly find the API path by stripping everything before /api/
-if (($apiPos = stripos($path, '/api/')) !== false) {
-    $path = substr($path, $apiPos);
+// Robust path normalization across Apache, Nginx, subdirectories, and rewrites
+if (stripos($path, 'index.php') !== false) {
+    $path = preg_replace('#^.*?index\.php#i', '', $path);
+} elseif (($pos = strrpos($path, '/api/')) !== false) {
+    $path = substr($path, $pos);
 }
 
-error_log("[DEBUG] Routing - Processed Path: $path, Method: $requestMethod");
-
-// Remove index.php from routing path
-$path = str_replace('/api/index.php', '', $path);
+$path = '/' . ltrim($path, '/');
+if (stripos($path, '/api/') !== 0 && $path !== '/api') {
+    $path = '/api' . $path;
+}
+$path = preg_replace('#^/api/api/#i', '/api/', $path);
 
 $route = $router->dispatch($path, $requestMethod);
 
