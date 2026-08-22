@@ -52,6 +52,23 @@ class IpdBillingItem extends BaseModel {
             }
         }
 
+        // Duplicate check for one-time Admission Charge and MRD Charge (only once per admission)
+        $chargeDesc = trim($data['description'] ?? '');
+        if (strcasecmp($chargeDesc, 'Admission Charge') === 0 || strcasecmp($chargeDesc, 'MRD Charge') === 0) {
+            $dupOneTime = $this->fetchOne(
+                "SELECT item_id FROM ipd_billing_items
+                 WHERE bill_id = ? AND description = ? AND status != 'CANCELLED'",
+                [$billId, $chargeDesc]
+            );
+            if ($dupOneTime && empty($data['force'])) {
+                return [
+                    'success'   => false,
+                    'duplicate' => true,
+                    'message'   => "{$chargeDesc} has already been added for this admission and cannot be added again.",
+                ];
+            }
+        }
+
         $qty       = (float)($data['quantity']   ?? 1);
         $unitPrice = (float)($data['unit_price']  ?? 0);
         $discount  = (float)($data['discount_amt'] ?? 0);

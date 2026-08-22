@@ -400,7 +400,7 @@ class Admission extends BaseModel {
             
             $billId = $masterRecord['data']['bill_id'];
             
-            // Auto-add Initial Charges
+            // Auto-add Initial Charges (One-time only on admission)
             $admCharge = (isset($data['admission_charge']) && is_numeric($data['admission_charge'])) ? (float)$data['admission_charge'] : 350;
             $mrdCharge = (isset($data['mrd_charge']) && is_numeric($data['mrd_charge'])) ? (float)$data['mrd_charge'] : 400;
             $foodCharge = (isset($data['food_charge']) && is_numeric($data['food_charge'])) ? (float)$data['food_charge'] : 570;
@@ -417,27 +417,56 @@ class Admission extends BaseModel {
             
             $createdBy = $_SESSION['username'] ?? 'system';
             
-            $insertQuery = "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, status, created_by, created_at) VALUES 
-                 (?, ?, ?, CURDATE(), 'MISC', 'Admission Charge', ?, 'COMPLETED', ?, NOW()),
-                 (?, ?, ?, CURDATE(), 'MISC', 'MRD Charge', ?, 'COMPLETED', ?, NOW()),
-                 (?, ?, ?, CURDATE(), 'MISC', 'Food Charge - Day 1', ?, 'COMPLETED', ?, NOW()),
-                 (?, ?, ?, CURDATE(), 'ROOM_RENT', ?, ?, 'COMPLETED', ?, NOW())";
-                 
-            $this->query($insertQuery, [
-                $billId, $filteredData['patient_id'], $data['admission_id'], $admCharge, $createdBy,
-                $billId, $filteredData['patient_id'], $data['admission_id'], $mrdCharge, $createdBy,
-                $billId, $filteredData['patient_id'], $data['admission_id'], $foodCharge, $createdBy,
-                $billId, $filteredData['patient_id'], $data['admission_id'], $roomDesc, $roomCharge, $createdBy
-            ]);
-            
-            // Note: Since IpdBillingMaster also has a broken schema mapping in recalculateMaster, 
-            // we manually update the other_charges and room_charges columns in ipd_billing_master instead of calling recalculateMaster.
-            $otherTotal = $admCharge + $mrdCharge + $foodCharge;
-            $grandTotal = $otherTotal + $roomCharge;
-            
-            $this->query("UPDATE ipd_billing_master SET room_charges = room_charges + ?, other_charges = other_charges + ?, subtotal = subtotal + ?, grand_total = grand_total + ?, patient_payable = patient_payable + ? WHERE bill_id = ?",
-                [ $roomCharge, $otherTotal, $grandTotal, $grandTotal, $grandTotal, $billId ]
+            // 1. One-time Admission Charge check (only once per admission)
+            $existingAdm = $this->fetchOne(
+                "SELECT item_id FROM ipd_billing_items WHERE bill_id = ? AND description = 'Admission Charge' AND status != 'CANCELLED'",
+                [$billId]
             );
+            if (!$existingAdm && $admCharge > 0) {
+                $this->query(
+                    "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'MISC', 'Admission Charge', ?, 'COMPLETED', ?, NOW())",
+                    [$billId, $filteredData['patient_id'], $data['admission_id'], $admCharge, $createdBy]
+                );
+            }
+
+            // 2. One-time MRD Charge check (only once per admission)
+            $existingMrd = $this->fetchOne(
+                "SELECT item_id FROM ipd_billing_items WHERE bill_id = ? AND description = 'MRD Charge' AND status != 'CANCELLED'",
+                [$billId]
+            );
+            if (!$existingMrd && $mrdCharge > 0) {
+                $this->query(
+                    "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'MISC', 'MRD Charge', ?, 'COMPLETED', ?, NOW())",
+                    [$billId, $filteredData['patient_id'], $data['admission_id'], $mrdCharge, $createdBy]
+                );
+            }
+
+            // 3. Food Charge Day 1 check
+            $existingFood = $this->fetchOne(
+                "SELECT item_id FROM ipd_billing_items WHERE bill_id = ? AND charge_date = CURDATE() AND charge_type = 'MISC' AND description LIKE 'Food Charge%' AND status != 'CANCELLED'",
+                [$billId]
+            );
+            if (!$existingFood && $foodCharge > 0) {
+                $this->query(
+                    "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'MISC', 'Food Charge - Day 1', ?, 'COMPLETED', ?, NOW())",
+                    [$billId, $filteredData['patient_id'], $data['admission_id'], $foodCharge, $createdBy]
+                );
+            }
+
+            // 4. Room Rent Day 1 check
+            $existingRoom = $this->fetchOne(
+                "SELECT item_id FROM ipd_billing_items WHERE bill_id = ? AND charge_date = CURDATE() AND charge_type = 'ROOM_RENT' AND status != 'CANCELLED'",
+                [$billId]
+            );
+            if (!$existingRoom && $roomCharge > 0) {
+                $this->query(
+                    "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'ROOM_RENT', ?, ?, 'COMPLETED', ?, NOW())",
+                    [$billId, $filteredData['patient_id'], $data['admission_id'], $roomDesc, $roomCharge, $createdBy]
+                );
+            }
+
+            // Recalculate Master accurately using IpdBillingMaster
+            $billingMaster->recalculateMaster($billId, $createdBy);
 
             // Process Advance Payment if any
             require_once __DIR__ . '/../../../Models/IpdPayment.php';
@@ -708,6 +737,23 @@ class Admission extends BaseModel {
                 } catch (Exception $e) {
                     error_log("Could not release bed by patient_id: " . $e->getMessage());
                 }
+            }
+
+            // Lock and finalize billing master with discharge date
+            try {
+                $this->query(
+                    "UPDATE ipd_billing_master SET discharge_date = ?, billing_status = 'FINALIZED', updated_at = NOW() WHERE admission_id = ?",
+                    [$dischargeDate, $admissionId]
+                );
+
+                require_once __DIR__ . '/IpdBillingMaster.php';
+                $bm = new IpdBillingMaster();
+                $master = $bm->fetchOne("SELECT bill_id FROM ipd_billing_master WHERE admission_id = ?", [$admissionId]);
+                if ($master) {
+                    $bm->recalculateMaster($master['bill_id'], 'system');
+                }
+            } catch (Exception $e) {
+                error_log("Discharge billing finalization warning: " . $e->getMessage());
             }
             
             $this->commit();
