@@ -87,13 +87,7 @@ $basePath = str_repeat('../', $depth);
                         </a>
                         <?php endif; ?>
 
-                        <?php if (in_array($_SESSION['role'], ['Admin', 'admin', 'Accountant', 'Receptionist'])): ?>
-                        <a href="<?php echo $basePath; ?>ipd_billing_report.php" class="opd-item" data-pd="ipd_billing_report"
-                            style="--n:4">
-                            <i class="fas fa-chart-bar"></i>
-                            <span>IP Billing Report</span>
-                        </a>
-                        <?php endif; ?>
+                       
                     </div>
                 </div>
 
