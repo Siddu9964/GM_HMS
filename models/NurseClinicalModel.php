@@ -34,6 +34,14 @@ class NurseClinicalModel {
         if (!in_array($columnName, $validColumns)) {
             throw new Exception("Invalid column name: {$columnName}");
         }
+
+        // Strictly block any clinical entries if patient is already discharged
+        if (!empty($admissionId)) {
+            $adm = $this->db->fetchOne("SELECT status, discharge_date FROM ipd_admissions WHERE admission_id = ?", [$admissionId]);
+            if ($adm && ($adm['status'] === 'Discharged' || !empty($adm['discharge_date']))) {
+                throw new Exception("This patient has already been discharged.");
+            }
+        }
         
         $today = date('Y-m-d');
         

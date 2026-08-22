@@ -519,6 +519,23 @@ const billing = (function() {
     // ── 1. ADD CHARGE ──
     let addChargeForce = false;
     window.openAddChargeModal = function(type) {
+        if (!currentBillId || !currentAdmissionId) {
+            showToast('Please select a patient bill first', 'warning');
+            return;
+        }
+        if (currentMaster && (currentMaster.billing_status === 'FINALIZED' || currentMaster.billing_status === 'CANCELLED' || currentMaster.status === 'Discharged' || currentMaster.discharge_date)) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Discharged Patient',
+                    text: 'This patient has already been discharged.',
+                    confirmButtonColor: '#1f6b4a'
+                });
+            } else {
+                alert('This patient has already been discharged.');
+            }
+            return;
+        }
         document.getElementById('chargeType').value = type;
         document.getElementById('chargeDate').value = new Date().toISOString().split('T')[0];
         document.getElementById('chargeDept').value = '';

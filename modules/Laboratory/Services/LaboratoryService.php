@@ -72,6 +72,14 @@ class LaboratoryService
 
     public function createOrder($data)
     {
+        if (!empty($data['admission_id'])) {
+            $db = \GM_HMS\Database\SecureDatabase::getInstance();
+            $adm = $db->fetchOne("SELECT status, discharge_date FROM ipd_admissions WHERE admission_id = ?", [$data['admission_id']]);
+            if ($adm && ($adm['status'] === 'Discharged' || !empty($adm['discharge_date']))) {
+                throw new \Exception("This patient has already been discharged.");
+            }
+        }
+
         $data['order_date'] = $data['order_date'] ?? date('Y-m-d');
         $data['status'] = $data['status'] ?? 'Ordered';
         $data['priority'] = $data['priority'] ?? 'Routine';

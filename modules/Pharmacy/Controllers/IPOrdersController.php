@@ -175,6 +175,14 @@ class IPOrdersController extends BaseController {
             
             $patientName = trim(($orderRow['first_name'] ?? '') . ' ' . ($orderRow['last_name'] ?? ''));
             
+            // Check if patient is discharged
+            if (!empty($orderRow['admission_id'])) {
+                $adm = $db->fetchOne("SELECT status, discharge_date FROM ipd_admissions WHERE admission_id = ?", [$orderRow['admission_id']]);
+                if ($adm && ($adm['status'] === 'Discharged' || !empty($adm['discharge_date']))) {
+                    return $this->respondError('This patient has already been discharged.');
+                }
+            }
+
             // The row-level created_by might be null if created by a different script.
             // Extract the actual nurse ID from the first item's audit block.
             $nurseId = $orders[0]['created_by'] ?? $orderRow['created_by'] ?? 'staff';

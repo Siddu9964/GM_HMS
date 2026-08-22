@@ -35,6 +35,23 @@ class IpdBillingItem extends BaseModel {
             return ['success' => false, 'message' => 'Invalid charge type'];
         }
 
+        // Block adding charges if patient is discharged or billing is finalized
+        $master = $this->fetchOne(
+            "SELECT bm.billing_status, ia.status AS admission_status, ia.discharge_date
+             FROM ipd_billing_master bm
+             LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
+             WHERE bm.bill_id = ?",
+            [$billId]
+        );
+        if ($master && empty($data['force'])) {
+            if ($master['billing_status'] === 'FINALIZED' || $master['billing_status'] === 'CANCELLED' || $master['admission_status'] === 'Discharged' || !empty($master['discharge_date'])) {
+                return [
+                    'success' => false,
+                    'message' => 'This patient has already been discharged.'
+                ];
+            }
+        }
+
         // Duplicate check for ROOM_RENT
         if ($data['charge_type'] === 'ROOM_RENT') {
             $dup = $this->fetchOne(

@@ -533,6 +533,10 @@ if (!isset($_SESSION['user_id'])) {
     }
     
     function selectPatient(p) {
+        if (p.status === 'Discharged' || p.discharge_date) {
+            showCenterMessage(false, 'Discharged Patient', 'This patient has already been discharged.');
+            return;
+        }
         currentPatient = p;
         pSuggestionsBox.style.display = 'none';
         pSearchInput.value = '';
@@ -741,12 +745,22 @@ if (!isset($_SESSION['user_id'])) {
                 cart = [];
                 renderCart();
             } else {
-                showCenterMessage(false, 'Error', data.message || 'Error saving pharmacy order.');
+                const msg = data.message || 'Error saving pharmacy order.';
+                if (msg.includes('discharged') || msg.includes('Discharged')) {
+                    showCenterMessage(false, 'Discharged Patient', 'This patient has already been discharged.');
+                } else {
+                    showCenterMessage(false, 'Error', msg);
+                }
             }
         })
         .catch(err => {
             console.error(err);
-            showCenterMessage(false, 'Error', 'An error occurred while saving.');
+            const errStr = String(err);
+            if (errStr.includes('discharged') || errStr.includes('Discharged')) {
+                showCenterMessage(false, 'Discharged Patient', 'This patient has already been discharged.');
+            } else {
+                showCenterMessage(false, 'Error', 'An error occurred while saving.');
+            }
         })
         .finally(() => {
             btn.disabled = false;

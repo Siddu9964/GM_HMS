@@ -1978,12 +1978,40 @@ async function saveResult() {
       closeResultModal();
       loadOrders();
     } else {
-      lisToast(data.message || 'Error saving results', 'error');
+      const msg = data.message || data.error || 'Error saving results';
+      if (msg.includes('discharged') || msg.includes('Discharged')) {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Discharged Patient',
+            text: 'This patient has already been discharged.',
+            confirmButtonColor: '#1f6b4a'
+          });
+        } else {
+          alert('This patient has already been discharged.');
+        }
+      } else {
+        lisToast(msg, 'error');
+      }
     }
   } catch(e) {
     btn.disabled  = false;
     btn.innerHTML = '<i class="fas fa-check-circle"></i> Submit Final Results';
-    lisToast(e.message || 'Failed to save results', 'error');
+    const errText = e.message || 'Failed to save results';
+    if (errText.includes('discharged') || errText.includes('Discharged')) {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Discharged Patient',
+          text: 'This patient has already been discharged.',
+          confirmButtonColor: '#1f6b4a'
+        });
+      } else {
+        alert('This patient has already been discharged.');
+      }
+    } else {
+      lisToast(errText, 'error');
+    }
   }
 }
 function printOrderResult(orderId) {

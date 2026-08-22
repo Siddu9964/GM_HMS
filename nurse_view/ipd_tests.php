@@ -549,6 +549,10 @@ session_start();
     }
     
     function selectPatient(p) {
+        if (p.status === 'Discharged' || p.discharge_date) {
+            showCenterMessage(false, 'Discharged Patient', 'This patient has already been discharged.');
+            return;
+        }
         currentPatient = p;
         pSuggestionsBox.style.display = 'none';
         pSearchInput.value = '';
@@ -841,12 +845,22 @@ session_start();
                     })
                 }).catch(e => console.error('Billing sync failed:', e));
             } else {
-                showCenterMessage(false, 'Error', data.message || 'Error saving diagnostic test order.');
+                const msg = data.message || 'Error saving diagnostic test order.';
+                if (msg.includes('discharged') || msg.includes('Discharged')) {
+                    showCenterMessage(false, 'Discharged Patient', 'This patient has already been discharged.');
+                } else {
+                    showCenterMessage(false, 'Error', msg);
+                }
             }
         })
         .catch(err => {
             console.error(err);
-            showCenterMessage(false, 'Error', 'An error occurred during save.');
+            const errStr = String(err);
+            if (errStr.includes('discharged') || errStr.includes('Discharged')) {
+                showCenterMessage(false, 'Discharged Patient', 'This patient has already been discharged.');
+            } else {
+                showCenterMessage(false, 'Error', 'An error occurred during save.');
+            }
         })
         .finally(() => {
             btn.disabled = false;

@@ -358,7 +358,21 @@ async function completeOrder(orderId) {
             PH.success('Order completed and Nurse notified!');
             loadOrders(); // Refresh the list
         } else {
-            PH.error(res.error || 'Failed to complete order');
+            const err = res.error || res.message || 'Failed to complete order';
+            if (err.includes('discharged') || err.includes('Discharged')) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Discharged Patient',
+                        text: 'This patient has already been discharged.',
+                        confirmButtonColor: '#1f6b4a'
+                    });
+                } else {
+                    alert('This patient has already been discharged.');
+                }
+            } else {
+                PH.error(err);
+            }
         }
     } catch (e) {
         PH.error('Network error while completing order');

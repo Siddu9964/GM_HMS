@@ -827,6 +827,20 @@ const billing = (function () {
             return;
         }
 
+        if (currentMaster && (currentMaster.billing_status === 'FINALIZED' || currentMaster.billing_status === 'CANCELLED' || currentMaster.status === 'Discharged' || currentMaster.discharge_date)) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Discharged Patient',
+                    text: 'This patient has already been discharged.',
+                    confirmButtonColor: '#1f6b4a'
+                });
+            } else {
+                alert('This patient has already been discharged.');
+            }
+            return;
+        }
+
         let tabId = 'tab-doctor';
         if (type === 'LAB' || type === 'tab-lab') tabId = 'tab-lab';
         else if (type === 'RADIOLOGY' || type === 'tab-radiology') tabId = 'tab-radiology';
