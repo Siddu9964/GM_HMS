@@ -384,7 +384,10 @@ class IpdBillingMaster extends IpdBaseModel {
      * 3. RECALCULATE MASTER  (the heart of the system)
      * ─────────────────────────────────────────────────────────────── */
     public function recalculateMaster(string $billId, string $updatedBy = 'system'): array {
-        // Step 0: 24-Hour Catch-Up Mechanism for Bed Charges
+        // Step 0: Auto-Deduplicate any historical duplicate one-time charges on this bill
+        $this->deduplicateOneTimeCharges($billId);
+
+        // Step 0.5: 24-Hour Catch-Up Mechanism for Bed Charges
         $this->catchUpBedCharges($billId, $updatedBy);
 
         // Step 1: Sum billing items by charge_type
@@ -793,6 +796,29 @@ class IpdBillingMaster extends IpdBaseModel {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Auto-deduplicate one-time admission charges (Admission Charge, MRD Charge) on existing bills
+     */
+    public function deduplicateOneTimeCharges(string $billId): void {
+        foreach (['Admission Charge', 'MRD Charge'] as $desc) {
+            $rows = $this->fetchAll(
+                "SELECT item_id FROM ipd_billing_items 
+                 WHERE bill_id = ? AND description = ? AND status != 'CANCELLED'
+                 ORDER BY item_id ASC",
+                [$billId, $desc]
+            );
+            if (count($rows) > 1) {
+                // Keep the first active row, cancel/remove duplicate rows
+                $cancelIds = array_slice(array_column($rows, 'item_id'), 1);
+                $placeholders = implode(',', array_fill(0, count($cancelIds), '?'));
+                $this->db->execute(
+                    "UPDATE ipd_billing_items SET status = 'CANCELLED', updated_at = NOW() WHERE item_id IN ($placeholders)",
+                    $cancelIds
+                );
             }
         }
     }
