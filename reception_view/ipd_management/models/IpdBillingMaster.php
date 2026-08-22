@@ -253,12 +253,14 @@ class IpdBillingMaster extends BaseModel {
             'OT'           => 'ot_charges',
             'PROCEDURE'    => 'procedure_charges',
             'CONSUMABLE'   => 'consumable_charges',
+            'MISC'         => 'other_charges',
+            'MISCELLANEOUS'=> 'other_charges',
             'OTHER'        => 'other_charges',
         ];
 
         foreach ($itemSums as $row) {
             $key = $typeMap[$row['charge_type']] ?? 'other_charges';
-            $charges[$key] = (float)$row['cat_total'];
+            $charges[$key] += (float)$row['cat_total'];
         }
 
         // Step 2: Subtotal

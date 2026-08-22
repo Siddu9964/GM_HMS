@@ -249,22 +249,20 @@ const billing = (function () {
         document.getElementById('btnPrintFinal').disabled = false;
 
         // Financial Summary Panel
-        animateValue(document.getElementById('fsVal_ROOM_RENT'), parseFloat(m.room_charges), true);
-        animateValue(document.getElementById('fsVal_DOCTOR_VISIT'), parseFloat(m.doctor_charges), true);
-        animateValue(document.getElementById('fsVal_LAB'), parseFloat(m.lab_charges), true);
-        animateValue(document.getElementById('fsVal_RADIOLOGY'), parseFloat(m.radiology_charges), true);
-        animateValue(document.getElementById('fsVal_PHARMACY'), parseFloat(m.pharmacy_charges), true);
-        animateValue(document.getElementById('fsVal_OT'), parseFloat(m.ot_charges), true);
-        animateValue(document.getElementById('fsVal_PROCEDURE'), parseFloat(m.procedure_charges), true);
-        animateValue(document.getElementById('fsVal_CONSUMABLE'), parseFloat(m.consumable_charges), true);
-        animateValue(document.getElementById('fsVal_OTHER'), parseFloat(m.other_charges), true);
+        animateValue(document.getElementById('fsVal_ROOM_RENT'), parseFloat(m.room_charges || 0), true);
+        animateValue(document.getElementById('fsVal_DOCTOR_VISIT'), parseFloat(m.doctor_charges || 0), true);
+        animateValue(document.getElementById('fsVal_LAB'), parseFloat(m.lab_charges || 0), true);
+        animateValue(document.getElementById('fsVal_RADIOLOGY'), parseFloat(m.radiology_charges || 0), true);
+        animateValue(document.getElementById('fsVal_PHARMACY'), parseFloat(m.pharmacy_charges || 0), true);
+        animateValue(document.getElementById('fsVal_OT'), parseFloat(m.ot_charges || 0), true);
+        animateValue(document.getElementById('fsVal_PROCEDURE'), parseFloat(m.procedure_charges || 0), true);
+        animateValue(document.getElementById('fsVal_CONSUMABLE'), parseFloat(m.consumable_charges || 0), true);
+        animateValue(document.getElementById('fsVal_MISC') || document.getElementById('fsVal_OTHER'), parseFloat(m.other_charges || 0), true);
 
         // Dim zero values
         ['ROOM_RENT', 'DOCTOR_VISIT', 'LAB', 'RADIOLOGY', 'PHARMACY', 'OT', 'PROCEDURE', 'CONSUMABLE', 'MISC', 'OTHER'].forEach(type => {
             const row = document.getElementById(`fsCat_${type}`);
             if (row) {
-                const val = parseFloat(m[type === 'ROOM_RENT' ? 'room_charges' : (type === 'MISC' || type === 'OTHER' ? 'other' : type.toLowerCase()) + '_charges'] || m[type === 'DOCTOR_VISIT' ? 'doctor_charges' : '']);
-                // Note: The mapping needs to exactly match the DB column names from IpdBillingMaster.php
                 let colName = 'other_charges';
                 if (type === 'ROOM_RENT') colName = 'room_charges';
                 if (type === 'DOCTOR_VISIT') colName = 'doctor_charges';
@@ -274,9 +272,10 @@ const billing = (function () {
                 if (type === 'OT') colName = 'ot_charges';
                 if (type === 'PROCEDURE') colName = 'procedure_charges';
                 if (type === 'CONSUMABLE') colName = 'consumable_charges';
+                if (type === 'MISC' || type === 'OTHER') colName = 'other_charges';
                 if (row.dataset.col) colName = row.dataset.col;
 
-                if (parseFloat(m[colName]) === 0) row.classList.add('zero');
+                if (parseFloat(m[colName] || 0) === 0) row.classList.add('zero');
                 else row.classList.remove('zero');
             }
         });
@@ -519,6 +518,39 @@ const billing = (function () {
         
         tbody.innerHTML = html;
         if(window.lucide) lucide.createIcons();
+
+        // Synchronize live category totals directly to Financial Summary panel
+        const liveBreakdown = {
+            ROOM_RENT: 0, DOCTOR_VISIT: 0, LAB: 0, RADIOLOGY: 0,
+            PHARMACY: 0, OT: 0, PROCEDURE: 0, CONSUMABLE: 0, MISC: 0
+        };
+        items.forEach(it => {
+            if (it.status !== 'CANCELLED') {
+                const amt = parseFloat(it.total_amount || 0);
+                const t = String(it.charge_type || '').toUpperCase();
+                if (t === 'ROOM_RENT') liveBreakdown.ROOM_RENT += amt;
+                else if (t === 'DOCTOR_VISIT') liveBreakdown.DOCTOR_VISIT += amt;
+                else if (t === 'LAB') liveBreakdown.LAB += amt;
+                else if (t === 'RADIOLOGY') liveBreakdown.RADIOLOGY += amt;
+                else if (t === 'PHARMACY') liveBreakdown.PHARMACY += amt;
+                else if (t === 'OT') liveBreakdown.OT += amt;
+                else if (t === 'PROCEDURE') liveBreakdown.PROCEDURE += amt;
+                else if (t === 'CONSUMABLE') liveBreakdown.CONSUMABLE += amt;
+                else liveBreakdown.MISC += amt;
+            }
+        });
+
+        Object.keys(liveBreakdown).forEach(k => {
+            const el = document.getElementById(`fsVal_${k}`) || (k === 'MISC' ? document.getElementById('fsVal_OTHER') : null);
+            const row = document.getElementById(`fsCat_${k}`) || (k === 'MISC' ? document.getElementById('fsCat_OTHER') : null);
+            if (el) {
+                el.textContent = '₹' + liveBreakdown[k].toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+            if (row) {
+                if (liveBreakdown[k] === 0) row.classList.add('zero');
+                else row.classList.remove('zero');
+            }
+        });
     }
 
     async function loadPayments() {
