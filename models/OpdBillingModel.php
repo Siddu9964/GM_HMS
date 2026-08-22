@@ -136,8 +136,13 @@ class OpdBillingModel
 
             if (!empty($billData['appointment_id'])) {
                 $this->db->execute(
-                    "UPDATE appointments SET payment_status = 'Paid' WHERE appointment_id = ?",
-                    [$billData['appointment_id']]
+                    "UPDATE appointments 
+                     SET payment_status = 'Paid',
+                         doctor_id = CASE WHEN ? != '' THEN ? ELSE doctor_id END,
+                         doctor_name = CASE WHEN ? != '' THEN ? ELSE doctor_name END,
+                         appointment_date = CASE WHEN ? != '' THEN ? ELSE appointment_date END
+                     WHERE appointment_id = ?",
+                    [$doctorId, $doctorId, $doctorName, $doctorName, $billDate, $billDate, $billData['appointment_id']]
                 );
             }
 

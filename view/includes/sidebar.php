@@ -210,7 +210,7 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
                     </a>
                     <a href="ipd_billing.php" class="billing-item <?php echo isActive('ipd_billing.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>" style="--n:2">
                         <i class="fas fa-bed"></i>
-                        <span>IPD Billing</span>
+                        <span>IP Billing</span>
                     </a>
                     <a href="ot_billing.php" class="billing-item <?php echo isActive('ot_billing.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>" style="--n:3">
                         <i class="fas fa-procedures"></i>

@@ -5,13 +5,13 @@ require_once '../security/EncryptionManager.php';
 require_once '../Database/SecureDatabase.php';
 use GM_HMS\Database\SecureDatabase;
 
-if (!isset($_SESSION['user_id']) || !in_array(strtolower($_SESSION['role'] ?? ''), ['admin', 'receptionist', 'accountant', 'doctor'])) {
-    header("Location: ../login.php");
+if (!isset($_SESSION['user_id']) || !in_array(strtolower($_SESSION['role'] ?? ''), ['receptionist', 'admin', 'accountant', 'doctor'])) {
+    header("Location: /GM_HMS/login.php");
     exit();
 }
 
-$pageTitle = 'IP Billing Terminal';
-$userRole  = $_SESSION['role'] ?? 'admin';
+$pageTitle = 'IP Billing';
+$userRole  = $_SESSION['role'] ?? 'Receptionist';
 $userName  = $_SESSION['username'] ?? 'Staff';
 
 $allDoctors = [];
@@ -29,24 +29,28 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPD Billing Terminal — GM HMS</title>
-    <meta name="description" content="IPD Billing Terminal for GM Hospital Management System">
+    <title>IP Billing — GM HMS</title>
+    <meta name="description" content="IP Billing & Payments Terminal for GM Hospital Management System">
     <link rel="stylesheet" href="/GM_HMS/assets/css/gm-theme.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="assets/css/admin_common.css">
-    <link rel="stylesheet" href="assets/css/ipd_billing.css?v=<?= time() ?>">
+    
+    <!-- Reception Base CSS -->
+    <link rel="stylesheet" href="assets/css/reception_dashboard.css">
+    
+    <!-- IPD Billing Module CSS -->
+    <link rel="stylesheet" href="/GM_HMS/view/assets/css/ipd_billing.css?v=<?= time() ?>">
+    
     <style>
-        /* Strict 2-Color Theme System: #f3efe6 (Cream) and #1f6b4a (Forest Green) ONLY */
         :root {
             --green: #1f6b4a;
             --cream: #f3efe6;
         }
 
-        body, .ipd-billing-page, .bg-slate-50 {
+        body, .ipd-billing-page {
             background-color: #f3efe6 !important;
             color: #1f6b4a !important;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
@@ -98,34 +102,37 @@ try {
             gap: 5px;
             padding: 3px 10px;
             border-radius: 20px;
-            font-size: 0.73rem;
-            font-weight: 800;
+            font-size: 0.75rem;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
             border: 1.5px solid transparent;
+            transition: all 0.2s ease;
             text-decoration: none;
         }
         .clearance-pill-btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
         }
-
-        .dept-badge-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2.5px 8px;
-            border-radius: 8px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: 1px solid #cbd5e1;
-            background: #ffffff;
+        .clearance-pill-btn.pill-cleared {
+            background: #dcfce7;
+            color: #15803d;
+            border-color: #86efac;
         }
-        .dept-badge-btn:hover {
-            transform: translateY(-1px);
+        .clearance-pill-btn.pill-pending {
+            background: #fef9c3;
+            color: #a16207;
+            border-color: #fde047;
+        }
+        .clearance-pill-btn.pill-query {
+            background: #fee2e2;
+            color: #b91c1c;
+            border-color: #fca5a5;
+            animation: pulse-query 1.5s infinite;
+        }
+        .clearance-pill-btn.pill-manage {
+            background: #1f6b4a;
+            color: #ffffff;
+            border-color: #1f6b4a;
         }
 
         .badge-patient-active {
@@ -247,363 +254,81 @@ try {
             opacity: 0.9;
         }
 
-        .phc-tag {
-            background: #f3efe6 !important;
-            color: #1f6b4a !important;
-            border: 1px solid #1f6b4a !important;
-            font-weight: 700 !important;
-            border-radius: 6px !important;
-            padding: 2px 8px !important;
-        }
-
         .phc-btn {
             background: #f3efe6 !important;
-            color: #1f6b4a !important;
             border: 1.5px solid #1f6b4a !important;
-            font-weight: 700 !important;
-            border-radius: 8px !important;
-            padding: 6px 12px !important;
-            font-size: 0.82rem !important;
-            transition: all 0.2s ease !important;
-            cursor: pointer;
-        }
-
-        .phc-btn:hover, .phc-btn.active, #btnPrintFinal {
-            background: #1f6b4a !important;
-            color: #f3efe6 !important;
-            border-color: #1f6b4a !important;
-        }
-
-        .phc-billing-status {
-            background: #1f6b4a !important;
-            color: #f3efe6 !important;
-            border: 1px solid #1f6b4a !important;
-            font-weight: 800 !important;
-            border-radius: 20px !important;
-            padding: 3px 10px !important;
-            font-size: 0.75rem !important;
-        }
-
-        /* Stat Cards */
-        .qs-item {
-            position: relative;
-            border: 1.5px solid #1f6b4a !important;
-            padding: 16px 20px !important;
-            background: #f3efe6 !important;
-        }
-
-        .qs-icon {
-            background: #1f6b4a !important;
-            color: #f3efe6 !important;
-            border-radius: 10px !important;
-        }
-
-        .qs-val {
-            font-size: 1.4rem !important;
-            font-weight: 800 !important;
             color: #1f6b4a !important;
-        }
-
-        .qs-lbl {
-            font-size: 0.72rem !important;
-            font-weight: 700 !important;
-            color: #1f6b4a !important;
-            text-transform: uppercase;
-            letter-spacing: 0.04em !important;
-            opacity: 0.85;
-        }
-
-        /* Filter Pills */
-        .category-filter-tabs {
-            padding: 12px 18px !important;
-            background: #f3efe6 !important;
-            border-bottom: 1px solid rgba(31, 107, 74, 0.25) !important;
-            gap: 8px !important;
-        }
-
-        .cat-tab {
-            background: #f3efe6 !important;
-            color: #1f6b4a !important;
-            border: 1.5px solid #1f6b4a !important;
-            border-radius: 20px !important;
-            padding: 5px 14px !important;
-            font-weight: 700 !important;
-            font-size: 0.8rem !important;
-            transition: all 0.2s ease !important;
-            cursor: pointer;
-        }
-
-        .cat-tab:hover, .cat-tab.active {
-            background: #1f6b4a !important;
-            color: #f3efe6 !important;
-            border-color: #1f6b4a !important;
-        }
-
-        /* Table Header */
-        .billing-items-table th {
-            background: #1f6b4a !important;
-            color: #f3efe6 !important;
-            font-size: 0.75rem !important;
-            font-weight: 800 !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.05em !important;
-            padding: 10px 14px !important;
-            border: none !important;
-        }
-
-        .billing-items-table td {
-            color: #1f6b4a !important;
-            border-bottom: 1px solid rgba(31, 107, 74, 0.2) !important;
-        }
-
-        .btn-add-charge, .btn-room-rent, .btn-add-payment, .fs-btn {
             border-radius: 8px !important;
             font-weight: 700 !important;
-            font-size: 0.82rem !important;
-            padding: 7px 14px !important;
-            transition: all 0.2s ease !important;
-            cursor: pointer;
         }
 
-        .btn-add-charge, .fs-btn-payment, .bm-btn-primary {
-            background: #1f6b4a !important;
-            color: #f3efe6 !important;
-            border: 1.5px solid #1f6b4a !important;
-        }
-
-        .btn-add-charge:hover, .fs-btn-payment:hover, .bm-btn-primary:hover {
-            opacity: 0.92;
-        }
-
-        .btn-room-rent, .btn-add-payment, .fs-btn-discount, .fs-btn-ins, .bm-btn-secondary {
-            background: #f3efe6 !important;
-            color: #1f6b4a !important;
-            border: 1.5px solid #1f6b4a !important;
-        }
-
-        .btn-room-rent:hover, .btn-add-payment:hover, .fs-btn-discount:hover, .fs-btn-ins:hover {
+        .phc-btn:hover {
             background: #1f6b4a !important;
             color: #f3efe6 !important;
         }
 
-        /* Financial Summary Card */
-        .fs-header {
-            font-size: 1.05rem !important;
-            font-weight: 800 !important;
-            color: #1f6b4a !important;
-            border-bottom: 1.5px solid rgba(31, 107, 74, 0.2) !important;
-            padding-bottom: 10px !important;
-        }
-
-        .fs-cat-row {
-            font-size: 0.86rem !important;
-            font-weight: 600 !important;
-            color: #1f6b4a !important;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 4px 0;
-        }
-
-        .fs-cat-val {
-            font-weight: 700 !important;
-            color: #1f6b4a !important;
-        }
-
-        .fs-grand-total {
-            background: #1f6b4a !important;
-            color: #f3efe6 !important;
-            border: 1.5px solid #1f6b4a !important;
-            border-radius: 10px !important;
-            padding: 12px 14px !important;
-            font-weight: 800 !important;
-            font-size: 1.05rem !important;
-        }
-
-        .fs-grand-total span, .fs-grand-total div {
-            color: #f3efe6 !important;
-        }
-
-        .fs-balance-box {
-            background: #1f6b4a !important;
-            color: #f3efe6 !important;
-            border: 1.5px solid #1f6b4a !important;
-            border-radius: 10px !important;
-            padding: 14px 16px !important;
-        }
-
-        .fs-balance-box .bold {
-            color: #f3efe6 !important;
-            font-size: 1.25rem !important;
-            font-weight: 800 !important;
-        }
-
-        .item-count-badge {
-            background: #1f6b4a !important;
-            color: #f3efe6 !important;
-            font-weight: 700;
-            border-radius: 12px;
-            padding: 2px 8px;
-        }
-
-        /* Inputs & Modals */
-        input, select, textarea {
-            background: #f3efe6 !important;
-            color: #1f6b4a !important;
-            border: 1.5px solid #1f6b4a !important;
-        }
-
-        .bm-head {
+        .phc-btn-print {
             background: #1f6b4a !important;
             color: #f3efe6 !important;
         }
 
-        .bm-head h3, .bm-head .bm-title, .bm-head .bm-close {
-            color: #f3efe6 !important;
+        .phc-btn-print:hover {
+            background: #144d34 !important;
+            color: #ffffff !important;
         }
 
-        /* Toast notifications */
-        .billing-toast {
-            background: #1f6b4a !important;
-            color: #f3efe6 !important;
-            border: 1.5px solid #f3efe6 !important;
-            border-radius: 10px !important;
-            box-shadow: 0 6px 20px rgba(31, 107, 74, 0.3) !important;
-            font-weight: 600 !important;
-        }
-
-        /* ── Nurse Workspace Pattern Styles ── */
         .treatment-subtabs {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             flex-wrap: wrap;
-            align-items: center;
+            border-bottom: 2px solid #1f6b4a;
+            padding-bottom: 8px;
         }
-        .t-tab {
-            padding: 8px 14px;
-            border-radius: 20px;
-            font-size: 0.82rem;
-            font-weight: 700;
+        .treatment-subtabs .t-tab {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1.5px solid #1f6b4a;
             background: #f3efe6;
             color: #1f6b4a;
-            border: 1.5px solid #1f6b4a;
+            font-weight: 700;
+            font-size: 0.78rem;
             cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
             transition: all 0.2s ease;
         }
-        .t-tab:hover, .t-tab.active {
-            background: #1f6b4a !important;
-            color: #f3efe6 !important;
-            border-color: #1f6b4a !important;
-            box-shadow: 0 4px 12px rgba(31, 107, 74, 0.22);
-        }
-        .t-panel {
-            display: none;
-            width: 100%;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .t-panel.active {
-            display: flex;
-        }
-        .t-title {
-            font-size: 0.95rem;
-            font-weight: 800;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #1f6b4a;
+        .treatment-subtabs .t-tab.active,
+        .treatment-subtabs .t-tab:hover {
+            background: #1f6b4a;
+            color: #f3efe6;
         }
 
-        /* Search Dropdowns */
-        #doc-results, #lab-results, #rad-results, #other-results, #ph-results, #proc-doc-results, #dia-doc-results, #oxy-doc-results, #vent-doc-results, #bt-doc-results, #wt-doc-results {
-            position: absolute;
-            top: calc(100% + 4px);
-            left: 0;
-            right: 0;
-            background: #f3efe6;
-            border: 1.5px solid #1f6b4a;
-            border-radius: 10px;
-            z-index: 500;
+        .t-panel {
             display: none;
-            box-shadow: 0 10px 25px rgba(31, 107, 74, 0.22);
-            max-height: 240px;
-            overflow-y: auto;
         }
-        .ts-item, .ph-item {
-            padding: 10px 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid rgba(31, 107, 74, 0.15);
-            transition: background 0.15s;
+        .t-panel.active {
+            display: block;
+            animation: fadeIn 0.2s ease-in-out;
         }
-        .ts-item:last-child, .ph-item:last-child {
-            border-bottom: none;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .ts-item:hover, .ph-item:hover {
-            background: rgba(31, 107, 74, 0.15);
-        }
-        .cart-row {
+
+        .t-title {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #1f6b4a;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 12px;
-            background: #f3efe6;
-            border-radius: 8px;
-            margin-bottom: 6px;
-            border: 1.5px solid #1f6b4a;
+            border-bottom: 1px dashed rgba(31, 107, 74, 0.3);
+            padding-bottom: 6px;
         }
-        .cart-row-n {
-            flex: 1;
-            font-size: 0.84rem;
-            font-weight: 700;
-            color: #1f6b4a;
-        }
-        .cart-row input[type=number] {
-            width: 70px;
-            padding: 4px 6px;
-            border: 1px solid #1f6b4a;
-            border-radius: 6px;
-            text-align: center;
-            font-size: 0.82rem;
-            color: #1f6b4a;
-            font-weight: 700;
-            background: #f3efe6;
-        }
-        .cart-row .rm-btn {
-            background: none;
-            border: none;
-            color: #dc2626;
-            cursor: pointer;
-            padding: 4px 8px;
-            font-size: 0.9rem;
-            transition: transform 0.15s ease;
-        }
-        .cart-row .rm-btn:hover {
-            transform: scale(1.15);
-        }
-        .badge {
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-size: 0.72rem;
-            font-weight: 700;
-            background: rgba(31, 107, 74, 0.15);
-            color: #1f6b4a;
-            border: 1px solid #1f6b4a;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
+
         .fg {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            width: 100%;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
         .fmg {
             display: flex;
@@ -630,33 +355,27 @@ try {
         }
     </style>
 </head>
-<body class="bg-slate-50">
-    <div class="flex h-screen overflow-hidden">
+<body>
+    <div class="reception-layout">
         <!-- Sidebar -->
-        <?php include 'includes/sidebar.php'; ?>
+        <?php include 'includes/reception_sidebar.php'; ?>
         
-        <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="reception-main-content">
             <!-- Navbar -->
-            <?php include 'includes/navbar.php'; ?>
+            <?php include 'includes/reception_navbar.php'; ?>
 
-            <main class="flex-1 ipd-billing-page" id="ipdBillingPage">
+            <main class="reception-content ipd-billing-page" id="ipdBillingPage" style="padding: 1.5rem !important;">
                 
-                <!-- ═══════════ ZONE 1: TOP SEARCH BAR (REMOVED) ═══════════ -->
-                <!-- The top search zone has been removed per user request -->
-
-                <!-- ═══════════ ZONE 2: ADMITTED PATIENTS LIST ═══════════ -->
-                <div class="billing-empty-state" id="billingEmptyState" style="padding:20px; align-items: stretch; justify-content: flex-start; height: calc(100vh - 100px); display: flex; flex-direction: column;">
+                <!-- ═══════════ ZONE 1: ALL ADMITTED IP PATIENTS LIST ═══════════ -->
+                <div class="billing-empty-state" id="billingEmptyState" style="padding:20px; align-items: stretch; justify-content: flex-start; min-height: calc(100vh - 140px); display: flex; flex-direction: column;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 2px solid #1f6b4a; padding-bottom: 10px; flex-shrink: 0;">
-                        <h2 style="font-size: 1.5rem; color: #1f6b4a; margin: 0; text-align: left; font-weight: 800;"><i data-lucide="users" style="display:inline; vertical-align:middle; margin-right:8px;"></i> All IPD Patients</h2>
+                        <h2 style="font-size: 1.5rem; color: #1f6b4a; margin: 0; text-align: left; font-weight: 800;">
+                            <i data-lucide="users" style="display:inline; vertical-align:middle; margin-right:8px;"></i> Active IPD Patients
+                        </h2>
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <select id="patientStatusFilter" onchange="billing.filterPatientsTable()" style="padding: 8px 12px; border-radius: 6px; border: 1.5px solid #1f6b4a; font-size: 0.9rem; outline: none; background: #f3efe6; color: #1f6b4a; cursor: pointer; font-weight: 700;">
-                                <option value="ALL" selected>All Patients</option>
-                                <option value="ACTIVE">Active Patients Only</option>
-                                <option value="DISCHARGED">Discharged</option>
-                            </select>
                             <div style="position: relative;">
                                 <i data-lucide="search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: #1f6b4a;"></i>
-                                <input type="text" id="patientTableSearch" onkeyup="billing.filterPatientsTable()" placeholder="Search in table..." style="padding: 8px 10px 8px 30px; border-radius: 6px; border: 1.5px solid #1f6b4a; font-size: 0.9rem; outline: none; width: 200px; background: #f3efe6; color: #1f6b4a;">
+                                <input type="text" id="patientTableSearch" onkeyup="billing.filterPatientsTable()" placeholder="Search patients..." style="padding: 8px 10px 8px 30px; border-radius: 6px; border: 1.5px solid #1f6b4a; font-size: 0.9rem; outline: none; width: 220px; background: #f3efe6; color: #1f6b4a;">
                             </div>
                             <button class="bm-btn" style="background: #1f6b4a; color: #f3efe6; border: 1.5px solid #1f6b4a; padding: 8px 16px; border-radius: 6px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;" onclick="billing.openDischargeHistory()">
                                 <i data-lucide="history" style="width: 16px; height: 16px;"></i> Discharge History
@@ -678,13 +397,13 @@ try {
                                 </tr>
                             </thead>
                             <tbody id="admittedPatientsList">
-                                <tr><td colspan="7" style="text-align:center; padding:20px; color: #1f6b4a;">Loading patients...</td></tr>
+                                <tr><td colspan="8" style="text-align:center; padding:30px; color: #1f6b4a;">Loading patients...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- ═══════════ ZONE 3: BILLING WORKSPACE ═══════════ -->
+                <!-- ═══════════ ZONE 2: IP BILLING PAYMENT WORKSPACE ═══════════ -->
                 <div class="billing-workspace" id="billingWorkspace" style="display:none;">
                     
                     <!-- ── HEADER ACTIONS ── -->
@@ -714,9 +433,8 @@ try {
                                 </div>
                             </div>
                             <div class="phc-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
-                                <!-- Clearance Status Badges & Bill Status (Above buttons) -->
+                                <!-- Clearance Badges & Bill Status -->
                                 <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
-                                    <!-- Discharge Clearance Multi-Module Badges -->
                                     <div class="phc-clearance-wrap" id="phcClearanceContainer"></div>
 
                                     <div class="phc-bill-card" style="margin: 0; display: flex; align-items: center; gap: 6px;">
@@ -781,109 +499,7 @@ try {
                         <!-- ───────── LEFT PANEL (Scrollable) ───────── -->
                         <div class="billing-left-panel">
                             
-                            <!-- Billing Items Section (Fully Visible for Admin) -->
-                            <div class="panel-card" id="billingItemsCard">
-                                <div class="panel-card-head">
-                                    <div class="panel-card-title">
-                                        <i data-lucide="list"></i> Billing Items
-                                        <span class="item-count-badge" id="itemCountBadge">0</span>
-                                    </div>
-                                    <div class="panel-card-actions">
-                                        <div class="add-charge-wrap">
-                                            <button class="btn-add-charge" id="btnAddCharge" onclick="billing.toggleChargeMenu()">
-                                                <i data-lucide="plus-circle"></i> Add Charge
-                                                <i data-lucide="chevron-down" class="charge-arrow" id="chargeArrow"></i>
-                                            </button>
-                                            <div class="charge-menu" id="chargeMenu">
-                                                <?php
-                                                $chargeTypes = [
-                                                    ['ROOM_RENT',        'bed-double',      'Room Rent',           'Opens room rent generator'],
-                                                    ['DOCTOR_VISIT',     'stethoscope',     'Doctor Visit',        'Consultant/visiting doctor'],
-                                                    ['LAB',              'flask-conical',   'Laboratory',          'Lab tests & reports'],
-                                                    ['RADIOLOGY',        'radio',           'Radiology',           'X-ray, MRI, CT, USG'],
-                                                    ['PHARMACY',         'pill',            'Pharmacy',            'Medicines & drugs'],
-                                                    ['OT',               'syringe',         'Operation Theatre',   'OT charges'],
-                                                    ['PROCEDURE',        'activity',        'Procedure',           'Minor procedures'],
-                                                    ['DIALYSIS',         'filter',          'Dialysis Record',     'Hemodialysis & PD charges'],
-                                                    ['OXYGEN',           'wind',            'Oxygen Therapy',      'L/min oxygen charges'],
-                                                    ['VENTILATION',      'activity',        'Ventilator Support',  'Invasive / Non-invasive'],
-                                                    ['BLOOD_TRANSFUSION','droplet',         'Blood Transfusion',   'Blood unit & crossmatch'],
-                                                    ['WARD_TRANSFER',    'arrow-right-left','Ward Transfer',       'Shift & transfer charges'],
-                                                    ['CONSUMABLE',       'bandage',         'Consumables',         'Dressings, gloves etc.'],
-                                                    ['MISC',             'more-horizontal', 'Miscellaneous',       'Misc charges'],
-                                                    ['OTHER',            'layers',          'Other',               'Other charges'],
-                                                ];
-                                                foreach ($chargeTypes as [$type, $icon, $label, $desc]):
-                                                    if ($type === 'ROOM_RENT'):
-                                                ?>
-                                                <div class="charge-menu-item" onclick="billing.closeChargeMenu(); billing.openRoomRentModal();">
-                                                    <i data-lucide="<?= $icon ?>" class="charge-menu-icon"></i>
-                                                    <div><div class="cmi-label"><?= $label ?></div><div class="cmi-desc"><?= $desc ?></div></div>
-                                                </div>
-                                                <?php else: ?>
-                                                <div class="charge-menu-item" onclick="billing.closeChargeMenu(); billing.openAddChargeModal('<?= $type ?>');">
-                                                    <i data-lucide="<?= $icon ?>" class="charge-menu-icon"></i>
-                                                    <div><div class="cmi-label"><?= $label ?></div><div class="cmi-desc"><?= $desc ?></div></div>
-                                                </div>
-                                                <?php endif; endforeach; ?>
-                                            </div>
-                                        </div>
-                                        <button class="btn-room-rent" onclick="billing.openRoomRentModal()">
-                                            <i data-lucide="bed-double"></i> Room Rent
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Category Filter Tabs -->
-                                <div class="category-filter-tabs" id="categoryFilterTabs">
-                                    <button class="cat-tab active" data-type="" onclick="billing.filterItems(this,'')">All</button>
-                                    <button class="cat-tab" data-type="ROOM_RENT"         onclick="billing.filterItems(this,'ROOM_RENT')">Room</button>
-                                    <button class="cat-tab" data-type="DOCTOR_VISIT"      onclick="billing.filterItems(this,'DOCTOR_VISIT')">Doctor</button>
-                                    <button class="cat-tab" data-type="LAB"               onclick="billing.filterItems(this,'LAB')">Lab</button>
-                                    <button class="cat-tab" data-type="RADIOLOGY"         onclick="billing.filterItems(this,'RADIOLOGY')">Radiology</button>
-                                    <button class="cat-tab" data-type="PHARMACY"          onclick="billing.filterItems(this,'PHARMACY')">Pharmacy</button>
-                                    <button class="cat-tab" data-type="OT"                onclick="billing.filterItems(this,'OT')">OT</button>
-                                    <button class="cat-tab" data-type="PROCEDURE"         onclick="billing.filterItems(this,'PROCEDURE')">Procedure</button>
-                                    <button class="cat-tab" data-type="DIALYSIS"          onclick="billing.filterItems(this,'DIALYSIS')">Dialysis</button>
-                                    <button class="cat-tab" data-type="OXYGEN"            onclick="billing.filterItems(this,'OXYGEN')">Oxygen</button>
-                                    <button class="cat-tab" data-type="VENTILATION"       onclick="billing.filterItems(this,'VENTILATION')">Ventilator</button>
-                                    <button class="cat-tab" data-type="BLOOD_TRANSFUSION" onclick="billing.filterItems(this,'BLOOD_TRANSFUSION')">Blood</button>
-                                    <button class="cat-tab" data-type="WARD_TRANSFER"     onclick="billing.filterItems(this,'WARD_TRANSFER')">Transfer</button>
-                                    <button class="cat-tab" data-type="CONSUMABLE"        onclick="billing.filterItems(this,'CONSUMABLE')">Consumables</button>
-                                    <button class="cat-tab" data-type="MISC"              onclick="billing.filterItems(this,'MISC')">Misc</button>
-                                </div>
-
-                                <!-- Items Table -->
-                                <div class="items-table-wrap">
-                                    <table class="billing-items-table" id="billingItemsTable">
-                                        <thead>
-                                            <tr>
-                                                <th>Sl.No</th>
-                                                <th>Date</th>
-                                                <th>Category</th>
-                                                <th>Description</th>
-                                                <th>Qty</th>
-                                                <th>Rate</th>
-                                                <th>Total</th>
-                                                <th>Status</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="itemsTableBody">
-                                            <tr class="empty-row" id="itemsEmptyRow">
-                                                <td colspan="9">
-                                                    <div class="table-empty-state">
-                                                        <i data-lucide="clipboard-list"></i>
-                                                        <p>No charges added yet</p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <!-- Payment History & Inline Record Payment Section -->
+                            <!-- Payment History & Inline Record Payment Section (Primary Focus) -->
                             <div class="panel-card" id="paymentHistoryCard">
                                 <div class="panel-card-head">
                                     <div class="panel-card-title">
@@ -892,7 +508,7 @@ try {
                                     </div>
                                     <div class="panel-card-actions">
                                         <button class="btn-ins-receipt" id="btnInsReceipt" onclick="billing.openInsuranceReceiptModal()" style="display:none;">
-                                            <i data-lucide="shield"></i> Insurance Receipt
+                                             <i data-lucide="shield"></i> Insurance Receipt
                                         </button>
                                     </div>
                                 </div>
@@ -936,7 +552,7 @@ try {
                                         </div>
                                     </div>
 
-                                    <!-- Insurance / TPA Sub-section (Shown when Insurance mode is selected) -->
+                                    <!-- Insurance Sub-section -->
                                     <div id="inlineInsuranceBlock" style="display:none; background: rgba(31,107,74,0.05); border: 1.5px dashed #1f6b4a; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
                                         <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
                                             <label style="font-size: 11px; font-weight: 800; color: #1f6b4a; text-transform: uppercase; margin: 0;">Sponsor Type <span class="req">*</span>:</label>
@@ -1049,6 +665,108 @@ try {
                                     </table>
                                 </div>
                             </div>
+
+                            <!-- Billing Items Section (Collapsible / Hidden by default) -->
+                            <div class="panel-card" id="billingItemsCard" style="display:none; margin-top: 16px;">
+                                <div class="panel-card-head">
+                                    <div class="panel-card-title">
+                                        <i data-lucide="list"></i> Billing Items Breakdown
+                                        <span class="item-count-badge" id="itemCountBadge">0</span>
+                                    </div>
+                                    <div class="panel-card-actions">
+                                        <div class="add-charge-wrap">
+                                            <button class="btn-add-charge" id="btnAddCharge" onclick="billing.toggleChargeMenu()">
+                                                <i data-lucide="plus-circle"></i> Add Charge
+                                                <i data-lucide="chevron-down" class="charge-arrow" id="chargeArrow"></i>
+                                            </button>
+                                            <div class="charge-menu" id="chargeMenu">
+                                                <?php
+                                                $chargeTypes = [
+                                                    ['ROOM_RENT',        'bed-double',      'Room Rent',           'Opens room rent generator'],
+                                                    ['DOCTOR_VISIT',     'stethoscope',     'Doctor Visit',        'Consultant/visiting doctor'],
+                                                    ['LAB',              'flask-conical',   'Laboratory',          'Lab tests & reports'],
+                                                    ['RADIOLOGY',        'radio',           'Radiology',           'X-ray, MRI, CT, USG'],
+                                                    ['PHARMACY',         'pill',            'Pharmacy',            'Medicines & drugs'],
+                                                    ['OT',               'syringe',         'Operation Theatre',   'OT charges'],
+                                                    ['PROCEDURE',        'activity',        'Procedure',           'Minor procedures'],
+                                                    ['DIALYSIS',         'filter',          'Dialysis Record',     'Hemodialysis & PD charges'],
+                                                    ['OXYGEN',           'wind',            'Oxygen Therapy',      'L/min oxygen charges'],
+                                                    ['VENTILATION',      'activity',        'Ventilator Support',  'Invasive / Non-invasive'],
+                                                    ['BLOOD_TRANSFUSION','droplet',         'Blood Transfusion',   'Blood unit & crossmatch'],
+                                                    ['WARD_TRANSFER',    'arrow-right-left','Ward Transfer',       'Shift & transfer charges'],
+                                                    ['CONSUMABLE',       'bandage',         'Consumables',         'Dressings, gloves etc.'],
+                                                    ['MISC',             'more-horizontal', 'Miscellaneous',       'Misc charges'],
+                                                    ['OTHER',            'layers',          'Other',               'Other charges'],
+                                                ];
+                                                foreach ($chargeTypes as [$type, $icon, $label, $desc]):
+                                                    if ($type === 'ROOM_RENT'):
+                                                ?>
+                                                <div class="charge-menu-item" onclick="billing.closeChargeMenu(); billing.openRoomRentModal();">
+                                                    <i data-lucide="<?= $icon ?>" class="charge-menu-icon"></i>
+                                                    <div><div class="cmi-label"><?= $label ?></div><div class="cmi-desc"><?= $desc ?></div></div>
+                                                </div>
+                                                <?php else: ?>
+                                                <div class="charge-menu-item" onclick="billing.closeChargeMenu(); billing.openAddChargeModal('<?= $type ?>');">
+                                                    <i data-lucide="<?= $icon ?>" class="charge-menu-icon"></i>
+                                                    <div><div class="cmi-label"><?= $label ?></div><div class="cmi-desc"><?= $desc ?></div></div>
+                                                </div>
+                                                <?php endif; endforeach; ?>
+                                            </div>
+                                        </div>
+                                        <button class="btn-room-rent" onclick="billing.openRoomRentModal()">
+                                            <i data-lucide="bed-double"></i> Room Rent
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Category Filter Tabs -->
+                                <div class="category-filter-tabs" id="categoryFilterTabs">
+                                    <button class="cat-tab active" data-type="" onclick="billing.filterItems(this,'')">All</button>
+                                    <button class="cat-tab" data-type="ROOM_RENT"         onclick="billing.filterItems(this,'ROOM_RENT')">Room</button>
+                                    <button class="cat-tab" data-type="DOCTOR_VISIT"      onclick="billing.filterItems(this,'DOCTOR_VISIT')">Doctor</button>
+                                    <button class="cat-tab" data-type="LAB"               onclick="billing.filterItems(this,'LAB')">Lab</button>
+                                    <button class="cat-tab" data-type="RADIOLOGY"         onclick="billing.filterItems(this,'RADIOLOGY')">Radiology</button>
+                                    <button class="cat-tab" data-type="PHARMACY"          onclick="billing.filterItems(this,'PHARMACY')">Pharmacy</button>
+                                    <button class="cat-tab" data-type="OT"                onclick="billing.filterItems(this,'OT')">OT</button>
+                                    <button class="cat-tab" data-type="PROCEDURE"         onclick="billing.filterItems(this,'PROCEDURE')">Procedure</button>
+                                    <button class="cat-tab" data-type="DIALYSIS"          onclick="billing.filterItems(this,'DIALYSIS')">Dialysis</button>
+                                    <button class="cat-tab" data-type="OXYGEN"            onclick="billing.filterItems(this,'OXYGEN')">Oxygen</button>
+                                    <button class="cat-tab" data-type="VENTILATION"       onclick="billing.filterItems(this,'VENTILATION')">Ventilator</button>
+                                    <button class="cat-tab" data-type="BLOOD_TRANSFUSION" onclick="billing.filterItems(this,'BLOOD_TRANSFUSION')">Blood</button>
+                                    <button class="cat-tab" data-type="WARD_TRANSFER"     onclick="billing.filterItems(this,'WARD_TRANSFER')">Transfer</button>
+                                    <button class="cat-tab" data-type="CONSUMABLE"        onclick="billing.filterItems(this,'CONSUMABLE')">Consumables</button>
+                                    <button class="cat-tab" data-type="MISC"              onclick="billing.filterItems(this,'MISC')">Misc</button>
+                                </div>
+
+                                <!-- Items Table -->
+                                <div class="items-table-wrap">
+                                    <table class="billing-items-table" id="billingItemsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Sl.No</th>
+                                                <th>Date</th>
+                                                <th>Category</th>
+                                                <th>Description</th>
+                                                <th>Qty</th>
+                                                <th>Rate</th>
+                                                <th>Total</th>
+                                                <th>Status</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="itemsTableBody">
+                                            <tr class="empty-row" id="itemsEmptyRow">
+                                                <td colspan="9">
+                                                    <div class="table-empty-state">
+                                                        <i data-lucide="clipboard-list"></i>
+                                                        <p>No charges added yet</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- ───────── RIGHT PANEL (Financial Summary) ───────── -->
@@ -1129,14 +847,14 @@ try {
 
             </main>
 
+        </div>
     </div>
-</div>
 
 <!-- ══════════════════════════════════════════════════════════════════
      MODALS
 ══════════════════════════════════════════════════════════════════ -->
 
-<!-- MODAL: Add Charge (Nurse Workspace Pattern Forms) -->
+<!-- MODAL: Add Charge -->
 <div class="billing-modal-overlay" id="modalAddCharge">
     <div class="billing-modal" style="max-width:680px;">
         <div class="bm-head">
@@ -1144,7 +862,7 @@ try {
             <button class="bm-close" onclick="billing.closeModal('modalAddCharge')"><i data-lucide="x"></i></button>
         </div>
         <div class="bm-body">
-            <!-- ── Top Category Tabs ── -->
+            <!-- Top Category Tabs -->
             <div class="treatment-subtabs" style="margin-bottom: 16px;">
                 <button type="button" class="t-tab active" data-tab="tab-doctor" onclick="billing.selectSubTab('tab-doctor', this)">
                     <i class="fas fa-user-md"></i> Doctor Visit
@@ -1162,35 +880,32 @@ try {
                     <i class="fas fa-pills"></i> Pharmacy
                 </button>
                 <button type="button" class="t-tab" data-tab="tab-dialysis" onclick="billing.selectSubTab('tab-dialysis', this)">
-                    <i class="fas fa-filter"></i> 14. Dialysis Chart
+                    <i class="fas fa-filter"></i> Dialysis Chart
                 </button>
                 <button type="button" class="t-tab" data-tab="tab-oxygen" onclick="billing.selectSubTab('tab-oxygen', this)">
-                    <i class="fas fa-lungs"></i> 15. Oxygen Chart
+                    <i class="fas fa-lungs"></i> Oxygen Chart
                 </button>
                 <button type="button" class="t-tab" data-tab="tab-ventilator" onclick="billing.selectSubTab('tab-ventilator', this)">
-                    <i class="fas fa-procedures"></i> 16. Ventilation Chart
+                    <i class="fas fa-procedures"></i> Ventilation Chart
                 </button>
                 <button type="button" class="t-tab" data-tab="tab-transfusion" onclick="billing.selectSubTab('tab-transfusion', this)">
-                    <i class="fas fa-syringe"></i> 17. Blood Transfusion
+                    <i class="fas fa-syringe"></i> Blood Transfusion
                 </button>
                 <button type="button" class="t-tab" data-tab="tab-ward-transfer" onclick="billing.selectSubTab('tab-ward-transfer', this)">
-                    <i class="fas fa-exchange-alt"></i> 18. Ward Transfer
+                    <i class="fas fa-exchange-alt"></i> Ward Transfer
                 </button>
                 <button type="button" class="t-tab" data-tab="tab-consumables" onclick="billing.selectSubTab('tab-consumables', this)">
                     <i class="fas fa-box"></i> Consumables & Other
                 </button>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 1. DOCTOR VISIT (Clean 2-Field Focus with Advance Search)
-                 ══════════════════════════════════════════════════════════ -->
+            <!-- 1. DOCTOR VISIT -->
             <div class="t-panel active" id="tab-doctor">
                 <div class="t-title"><i class="fas fa-user-md"></i> Consultant Round Visit</div>
                 
-                <!-- Advance Search Doctor Bar -->
                 <div class="fmg" style="position: relative; margin-bottom: 10px;">
                     <label>Doctor Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Doctor</span></label>
-                    <input type="text" id="doc-search-input" placeholder="Type doctor name, specialization, or ID (e.g. Dr. Girish, Cardiology, DOC011)..." autocomplete="off">
+                    <input type="text" id="doc-search-input" placeholder="Type doctor name, specialization, or ID..." autocomplete="off">
                     <div id="doc-results"></div>
                 </div>
 
@@ -1218,7 +933,7 @@ try {
                         <input type="time" id="doc-time">
                     </div>
                     <div class="fmg">
-                        <label>Entered By (Logged-in User)</label>
+                        <label>Entered By</label>
                         <input type="text" id="doc-user" value="<?php echo htmlspecialchars($userName); ?>" readonly style="opacity: 0.9; font-weight: 600;">
                     </div>
                     <div class="fmg">
@@ -1248,15 +963,13 @@ try {
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 2. LAB TEST (Table: lab_services with Room-Tier Pricing)
-                 ══════════════════════════════════════════════════════════ -->
+            <!-- 2. LAB TEST -->
             <div class="t-panel" id="tab-lab">
                 <div class="t-title"><i class="fas fa-flask"></i> Laboratory Test Order</div>
                 
                 <div class="fmg" style="position: relative; margin-bottom: 10px;">
-                    <label>Test Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Lab Tests (Table: lab_services)</span></label>
-                    <input type="text" id="lab-input" placeholder="Type lab test name e.g. CBC, Lipid Profile, Blood Urea, Fasting Blood Sugar..." autocomplete="off">
+                    <label>Test Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Lab Tests</span></label>
+                    <input type="text" id="lab-input" placeholder="Type lab test name e.g. CBC, Lipid Profile, Blood Urea..." autocomplete="off">
                     <div id="lab-results"></div>
                 </div>
 
@@ -1278,7 +991,7 @@ try {
                         <input type="text" id="lab-tier" placeholder="Auto-calculated rate" readonly style="opacity: 0.9; font-weight:600;">
                     </div>
                     <div class="fmg">
-                        <label>Entered By (Logged-in User)</label>
+                        <label>Entered By</label>
                         <input type="text" id="lab-user" value="<?php echo htmlspecialchars($userName); ?>" readonly style="opacity: 0.9; font-weight:600;">
                     </div>
                     <div class="fmg">
@@ -1308,15 +1021,13 @@ try {
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 3. RADIOLOGY (Table: radiology_services with Room-Tier Pricing)
-                 ══════════════════════════════════════════════════════════ -->
+            <!-- 3. RADIOLOGY -->
             <div class="t-panel" id="tab-radiology">
                 <div class="t-title"><i class="fas fa-radiation"></i> Radiology Investigation</div>
                 
                 <div class="fmg" style="position: relative; margin-bottom: 10px;">
-                    <label>Radiology Test Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Radiology (Table: radiology_services)</span></label>
-                    <input type="text" id="rad-input" placeholder="Type radiology test name e.g. X-Ray Chest, CT Brain, USG Abdomen, MRI..." autocomplete="off">
+                    <label>Radiology Test Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Radiology</span></label>
+                    <input type="text" id="rad-input" placeholder="Type radiology test name e.g. X-Ray Chest, CT Brain, USG..." autocomplete="off">
                     <div id="rad-results"></div>
                 </div>
 
@@ -1338,7 +1049,7 @@ try {
                         <input type="text" id="rad-tier" placeholder="Auto-calculated rate" readonly style="opacity: 0.9; font-weight:600;">
                     </div>
                     <div class="fmg">
-                        <label>Entered By (Logged-in User)</label>
+                        <label>Entered By</label>
                         <input type="text" id="rad-user" value="<?php echo htmlspecialchars($userName); ?>" readonly style="opacity: 0.9; font-weight:600;">
                     </div>
                     <div class="fmg">
@@ -1368,19 +1079,16 @@ try {
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 4. OTHER SERVICES (Table: other_services with Room-Tier Pricing)
-                 ══════════════════════════════════════════════════════════ -->
+            <!-- 4. OTHER SERVICES -->
             <div class="t-panel" id="tab-other-services">
                 <div class="t-title"><i class="fas fa-stethoscope"></i> Hospital Services & Procedures</div>
                 
                 <div class="fmg" style="position: relative; margin-bottom: 10px;">
-                    <label>Service Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Other Services (Table: other_services)</span></label>
-                    <input type="text" id="other-input" placeholder="Type service name e.g. ECG, Nebulization, Dressing, Physiotherapy, Nursing..." autocomplete="off">
+                    <label>Service Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Other Services</span></label>
+                    <input type="text" id="other-input" placeholder="Type service name e.g. ECG, Nebulization, Dressing..." autocomplete="off">
                     <div id="other-results"></div>
                 </div>
 
-                <!-- Advance Search Doctor for Other Services -->
                 <div class="fmg" style="position: relative; margin-bottom: 10px;">
                     <label>Performing Doctor / Attending Staff <span class="badge"><i class="fas fa-search"></i> Advance Search Doctor</span></label>
                     <input type="text" id="proc-doc-search" placeholder="Type doctor or consultant name..." autocomplete="off">
@@ -1409,7 +1117,7 @@ try {
                         <input type="text" id="other-tier" placeholder="Auto-calculated rate" readonly style="opacity: 0.9; font-weight:600;">
                     </div>
                     <div class="fmg">
-                        <label>Entered By (Logged-in User)</label>
+                        <label>Entered By</label>
                         <input type="text" id="other-user" value="<?php echo htmlspecialchars($userName); ?>" readonly style="opacity: 0.9; font-weight:600;">
                     </div>
                     <div class="fmg">
@@ -1439,9 +1147,7 @@ try {
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 5. PHARMACY MEDICINES (Inventory search & order)
-                 ══════════════════════════════════════════════════════════ -->
+            <!-- 5. PHARMACY MEDICINES -->
             <div class="t-panel" id="tab-pharmacy">
                 <div class="t-title"><i class="fas fa-pills"></i> Pharmacy Medicine Order</div>
                 <div class="fmg" style="margin-bottom: 8px;">
@@ -1454,7 +1160,6 @@ try {
                     <div id="ph-results"></div>
                 </div>
 
-                <!-- Pharmacy Cart -->
                 <div id="ph-cart" style="margin-top: 10px; max-height: 220px; overflow-y: auto;"></div>
 
                 <div class="fmg" style="margin-top: 6px;">
@@ -1475,13 +1180,10 @@ try {
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 6. DIALYSIS RECORD (14. dialysis_chart from nurse_workspace.php)
-                 ══════════════════════════════════════════════════════════ -->
+            <!-- 6. DIALYSIS RECORD -->
             <div class="t-panel" id="tab-dialysis">
-                <div class="t-title"><i class="fas fa-filter"></i> 14. Dialysis Record (dialysis_chart)</div>
+                <div class="t-title"><i class="fas fa-filter"></i> Dialysis Record (dialysis_chart)</div>
                 
-                <!-- Advance Search Doctor -->
                 <div class="fmg" style="position: relative; margin-bottom: 8px;">
                     <label>Doctor Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Doctor</span></label>
                     <input type="text" id="dia-doc-search" placeholder="Type doctor / nephrologist name..." autocomplete="off">
@@ -1515,7 +1217,7 @@ try {
                     </div>
                     <div class="fmg">
                         <label>Dialysis Charge (₹) <span class="req">*</span></label>
-                        <input type="number" id="dia-fee" value="2500" min="0" step="0.01" oninput="billing.calcDiaTotal()">
+                        <input type="number" id="dia-charge" value="2500" min="0" step="0.01" oninput="billing.calcDiaTotal()">
                     </div>
                     <div class="fmg">
                         <label>Discount (₹)</label>
@@ -1524,43 +1226,29 @@ try {
                 </div>
 
                 <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
+                    <span>Total Dialysis Charge:</span>
                     <span id="dia-total-preview" class="bm-total-val">₹ 2,500.00</span>
                 </div>
 
                 <div class="bm-footer" style="margin-top: 14px;">
                     <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
                     <button type="button" class="bm-btn bm-btn-primary" id="dia-save-btn" onclick="billing.saveDialysisCharge()">
-                        <i class="fas fa-plus"></i> Add Dialysis Charge
+                        <i class="fas fa-plus"></i> Save & Post Dialysis Charge
                     </button>
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 7. OXYGEN THERAPY (15. oxygen_chart from nurse_workspace.php)
-                 ══════════════════════════════════════════════════════════ -->
+            <!-- 7. OXYGEN RECORD -->
             <div class="t-panel" id="tab-oxygen">
-                <div class="t-title"><i class="fas fa-lungs"></i> 15. Oxygen Therapy (oxygen_chart)</div>
-                
-                <!-- Advance Search Doctor -->
-                <div class="fmg" style="position: relative; margin-bottom: 8px;">
-                    <label>Doctor Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Doctor</span></label>
-                    <input type="text" id="oxy-doc-search" placeholder="Type prescribing doctor name..." autocomplete="off">
-                    <div id="oxy-doc-results"></div>
-                </div>
-
+                <div class="t-title"><i class="fas fa-lungs"></i> Oxygen Therapy Record (oxygen_chart)</div>
                 <div class="fg">
-                    <div class="fmg">
-                        <label>Selected Doctor Name <span class="req">*</span></label>
-                        <input type="text" id="oxy-doctor" placeholder="Selected doctor name" readonly style="font-weight:700;">
-                    </div>
                     <div class="fmg">
                         <label>Date (oxy_date) <span class="req">*</span></label>
                         <input type="date" id="oxy-date">
                     </div>
                     <div class="fmg">
-                        <label>Flow Rate (L/min) (oxy_flow) <span class="req">*</span></label>
-                        <input type="text" id="oxy-flow" placeholder="e.g. 2 L/min">
+                        <label>Flow Rate (oxy_flow) <span class="req">*</span></label>
+                        <input type="text" id="oxy-flow" placeholder="e.g. 4 L/min via Nasal Cannula" style="font-weight:600;">
                     </div>
                     <div class="fmg">
                         <label>Start Time (oxy_start)</label>
@@ -1571,16 +1259,16 @@ try {
                         <input type="time" id="oxy-end" onchange="billing.calcOxyDuration()">
                     </div>
                     <div class="fmg">
-                        <label>Duration (oxy_dur) <span class="req">*</span></label>
-                        <input type="text" id="oxy-dur" placeholder="Auto / e.g. 2h">
+                        <label>Total Duration</label>
+                        <input type="text" id="oxy-dur" placeholder="Auto / e.g. 6 hrs" readonly style="opacity:0.9;">
                     </div>
                     <div class="fmg">
-                        <label>Nurse Signature (oxy_nurse) <span class="req">*</span></label>
+                        <label>Nurse Signature <span class="req">*</span></label>
                         <input type="text" id="oxy-nurse" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
                     </div>
                     <div class="fmg">
                         <label>Oxygen Charge (₹) <span class="req">*</span></label>
-                        <input type="number" id="oxy-fee" value="500" min="0" step="0.01" oninput="billing.calcOxyTotal()">
+                        <input type="number" id="oxy-charge" value="500" min="0" step="0.01" oninput="billing.calcOxyTotal()">
                     </div>
                     <div class="fmg">
                         <label>Discount (₹)</label>
@@ -1589,47 +1277,34 @@ try {
                 </div>
 
                 <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
+                    <span>Total Oxygen Charge:</span>
                     <span id="oxy-total-preview" class="bm-total-val">₹ 500.00</span>
                 </div>
 
                 <div class="bm-footer" style="margin-top: 14px;">
                     <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
                     <button type="button" class="bm-btn bm-btn-primary" id="oxy-save-btn" onclick="billing.saveOxygenCharge()">
-                        <i class="fas fa-plus"></i> Add Oxygen Charge
+                        <i class="fas fa-plus"></i> Save & Post Oxygen Charge
                     </button>
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 8. VENTILATOR SUPPORT (16. ventilation_chart from nurse_workspace.php)
-                 ══════════════════════════════════════════════════════════ -->
+            <!-- 8. VENTILATOR RECORD -->
             <div class="t-panel" id="tab-ventilator">
-                <div class="t-title"><i class="fas fa-procedures"></i> 16. Ventilator Support (ventilation_chart)</div>
-                
-                <!-- Advance Search Doctor -->
-                <div class="fmg" style="position: relative; margin-bottom: 8px;">
-                    <label>Doctor Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Doctor</span></label>
-                    <input type="text" id="vent-doc-search" placeholder="Type doctor / intensivist name..." autocomplete="off">
-                    <div id="vent-doc-results"></div>
-                </div>
-
+                <div class="t-title"><i class="fas fa-procedures"></i> Ventilation Support Record (ventilation_chart)</div>
                 <div class="fg">
-                    <div class="fmg">
-                        <label>Selected Doctor Name <span class="req">*</span></label>
-                        <input type="text" id="vent-doctor" placeholder="Selected doctor name" readonly style="font-weight:700;">
-                    </div>
                     <div class="fmg">
                         <label>Date (vent_date) <span class="req">*</span></label>
                         <input type="date" id="vent-date">
                     </div>
                     <div class="fmg">
                         <label>Vent Mode (vent_mode) <span class="req">*</span></label>
-                        <select id="vent-mode">
-                            <option value="CMV">CMV</option>
-                            <option value="SIMV">SIMV</option>
-                            <option value="CPAP">CPAP</option>
-                            <option value="BiPAP">BiPAP</option>
+                        <select id="vent-mode" style="font-weight:700;">
+                            <option value="SIMV + PS">SIMV + PS (Invasive)</option>
+                            <option value="CPAP / BiPAP">CPAP / BiPAP (Non-invasive)</option>
+                            <option value="CMV / AC">CMV / AC (Assist Control)</option>
+                            <option value="HFNC">High Flow Nasal Cannula (HFNC)</option>
+                            <option value="NIV">Non-Invasive Ventilation (NIV)</option>
                         </select>
                     </div>
                     <div class="fmg">
@@ -1641,16 +1316,16 @@ try {
                         <input type="time" id="vent-end" onchange="billing.calcVentDuration()">
                     </div>
                     <div class="fmg">
-                        <label>Duration (vent_dur) <span class="req">*</span></label>
-                        <input type="text" id="vent-dur" placeholder="Auto / e.g. 6h">
+                        <label>Total Duration</label>
+                        <input type="text" id="vent-dur" placeholder="Auto / e.g. 12 hrs" readonly style="opacity:0.9;">
                     </div>
                     <div class="fmg">
-                        <label>Nurse Signature (vent_nurse) <span class="req">*</span></label>
+                        <label>Nurse / Operator <span class="req">*</span></label>
                         <input type="text" id="vent-nurse" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
                     </div>
                     <div class="fmg">
-                        <label>Ventilator Charge (₹) <span class="req">*</span></label>
-                        <input type="number" id="vent-fee" value="2000" min="0" step="0.01" oninput="billing.calcVentTotal()">
+                        <label>Ventilator Daily/Shift Charge (₹) <span class="req">*</span></label>
+                        <input type="number" id="vent-charge" value="4500" min="0" step="0.01" oninput="billing.calcVentTotal()">
                     </div>
                     <div class="fmg">
                         <label>Discount (₹)</label>
@@ -1659,63 +1334,49 @@ try {
                 </div>
 
                 <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
-                    <span id="vent-total-preview" class="bm-total-val">₹ 2,000.00</span>
+                    <span>Total Ventilator Charge:</span>
+                    <span id="vent-total-preview" class="bm-total-val">₹ 4,500.00</span>
                 </div>
 
                 <div class="bm-footer" style="margin-top: 14px;">
                     <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
                     <button type="button" class="bm-btn bm-btn-primary" id="vent-save-btn" onclick="billing.saveVentilatorCharge()">
-                        <i class="fas fa-plus"></i> Add Ventilator Charge
+                        <i class="fas fa-plus"></i> Save & Post Ventilator Charge
                     </button>
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 9. BLOOD TRANSFUSION (17. blood_transfusion_chart from nurse_workspace.php)
-                 ══════════════════════════════════════════════════════════ -->
+            <!-- 9. BLOOD TRANSFUSION -->
             <div class="t-panel" id="tab-transfusion">
-                <div class="t-title"><i class="fas fa-syringe"></i> 17. Blood Transfusion Record (blood_transfusion)</div>
-                
-                <!-- Advance Search Doctor -->
-                <div class="fmg" style="position: relative; margin-bottom: 8px;">
-                    <label>Doctor Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Doctor</span></label>
-                    <input type="text" id="bt-doc-search" placeholder="Type prescribing doctor name..." autocomplete="off">
-                    <div id="bt-doc-results"></div>
-                </div>
-
+                <div class="t-title"><i class="fas fa-syringe"></i> Blood Transfusion Record (blood_transfusion_chart)</div>
                 <div class="fg">
                     <div class="fmg">
-                        <label>Selected Doctor Name <span class="req">*</span></label>
-                        <input type="text" id="bt-doctor" placeholder="Selected doctor name" readonly style="font-weight:700;">
+                        <label>Date (bt_date) <span class="req">*</span></label>
+                        <input type="date" id="bt-date">
                     </div>
                     <div class="fmg">
-                        <label>Date (trans_date) <span class="req">*</span></label>
-                        <input type="date" id="trans-date">
+                        <label>Blood Bag No. (bt_bag) <span class="req">*</span></label>
+                        <input type="text" id="bt-bag" placeholder="e.g. PRBC-2024-8891" style="font-weight:700;">
                     </div>
                     <div class="fmg">
-                        <label>Blood Group (blood_group) <span class="req">*</span></label>
-                        <input type="text" id="blood-group" placeholder="e.g. O+ / AB+ / A+">
+                        <label>Blood Component / Group <span class="req">*</span></label>
+                        <input type="text" id="bt-group" placeholder="e.g. O +ve (PRBC / FFP / Platelets)" style="font-weight:600;">
                     </div>
                     <div class="fmg">
-                        <label>Bag Number (bag_number) <span class="req">*</span></label>
-                        <input type="text" id="bag-number" placeholder="e.g. 2563">
+                        <label>Start Time (bt_start)</label>
+                        <input type="time" id="bt-start">
                     </div>
                     <div class="fmg">
-                        <label>Qty (ml) (quantity) <span class="req">*</span></label>
-                        <input type="number" id="trans-qty" value="350" min="1" step="1">
+                        <label>End Time (bt_end)</label>
+                        <input type="time" id="bt-end">
                     </div>
                     <div class="fmg">
-                        <label>Vitals During Transfusion (vitals_during)</label>
-                        <input type="text" id="vitals-during" placeholder="BP, Pulse, Temp...">
-                    </div>
-                    <div class="fmg">
-                        <label>Nurse Signature (nurse_sign) <span class="req">*</span></label>
+                        <label>Nurse Signature <span class="req">*</span></label>
                         <input type="text" id="bt-nurse" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
                     </div>
                     <div class="fmg">
-                        <label>Transfusion Charge (₹) <span class="req">*</span></label>
-                        <input type="number" id="bt-fee" value="1200" min="0" step="0.01" oninput="billing.calcBtTotal()">
+                        <label>Transfusion & Testing Charge (₹) <span class="req">*</span></label>
+                        <input type="number" id="bt-charge" value="1800" min="0" step="0.01" oninput="billing.calcBtTotal()">
                     </div>
                     <div class="fmg">
                         <label>Discount (₹)</label>
@@ -1724,140 +1385,117 @@ try {
                 </div>
 
                 <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
-                    <span id="bt-total-preview" class="bm-total-val">₹ 1,200.00</span>
+                    <span>Total Blood Transfusion Charge:</span>
+                    <span id="bt-total-preview" class="bm-total-val">₹ 1,800.00</span>
                 </div>
 
                 <div class="bm-footer" style="margin-top: 14px;">
                     <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
                     <button type="button" class="bm-btn bm-btn-primary" id="bt-save-btn" onclick="billing.saveTransfusionCharge()">
-                        <i class="fas fa-plus"></i> Add Transfusion Charge
+                        <i class="fas fa-plus"></i> Save & Post Transfusion Charge
                     </button>
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 10. WARD TRANSFER (18. ward_transfer from nurse_workspace.php)
-                 ══════════════════════════════════════════════════════════ -->
+            <!-- 10. WARD TRANSFER -->
             <div class="t-panel" id="tab-ward-transfer">
-                <div class="t-title"><i class="fas fa-exchange-alt"></i> 18. Ward Transfer / Bed Shift</div>
-                
-                <!-- Advance Search Doctor -->
-                <div class="fmg" style="position: relative; margin-bottom: 8px;">
-                    <label>Doctor Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Doctor</span></label>
-                    <input type="text" id="wt-doc-search" placeholder="Type authorising doctor name..." autocomplete="off">
-                    <div id="wt-doc-results"></div>
-                </div>
-
+                <div class="t-title"><i class="fas fa-exchange-alt"></i> Ward Shift & Bed Transfer (ward_transfer)</div>
                 <div class="fg">
                     <div class="fmg">
-                        <label>Selected Doctor Name <span class="req">*</span></label>
-                        <input type="text" id="wt-doctor" placeholder="Selected doctor name" readonly style="font-weight:700;">
-                    </div>
-                    <div class="fmg">
-                        <label>Transfer Date <span class="req">*</span></label>
+                        <label>Transfer Date (wt_date) <span class="req">*</span></label>
                         <input type="date" id="wt-date">
                     </div>
                     <div class="fmg">
-                        <label>Transfer Time <span class="req">*</span></label>
+                        <label>Transfer Time (wt_time) <span class="req">*</span></label>
                         <input type="time" id="wt-time">
                     </div>
                     <div class="fmg">
-                        <label>From Ward / Bed <span class="req">*</span></label>
-                        <input type="text" id="wt-from" placeholder="e.g. ICU / Bed 3">
+                        <label>Shifted From (wt_from) <span class="req">*</span></label>
+                        <input type="text" id="wt-from" placeholder="Current bed/ward (auto-filled)" style="font-weight:600;">
                     </div>
                     <div class="fmg">
-                        <label>To Ward / Bed <span class="req">*</span></label>
-                        <input type="text" id="wt-to" placeholder="e.g. General Ward / Bed 12">
+                        <label>Shifted To Bed/Ward (wt_to) <span class="req">*</span></label>
+                        <input type="text" id="wt-to" placeholder="Target bed/ward e.g. ICU Bed-02" style="font-weight:700;">
                     </div>
                     <div class="fmg">
-                        <label>Staff Signature <span class="req">*</span></label>
+                        <label>Transfer Reason / Note</label>
+                        <input type="text" id="wt-reason" placeholder="e.g. Clinical deterioration / Step-down shift">
+                    </div>
+                    <div class="fmg">
+                        <label>Nurse / In-charge <span class="req">*</span></label>
                         <input type="text" id="wt-nurse" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
                     </div>
                     <div class="fmg">
-                        <label>Transfer Fee (₹)</label>
-                        <input type="number" id="wt-fee" value="0" min="0" step="0.01" oninput="billing.calcWtTotal()">
+                        <label>Transfer Handling Charge (₹)</label>
+                        <input type="number" id="wt-charge" value="0" min="0" step="0.01" oninput="billing.calcWtTotal()">
                     </div>
                     <div class="fmg">
                         <label>Discount (₹)</label>
                         <input type="number" id="wt-discount" value="0" min="0" step="0.01" oninput="billing.calcWtTotal()">
                     </div>
-                    <div class="fmg" style="grid-column: 1 / -1;">
-                        <label>Transfer Reason / Notes</label>
-                        <input type="text" id="wt-reason" placeholder="e.g. Condition stabilized, Step down to ward, Attender request">
-                    </div>
                 </div>
 
                 <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
+                    <span>Total Handling Charge:</span>
                     <span id="wt-total-preview" class="bm-total-val">₹ 0.00</span>
                 </div>
 
                 <div class="bm-footer" style="margin-top: 14px;">
                     <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
                     <button type="button" class="bm-btn bm-btn-primary" id="wt-save-btn" onclick="billing.saveWardTransferCharge()">
-                        <i class="fas fa-plus"></i> Add Transfer Charge
+                        <i class="fas fa-plus"></i> Save & Post Ward Transfer
                     </button>
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 11. CONSUMABLES & OTHER CHARGES
-                 ══════════════════════════════════════════════════════════ -->
+            <!-- 11. CONSUMABLES & OTHER -->
             <div class="t-panel" id="tab-consumables">
-                <div class="t-title"><i class="fas fa-box"></i> Medical Consumables & Other Charges</div>
+                <div class="t-title"><i class="fas fa-box"></i> Consumables & Custom Charge Entry</div>
                 <div class="fg">
                     <div class="fmg">
-                        <label>Charge Date <span class="req">*</span></label>
-                        <input type="date" id="misc-date">
-                    </div>
-                    <div class="fmg">
-                        <label>Charge Category</label>
-                        <select id="misc-type">
-                            <option value="CONSUMABLE">🧪 Medical Consumables</option>
-                            <option value="MISC">📦 Miscellaneous</option>
-                            <option value="OTHER">📁 Other Charges</option>
+                        <label>Charge Category <span class="req">*</span></label>
+                        <select id="con-type">
+                            <option value="CONSUMABLE">Consumable (Gloves, Syringes, Gauze)</option>
+                            <option value="OT">Operation Theatre (OT Charges / Anesthesia)</option>
+                            <option value="MISC">Miscellaneous Hospital Charges</option>
+                            <option value="OTHER">Other Custom Bill Entry</option>
                         </select>
                     </div>
-                    <div class="fmg" style="grid-column: 1 / -1;">
-                        <label>Description / Item Name <span class="req">*</span></label>
-                        <input type="text" id="misc-desc" placeholder="e.g. IV Cannula 20G, Bandage Roll, Oxygen Mask, Ambulance...">
-                    </div>
                     <div class="fmg">
-                        <label>Department / Category</label>
-                        <input type="text" id="misc-dept" placeholder="e.g. Nursing, General, Admin">
+                        <label>Charge Date <span class="req">*</span></label>
+                        <input type="date" id="con-date">
+                    </div>
+                    <div class="fmg" style="grid-column: 1 / -1;">
+                        <label>Item Description <span class="req">*</span></label>
+                        <input type="text" id="con-desc" placeholder="Enter full item / service description..." style="font-weight:600;">
                     </div>
                     <div class="fmg">
                         <label>Quantity</label>
-                        <input type="number" id="misc-qty" value="1" min="0.01" step="0.01" oninput="billing.calcConsumableTotal()">
+                        <input type="number" id="con-qty" value="1" min="1" step="1" oninput="billing.calcConTotal()">
                     </div>
                     <div class="fmg">
-                        <label>Entered By (Logged-in User)</label>
-                        <input type="text" id="misc-user" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
-                    </div>
-                    <div class="fmg">
-                        <label>Unit Price (₹) <span class="req">*</span></label>
-                        <input type="number" id="misc-fee" value="0" min="0" step="0.01" oninput="billing.calcConsumableTotal()">
+                        <label>Unit Rate (₹) <span class="req">*</span></label>
+                        <input type="number" id="con-rate" value="0" min="0" step="0.01" oninput="billing.calcConTotal()">
                     </div>
                     <div class="fmg">
                         <label>Discount (₹)</label>
-                        <input type="number" id="misc-discount" value="0" min="0" step="0.01" oninput="billing.calcConsumableTotal()">
+                        <input type="number" id="con-discount" value="0" min="0" step="0.01" oninput="billing.calcConTotal()">
                     </div>
-                    <div class="fmg" style="grid-column: 1 / -1;">
-                        <label>Reference Notes</label>
-                        <input type="text" id="misc-notes" placeholder="Optional reference notes">
+                    <div class="fmg">
+                        <label>Entered By</label>
+                        <input type="text" id="con-user" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
                     </div>
                 </div>
 
                 <div class="bm-total-preview" style="margin-top: 14px;">
                     <span>Total Amount:</span>
-                    <span id="misc-total-preview" class="bm-total-val">₹ 0.00</span>
+                    <span id="con-total-preview" class="bm-total-val">₹ 0.00</span>
                 </div>
 
                 <div class="bm-footer" style="margin-top: 14px;">
                     <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
-                    <button type="button" class="bm-btn bm-btn-primary" id="misc-save-btn" onclick="billing.saveConsumableCharge()">
-                        <i class="fas fa-plus"></i> Add Consumable Charge
+                    <button type="button" class="bm-btn bm-btn-primary" id="con-save-btn" onclick="billing.saveConsumableCharge()">
+                        <i class="fas fa-plus"></i> Add Charge Item
                     </button>
                 </div>
             </div>
@@ -1868,72 +1506,72 @@ try {
 
 <!-- MODAL: Room Rent Generator -->
 <div class="billing-modal-overlay" id="modalRoomRent">
-    <div class="billing-modal" style="max-width:640px;">
-        <div class="bm-head green-head">
-            <div class="bm-title"><i data-lucide="bed-double"></i> Generate Room Rent</div>
+    <div class="billing-modal" style="max-width:540px;">
+        <div class="bm-head">
+            <div class="bm-title"><i data-lucide="bed-double"></i> Room & Bed Rent Calculator</div>
             <button class="bm-close" onclick="billing.closeModal('modalRoomRent')"><i data-lucide="x"></i></button>
         </div>
         <div class="bm-body">
-            <div class="rr-bed-info-card" id="rrBedInfoCard">
-                <div class="rr-bed-details">
-                    <div class="rr-bed-icon"><i data-lucide="bed-double"></i></div>
-                    <div>
-                        <div class="rr-bed-name" id="rrBedName">Loading...</div>
-                        <div class="rr-bed-rate" id="rrBedRate"></div>
-                    </div>
+            <div class="rr-bed-info" id="rrBedInfo">
+                <div class="rr-bed-tag" id="rrBedTag">Ward / Bed</div>
+                <div class="rr-rate-grid">
+                    <div><span>Bed Rent:</span> <strong id="rrBedRent">₹0</strong>/day</div>
+                    <div><span>Nursing:</span> <strong id="rrNursing">₹0</strong>/day</div>
+                    <div><span>Duty Doctor:</span> <strong id="rrDutyDr">₹0</strong>/day</div>
+                    <div><span>Total/Day:</span> <strong id="rrTotalPerDay" style="color:var(--teal)">₹0</strong></div>
                 </div>
-                <div class="rr-rate-breakdown" id="rrRateBreakdown"></div>
             </div>
+
+            <div class="bm-form-group">
+                <label>Date Range (From - To)</label>
+                <div class="bm-form-row two-col">
+                    <input type="date" id="rrFromDate" onchange="billing.calcRoomRentDays()">
+                    <input type="date" id="rrToDate" onchange="billing.calcRoomRentDays()">
+                </div>
+            </div>
+
             <div class="bm-form-row two-col">
                 <div class="bm-form-group">
-                    <label>From Date <span class="req">*</span></label>
-                    <input type="date" id="rrFromDate" onchange="billing.loadRoomRentPreview()">
+                    <label>Total Days</label>
+                    <input type="number" id="rrTotalDays" min="1" value="1" oninput="billing.calcRoomRentTotal()">
                 </div>
                 <div class="bm-form-group">
-                    <label>To Date <span class="req">*</span></label>
-                    <input type="date" id="rrToDate" onchange="billing.loadRoomRentPreview()">
+                    <label>Per Day Rate (₹)</label>
+                    <input type="number" id="rrDailyRate" min="0" step="0.01" oninput="billing.calcRoomRentTotal()">
                 </div>
             </div>
-            <div class="rr-preview" id="rrPreview">
-                <div class="rr-preview-loading"><i data-lucide="loader-2" class="lucide-spin"></i> Select dates to preview...</div>
+
+            <div class="bm-form-group">
+                <label>Charge Category</label>
+                <select id="rrChargeType">
+                    <option value="ROOM_RENT">Room Rent (Full Bed Amount)</option>
+                    <option value="NURSING">Nursing Charges Only</option>
+                    <option value="ICU">ICU / Special Care Charges</option>
+                </select>
             </div>
-            <div class="rr-preview-summary" id="rrPreviewSummary" style="display:none;">
-                <div class="rr-ps-item">
-                    <span class="rr-ps-label">New Days</span>
-                    <span class="rr-ps-val green" id="rrNewCount">0</span>
-                </div>
-                <div class="rr-ps-item">
-                    <span class="rr-ps-label">Skipped (duplicate)</span>
-                    <span class="rr-ps-val amber" id="rrSkipCount">0</span>
-                </div>
-                <div class="rr-ps-item">
-                    <span class="rr-ps-label">Total to Add</span>
-                    <span class="rr-ps-val bold" id="rrNewTotal">₹0</span>
-                </div>
+
+            <div class="bm-total-preview">
+                <span>Calculated Total:</span>
+                <span id="rrTotalPreview" class="bm-total-val">₹0.00</span>
             </div>
-            <div class="bm-footer">
-                <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalRoomRent')">Cancel</button>
-                <button class="bm-btn bm-btn-green" id="btnConfirmRoomRent" onclick="billing.confirmRoomRent()" disabled>
-                    <i data-lucide="check-circle-2"></i> <span id="rrConfirmBtnLabel">Confirm & Generate</span>
-                </button>
-            </div>
+        </div>
+        <div class="bm-footer">
+            <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalRoomRent')">Cancel</button>
+            <button class="bm-btn bm-btn-primary" onclick="billing.applyRoomRent()">
+                <i data-lucide="check"></i> Post to Bill
+            </button>
         </div>
     </div>
 </div>
 
 <!-- MODAL: Record Payment -->
 <div class="billing-modal-overlay" id="modalPayment">
-    
-    <div class="billing-modal" style="max-width:520px;">
+    <div class="billing-modal" style="max-width:540px;">
         <div class="bm-head">
-            <div class="bm-title"><i data-lucide="credit-card"></i> Record Payment</div>
+            <div class="bm-title"><i data-lucide="credit-card"></i> Record Payment / Advance</div>
             <button class="bm-close" onclick="billing.closeModal('modalPayment')"><i data-lucide="x"></i></button>
         </div>
         <div class="bm-body">
-            <div class="pay-balance-preview" id="payBalancePreview">
-                <div class="pbp-label">Current Balance Due</div>
-                <div class="pbp-val" id="payBalanceVal">₹0.00</div>
-            </div>
             <div class="bm-form-row two-col">
                 <div class="bm-form-group">
                     <label>Payment Date <span class="req">*</span></label>
@@ -1949,6 +1587,7 @@ try {
                     </div>
                 </div>
             </div>
+
             <div class="bm-form-group">
                 <label>Payment Mode <span class="req">*</span></label>
                 <div class="pay-mode-group" id="payModeGroup">
@@ -1957,342 +1596,153 @@ try {
                     <button class="pay-mode-btn" data-mode="CARD"><i data-lucide="credit-card"></i> Card</button>
                     <button class="pay-mode-btn" data-mode="BANK"><i data-lucide="landmark"></i> Bank</button>
                     <button class="pay-mode-btn" data-mode="CHEQUE"><i data-lucide="receipt"></i> Cheque</button>
-                    <button class="pay-mode-btn" data-mode="INSURANCE"><i data-lucide="shield"></i> Insurance</button>
                 </div>
             </div>
 
-            <!-- Insurance / TPA Sub-section for Modal -->
-            <div id="modalInsuranceBlock" style="display:none; background: rgba(31,107,74,0.05); border: 1.5px dashed #1f6b4a; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
-                    <label style="font-size: 11px; font-weight: 800; color: #1f6b4a; text-transform: uppercase; margin: 0;">Sponsor Type <span class="req">*</span>:</label>
-                    <div class="pay-type-group" id="modalSponsorTypeGroup" style="display: flex; gap: 6px;">
-                        <button type="button" class="pay-type-btn active" data-sponsor-type="INSURANCE" style="padding: 4px 14px; min-height: 32px; font-size: 12px;"><i data-lucide="shield"></i> Insurance</button>
-                        <button type="button" class="pay-type-btn" data-sponsor-type="TPA" style="padding: 4px 14px; min-height: 32px; font-size: 12px;"><i data-lucide="building-2"></i> TPA</button>
-                    </div>
-                </div>
-
-                <div style="position: relative;">
-                    <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">
-                        <span id="modalSponsorLabel">Insurance Company Name</span> <span class="req">*</span>
-                        <span style="background: #1f6b4a; color: #f3efe6; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 700;"><i class="fas fa-search"></i> Advance Search</span>
-                    </label>
-                    <input type="text" id="modalSponsorSearchInput" placeholder="Type to search Insurance company (e.g. Star Health, HDFC ERGO...)" autocomplete="off" style="width: 100%; height: 38px; padding: 0 10px; border: 1.5px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a; font-weight: 700;">
-                    <input type="hidden" id="modalSelectedSponsorName">
-                    <div id="modalSponsorResults" style="display:none; position:absolute; left:0; right:0; top:100%; z-index:100; background:#ffffff; border:1.5px solid #1f6b4a; border-radius:6px; max-height:220px; overflow-y:auto; box-shadow:0 4px 12px rgba(31,107,74,0.15); margin-top:2px;"></div>
-                </div>
-            </div>
             <div class="bm-form-row two-col">
                 <div class="bm-form-group">
                     <label>Amount (₹) <span class="req">*</span></label>
                     <div style="position:relative;">
                         <input type="number" id="payAmount" min="0.01" step="0.01" placeholder="0.00" oninput="billing.updatePayPreview()">
-                        <button class="btn-full-amount" id="btnFullAmount" onclick="billing.fillFullAmount()" title="Fill full balance">Full</button>
+                        <button class="btn-full-amount" onclick="billing.fillFullBalance()" title="Fill full balance">Full</button>
                     </div>
                 </div>
-                <div class="bm-form-group" id="payRefGroup">
-                    <label>Reference No.</label>
-                    <input type="text" id="payRef" placeholder="UPI txn / Cheque no.">
-                </div>
-            </div>
-            <!-- Refund extra fields -->
-            <div id="refundExtraFields" style="display:none;">
-                <div class="bm-form-group">
-                    <label>Refund Reason <span class="req">*</span></label>
-                    <textarea id="refundReason" rows="2" placeholder="Reason for refund (required)"></textarea>
-                </div>
-                <div class="bm-form-group">
-                    <label>Authorized By <span class="req">*</span></label>
-                    <input type="text" id="refundApprovedBy" placeholder="Manager / Doctor name">
-                </div>
-            </div>
-            <!-- Discount / Concession row for Modal -->
-            <div class="bm-form-row two-col" style="margin-bottom: 12px;">
-                <div class="bm-form-group">
-                    <label>Discount / Concession (₹ or %)</label>
-                    <div style="display: flex; gap: 8px;">
-                        <div style="position: relative; width: 60%;">
-                            <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-weight: 700;">₹</span>
-                            <input type="number" id="modalPayDiscount" min="0" step="0.01" placeholder="0.00" oninput="billing.calcModalDiscountAmt()" style="padding-left: 22px;">
-                        </div>
-                        <div style="position: relative; width: 40%;">
-                            <input type="number" id="modalPayDiscountPct" min="0" max="100" step="0.1" placeholder="0" oninput="billing.calcModalDiscountPct()" style="padding-right: 22px;">
-                            <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-weight: 700;">%</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="bm-form-group">
-                    <label>Discount Reason</label>
-                    <input type="text" id="modalPayDiscountReason" placeholder="Reason (e.g. Concession, Management)">
+                <div class="bm-form-group" id="payRefGroup" style="display:none;">
+                    <label>Reference No. / Txn ID</label>
+                    <input type="text" id="payRefNo" placeholder="UPI txn / Cheque no.">
                 </div>
             </div>
 
             <div class="bm-form-group">
-                <label>Remarks</label>
-                <input type="text" id="payRemarks" placeholder="Optional notes">
+                <label>Remarks / Notes</label>
+                <input type="text" id="payRemarks" placeholder="Optional payment remarks">
             </div>
-            <div class="pay-after-preview" id="payAfterPreview">
-                Balance after payment: <strong id="payAfterVal">—</strong>
+
+            <div class="bm-total-preview">
+                <span>Balance after payment:</span>
+                <span id="payBalancePreview" class="bm-total-val">—</span>
             </div>
-            <div class="bm-footer">
-                <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalPayment')">Cancel</button>
-                <button class="bm-btn bm-btn-primary" id="btnSavePayment" onclick="billing.savePayment()">
-                    <i data-lucide="check-circle-2"></i> Record Payment
-                </button>
-            </div>
+        </div>
+        <div class="bm-footer">
+            <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalPayment')">Cancel</button>
+            <button class="bm-btn bm-btn-primary" onclick="billing.savePayment()">
+                <i data-lucide="check-circle-2"></i> Save & Generate Receipt
+            </button>
         </div>
     </div>
 </div>
 
-<!-- MODAL: Insurance Receipt -->
-<div class="billing-modal-overlay" id="modalInsReceipt">
-    <div class="billing-modal" style="max-width:480px;">
-        <div class="bm-head blue-head">
-            <div class="bm-title"><i data-lucide="shield"></i> Insurance Receipt</div>
-            <button class="bm-close" onclick="billing.closeModal('modalInsReceipt')"><i data-lucide="x"></i></button>
-        </div>
-        <div class="bm-body">
-            <div class="ins-summary-card" id="insReceiptSummaryCard">
-                <div class="ins-sc-row"><span>Company:</span><strong id="insRcptCompany">—</strong></div>
-                <div class="ins-sc-row"><span>Approved:</span><strong id="insRcptApproved">₹0</strong></div>
-                <div class="ins-sc-row"><span>Already Received:</span><strong id="insRcptReceived">₹0</strong></div>
-                <div class="ins-sc-row highlight"><span>Pending Claim:</span><strong id="insRcptPending">₹0</strong></div>
-            </div>
-            <div class="bm-form-row two-col">
-                <div class="bm-form-group">
-                    <label>Receipt Date <span class="req">*</span></label>
-                    <input type="date" id="insRcptDate">
-                </div>
-                <div class="bm-form-group">
-                    <label>Amount Received (₹) <span class="req">*</span></label>
-                    <input type="number" id="insRcptAmount" min="0.01" step="0.01" placeholder="0.00">
-                    <button class="btn-full-amount mt-1" onclick="billing.fillInsFullAmount()">Full Pending</button>
-                </div>
-            </div>
-            <div class="bm-form-group">
-                <label>Settlement Reference <span class="req">*</span></label>
-                <input type="text" id="insRcptRef" placeholder="Claim settlement / NEFT reference">
-            </div>
-            <div class="bm-form-group">
-                <label>Remarks</label>
-                <input type="text" id="insRcptRemarks" placeholder="Optional">
-            </div>
-            <div class="bm-footer">
-                <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalInsReceipt')">Cancel</button>
-                <button class="bm-btn bm-btn-primary" onclick="billing.saveInsuranceReceipt()">
-                    <i data-lucide="check-circle-2"></i> Record Receipt
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL: Apply Discount -->
+<!-- MODAL: Discount -->
 <div class="billing-modal-overlay" id="modalDiscount">
     <div class="billing-modal" style="max-width:440px;">
         <div class="bm-head">
-            <div class="bm-title"><i data-lucide="tags"></i> Apply Discount</div>
+            <div class="bm-title"><i data-lucide="tag"></i> Apply Discount / Concession</div>
             <button class="bm-close" onclick="billing.closeModal('modalDiscount')"><i data-lucide="x"></i></button>
         </div>
         <div class="bm-body">
-            <div class="discount-subtotal-info">
-                Current Subtotal: <strong id="discSubtotalDisplay">₹0.00</strong>
-            </div>
-            <div class="bm-form-row two-col">
-                <div class="bm-form-group">
-                    <label>Discount Amount (₹)</label>
-                    <input type="number" id="discAmount" min="0" step="0.01" placeholder="0.00" oninput="billing.calcDiscountPct()">
-                </div>
-                <div class="bm-form-group">
-                    <label>Discount Percentage (%)</label>
-                    <input type="number" id="discPct" min="0" max="100" step="0.01" placeholder="0.00" oninput="billing.calcDiscountAmt()">
+            <div class="bm-form-group">
+                <label>Discount Type</label>
+                <div class="pay-type-group" id="discountTypeGroup">
+                    <button class="pay-type-btn active" data-dtype="FLAT">Flat Amount (₹)</button>
+                    <button class="pay-type-btn" data-dtype="PERCENT">Percentage (%)</button>
                 </div>
             </div>
             <div class="bm-form-group">
-                <label>Reason <span class="req">*</span></label>
-                <select id="discReason">
-                    <option value="">Select reason</option>
-                    <option>Doctor Approved</option>
-                    <option>Management Decision</option>
-                    <option>Insurance Negotiation</option>
-                    <option>Below Poverty Line</option>
-                    <option>Employee Discount</option>
-                    <option>Loyalty Discount</option>
-                </select>
+                <label id="discountValLabel">Discount Amount (₹)</label>
+                <input type="number" id="discountValue" min="0" step="0.01" placeholder="0.00" oninput="billing.calcDiscountPreview()">
             </div>
-            <div class="discount-after-preview">
-                <div class="dap-row"><span>Subtotal</span><span id="dapSubtotal">₹0.00</span></div>
-                <div class="dap-row red"><span>Discount</span><span id="dapDiscount">-₹0.00</span></div>
-                <div class="dap-row bold green"><span>Grand Total</span><span id="dapGrandTotal">₹0.00</span></div>
+            <div class="bm-form-group">
+                <label>Reason / Authorization <span class="req">*</span></label>
+                <input type="text" id="discountReason" placeholder="e.g. Doctor Concession, Management Approval">
             </div>
-            <div class="bm-footer">
-                <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalDiscount')">Cancel</button>
-                <button class="bm-btn bm-btn-primary" onclick="billing.saveDiscount()">
-                    <i data-lucide="check-circle-2"></i> Apply Discount
-                </button>
+            <div class="bm-total-preview">
+                <span>New Grand Total:</span>
+                <span id="discountGrandTotalPreview" class="bm-total-val">—</span>
             </div>
+        </div>
+        <div class="bm-footer">
+            <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalDiscount')">Cancel</button>
+            <button class="bm-btn bm-btn-primary" onclick="billing.applyDiscount()">
+                <i data-lucide="check"></i> Apply Discount
+            </button>
         </div>
     </div>
 </div>
 
 <!-- MODAL: Insurance Details -->
 <div class="billing-modal-overlay" id="modalInsurance">
-    <div class="billing-modal" style="max-width:600px;">
-        <div class="bm-head blue-head">
-            <div class="bm-title"><i data-lucide="shield"></i> Insurance / Corporate Details</div>
+    <div class="billing-modal" style="max-width:520px;">
+        <div class="bm-head">
+            <div class="bm-title"><i data-lucide="shield"></i> Insurance / TPA Details</div>
             <button class="bm-close" onclick="billing.closeModal('modalInsurance')"><i data-lucide="x"></i></button>
         </div>
         <div class="bm-body">
             <div class="bm-form-group">
-                <label>Bill Type</label>
-                <div class="bill-type-group">
-                    <button class="bill-type-btn active" data-type="SELF"      onclick="billing.selectBillType(this)">SELF</button>
-                    <button class="bill-type-btn" data-type="INSURANCE"  onclick="billing.selectBillType(this)">INSURANCE</button>
-                    <button class="bill-type-btn" data-type="CORPORATE"  onclick="billing.selectBillType(this)">CORPORATE</button>
-                </div>
+                <label>Billing Type</label>
+                <select id="insBillType" onchange="billing.toggleInsFields()">
+                    <option value="SELF">Self Pay (Cash)</option>
+                    <option value="INSURANCE">Insurance (TPA / Mediclaim)</option>
+                    <option value="CORPORATE">Corporate Tie-up</option>
+                </select>
             </div>
-            <div id="insFormFields">
+            <div id="insFieldsBlock" style="display:none;">
                 <div class="bm-form-row two-col">
                     <div class="bm-form-group">
-                        <label>Company Name <span class="req">*</span></label>
-                        <input type="text" id="insCompanyName" placeholder="Insurance company name">
+                        <label>Company / TPA Name</label>
+                        <input type="text" id="insCompanyName" placeholder="e.g. Star Health, Medi Assist">
                     </div>
-                    <div class="bm-form-group">
-                        <label>TPA Name</label>
-                        <input type="text" id="insTpaName" placeholder="e.g. Medi Assist">
-                    </div>
-                </div>
-                <div class="bm-form-row three-col">
                     <div class="bm-form-group">
                         <label>Policy Number</label>
-                        <input type="text" id="insPolicyNo" placeholder="Policy number">
-                    </div>
-                    <div class="bm-form-group">
-                        <label>Claim Number</label>
-                        <input type="text" id="insClaimNo" placeholder="Claim number">
-                    </div>
-                    <div class="bm-form-group">
-                        <label>Approval Number</label>
-                        <input type="text" id="insApprovalNo" placeholder="Approval ref">
+                        <input type="text" id="insPolicyNo" placeholder="Policy / Card no.">
                     </div>
                 </div>
                 <div class="bm-form-row two-col">
                     <div class="bm-form-group">
-                        <label>Approved Amount (₹)</label>
-                        <input type="number" id="insApprovedAmt" min="0" step="0.01" placeholder="0.00" oninput="billing.calcInsPatientPayable()">
+                        <label>Approval / CCN No.</label>
+                        <input type="text" id="insApprovalNo" placeholder="CCN / Pre-auth code">
                     </div>
                     <div class="bm-form-group">
-                        <label>Claim Status</label>
-                        <select id="insClaimStatus">
-                            <option value="PENDING">PENDING</option>
-                            <option value="SUBMITTED">SUBMITTED</option>
-                            <option value="APPROVED">APPROVED</option>
-                            <option value="PARTIAL_APPROVED">PARTIAL APPROVED</option>
-                            <option value="REJECTED">REJECTED</option>
-                            <option value="SETTLED">SETTLED</option>
-                        </select>
+                        <label>Approved Amount (₹)</label>
+                        <input type="number" id="insApprovedAmount" min="0" step="0.01" placeholder="0.00">
                     </div>
                 </div>
-                <div class="ins-patient-payable-preview">
-                    Grand Total: <strong id="insGtDisplay">₹0</strong> &nbsp;|&nbsp;
-                    Insurance Approved: <strong id="insApprDisplay">₹0</strong> &nbsp;|&nbsp;
-                    Patient Payable: <strong class="green" id="insPpDisplay">₹0</strong>
-                </div>
             </div>
-            <div class="bm-footer">
-                <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalInsurance')">Cancel</button>
-                <button class="bm-btn bm-btn-primary" onclick="billing.saveInsuranceDetails()">
-                    <i class="fas fa-save"></i> Save Details
-                </button>
-            </div>
+        </div>
+        <div class="bm-footer">
+            <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalInsurance')">Cancel</button>
+            <button class="bm-btn bm-btn-primary" onclick="billing.saveInsurance()">
+                <i data-lucide="check"></i> Save Insurance Info
+            </button>
         </div>
     </div>
 </div>
 
-<!-- MODAL: Change Status -->
+<!-- MODAL: Change Billing Status -->
 <div class="billing-modal-overlay" id="modalStatus">
-    <div class="billing-modal" style="max-width:420px;">
+    <div class="billing-modal" style="max-width:400px;">
         <div class="bm-head">
-            <div class="bm-title"><i class="fas fa-toggle-on"></i> Change Billing Status</div>
+            <div class="bm-title"><i data-lucide="toggle-right"></i> Change Billing Status</div>
             <button class="bm-close" onclick="billing.closeModal('modalStatus')"><i data-lucide="x"></i></button>
         </div>
         <div class="bm-body">
             <div class="bm-form-group">
-                <label>Current Status</label>
-                <div class="status-current-display" id="statusCurrentDisplay">OPEN</div>
+                <label>New Billing Status</label>
+                <select id="newBillingStatus">
+                    <option value="OPEN">OPEN — Active billing in progress</option>
+                    <option value="FINALIZED">FINALIZED — Ready for discharge settlement</option>
+                    <option value="SETTLED">SETTLED — All payments cleared & settled</option>
+                    <option value="CANCELLED">CANCELLED — Void / Cancelled bill</option>
+                </select>
             </div>
-            <div class="bm-form-group">
-                <label>New Status <span class="req">*</span></label>
-                <div class="status-options" id="statusOptions">
-                    <button class="status-option-btn" data-status="OPEN">OPEN</button>
-                    <button class="status-option-btn" data-status="UNDER_TREATMENT">UNDER TREATMENT</button>
-                    <button class="status-option-btn" data-status="DISCHARGE_PENDING">DISCHARGE PENDING</button>
-                    <button class="status-option-btn" data-status="FINALIZED">FINALIZED</button>
-                    <button class="status-option-btn danger-btn" data-status="CANCELLED">CANCELLED</button>
-                </div>
-            </div>
-            <div class="bm-form-group">
-                <label>Reason for change</label>
-                <textarea id="statusReason" rows="2" placeholder="Optional notes..."></textarea>
-            </div>
-            <div class="bm-footer">
-                <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalStatus')">Cancel</button>
-                <button class="bm-btn bm-btn-primary" onclick="billing.saveStatus()">
-                    <i data-lucide="check-circle-2"></i> Update Status
-                </button>
+            <div class="bm-form-group" id="statusReasonGroup" style="display:none;">
+                <label>Cancellation Reason <span class="req">*</span></label>
+                <input type="text" id="statusCancelReason" placeholder="Required for cancellation">
             </div>
         </div>
-    </div>
-</div>
-
-<!-- MODAL: Discharge Patient -->
-<div class="billing-modal-overlay" id="modalDischarge">
-    <div class="billing-modal" style="max-width:620px; max-height:90vh; display:flex; flex-direction:column; background:#f3efe6; border:1.5px solid #1f6b4a; border-radius:12px; box-shadow:0 10px 30px rgba(31,107,74,0.25);">
-        <div class="bm-head" style="background:#1f6b4a; color:#f3efe6; padding:16px 20px; border-radius:10px 10px 0 0; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-            <div class="bm-title" style="color:#f3efe6; font-size:1.1rem; font-weight:800; display:flex; align-items:center; gap:8px;"><i data-lucide="log-out"></i> Discharge Patient</div>
-            <button class="bm-close" style="color:#f3efe6; background:transparent; border:none; cursor:pointer;" onclick="billing.closeModal('modalDischarge')"><i data-lucide="x"></i></button>
-        </div>
-        <div class="bm-body" style="overflow-y:auto; flex:1; padding:20px; max-height:calc(90vh - 130px);">
-            <form id="dischargeFormLocal" onsubmit="event.preventDefault(); billing.submitDischarge();">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                    <div class="bm-form-group">
-                        <label style="font-size:12px; font-weight:700; color:#1f6b4a; text-transform:uppercase; margin-bottom:4px; display:block;">Discharge Date & Time <span class="req">*</span></label>
-                        <input type="datetime-local" id="dsDate" class="bm-input" required style="width:100%; height:40px; padding:0 10px; border:1.5px solid #1f6b4a; border-radius:8px; background:#f3efe6; color:#1f6b4a; font-weight:600;">
-                    </div>
-                    <div class="bm-form-group">
-                        <label style="font-size:12px; font-weight:700; color:#1f6b4a; text-transform:uppercase; margin-bottom:4px; display:block;">Discharge Type <span class="req">*</span></label>
-                        <select id="dsType" class="bm-input" required style="width:100%; height:40px; padding:0 10px; border:1.5px solid #1f6b4a; border-radius:8px; background:#f3efe6; color:#1f6b4a; font-weight:600;">
-                            <option value="Normal">Normal</option>
-                            <option value="Against Medical Advice">Against Medical Advice (LAMA)</option>
-                            <option value="Transferred">Transferred</option>
-                            <option value="Deceased">Deceased</option>
-                        </select>
-                    </div>
-                    <div class="bm-form-group">
-                        <label style="font-size:12px; font-weight:700; color:#1f6b4a; text-transform:uppercase; margin-bottom:4px; display:block;">Follow-up Date</label>
-                        <input type="date" id="dsFollowup" class="bm-input" style="width:100%; height:40px; padding:0 10px; border:1.5px solid #1f6b4a; border-radius:8px; background:#f3efe6; color:#1f6b4a; font-weight:600;">
-                    </div>
-                </div>
-                
-                <div class="bm-form-group" style="margin-bottom: 14px;">
-                    <label style="font-size:12px; font-weight:700; color:#1f6b4a; text-transform:uppercase; margin-bottom:4px; display:block;">Final Diagnosis</label>
-                    <textarea id="dsDiagnosis" class="bm-input" rows="2" placeholder="e.g. Acute appendicitis, Hypertension resolved..." style="width:100%; padding:8px 10px; border:1.5px solid #1f6b4a; border-radius:8px; background:#f3efe6; color:#1f6b4a; font-size:13px;"></textarea>
-                </div>
-                
-                <div class="bm-form-group" style="margin-bottom: 14px;">
-                    <label style="font-size:12px; font-weight:700; color:#1f6b4a; text-transform:uppercase; margin-bottom:4px; display:block;">Discharge Summary</label>
-                    <textarea id="dsSummary" class="bm-input" rows="3" placeholder="Condition at discharge, main clinical events during stay..." style="width:100%; padding:8px 10px; border:1.5px solid #1f6b4a; border-radius:8px; background:#f3efe6; color:#1f6b4a; font-size:13px;"></textarea>
-                </div>
-                
-                <div class="bm-form-group" style="margin-bottom: 10px;">
-                    <label style="font-size:12px; font-weight:700; color:#1f6b4a; text-transform:uppercase; margin-bottom:4px; display:block;">Medications Prescribed</label>
-                    <textarea id="dsMeds" class="bm-input" rows="2" placeholder="List of take-home discharge medications..." style="width:100%; padding:8px 10px; border:1.5px solid #1f6b4a; border-radius:8px; background:#f3efe6; color:#1f6b4a; font-size:13px;"></textarea>
-                </div>
-            </form>
-        </div>
-        <div class="bm-footer" style="padding:14px 20px; border-top:1.5px solid rgba(31,107,74,0.2); background:#f3efe6; display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-shrink:0; border-radius:0 0 12px 12px;">
-            <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalDischarge')" style="background:#f3efe6; color:#1f6b4a; border:1.5px solid #1f6b4a; font-weight:700; padding:9px 18px; border-radius:8px; cursor:pointer;">Cancel</button>
-            <button type="button" class="bm-btn bm-btn-primary" id="btnSubmitDischarge" onclick="billing.submitDischarge()" style="background:#1f6b4a; color:#f3efe6; border:1.5px solid #1f6b4a; font-weight:800; padding:10px 22px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(31,107,74,0.3);">
-                <i data-lucide="check-circle-2"></i> Complete Discharge
+        <div class="bm-footer">
+            <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalStatus')">Cancel</button>
+            <button class="bm-btn bm-btn-primary" onclick="billing.saveStatus()">
+                <i data-lucide="check"></i> Update Status
             </button>
         </div>
     </div>
@@ -2300,142 +1750,37 @@ try {
 
 <!-- MODAL: Discharge History -->
 <div class="billing-modal-overlay" id="modalDischargeHistory">
-    <div class="billing-modal" style="max-width:800px;">
-        <div class="bm-head" style="background:var(--blue-600);">
-            <div class="bm-title" style="color:white;"><i data-lucide="history"></i> Discharge History</div>
-            <button class="bm-close" style="color:white;" onclick="billing.closeModal('modalDischargeHistory')"><i data-lucide="x"></i></button>
+    <div class="billing-modal" style="max-width:850px;">
+        <div class="bm-head">
+            <div class="bm-title"><i data-lucide="history"></i> Discharged Patients Billing History</div>
+            <button class="bm-close" onclick="billing.closeModal('modalDischargeHistory')"><i data-lucide="x"></i></button>
         </div>
-        <div class="bm-body" style="max-height: 70vh; overflow-y: auto;">
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover billing-items-table" style="width: 100%;">
-                    <thead>
+        <div class="bm-body">
+            <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                <input type="text" id="dhSearchInput" onkeyup="billing.filterDischargeHistory()" placeholder="Search patient name, admission ID, phone..." style="flex:1; padding: 8px 12px; border-radius: 6px; border: 1.5px solid #1f6b4a; background: #f3efe6; color: #1f6b4a; font-size: 0.9rem;">
+            </div>
+            <div class="table-responsive rounded" style="max-height: 400px; overflow-y: auto; border: 1.5px solid #1f6b4a;">
+                <table class="billing-items-table" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                    <thead style="position: sticky; top: 0; z-index: 10;">
                         <tr>
+                            <th>Adm. ID</th>
                             <th>Patient Name</th>
-                            <th>Admission ID</th>
+                            <th>Phone</th>
                             <th>Discharge Date</th>
-                            <th>Final Bill Amount</th>
+                            <th>Grand Total</th>
+                            <th>Amount Paid</th>
+                            <th>Balance</th>
                             <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody id="dhTableBody">
-                        <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                    <tbody id="dischargeHistoryTbody">
+                        <tr><td colspan="8" style="text-align:center; padding: 20px;">Loading discharge history...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
-    </div>
-</div>
-
-<!-- MODAL: Cancel Charge Confirmation -->
-<div class="billing-modal-overlay" id="modalCancelCharge">
-    <div class="billing-modal" style="max-width:420px;">
-        <div class="bm-head danger-head">
-            <div class="bm-title"><i data-lucide="alert-triangle"></i> Cancel Charge?</div>
-            <button class="bm-close" onclick="billing.closeModal('modalCancelCharge')"><i data-lucide="x"></i></button>
-        </div>
-        <div class="bm-body">
-            <div class="cancel-charge-info" id="cancelChargeInfo">
-                <div class="cci-row"><i class="fas fa-tag"></i><span id="cciCategory"></span></div>
-                <div class="cci-row"><i class="fas fa-info-circle"></i><span id="cciDesc"></span></div>
-                <div class="cci-row"><i class="fas fa-calendar-alt"></i><span id="cciDate"></span></div>
-                <div class="cci-row bold"><i class="fas fa-rupee-sign"></i><span id="cciAmount"></span></div>
-            </div>
-            <p class="cancel-charge-warn">This charge will be marked <strong>CANCELLED</strong> and removed from the total. This action cannot be undone.</p>
-            <div class="bm-footer">
-                <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalCancelCharge')">Go Back</button>
-                <button class="bm-btn bm-btn-danger" id="btnConfirmCancelCharge" onclick="billing.confirmCancelCharge()">
-                    <i class="fas fa-times-circle"></i> Yes, Cancel Charge
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL: Discharge Clearance Detail & Multi-Department Breakdown -->
-<div class="billing-modal-overlay" id="modalClearanceDetail">
-    <div class="billing-modal" style="max-width: 680px; width: 95%;">
-        <div class="bm-head" style="background: #1f6b4a; color: #ffffff;">
-            <div class="bm-title" style="color: #ffffff; display: flex; align-items: center; gap: 8px;">
-                <i class="fas fa-clipboard-check"></i> Multi-Department Discharge Clearance Matrix
-            </div>
-            <button class="bm-close" style="color: #ffffff;" onclick="billing.closeModal('modalClearanceDetail')">&times;</button>
-        </div>
-        <div class="bm-body" style="padding: 20px; max-height: 80vh; overflow-y: auto;">
-            <!-- Patient summary -->
-            <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                <div>
-                    <div style="font-weight: 800; font-size: 1.1rem; color: #1f6b4a;" id="cdPtName">Patient Name</div>
-                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;" id="cdPtDetails">PID: - | Admission: - | Ward & Bed: -</div>
-                </div>
-                <div id="cdOverallStatusBadge"></div>
-            </div>
-
-            <!-- Nurse Initiation Info -->
-            <div id="cdNurseSection" style="background: #fdfbf7; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.82rem;">
-                <div style="color: #475569; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
-                    <span><i class="fas fa-user-nurse" style="color:#1f6b4a;"></i> Initiated by: <strong id="cdNurseName">Nurse</strong></span>
-                    <span id="cdInitiatedAt" style="color:#94a3b8; font-size:0.75rem;"></span>
-                </div>
-                <div id="cdNurseNotesWrap" style="margin-top: 6px; color: #334155; display:none;">
-                    <strong>Nurse Notes:</strong> <span id="cdNurseNotes"></span>
-                </div>
-            </div>
-
-            <!-- 3 Department Cards Grid -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
-                <!-- Reception Card -->
-                <div id="cdRecCard" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: left;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-size: 0.78rem; font-weight: 800; color: #1e293b;"><i class="fas fa-file-invoice-dollar" style="color:#1f6b4a;"></i> Reception</span>
-                        <span id="cdRecStatus" style="font-size: 0.7rem; font-weight: 800;">Pending</span>
-                    </div>
-                    <div style="font-size: 0.72rem; color: #64748b;" id="cdRecBy">By: -</div>
-                    <div style="font-size: 0.68rem; color: #94a3b8;" id="cdRecAt">-</div>
-                    <div id="cdRecNotes" style="font-size: 0.72rem; color: #334155; margin-top: 6px; padding: 4px 6px; background: #f8fafc; border-radius: 6px; display: none;"></div>
-                    <div id="cdRecQuery" style="font-size: 0.72rem; color: #991b1b; margin-top: 6px; padding: 4px 6px; background: #fee2e2; border-radius: 6px; display: none;"></div>
-                </div>
-
-                <!-- Pharmacy Card -->
-                <div id="cdPhCard" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: left;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-size: 0.78rem; font-weight: 800; color: #1e293b;"><i class="fas fa-pills" style="color:#1f6b4a;"></i> Pharmacy</span>
-                        <span id="cdPhStatus" style="font-size: 0.7rem; font-weight: 800;">Pending</span>
-                    </div>
-                    <div style="font-size: 0.72rem; color: #64748b;" id="cdPhBy">By: -</div>
-                    <div style="font-size: 0.68rem; color: #94a3b8;" id="cdPhAt">-</div>
-                    <div id="cdPhNotes" style="font-size: 0.72rem; color: #334155; margin-top: 6px; padding: 4px 6px; background: #f8fafc; border-radius: 6px; display: none;"></div>
-                    <div id="cdPhQuery" style="font-size: 0.72rem; color: #991b1b; margin-top: 6px; padding: 4px 6px; background: #fee2e2; border-radius: 6px; display: none;"></div>
-                </div>
-
-                <!-- Laboratory Card -->
-                <div id="cdLabCard" style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px; text-align: left;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-size: 0.78rem; font-weight: 800; color: #1e293b;"><i class="fas fa-microscope" style="color:#1f6b4a;"></i> Laboratory</span>
-                        <span id="cdLabStatus" style="font-size: 0.7rem; font-weight: 800;">Pending</span>
-                    </div>
-                    <div style="font-size: 0.72rem; color: #64748b;" id="cdLabBy">By: -</div>
-                    <div style="font-size: 0.68rem; color: #94a3b8;" id="cdLabAt">-</div>
-                    <div id="cdLabNotes" style="font-size: 0.72rem; color: #334155; margin-top: 6px; padding: 4px 6px; background: #f8fafc; border-radius: 6px; display: none;"></div>
-                    <div id="cdLabQuery" style="font-size: 0.72rem; color: #991b1b; margin-top: 6px; padding: 4px 6px; background: #fee2e2; border-radius: 6px; display: none;"></div>
-                </div>
-            </div>
-
-            <!-- Admin Final Confirmation Section (if all cleared) -->
-            <div id="cdAdminActionSection" style="display:none; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px; padding: 14px; margin-bottom: 16px; text-align: center;">
-                <div style="font-weight: 800; font-size: 0.95rem; color: #15803d; margin-bottom: 6px;">
-                    🎉 All 3 Departments Have Cleared Discharge!
-                </div>
-                <p style="font-size: 0.8rem; color: #166534; margin: 0 0 10px 0;">
-                    Reception/Billing, Pharmacy, and Laboratory approvals are complete. Admin can now confirm final discharge clearance.
-                </p>
-                <button type="button" onclick="billing.confirmAdminDischargeFromModal()" style="padding: 8px 24px; background: #16a34a; color: #ffffff; font-weight: 800; font-size: 0.85rem; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 3px 10px rgba(22,163,74,0.3);">
-                    <i class="fas fa-check-double"></i> Confirm Final Discharge
-                </button>
-            </div>
-
-            <div class="bm-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
-                <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalClearanceDetail')">Close</button>
-            </div>
+        <div class="bm-footer">
+            <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalDischargeHistory')">Close</button>
         </div>
     </div>
 </div>
@@ -2444,11 +1789,16 @@ try {
     window.BILLING_API = '/GM_HMS/api/';
     window.USER_ROLE   = '<?= htmlspecialchars($userRole) ?>';
     window.USER_NAME   = '<?= htmlspecialchars($userName) ?>';
-    window.IS_RECEPTION_VIEW = false;
+    window.IS_RECEPTION_VIEW = true;
 </script>
-<script src="assets/js/ipd_billing.js?v=<?= time() ?>"></script>
-    <script>
-        lucide.createIcons();
-    </script>
+<script src="/GM_HMS/view/assets/js/ipd_billing.js?v=<?= time() ?>"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.lucide) lucide.createIcons();
+        if (window.billing && typeof billing.loadAllAdmittedPatients === 'function') {
+            billing.loadAllAdmittedPatients();
+        }
+    });
+</script>
 </body>
 </html>

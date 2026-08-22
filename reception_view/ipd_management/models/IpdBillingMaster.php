@@ -393,7 +393,7 @@ class IpdBillingMaster extends BaseModel {
     public function searchActiveAdmissions(string $q): array {
         $like = "%{$q}%";
         return $this->fetchAll(
-            "SELECT ia.admission_id, ia.patient_id,
+            "SELECT ia.admission_id, ia.patient_id, ia.status, ia.discharge_date,
                     TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.phone, p.age, p.sex,
                     d.full_name AS doctor_name,
@@ -405,11 +405,10 @@ class IpdBillingMaster extends BaseModel {
              LEFT JOIN doctors d ON ia.admitting_doctor_id = d.doctor_id
              LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
              LEFT JOIN ipd_billing_master bm ON ia.admission_id = bm.admission_id
-             WHERE ia.status = 'Admitted'
-               AND (p.first_name LIKE ? OR p.last_name LIKE ? OR ia.admission_id LIKE ? OR p.phone LIKE ?)
+             WHERE (p.first_name LIKE ? OR p.last_name LIKE ? OR ia.admission_id LIKE ? OR p.phone LIKE ? OR ia.patient_id LIKE ?)
              ORDER BY ia.admission_date DESC
-             LIMIT 20",
-            [$like, $like, $like, $like]
+             LIMIT 500",
+            [$like, $like, $like, $like, $like]
         );
     }
 

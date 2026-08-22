@@ -121,6 +121,7 @@ class OpdBillingController extends BaseController {
                 'doctor_id'   => $input['doctor_id']   ?? null,
                 'doctor_name' => $input['doctor_name'] ?? null,
                 'appointment_id' => $input['appointment_id'] ?? null,
+                'bill_date'      => $input['bill_date'] ?? ($input['appointment_date'] ?? null),
                 'referral_type'       => $input['referral_type']       ?? null,
                 'referred_by'         => $input['referred_by']         ?? null,
                 'sponsor'             => $input['sponsor']             ?? null,

@@ -67,15 +67,21 @@ $basePath = str_repeat('../', $depth);
                         <i class="fas fa-chevron-right opd-arrow"></i>
                     </button>
                     <div class="opd-drop-panel" id="opdPanel">
-                        <!-- Removed Registration / Appointment -->
+                        <!-- OPD Billing -->
                         <a href="<?php echo $basePath; ?>opd_billing.php" class="opd-item" data-pd="opd_billing"
                             style="--n:1">
                             <i class="fas fa-file-invoice"></i>
                             <span>OPD Billing</span>
                         </a>
+                        <!-- IP Billing -->
+                        <a href="<?php echo $basePath; ?>ipd_billing.php" class="opd-item" data-pd="ipd_billing"
+                            style="--n:2">
+                            <i class="fas fa-bed"></i>
+                            <span>IP Billing</span>
+                        </a>
                         <?php if (in_array($_SESSION['role'], ['Admin', 'admin', 'Accountant', 'Receptionist'])): ?>
                         <a href="<?php echo $basePath; ?>opd_billing_report.php" class="opd-item" data-pd="opd_billing_report"
-                            style="--n:2">
+                            style="--n:3">
                             <i class="fas fa-chart-bar"></i>
                             <span>Billing Report</span>
                         </a>
@@ -560,10 +566,14 @@ $basePath = str_repeat('../', $depth);
             if (active) link.classList.add('active');
         });
 
-        // OPD item active state
-        var OPD = ['patient_registration', 'opd_billing', 'opd_billing_report'];
+        // Billing item active state
+        var OPD = ['patient_registration', 'opd_billing', 'ipd_billing', 'opd_billing_report'];
         document.querySelectorAll('.opd-item').forEach(function (item) {
-            if (item.dataset.pd === page) item.classList.add('active');
+            if (item.dataset.pd === page) {
+                item.classList.add('active');
+                var opdBtn = document.getElementById('opdBtn');
+                if (opdBtn) opdBtn.classList.add('active');
+            }
         });
 
         // Close flyout when clicking outside

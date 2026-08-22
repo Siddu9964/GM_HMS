@@ -54,6 +54,10 @@ class OpdBillingManager {
                 document.getElementById('referralSuggestions')?.classList.remove('active');
                 document.getElementById('sponsorSuggestions')?.classList.remove('active');
             }
+            if (!e.target.closest('#editDoctorSearchInput') && !e.target.closest('#doctorSearchDropdown')) {
+                const dd = document.getElementById('doctorSearchDropdown');
+                if (dd) dd.style.display = 'none';
+            }
         });
 
         // Initialize payment splits
@@ -177,10 +181,16 @@ class OpdBillingManager {
 
     // ─── Doctors ─────────────────────────────────────────────
     async loadDoctors() {
+        if (window.ALL_DOCTORS && Array.isArray(window.ALL_DOCTORS) && window.ALL_DOCTORS.length > 0) {
+            this.doctors = window.ALL_DOCTORS;
+        }
         try {
-            this.doctors = await this.api('GET', '/api/doctors?limit=200');
+            const docs = await this.api('GET', '/api/doctors?limit=200');
+            if (docs && Array.isArray(docs) && docs.length > 0) {
+                this.doctors = docs;
+            }
         } catch (e) {
-            console.warn('Could not load doctors:', e.message);
+            console.warn('Could not load doctors from API:', e.message);
         }
     }
 
@@ -354,6 +364,25 @@ class OpdBillingManager {
         const grid = document.getElementById('patientInfoGrid');
         if (!grid) return;
 
+        if (!this.doctors || this.doctors.length === 0) {
+            if (window.ALL_DOCTORS && Array.isArray(window.ALL_DOCTORS)) {
+                this.doctors = window.ALL_DOCTORS;
+            }
+        }
+
+        // Format initial doctor display (Name + Specialization if available)
+        let initialDocDisplay = (p.doctor_name || '').trim();
+        if (this.doctors && this.doctors.length > 0) {
+            const foundDoc = this.doctors.find(d => 
+                (p.doctor_id && d.doctor_id === p.doctor_id) || 
+                (initialDocDisplay && d.full_name && d.full_name.toLowerCase() === initialDocDisplay.toLowerCase())
+            );
+            if (foundDoc) {
+                const spec = foundDoc.specialization ? ` (${foundDoc.specialization})` : '';
+                initialDocDisplay = `${foundDoc.full_name}${spec}`;
+            }
+        }
+
         // Prepare date value for input[type=date] (YYYY-MM-DD)
         let dateForInput = '';
         if (p.appointment_date) {
@@ -362,56 +391,61 @@ class OpdBillingManager {
                 dateForInput = d.toISOString().split('T')[0];
             }
         }
+        if (!dateForInput) {
+            dateForInput = new Date().toISOString().split('T')[0];
+        }
 
         grid.innerHTML = `
             <div class="info-item">
-                <label>Patient Name</label>
-                <span>${this._escape(p.patient_name || '—')}</span>
+                <label>PATIENT NAME</label>
+                <span>${this._escape(p.patient_name || p.name || '—')}</span>
             </div>
             <div class="info-item">
-                <label>Patient ID</label>
+                <label>PATIENT ID</label>
                 <span>${p.patient_id || '—'}</span>
             </div>
             <div class="info-item">
-                <label>Phone</label>
-                <span>${p.phone || '—'}</span>
+                <label>PHONE</label>
+                <span>${p.phone || p.mobile || '—'}</span>
             </div>
             <div class="info-item">
-                <label>Appointment / Visit</label>
+                <label>APPOINTMENT / VISIT</label>
                 <span>${p.appointment_id || p.bill_id || 'Walk-in'}</span>
             </div>
             <div class="info-item" style="position:relative;">
-                <label>Doctor <i class="fas fa-pen-to-square" style="font-size:.7rem;color:var(--teal);margin-left:3px;"></i></label>
-                <input type="text"
-                       id="editDoctorName"
-                       value="${this._escape(p.doctor_name || '')}"
-                       placeholder="Search or type doctor name…"
-                       autocomplete="off"
-                       style="border:1.5px solid var(--teal);border-radius:6px;padding:.28rem .55rem;font-size:.85rem;width:100%;background:#f0fafa;color:var(--gray-800);outline:none;"
-                       oninput="opdBilling._onDoctorInput(this.value)"
-                       onfocus="opdBilling._showDoctorDropdown(this.value)">
+                <label style="display:flex; align-items:center; gap:5px; cursor:pointer;" onclick="document.getElementById('editDoctorSearchInput')?.focus();">
+                    <span>DOCTOR</span>
+                    <i class="fas fa-magnifying-glass" style="font-size:0.75rem; color:var(--teal);"></i>
+                </label>
+                <div style="position:relative; width:100%;">
+                    <input type="text"
+                           id="editDoctorSearchInput"
+                           value="${this._escape(initialDocDisplay)}"
+                           placeholder="Type to search doctor or specialty…"
+                           autocomplete="off"
+                           onfocus="opdBilling._openDoctorSearch(this.value)"
+                           oninput="opdBilling._filterDoctorSearch(this.value)"
+                           onclick="opdBilling._openDoctorSearch(this.value)"
+                           style="width:100%; height:38px; border:1.5px solid var(--teal); border-radius:8px; padding:0.35rem 2rem 0.35rem 0.65rem; font-size:0.86rem; font-weight:600; background:#f0fafa; color:#1e293b; outline:none; cursor:text; transition:all 0.2s ease;">
+                    <i class="fas fa-chevron-down" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:0.72rem; color:var(--teal); pointer-events:none;"></i>
+                    <div id="doctorSearchDropdown" style="position:absolute; top:calc(100% + 4px); left:0; width:100%; min-width:280px; max-height:230px; overflow-y:auto; background:#ffffff; border:1.5px solid var(--teal); border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.15); z-index:1100; display:none;"></div>
+                </div>
             </div>
             <div class="info-item">
-                <label>Date <i class="fas fa-pen-to-square" style="font-size:.7rem;color:var(--teal);margin-left:3px;"></i></label>
-                <input type="date"
-                       id="editAppointmentDate"
-                       value="${dateForInput}"
-                       style="border:1.5px solid var(--teal);border-radius:6px;padding:.28rem .55rem;font-size:.85rem;width:100%;background:#f0fafa;color:var(--gray-800);outline:none;"
-                       onchange="opdBilling.selectedPatient.appointment_date = this.value">
+                <label style="display:flex; align-items:center; gap:5px; cursor:pointer;" onclick="const el=document.getElementById('editAppointmentDate'); if(el.showPicker) el.showPicker(); else el.focus();">
+                    <span>DATE</span>
+                    <i class="fas fa-pen-to-square" style="font-size:0.75rem; color:var(--teal);"></i>
+                </label>
+                <div style="position:relative; width:100%;">
+                    <input type="date"
+                           id="editAppointmentDate"
+                           value="${dateForInput}"
+                           onclick="if(this.showPicker) this.showPicker();"
+                           onchange="opdBilling.onDateChange(this.value)"
+                           style="width:100%; height:38px; border:1.5px solid var(--teal); border-radius:8px; padding:0.35rem 0.65rem; font-size:0.86rem; font-weight:600; background:#f0fafa; color:#1e293b; outline:none; cursor:pointer; transition:all 0.2s ease;">
+                </div>
             </div>
         `;
-
-        // Close portal dropdown on outside click
-        setTimeout(() => {
-            document.addEventListener('click', this._closeDoctorDropdown = (e) => {
-                const inp = document.getElementById('editDoctorName');
-                const portal = document.getElementById('doctorPortalDd');
-                if (inp && !inp.contains(e.target) && portal && !portal.contains(e.target)) {
-                    this._hideDoctorPortal();
-                    document.removeEventListener('click', this._closeDoctorDropdown);
-                }
-            });
-        }, 100);
 
         this.showBillingModal();
 
@@ -441,7 +475,7 @@ class OpdBillingManager {
                 // 2. Add consultations based on per-doctor follow-up status
                 if (consultations.length > 1) {
                     const docNames = consultations.map(c => c.doctor_name).filter(Boolean).join(', ');
-                    const docInput = document.getElementById('editDoctorName');
+                    const docInput = document.getElementById('editDoctorSearchInput');
                     if (docInput && docNames) docInput.value = docNames;
 
                     consultations.forEach(c => {
@@ -458,7 +492,7 @@ class OpdBillingManager {
                     const c = consultations[0];
                     const fee = parseFloat(c.consultation_fee) || 0;
                     
-                    const docInput = document.getElementById('editDoctorName');
+                    const docInput = document.getElementById('editDoctorSearchInput');
                     if (docInput && c.doctor_name) docInput.value = c.doctor_name;
 
                     if (c.is_followup) {
@@ -496,109 +530,112 @@ class OpdBillingManager {
         document.getElementById('billingModalOverlay').classList.remove('active');
     }
 
-    // ── Doctor autocomplete helpers ───────────────────────────
-    _onDoctorInput(query) {
-        // Save whatever is typed as doctor_name immediately (free-text / outside doctor)
-        if (this.selectedPatient) {
-            this.selectedPatient.doctor_name = query;
-            this.selectedPatient.doctor_id   = null;
-        }
-        clearTimeout(this.doctorDebounce);
-        this.doctorDebounce = setTimeout(() => this._showDoctorDropdown(query), 200);
+    // ── Advanced Doctor Search & Date Handlers ────────────
+    _openDoctorSearch(query = '') {
+        this._filterDoctorSearch(query);
     }
 
-    /** Get or create the body-level portal dropdown */
-    _getDoctorPortal() {
-        let portal = document.getElementById('doctorPortalDd');
-        if (!portal) {
-            portal = document.createElement('div');
-            portal.id = 'doctorPortalDd';
-            portal.style.cssText = [
-                'position:fixed',
-                'z-index:99999',
-                'background:white',
-                'border:1.5px solid var(--teal)',
-                'border-radius:8px',
-                'box-shadow:0 8px 32px rgba(0,0,0,.18)',
-                'max-height:220px',
-                'overflow-y:auto',
-                'display:none',
-                'font-family:Inter,sans-serif'
-            ].join(';');
-            document.body.appendChild(portal);
-        }
-        return portal;
-    }
+    _filterDoctorSearch(query = '') {
+        const container = document.getElementById('doctorSearchDropdown');
+        if (!container) return;
 
-    _hideDoctorPortal() {
-        const p = document.getElementById('doctorPortalDd');
-        if (p) p.style.display = 'none';
-    }
-
-    _showDoctorDropdown(query) {
-        const inp = document.getElementById('editDoctorName');
-        if (!inp) return;
-
-        const portal = this._getDoctorPortal();
-
-        // Position portal exactly below the input
-        const rect = inp.getBoundingClientRect();
-        portal.style.top    = (rect.bottom + window.scrollY) + 'px';
-        portal.style.left   = rect.left + 'px';
-        portal.style.width  = rect.width + 'px';
-        // Reset to fixed (not affected by scroll)
-        portal.style.position = 'fixed';
-        portal.style.top      = rect.bottom + 'px';
-
-        const q = (query || '').trim().toLowerCase();
-        const list = q
-            ? this.doctors.filter(d => (d.full_name || '').toLowerCase().includes(q) || (d.specialization || '').toLowerCase().includes(q))
-            : this.doctors.slice(0, 20);
-
-        if (list.length === 0) {
-            portal.innerHTML = `<div onclick="opdBilling._hideDoctorPortal()" style="padding:.7rem 1rem;color:#1f6b4a;font-size:.82rem;font-weight:600;cursor:pointer;background:#f0fafa;border-radius:8px;"><i class="fas fa-check-circle"></i> No doctors found — click here to save outside doctor</div>`;
-            portal.style.display = 'block';
-            return;
-        }
-
-        portal.innerHTML = list.map(d => `
-            <div data-did="${this._escape(d.doctor_id)}" data-dname="${this._escape(d.full_name || '')}" data-dfee="${this._escape(d.consultation_fee || 0)}"
-                 onclick="opdBilling._pickDoctorFromEl(this)"
-                 style="padding:.55rem 1rem;cursor:pointer;font-size:.84rem;
-                        display:flex;justify-content:space-between;align-items:center;
-                        border-bottom:1px solid #f1f5f9;transition:background .12s;"
-                 onmouseover="this.style.background='rgba(31, 107, 74,.1)'"
-                 onmouseout="this.style.background='white'">
-                <span style="font-weight:500;color:#1e293b;">${this._escape(d.full_name)}</span>
-                <span style="color:var(--teal);font-size:.75rem;margin-left:.5rem;">${this._escape(d.specialization || '')}</span>
-            </div>`).join('');
-        portal.style.display = 'block';
-    }
-
-    _pickDoctorFromEl(el) {
-        if (!this.selectedPatient) return;
-        const doctorId   = el.dataset.did;
-        const doctorName = el.dataset.dname;
-        const doctorFee  = parseFloat(el.dataset.dfee) || 0;
-
-        this.selectedPatient.doctor_id   = doctorId;
-        this.selectedPatient.doctor_name = doctorName;
-        const inp = document.getElementById('editDoctorName');
-        if (inp) inp.value = doctorName;
-        this._hideDoctorPortal();
-
-        // Auto-update Consultation row if it exists
-        const consultItem = this.items.find(i => i.type === 'Consultation');
-        if (consultItem) {
-            this._updateItem(consultItem.id, 'price', doctorFee);
-            
-            // Also explicitly update the input field visually
-            const row = document.getElementById('row-' + consultItem.id);
-            if (row) {
-                const priceInput = row.querySelector('td:nth-child(4) input[type="number"]');
-                if (priceInput) priceInput.value = doctorFee;
+        if (!this.doctors || this.doctors.length === 0) {
+            if (window.ALL_DOCTORS && Array.isArray(window.ALL_DOCTORS)) {
+                this.doctors = window.ALL_DOCTORS;
             }
         }
+
+        const q = (query || '').trim().toLowerCase();
+        let list = [];
+        if (this.doctors && this.doctors.length > 0) {
+            list = q 
+                ? this.doctors.filter(d => 
+                    (d.full_name || '').toLowerCase().includes(q) || 
+                    (d.specialization || '').toLowerCase().includes(q) ||
+                    (d.doctor_id || '').toLowerCase().includes(q)
+                  )
+                : this.doctors;
+        }
+
+        let html = '';
+        if (list.length > 0) {
+            html += list.map(d => {
+                const did = this._escape(d.doctor_id || '');
+                const dname = this._escape(d.full_name || '');
+                const dspec = d.specialization ? ` (${this._escape(d.specialization)})` : '';
+                const fee = parseFloat(d.consultation_fee) || 0;
+                const cleanName = (d.full_name || '').replace(/'/g, "\\'");
+                const cleanSpec = (d.specialization || '').replace(/'/g, "\\'");
+
+                return `
+                <div onclick="opdBilling.selectDoctorFromSearch('${did}', '${cleanName}', '${cleanSpec}', ${fee})"
+                     style="padding:0.55rem 0.75rem; cursor:pointer; font-size:0.84rem; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; transition:background 0.15s;"
+                     onmouseover="this.style.background='rgba(31, 107, 74, 0.08)'"
+                     onmouseout="this.style.background='transparent'">
+                    <div>
+                        <span style="font-weight:600; color:#1e293b;">${dname}</span>
+                        ${dspec ? `<span style="color:#0d9488; font-weight:500; font-size:0.78rem; margin-left:4px;">${dspec}</span>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        if (q) {
+            const cleanQ = q.replace(/'/g, "\\'");
+            html += `
+            <div onclick="opdBilling.selectDoctorFromSearch('', '${cleanQ}', '', 500)"
+                 style="padding:0.6rem 0.75rem; cursor:pointer; font-size:0.82rem; font-weight:600; color:#0d9488; background:#f0fdfa; border-top:1px dashed #0d9488; display:flex; align-items:center; gap:6px;">
+                <i class="fas fa-user-plus"></i>
+                <span>Use outside doctor: "<strong>${this._escape(query)}</strong>"</span>
+            </div>`;
+        }
+
+        container.innerHTML = html || `<div style="padding:0.75rem; color:#64748b; font-size:0.82rem; text-align:center;">No matching doctors found</div>`;
+        container.style.display = 'block';
+    }
+
+    _hideDoctorSearch() {
+        const container = document.getElementById('doctorSearchDropdown');
+        if (container) container.style.display = 'none';
+    }
+
+    selectDoctorFromSearch(doctorId, doctorName, doctorSpec, doctorFee) {
+        const inp = document.getElementById('editDoctorSearchInput');
+        const displayVal = doctorSpec ? `${doctorName} (${doctorSpec})` : doctorName;
+        if (inp) inp.value = displayVal;
+
+        if (!this.selectedPatient) this.selectedPatient = {};
+        this.selectedPatient.doctor_id = doctorId || null;
+        this.selectedPatient.doctor_name = doctorName;
+
+        this._hideDoctorSearch();
+
+        // Auto-update Consultation / Follow-up row if it exists
+        const consultItem = this.items.find(i => i.type === 'Consultation' || i.type === 'Follow-up Fee');
+        if (consultItem) {
+            if (doctorFee > 0) {
+                this._updateItem(consultItem.id, 'price', doctorFee);
+                const row = document.getElementById('row-' + consultItem.id);
+                if (row) {
+                    const priceInput = row.querySelector('td:nth-child(4) input[type="number"]');
+                    if (priceInput) priceInput.value = doctorFee;
+                }
+            }
+            const newName = consultItem.type === 'Follow-up Fee' ? `Follow-up Fee (${doctorName})` : `Consultation Fee (${doctorName})`;
+            this._updateItem(consultItem.id, 'name', newName);
+            const row = document.getElementById('row-' + consultItem.id);
+            if (row) {
+                const nameInput = row.querySelector('td:nth-child(2) input[type="text"]');
+                if (nameInput) nameInput.value = newName;
+            }
+        }
+        this.recalculate();
+    }
+
+    onDateChange(value) {
+        if (!this.selectedPatient) this.selectedPatient = {};
+        this.selectedPatient.appointment_date = value;
+        this.selectedPatient.bill_date = value;
     }
 
     clearPatient() {
@@ -898,16 +935,32 @@ class OpdBillingManager {
 
         // Derive the primary service_id and item_name from the first service-picked item
         const firstSvcItem = this.items.find(i => i.itemCode);
-        const doctorNameInput = document.getElementById('editDoctorName')?.value?.trim() || '';
-        const doctorName = doctorNameInput || this.selectedPatient.doctor_name || null;
+        const doctorSearchInput = document.getElementById('editDoctorSearchInput');
+        let doctorName = '';
+        let doctorId = this.selectedPatient?.doctor_id || null;
+
+        if (doctorSearchInput) {
+            const rawVal = doctorSearchInput.value.trim();
+            if (rawVal.includes(' (')) {
+                doctorName = rawVal.split(' (')[0].trim();
+            } else {
+                doctorName = rawVal;
+            }
+        }
+        doctorName = doctorName || this.selectedPatient?.doctor_name || 'Walk-in';
+        doctorId   = doctorId   || this.selectedPatient?.doctor_id   || null;
+
+        const billDate = document.getElementById('editAppointmentDate')?.value || this.selectedPatient.appointment_date || this.selectedPatient.bill_date || new Date().toISOString().split('T')[0];
 
         const payload = {
             patient_id:          this.selectedPatient.patient_id,
             name:                this.selectedPatient.patient_name || this.selectedPatient.name || null,
             mobile:              this.selectedPatient.phone || this.selectedPatient.mobile || null,
-            doctor_id:           this.selectedPatient.doctor_id   || null,
+            doctor_id:           doctorId,
             doctor_name:         doctorName,
-            appointment_id:      this.selectedPatient.appointment_id,
+            appointment_id:      this.selectedPatient.appointment_id || null,
+            bill_date:           billDate,
+            appointment_date:    billDate,
             referral_type:       referralType || null,
             referred_by:         referredBy   || null,
             sponsor:             sponsor      || null,

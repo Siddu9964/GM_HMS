@@ -559,9 +559,6 @@ class IpdBillingMaster extends IpdBaseModel {
         return true;
     }
 
-    /* ───────────────────────────────────────────────────────────────
-     * 7. SEARCH ACTIVE ADMISSIONS (for Select2 dropdown)
-     * ─────────────────────────────────────────────────────────────── */
     public function searchActiveAdmissions(string $q): array {
         $like = "%{$q}%";
         return $this->fetchAll(
@@ -579,7 +576,7 @@ class IpdBillingMaster extends IpdBaseModel {
              LEFT JOIN ipd_billing_master bm ON ia.admission_id = bm.admission_id
              WHERE (p.first_name LIKE ? OR p.last_name LIKE ? OR ia.admission_id LIKE ? OR p.phone LIKE ? OR ia.patient_id LIKE ?)
              ORDER BY ia.admission_date DESC
-             LIMIT 200",
+             LIMIT 500",
             [$like, $like, $like, $like, $like]
         );
     }

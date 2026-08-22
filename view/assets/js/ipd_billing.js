@@ -566,6 +566,9 @@ const billing = (function () {
             const isRefund = pay.payment_type === 'REFUND';
             const status = pay.verified_status || 'VERIFIED';
             const isVerified = (status === 'VERIFIED');
+            const verifiedBadge = isVerified 
+                ? `<span class="badge-payment-verified" style="background: #dcfce7 !important; color: #14532d !important; border: 1.5px solid #4ade80 !important; padding: 4px 10px !important; border-radius: 20px !important; font-weight: 800 !important; font-size: 0.75rem !important; display: inline-flex !important; align-items: center !important; gap: 5px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;"><span style="color: #16a34a !important; font-weight: 900 !important;">✓</span> <span style="color: #14532d !important; font-weight: 800 !important;">VERIFIED</span></span>`
+                : `<span class="badge-payment-pending" style="background: #fef3c7 !important; color: #92400e !important; border: 1.5px solid #fcd34d !important; padding: 4px 10px !important; border-radius: 20px !important; font-weight: 800 !important; font-size: 0.75rem !important; display: inline-flex !important; align-items: center !important; gap: 5px !important;"><span style="color: #d97706 !important;">⏳</span> <span style="color: #92400e !important; font-weight: 800 !important;">${status}</span></span>`;
 
             html += `
                 <tr style="border-bottom: 1px solid rgba(31, 107, 74, 0.2); color: #1f6b4a;">
@@ -575,7 +578,7 @@ const billing = (function () {
                     <td style="padding: 10px 14px; font-weight: 600;"><i class="fas ${modeIcon} pay-mode-icon" style="color: #1f6b4a; margin-right: 4px;"></i> ${pay.payment_mode}</td>
                     <td style="padding: 10px 14px; font-weight: 800; color: #1f6b4a;">${isRefund ? '-' : ''}₹${amount}</td>
                     <td style="padding: 10px 14px; opacity: 0.85;">${pay.reference_no || '—'}</td>
-                    <td style="padding: 10px 14px;"><span style="background: ${isVerified ? '#1f6b4a' : '#d97706'}; color: #f3efe6; border: 1px solid ${isVerified ? '#1f6b4a' : '#d97706'}; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">${isVerified ? '✓' : '⏳'} ${status}</span></td>
+                    <td style="padding: 10px 14px;">${verifiedBadge}</td>
                 </tr>
             `;
         });
@@ -613,22 +616,31 @@ const billing = (function () {
         const tbody = document.getElementById('admittedPatientsList');
         if (!tbody || !window.allAdmittedPatientsList) return;
 
-        const statusFilter = document.getElementById('patientStatusFilter')?.value || '';
+        const isReception = Boolean(window.IS_RECEPTION_VIEW) || 
+                            (!['admin', 'accountant'].includes((window.USER_ROLE || '').toLowerCase()) && window.IS_RECEPTION_VIEW !== false);
+
+        const statusFilter = isReception ? 'ACTIVE' : (document.getElementById('patientStatusFilter')?.value || 'ALL');
         const searchQuery = (document.getElementById('patientTableSearch')?.value || '').toLowerCase();
         
         // Filtering
         let filtered = window.allAdmittedPatientsList.filter(p => {
-            // Determine active vs discharged
-            const isDischarged = (p.discharge_date !== null && p.discharge_date !== undefined && p.discharge_date !== '');
-            const isActive = !isDischarged;
+            const rawStatus = (p.status || '').toString().trim();
+            const lowerStatus = rawStatus.toLowerCase();
+            const isActive = (lowerStatus === 'admitted' || lowerStatus === 'active');
+            const isDischarged = (lowerStatus === 'discharged' || (!isActive && Boolean(p.discharge_date)));
             
-            // Status Check
-            if (statusFilter === 'ACTIVE' && !isActive) return false;
-            if (statusFilter === 'DISCHARGED' && !isDischarged) return false;
+            // In Reception View: STRICTLY show Active/Admitted patients only (never show Discharged)
+            if (isReception) {
+                if (!isActive) return false;
+            } else {
+                // In Admin Mode: apply dropdown filter (All, Active, Discharged)
+                if (statusFilter === 'ACTIVE' && !isActive) return false;
+                if (statusFilter === 'DISCHARGED' && !isDischarged) return false;
+            }
             
             // Search Check
             if (searchQuery) {
-                const searchStr = `${p.admission_id} ${p.patient_name} ${p.phone} ${p.doctor_name} ${p.ward_name} ${p.room_name}`.toLowerCase();
+                const searchStr = `${p.admission_id || ''} ${p.patient_name || ''} ${p.phone || ''} ${p.doctor_name || ''} ${p.ward_name || ''} ${p.room_name || ''} ${rawStatus}`.toLowerCase();
                 if (!searchStr.includes(searchQuery)) return false;
             }
             return true;
@@ -641,8 +653,10 @@ const billing = (function () {
             
             // Special handling for computed status
             if (window.currentPatientSort?.col === 'status') {
-                valA = a.discharge_date ? 'Discharged' : 'Active';
-                valB = b.discharge_date ? 'Discharged' : 'Active';
+                const stA = (a.status || '').toString().trim().toLowerCase();
+                const stB = (b.status || '').toString().trim().toLowerCase();
+                valA = (stA === 'admitted' || stA === 'active') ? 'Active' : (stA === 'discharged' || a.discharge_date ? 'Discharged' : a.status || '');
+                valB = (stB === 'admitted' || stB === 'active') ? 'Active' : (stB === 'discharged' || b.discharge_date ? 'Discharged' : b.status || '');
             }
 
             if (valA < valB) return window.currentPatientSort?.asc ? -1 : 1;
@@ -659,26 +673,35 @@ const billing = (function () {
         let html = '';
         filtered.forEach(p => {
             const pName = p.patient_name || [p.first_name, p.last_name].filter(Boolean).join(' ') || 'Patient';
-            const isDischarged = (p.discharge_date !== null && p.discharge_date !== undefined && p.discharge_date !== '');
-            const statusLabel = isDischarged ? `<span style="background:#f3efe6; color:#1f6b4a; border: 1px dashed #1f6b4a; padding:3px 8px; border-radius:12px; font-size:0.8em; font-weight:700;">Discharged</span>` 
-                                             : `<span style="background:#1f6b4a; color:#f3efe6; border: 1px solid #1f6b4a; padding:3px 8px; border-radius:12px; font-size:0.8em; font-weight:700;">Active</span>`;
+            const rawStatus = (p.status || '').toString().trim();
+            const lowerStatus = rawStatus.toLowerCase();
+            const isActive = (lowerStatus === 'admitted' || lowerStatus === 'active');
+            
+            let statusLabel = '';
+            if (isActive) {
+                statusLabel = `<span class="badge-patient-active" style="background: #dcfce7 !important; color: #14532d !important; border: 1.5px solid #4ade80 !important; padding: 4px 12px !important; border-radius: 20px !important; font-size: 0.8rem !important; font-weight: 800 !important; display: inline-flex !important; align-items: center !important; gap: 6px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;"><span class="dot" style="width: 8px; height: 8px; border-radius: 50%; background: #16a34a !important; display: inline-block !important;"></span> Active</span>`;
+            } else if (lowerStatus === 'discharged' || (!isActive && p.discharge_date)) {
+                statusLabel = `<span class="badge-patient-discharged" style="background: #f1f5f9 !important; color: #334155 !important; border: 1.5px solid #94a3b8 !important; padding: 4px 12px !important; border-radius: 20px !important; font-size: 0.8rem !important; font-weight: 800 !important; display: inline-flex !important; align-items: center !important; gap: 6px !important;"><span class="dot" style="width: 8px; height: 8px; border-radius: 50%; background: #64748b !important; display: inline-block !important;"></span> Discharged</span>`;
+            } else {
+                statusLabel = `<span style="background: #fef3c7 !important; color: #92400e !important; border: 1.5px solid #fcd34d !important; padding: 4px 12px !important; border-radius: 20px !important; font-size: 0.8rem !important; font-weight: 800 !important; display: inline-flex !important; align-items: center !important; gap: 6px !important;"><span class="dot" style="width: 8px; height: 8px; border-radius: 50%; background: #d97706 !important; display: inline-block !important;"></span> ${escapeHtml(rawStatus || 'Unknown')}</span>`;
+            }
 
             html += `
                 <tr style="border-bottom: 1px solid rgba(31, 107, 74, 0.2); transition: background 0.2s; color: #1f6b4a;" onmouseover="this.style.background='rgba(31, 107, 74, 0.08)'" onmouseout="this.style.background='transparent'">
-                    <td style="padding: 12px; font-weight: 700;">${p.admission_id}</td>
+                    <td style="padding: 12px; font-weight: 700;">${escapeHtml(p.admission_id)}</td>
                     <td style="padding: 12px;">
-                        <div style="font-weight: 800; color: #1f6b4a;">${pName}</div>
+                        <div style="font-weight: 800; color: #1f6b4a;">${escapeHtml(pName)}</div>
                     </td>
-                    <td style="padding: 12px; font-weight: 600;">${p.age || '-'} / ${p.sex ? p.sex.charAt(0) : '-'}</td>
-                    <td style="padding: 12px; font-weight: 600;">${p.phone || '-'}</td>
+                    <td style="padding: 12px; font-weight: 600;">${p.age ? escapeHtml(p.age) : '-'} / ${p.sex ? escapeHtml(p.sex.charAt(0)) : '-'}</td>
+                    <td style="padding: 12px; font-weight: 600;">${escapeHtml(p.phone || '-')}</td>
                     <td style="padding: 12px;">
-                        <div style="font-weight: 700;">${p.ward_name || '-'}</div>
-                        <div style="font-size: 0.85em; opacity: 0.8;">${p.room_name || '-'} (${p.bed_number || '-'})</div>
+                        <div style="font-weight: 700;">${escapeHtml(p.ward_name || '-')}</div>
+                        <div style="font-size: 0.85em; opacity: 0.8;">${escapeHtml(p.room_name || '-')} (${escapeHtml(p.bed_number || '-')})</div>
                     </td>
-                    <td style="padding: 12px; font-weight: 600;">${p.doctor_name || '-'}</td>
+                    <td style="padding: 12px; font-weight: 600;">${escapeHtml(p.doctor_name || '-')}</td>
                     <td style="padding: 12px;">${statusLabel}</td>
                     <td style="padding: 12px;">
-                        <button onclick="billing.loadAdmission('${p.admission_id}', '${p.patient_id}')" 
+                        <button onclick="billing.loadAdmission('${escapeHtml(p.admission_id)}', '${escapeHtml(p.patient_id)}')" 
                                 style="background: #1f6b4a; color: #f3efe6; border: 1.5px solid #1f6b4a; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-weight: 700; transition: all 0.2s;">
                             <i data-lucide="external-link" style="width: 14px; height: 14px;"></i> Open
                         </button>
@@ -3650,21 +3673,28 @@ const billing = (function () {
         else if (current === 'FINALIZED') next = 'FINALIZED';
 
         selectedStatus = next;
-        document.querySelector(`.status-option-btn[data-status="${next}"]`).classList.add('selected');
+        const nextStatusBtn = document.querySelector(`.status-option-btn[data-status="${next}"]`);
+        if (nextStatusBtn) nextStatusBtn.classList.add('selected');
+
+        const newStatusSelect = document.getElementById('newBillingStatus');
+        if (newStatusSelect) newStatusSelect.value = next;
 
         openModal('modalStatus');
     };
 
-    // Attached via onclick inline in HTML isn't there, so we delegate
-    document.getElementById('statusOptions').addEventListener('click', function (e) {
-        const btn = e.target.closest('.status-option-btn');
-        if (btn) {
-            if (btn.disabled) return;
-            document.querySelectorAll('.status-option-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            selectedStatus = btn.dataset.status;
-        }
-    });
+    // Attached via onclick inline in HTML isn't there, so we delegate safely
+    const statusOptionsContainer = document.getElementById('statusOptions');
+    if (statusOptionsContainer) {
+        statusOptionsContainer.addEventListener('click', function (e) {
+            const btn = e.target.closest('.status-option-btn');
+            if (btn) {
+                if (btn.disabled) return;
+                document.querySelectorAll('.status-option-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedStatus = btn.dataset.status;
+            }
+        });
+    }
 
     async function saveStatus() {
         if (selectedStatus === currentMaster.billing_status) {
@@ -4600,8 +4630,23 @@ const billing = (function () {
         confirmAdminDischargeFromModal,
         filterPatientsTable,
         sortPatientsTable,
-        closeWorkspace
+        closeWorkspace,
+        toggleDetailedCharges
     };
+
+    function toggleDetailedCharges() {
+        const card = document.getElementById('billingItemsCard');
+        const btn = document.getElementById('btnToggleItems');
+        if (!card) return;
+        if (card.style.display === 'none' || getComputedStyle(card).display === 'none') {
+            card.style.display = 'block';
+            if (btn) btn.innerHTML = `<i data-lucide="eye-off"></i> Hide Charges Breakdown`;
+        } else {
+            card.style.display = 'none';
+            if (btn) btn.innerHTML = `<i data-lucide="list"></i> View Charges Breakdown`;
+        }
+        if (window.lucide) lucide.createIcons();
+    }
 
 })();
 

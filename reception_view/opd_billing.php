@@ -5,6 +5,20 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
     exit();
 }
 $pageTitle = 'OPD Billing';
+
+require_once __DIR__ . '/../core/Autoloader.php';
+require_once __DIR__ . '/../Database/SecureDatabase.php';
+use GM_HMS\Database\SecureDatabase;
+
+$allDoctors = [];
+try {
+    $db = SecureDatabase::getInstance();
+    $conn = $db->getConnection();
+    $res = $conn->query("SELECT doctor_id, full_name, specialization, department_id, consultation_fee, status FROM doctors WHERE status = 'Active' OR status IS NULL OR status = '' ORDER BY full_name ASC");
+    if ($res) {
+        while ($r = $res->fetch_assoc()) $allDoctors[] = $r;
+    }
+} catch(Exception $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -461,6 +475,7 @@ $pageTitle = 'OPD Billing';
 
 <script>
     window.HOSPITAL_BRANCH = '<?= addslashes($_SESSION['hospital_branch'] ?? 'Nagarabhavi') ?>';
+    window.ALL_DOCTORS     = <?= json_encode($allDoctors) ?>;
 </script>
 <script src="assets/js/opd_billing.js?v=<?= time() ?>"></script>
 </body>

@@ -396,8 +396,11 @@ const billing = (function() {
             if (pay.payment_mode === 'BANK' || pay.payment_mode === 'CHEQUE') modeIcon = 'fa-university';
             if (pay.payment_mode === 'INSURANCE') modeIcon = 'fa-shield-alt';
 
-            const isRefund = pay.payment_type === 'REFUND';
-            
+            const isVerified = (pay.verified_status === 'VERIFIED' || !pay.verified_status);
+            const verifiedBadge = isVerified 
+                ? `<span class="badge-payment-verified" style="background: #dcfce7 !important; color: #14532d !important; border: 1.5px solid #4ade80 !important; padding: 4px 10px !important; border-radius: 20px !important; font-weight: 800 !important; font-size: 0.75rem !important; display: inline-flex !important; align-items: center !important; gap: 5px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;"><span style="color: #16a34a !important; font-weight: 900 !important;">✓</span> <span style="color: #14532d !important; font-weight: 800 !important;">VERIFIED</span></span>`
+                : `<span class="badge-payment-pending" style="background: #fef3c7 !important; color: #92400e !important; border: 1.5px solid #fcd34d !important; padding: 4px 10px !important; border-radius: 20px !important; font-weight: 800 !important; font-size: 0.75rem !important; display: inline-flex !important; align-items: center !important; gap: 5px !important;"><span style="color: #d97706 !important;">⏳</span> <span style="color: #92400e !important; font-weight: 800 !important;">${pay.verified_status || 'PENDING'}</span></span>`;
+
             html += `
                 <tr style="${pay.is_insurance == 1 ? 'background:var(--blue-light);' : ''}">
                     <td>${index + 1}</td>
@@ -406,7 +409,7 @@ const billing = (function() {
                     <td><i class="fas ${modeIcon} pay-mode-icon"></i> ${pay.payment_mode}</td>
                     <td class="tbl-amt" style="${isRefund ? 'color:var(--red);' : ''}">${isRefund ? '-' : ''}₹${amount}</td>
                     <td>${pay.reference_no || '—'}</td>
-                    <td><div class="verified-chip v-${pay.verified_status}">${pay.verified_status === 'VERIFIED' ? '✅' : '⏳'} ${pay.verified_status}</div></td>
+                    <td>${verifiedBadge}</td>
                 </tr>
             `;
         });
@@ -1063,20 +1066,27 @@ const billing = (function() {
         else if (current === 'FINALIZED') next = 'FINALIZED';
         
         selectedStatus = next;
-        document.querySelector(`.status-option-btn[data-status="${next}"]`).classList.add('selected');
+        const nextStatusBtn = document.querySelector(`.status-option-btn[data-status="${next}"]`);
+        if (nextStatusBtn) nextStatusBtn.classList.add('selected');
+        
+        const newStatusSelect = document.getElementById('newBillingStatus');
+        if (newStatusSelect) newStatusSelect.value = next;
         
         openModal('modalStatus');
     };
 
-    // Attached via onclick inline in HTML isn't there, so we delegate
-    document.getElementById('statusOptions').addEventListener('click', function(e) {
-        if (e.target.classList.contains('status-option-btn')) {
-            if (e.target.disabled) return;
-            document.querySelectorAll('.status-option-btn').forEach(b => b.classList.remove('selected'));
-            e.target.classList.add('selected');
-            selectedStatus = e.target.dataset.status;
-        }
-    });
+    // Attached via onclick inline in HTML isn't there, so we delegate safely
+    const statusOptionsContainer = document.getElementById('statusOptions');
+    if (statusOptionsContainer) {
+        statusOptionsContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('status-option-btn')) {
+                if (e.target.disabled) return;
+                document.querySelectorAll('.status-option-btn').forEach(b => b.classList.remove('selected'));
+                e.target.classList.add('selected');
+                selectedStatus = e.target.dataset.status;
+            }
+        });
+    }
 
     window.saveStatus = async function() {
         if (selectedStatus === currentMaster.billing_status) {
@@ -1472,8 +1482,34 @@ const billing = (function() {
         // Print
         printInterim,
         printFinal,
-        printReceipt
+        printReceipt,
+        // Workspace
+        closeWorkspace,
+        toggleDetailedCharges
     };
+
+    function closeWorkspace() {
+        const ws = document.getElementById('billingWorkspace');
+        const es = document.getElementById('billingEmptyState');
+        if (ws) ws.style.display = 'none';
+        if (es) es.style.display = 'flex';
+        if (window.billing && typeof billing.loadAllAdmittedPatients === 'function') {
+            billing.loadAllAdmittedPatients();
+        }
+    }
+
+    function toggleDetailedCharges() {
+        const card = document.getElementById('billingItemsCard');
+        const btn = document.getElementById('btnToggleItems');
+        if (!card) return;
+        if (card.style.display === 'none' || getComputedStyle(card).display === 'none') {
+            card.style.display = 'block';
+            if (btn) btn.innerHTML = `<i class="fas fa-eye-slash"></i> Hide Charges Breakdown`;
+        } else {
+            card.style.display = 'none';
+            if (btn) btn.innerHTML = `<i class="fas fa-list"></i> Charges Breakdown`;
+        }
+    }
 
 })();
 
