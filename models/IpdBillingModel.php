@@ -612,14 +612,15 @@ class IpdBillingModel {
      */
     public function getBillDetails($billId) {
         $billSql = "SELECT ibm.*, 
+                           COALESCE(ia.patient_id, ibm.patient_id) AS patient_id,
                            TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                            p.age, p.sex, p.phone, p.address, p.aadhar,
-                           d.full_name AS doctor_name, d.specialization,
+                           COALESCE(d.full_name, '') AS doctor_name, d.specialization,
                            ia.admission_type, ia.diagnosis
                     FROM ipd_billing_master ibm
-                    LEFT JOIN patient p ON ibm.patient_id = p.patient_id
-                    LEFT JOIN doctors d ON ibm.doctor_id = d.doctor_id
                     LEFT JOIN ipd_admissions ia ON ibm.admission_id = ia.admission_id
+                    LEFT JOIN patient p ON COALESCE(ia.patient_id, ibm.patient_id) = p.patient_id
+                    LEFT JOIN doctors d ON COALESCE(ia.admitting_doctor_id, ibm.doctor_id) = d.doctor_id
                     WHERE ibm.bill_id = ?";
         
         $bill = $this->db->fetchOne($billSql, [$billId]);
@@ -643,8 +644,8 @@ class IpdBillingModel {
             foreach ($jsonItems as $jItem) {
                 $jItem['item_id'] = $dbItem['item_id'];
                 $jItem['bill_id'] = $dbItem['bill_id'];
-                $jItem['charge_date'] = $dbItem['charge_date'];
-                $jItem['created_by'] = $dbItem['created_by'];
+                $jItem['date'] = $dbItem['charge_date'];
+                $jItem['service_type'] = $dbItem['charge_type'];
                 $items[] = $jItem;
             }
         }
@@ -689,12 +690,14 @@ class IpdBillingModel {
      */
     public function getAllBills($filters = []) {
         $sql = "SELECT ibm.*, 
+                       COALESCE(ia.patient_id, ibm.patient_id) AS patient_id,
                        TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                        TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS name,
-                       d.full_name AS doctor_name
+                       COALESCE(d.full_name, '') AS doctor_name
                 FROM ipd_billing_master ibm
-                LEFT JOIN patient p ON ibm.patient_id = p.patient_id
-                LEFT JOIN doctors d ON ibm.doctor_id = d.doctor_id
+                LEFT JOIN ipd_admissions ia ON ibm.admission_id = ia.admission_id
+                LEFT JOIN patient p ON COALESCE(ia.patient_id, ibm.patient_id) = p.patient_id
+                LEFT JOIN doctors d ON COALESCE(ia.admitting_doctor_id, ibm.doctor_id) = d.doctor_id
                 WHERE 1=1";
         $params = [];
         

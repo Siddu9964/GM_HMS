@@ -178,39 +178,104 @@ class IpdBillingMaster extends IpdBaseModel {
      * 1. GET OR CREATE BILLING MASTER
      * ─────────────────────────────────────────────────────────────── */
     public function getOrCreateForAdmission(array $admissionData): array {
-        // Check existing
+        // Fetch the authoritative admission record first
+        $adm = $this->fetchOne(
+            "SELECT ia.*, 
+                    hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
+                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount
+             FROM ipd_admissions ia
+             LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
+             WHERE ia.admission_id = ?",
+            [$admissionData['admission_id']]
+        );
+
+        // Check existing master
         $existing = $this->fetchOne(
             "SELECT bm.*, 
+                    bm.patient_id AS bm_patient_id,
+                    bm.doctor_id AS bm_doctor_id,
+                    bm.admission_date AS bm_admission_date,
+                    COALESCE(ia.patient_id, bm.patient_id) AS patient_id,
                     TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.age, p.sex, p.phone,
-                    d.full_name AS doctor_name,
+                    COALESCE(d.full_name, '') AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
                     hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
-                    ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount
+                    ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount,
+                    COALESCE(ia.admission_date, bm.admission_date) AS admission_date,
+                    COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date
              FROM ipd_billing_master bm
-             LEFT JOIN patient p ON bm.patient_id = p.patient_id
-             LEFT JOIN doctors d ON bm.doctor_id = d.doctor_id
              LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
+             LEFT JOIN patient p ON COALESCE(ia.patient_id, bm.patient_id) = p.patient_id
+             LEFT JOIN doctors d ON COALESCE(ia.admitting_doctor_id, bm.doctor_id) = d.doctor_id
              LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
              WHERE bm.admission_id = ?",
             [$admissionData['admission_id']]
         );
 
         if ($existing) {
+            // Auto-heal / synchronize if patient_id, doctor_id, or admission_date was mismatched
+            if ($adm) {
+                $needsUpdate = false;
+                $updateFields = [];
+                if (!empty($adm['patient_id']) && ($existing['bm_patient_id'] ?? '') !== $adm['patient_id']) {
+                    $updateFields['patient_id'] = $adm['patient_id'];
+                    $needsUpdate = true;
+                }
+                if (!empty($adm['admitting_doctor_id']) && ($existing['bm_doctor_id'] ?? '') !== $adm['admitting_doctor_id']) {
+                    $updateFields['doctor_id'] = $adm['admitting_doctor_id'];
+                    $needsUpdate = true;
+                }
+                if (!empty($adm['admission_date']) && ($existing['bm_admission_date'] ?? '') !== $adm['admission_date']) {
+                    $updateFields['admission_date'] = $adm['admission_date'];
+                    $needsUpdate = true;
+                }
+                if ($needsUpdate) {
+                    $updateFields['updated_at'] = date('Y-m-d H:i:s');
+                    $this->db->update('ipd_billing_master', $updateFields, "`bill_id` = ?", [$existing['bill_id']]);
+                    if (!empty($adm['patient_id'])) {
+                        $this->db->update('ipd_billing_items', ['patient_id' => $adm['patient_id']], "`bill_id` = ?", [$existing['bill_id']]);
+                    }
+                    // Re-fetch with fresh data
+                    $existing = $this->fetchOne(
+                        "SELECT bm.*, 
+                                COALESCE(ia.patient_id, bm.patient_id) AS patient_id,
+                                TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
+                                p.age, p.sex, p.phone,
+                                COALESCE(d.full_name, '') AS doctor_name,
+                                hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
+                                hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
+                                ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount,
+                                COALESCE(ia.admission_date, bm.admission_date) AS admission_date,
+                                COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date
+                         FROM ipd_billing_master bm
+                         LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
+                         LEFT JOIN patient p ON COALESCE(ia.patient_id, bm.patient_id) = p.patient_id
+                         LEFT JOIN doctors d ON COALESCE(ia.admitting_doctor_id, bm.doctor_id) = d.doctor_id
+                         LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
+                         WHERE bm.admission_id = ?",
+                        [$admissionData['admission_id']]
+                    );
+                }
+            }
             return ['created' => false, 'data' => $existing];
         }
 
         // Create new master
-        $billId = $this->generateBillId();
-        $now    = date('Y-m-d H:i:s');
+        $billId    = $this->generateBillId();
+        $now       = date('Y-m-d H:i:s');
+        $patientId = $adm['patient_id'] ?? $admissionData['patient_id'];
+        $doctorId  = $adm['admitting_doctor_id'] ?? $admissionData['doctor_id'] ?? null;
+        $admDate   = $adm['admission_date'] ?? $admissionData['admission_date'] ?? date('Y-m-d');
+        $disDate   = $adm['discharge_date'] ?? null;
 
         $this->db->insert('ipd_billing_master', [
             'bill_id'          => $billId,
             'admission_id'     => $admissionData['admission_id'],
-            'patient_id'       => $admissionData['patient_id'],
-            'doctor_id'        => $admissionData['doctor_id']        ?? null,
-            'admission_date'   => $admissionData['admission_date']   ?? date('Y-m-d'),
-            'discharge_date'   => null,
+            'patient_id'       => $patientId,
+            'doctor_id'        => $doctorId,
+            'admission_date'   => $admDate,
+            'discharge_date'   => $disDate,
             'total_days'       => 0,
             'bill_type'        => $admissionData['bill_type']        ?? 'SELF',
             'room_charges'     => 0,
@@ -242,16 +307,19 @@ class IpdBillingMaster extends IpdBaseModel {
 
         $newRecord = $this->fetchOne(
             "SELECT bm.*,
+                    COALESCE(ia.patient_id, bm.patient_id) AS patient_id,
                     TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.age, p.sex, p.phone,
-                    d.full_name AS doctor_name,
+                    COALESCE(d.full_name, '') AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
                     hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
-                    ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount
+                    ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount,
+                    COALESCE(ia.admission_date, bm.admission_date) AS admission_date,
+                    COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date
              FROM ipd_billing_master bm
-             LEFT JOIN patient p ON bm.patient_id = p.patient_id
-             LEFT JOIN doctors d ON bm.doctor_id = d.doctor_id
              LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
+             LEFT JOIN patient p ON COALESCE(ia.patient_id, bm.patient_id) = p.patient_id
+             LEFT JOIN doctors d ON COALESCE(ia.admitting_doctor_id, bm.doctor_id) = d.doctor_id
              LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
              WHERE bm.bill_id = ?",
             [$billId]
@@ -267,16 +335,19 @@ class IpdBillingMaster extends IpdBaseModel {
         $this->recalculateMaster($billId);
         return $this->fetchOne(
             "SELECT bm.*,
+                    COALESCE(ia.patient_id, bm.patient_id) AS patient_id,
                     TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.age, p.sex, p.phone, p.address,
-                    d.full_name AS doctor_name, d.specialization,
+                    COALESCE(d.full_name, '') AS doctor_name, d.specialization,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
                     hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
-                    ia.admission_id AS adm_id, ia.bed_id, ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount
+                    ia.admission_id AS adm_id, ia.bed_id, ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount,
+                    COALESCE(ia.admission_date, bm.admission_date) AS admission_date,
+                    COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date
              FROM ipd_billing_master bm
-             LEFT JOIN patient p ON bm.patient_id = p.patient_id
-             LEFT JOIN doctors d ON bm.doctor_id = d.doctor_id
              LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
+             LEFT JOIN patient p ON COALESCE(ia.patient_id, bm.patient_id) = p.patient_id
+             LEFT JOIN doctors d ON COALESCE(ia.admitting_doctor_id, bm.doctor_id) = d.doctor_id
              LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
              WHERE bm.bill_id = ?",
             [$billId]
@@ -290,16 +361,19 @@ class IpdBillingMaster extends IpdBaseModel {
         }
         return $this->fetchOne(
             "SELECT bm.*,
+                    COALESCE(ia.patient_id, bm.patient_id) AS patient_id,
                     TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.age, p.sex, p.phone,
-                    d.full_name AS doctor_name,
+                    COALESCE(d.full_name, '') AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
                     hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
-                    ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount
+                    ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount,
+                    COALESCE(ia.admission_date, bm.admission_date) AS admission_date,
+                    COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date
              FROM ipd_billing_master bm
-             LEFT JOIN patient p ON bm.patient_id = p.patient_id
-             LEFT JOIN doctors d ON bm.doctor_id = d.doctor_id
              LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
+             LEFT JOIN patient p ON COALESCE(ia.patient_id, bm.patient_id) = p.patient_id
+             LEFT JOIN doctors d ON COALESCE(ia.admitting_doctor_id, bm.doctor_id) = d.doctor_id
              LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
              WHERE bm.admission_id = ?",
             [$admissionId]
@@ -541,21 +615,23 @@ class IpdBillingMaster extends IpdBaseModel {
 
         $countRow = $this->fetchOne(
             "SELECT COUNT(*) AS total FROM ipd_billing_master bm
-             LEFT JOIN patient p ON bm.patient_id = p.patient_id
+             LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
+             LEFT JOIN patient p ON COALESCE(ia.patient_id, bm.patient_id) = p.patient_id
              $where",
             $params
         );
 
         $rows = $this->fetchAll(
             "SELECT bm.*,
+                    COALESCE(ia.patient_id, bm.patient_id) AS patient_id,
                     TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.phone, p.age, p.sex,
-                    d.full_name AS doctor_name,
+                    COALESCE(d.full_name, '') AS doctor_name,
                     hb.ward_name, hb.room_name, hb.bed_number
              FROM ipd_billing_master bm
-             LEFT JOIN patient p ON bm.patient_id = p.patient_id
-             LEFT JOIN doctors d ON bm.doctor_id = d.doctor_id
              LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
+             LEFT JOIN patient p ON COALESCE(ia.patient_id, bm.patient_id) = p.patient_id
+             LEFT JOIN doctors d ON COALESCE(ia.admitting_doctor_id, bm.doctor_id) = d.doctor_id
              LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
              $where
              ORDER BY bm.created_at DESC
@@ -593,7 +669,11 @@ class IpdBillingMaster extends IpdBaseModel {
     private function catchUpBedCharges(string $billId, string $updatedBy = 'system'): void {
         // Fetch Admission Details and Bed Info
         $admission = $this->fetchOne(
-            "SELECT bm.patient_id, bm.admission_id, ia.admission_date, ia.admission_time, ia.discharge_date, ia.discharge_time,
+            "SELECT COALESCE(ia.patient_id, bm.patient_id) AS patient_id, bm.admission_id, 
+                    COALESCE(ia.admission_date, bm.admission_date) AS admission_date, 
+                    ia.admission_time, 
+                    COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date, 
+                    ia.discharge_time,
                     hb.room_name, hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.service_charge, hb.total_bed_amount
              FROM ipd_billing_master bm
              JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
