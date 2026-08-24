@@ -731,7 +731,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                                     <thead>
                                         <tr>
                                             <th>Patient ID</th>
-                                            <th>Apt ID</th>
+                                            <th>Appt ID</th>
                                             <th>Patient</th>
                                             <th>Phone</th>
                                             <th>Doctor</th>

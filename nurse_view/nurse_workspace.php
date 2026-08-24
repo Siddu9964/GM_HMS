@@ -1175,7 +1175,7 @@ html, body {
         <div class="pt-banner-chips" id="pt-chips"></div>
       </div>
       <div class="pt-banner-ac">
-        <button class="pba ksheet" onclick="goToKSheet()"><i class="fas fa-file-medical-alt"></i> View K-Sheet</button>
+        <button class="pba ksheet" onclick="goToKSheet()"><i class="fas fa-file-medical-alt"></i> View Case-Sheet</button>
         <button class="pba warn" onclick="openDischargeModal()"><i class="fas fa-bell"></i> Notify Discharge</button>
         <button class="pba sec" onclick="openSearch()"><i class="fas fa-exchange-alt"></i> Change Patient</button>
       </div>

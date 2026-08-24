@@ -64,7 +64,7 @@
 
                 <a href="k_sheet_view.php" class="sidebar-link" data-page="k_sheet_view">
                     <i class="fas fa-file-medical-alt"></i>
-                    <span>K-Sheet</span>
+                    <span>Case-Sheet</span>
                 </a>
 
                 <a href="ipd_summary.php" class="sidebar-link" data-page="ipd_summary">

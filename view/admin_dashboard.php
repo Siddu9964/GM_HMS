@@ -271,7 +271,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                     <!-- Operations Schedule -->
                     <div class="stat-card">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-gray-700 font-semibold">Operations Today</h3>
+                            <h3 class="text-gray-700 font-semibold">Surgeries Today</h3>
                             <i class="fas fa-procedures text-red-500 text-xl"></i>
                         </div>
                         <div class="space-y-3" id="operationsContainer">
