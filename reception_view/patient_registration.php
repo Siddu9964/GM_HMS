@@ -31,7 +31,32 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     <style>
-        /* Additional page-specific overrides if needed */
+        #cardQrCodeContainer {
+            width: 130px !important;
+            height: 130px !important;
+            min-width: 130px !important;
+            min-height: 130px !important;
+            max-width: 130px !important;
+            max-height: 130px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 auto !important;
+            background: #ffffff !important;
+            overflow: hidden !important;
+        }
+        #cardQrCodeContainer img, #cardQrCodeContainer canvas {
+            width: 130px !important;
+            height: 130px !important;
+            min-width: 130px !important;
+            min-height: 130px !important;
+            max-width: 130px !important;
+            max-height: 130px !important;
+            aspect-ratio: 1 / 1 !important;
+            object-fit: contain !important;
+            display: block !important;
+            margin: 0 auto !important;
+        }
     </style>
 </head>
 
@@ -241,6 +266,10 @@ include 'includes/reception_navbar.php';
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <!-- QRCode & JsBarcode Libraries (Loaded BEFORE patient.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    
     <!-- JavaScript -->
     <script src="assets/js/patient.js?v=<?= time() ?>"></script>
     <script>
@@ -445,8 +474,8 @@ include 'includes/reception_navbar.php';
             const printWindow = window.open('', '_blank', 'width=600,height=600');
             printWindow.document.write('<html><head><title>Patient ID Card</title>');
             printWindow.document.write('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">');
-            printWindow.document.write('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">');
-            printWindow.document.write('<style>body{margin:20px; display:flex; justify-content:center; align-items:center; font-family:"Inter", sans-serif;}</style>');
+            printWindow.document.write('<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">');
+            printWindow.document.write('<style>body{margin:20px; display:flex; justify-content:center; align-items:center; font-family:"Inter", sans-serif;} @media print { body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } }</style>');
             printWindow.document.write('</head><body>');
             printWindow.document.write(printContent);
             printWindow.document.write('<script>window.onload = function() { window.print(); setTimeout(function(){ window.close(); }, 500); }<\/script>');
@@ -458,47 +487,72 @@ include 'includes/reception_navbar.php';
     <!-- Patient Card Modal -->
     <div id="patientCardModal" class="ref-modal-overlay hidden" onclick="closePatientCardModalOnBackdrop(event)" style="z-index: 2000; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
         <!-- Printable Card Div -->
-        <div id="printablePatientCard" class="patient-id-card" style="width: 100%; max-width: 290px; background: white; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid #e2e8f0; overflow: hidden; font-family: \'Inter\', sans-serif;" onclick="event.stopPropagation()">
+        <div id="printablePatientCard" class="patient-id-card" data-branch="<?php echo htmlspecialchars($_SESSION['hospital_branch'] ?? $_SESSION['branch'] ?? 'Basaveshwaranagar'); ?>" style="width: 100%; max-width: 330px; background: white; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1.5px solid #cbd5e1; overflow: hidden; font-family: 'Inter', sans-serif;" onclick="event.stopPropagation()">
             <!-- Header -->
-            <div style="background: #144d34; padding: 16px; color: white; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #f59e0b;">
+            <div style="background: #144d34; padding: 14px 18px; color: white; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #f59e0b;">
                 <div>
-                    <div style="font-weight: 800; font-size: 1rem; letter-spacing: 0.5px;">GM HOSPITAL</div>
-                    <div style="font-size: 0.65rem; opacity: 0.8; font-weight: 500; text-transform: uppercase; letter-spacing: 1px;"><?php echo htmlspecialchars($_SESSION['hospital_branch'] ?? $_SESSION['branch'] ?? 'Branch Name'); ?></div>
+                    <div style="font-weight: 800; font-size: 1.05rem; letter-spacing: 0.5px;">GM HOSPITAL</div>
+                    <div style="font-size: 0.68rem; opacity: 0.85; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;"><?php echo htmlspecialchars($_SESSION['hospital_branch'] ?? $_SESSION['branch'] ?? 'Basaveshwaranagar'); ?></div>
                 </div>
-                <div style="width: 36px; height: 36px; background: rgba(255,255,255,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                <div style="width: 36px; height: 36px; background: rgba(255,255,255,0.18); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem;">
                     <i class="fas fa-hospital-alt"></i>
                 </div>
             </div>
             <!-- Body -->
-            <div style="padding: 20px; display: flex; flex-direction: column; gap: 12px; color: #1e293b;">
-                <div style="display: flex; gap: 14px; align-items: center;">
-                    <div style="width: 50px; height: 50px; border-radius: 50%; background: #f0fdf4; color: #16a34a; border: 2px solid #bbf7d0; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: bold; flex-shrink: 0;" id="cardInitials">
-                        P
+            <div style="padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; color: #1e293b;">
+                <!-- Avatar & Name & Blood Badge -->
+                <div style="display: flex; gap: 12px; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; gap: 12px; align-items: center; min-width: 0; flex: 1;">
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: #f0fdf4; color: #16a34a; border: 2px solid #bbf7d0; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; font-weight: 800; flex-shrink: 0;" id="cardInitials">
+                            P
+                        </div>
+                        <div style="min-width: 0;">
+                            <div id="cardPatientName" style="font-weight: 800; font-size: 1.02rem; color: #0f172a; line-height: 1.2; word-break: break-word;">Patient Name</div>
+                            <div id="cardPatientId" style="font-size: 0.78rem; color: #1f6b4a; font-weight: 800; margin-top: 2px;">PID-XXXX</div>
+                        </div>
                     </div>
-                    <div>
-                        <div id="cardPatientName" style="font-weight: 700; font-size: 1.05rem; color: #0f172a; line-height: 1.2;">Patient Name</div>
-                        <div id="cardPatientId" style="font-size: 0.8rem; color: #1f6b4a; font-weight: 700; margin-top: 2px;">PID-XXXX</div>
+                    <!-- Blood Group Badge in top right -->
+                    <div id="cardBloodBadgeWrap" style="flex-shrink: 0; text-align: right;">
+                        <span id="cardPatientBloodGroup" style="background: #fee2e2; color: #dc2626; border: 1.5px solid #fca5a5; font-weight: 800; font-size: 0.75rem; padding: 4px 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-tint" style="font-size: 0.7rem;"></i> <span id="cardBloodVal">O+</span>
+                        </span>
                     </div>
                 </div>
                 
-                <div style="border-top: 1px dashed #e2e8f0; padding-top: 12px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 0.75rem;">
+                <!-- 2-Column Info Grid -->
+                <div style="border-top: 1px dashed #e2e8f0; padding-top: 10px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 0.75rem;">
                     <div>
-                        <span style="display: block; color: #64748b; font-weight: 500; font-size: 0.65rem; text-transform: uppercase;">Date of Birth</span>
-                        <span id="cardPatientDob" style="font-weight: 600; color: #334155;">1990-01-01</span>
+                        <span style="display: block; color: #64748b; font-weight: 600; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.3px;">Date of Birth</span>
+                        <span id="cardPatientDob" style="font-weight: 700; color: #334155;">1990-01-01</span>
                     </div>
                     <div>
-                        <span style="display: block; color: #64748b; font-weight: 500; font-size: 0.65rem; text-transform: uppercase;">Age / Gender</span>
-                        <span id="cardPatientAgeGender" style="font-weight: 600; color: #334155;">34 yrs / Male</span>
+                        <span style="display: block; color: #64748b; font-weight: 600; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.3px;">Age / Gender</span>
+                        <span id="cardPatientAgeGender" style="font-weight: 700; color: #334155;">34 yrs / Male</span>
                     </div>
-                    <div style="grid-column: span 2;">
-                        <span style="display: block; color: #64748b; font-weight: 500; font-size: 0.65rem; text-transform: uppercase;">Phone Number</span>
-                        <span id="cardPatientPhone" style="font-weight: 600; color: #334155;">9876543210</span>
+                    <div>
+                        <span style="display: block; color: #64748b; font-weight: 600; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.3px;">Phone Number</span>
+                        <span id="cardPatientPhone" style="font-weight: 700; color: #334155;">9876543210</span>
+                    </div>
+                    <div>
+                        <span style="display: block; color: #64748b; font-weight: 600; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.3px;">Aadhar Number</span>
+                        <span id="cardPatientAadhar" style="font-weight: 700; color: #334155;">N/A</span>
+                    </div>
+                    <div>
+                        <span style="display: block; color: #64748b; font-weight: 600; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.3px;">City / Location</span>
+                        <span id="cardPatientCity" style="font-weight: 700; color: #334155;">Bangalore</span>
+                    </div>
+                    <div>
+                        <span style="display: block; color: #64748b; font-weight: 600; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.3px;">Reg. Date</span>
+                        <span id="cardPatientRegDate" style="font-weight: 700; color: #334155;">2026-08-24</span>
                     </div>
                 </div>
 
-                <!-- Barcode Area -->
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 8px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
-                    <svg id="cardBarcode" style="max-width: 100%;"></svg>
+                <!-- QR Code Area (Full Data Scan) -->
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 4px; padding-top: 10px; border-top: 1px solid #f1f5f9; text-align: center;">
+                    <div style="background: #ffffff; padding: 6px; border: 1.5px solid #cbd5e1; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); width: 142px; height: 142px;">
+                        <div id="cardQrCodeContainer" style="width: 130px; height: 130px; display: flex; align-items: center; justify-content: center; margin: 0 auto; background: #ffffff;"></div>
+                    </div>
+                    <div id="cardBarcodeId" style="font-size: 0.88rem; font-weight: 800; color: #144d34; margin-top: 6px; letter-spacing: 0.5px;">PID-XXXX</div>
                 </div>
             </div>
         </div>
@@ -516,7 +570,6 @@ include 'includes/reception_navbar.php';
     
     <?php include 'includes/global_modals.php'; ?>
     
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);

@@ -186,29 +186,99 @@ class PatientManager {
 
             // Fill card fields
             const fullName = patient.full_name || (patient.first_name + ' ' + (patient.last_name || ''));
-            document.getElementById('cardPatientName').textContent = fullName;
-            document.getElementById('cardPatientId').textContent = patient.patient_id;
-            document.getElementById('cardPatientDob').textContent = patient.birth_date || 'N/A';
-            document.getElementById('cardPatientAgeGender').textContent = `${patient.age || 'N/A'} yrs / ${patient.sex || 'N/A'}`;
-            document.getElementById('cardPatientPhone').textContent = patient.phone || 'N/A';
+            const nameEl = document.getElementById('cardPatientName');
+            const idEl = document.getElementById('cardPatientId');
+            const dobEl = document.getElementById('cardPatientDob');
+            const ageGenderEl = document.getElementById('cardPatientAgeGender');
+            const phoneEl = document.getElementById('cardPatientPhone');
+            const bloodEl = document.getElementById('cardBloodVal');
+            const aadharEl = document.getElementById('cardPatientAadhar');
+            const cityEl = document.getElementById('cardPatientCity');
+            const regDateEl = document.getElementById('cardPatientRegDate');
+            const initialsEl = document.getElementById('cardInitials');
+
+            if (nameEl) nameEl.textContent = fullName;
+            if (idEl) idEl.textContent = patient.patient_id;
+            if (dobEl) dobEl.textContent = patient.birth_date || 'N/A';
+            if (ageGenderEl) ageGenderEl.textContent = `${patient.age || 'N/A'} yrs / ${patient.sex || 'N/A'}`;
+            if (phoneEl) phoneEl.textContent = patient.phone || 'N/A';
+            
+            // Blood Group
+            if (bloodEl) {
+                bloodEl.textContent = patient.blood_group ? patient.blood_group : 'N/A';
+            }
+            
+            // Aadhar Number (formatted if provided)
+            if (aadharEl) {
+                const aadhar = (patient.aadhar || '').toString().trim();
+                aadharEl.textContent = aadhar ? aadhar : 'N/A';
+            }
+            
+            // City / Location
+            if (cityEl) {
+                cityEl.textContent = patient.city || patient.district || patient.area || 'N/A';
+            }
+            
+            // Registration Date
+            if (regDateEl) {
+                regDateEl.textContent = patient.date || (patient.account_opening_timestamp ? patient.account_opening_timestamp.substring(0, 10) : 'N/A');
+            }
             
             // Set initials
-            document.getElementById('cardInitials').textContent = fullName.charAt(0).toUpperCase();
+            if (initialsEl) initialsEl.textContent = fullName.charAt(0).toUpperCase();
 
-            // Generate barcode with patient details
-            // Structured data: "ID:PID-001 | Name:John | Phone:98765"
-            // To make sure all details show on scan, we format it cleanly.
-            const barcodeData = `ID:${patient.patient_id},Name:${fullName},DOB:${patient.birth_date || ''},Age:${patient.age || ''},Phone:${patient.phone || ''}`;
-            
-            // Generate Code 128 barcode
-            JsBarcode("#cardBarcode", patient.patient_id, {
-                format: "CODE128",
-                width: 1.5,
-                height: 50,
-                displayValue: true,
-                fontSize: 12,
-                lineColor: "#0f172a"
-            });
+            // Prepare clean, structured plain text for 100% universal scanner app support
+            const bloodGroup = patient.blood_group ? patient.blood_group : 'N/A';
+            const aadharVal = (patient.aadhar || '').toString().trim() || 'N/A';
+            const cityVal = patient.city || patient.district || patient.area || 'N/A';
+            const regDateVal = patient.date || (patient.account_opening_timestamp ? patient.account_opening_timestamp.substring(0, 10) : 'N/A');
+            const branchName = document.getElementById('printablePatientCard')?.dataset?.branch || 'Basaveshwaranagar';
+
+            const qrData = [
+                `GM HOSPITAL - PATIENT RECORD`,
+                `----------------------------`,
+                `Patient ID : ${patient.patient_id}`,
+                `Full Name  : ${fullName}`,
+                `Phone No   : ${patient.phone || 'N/A'}`,
+                `Gender/Age : ${patient.sex || 'N/A'} / ${patient.age || 'N/A'} yrs`,
+                `DOB        : ${patient.birth_date || 'N/A'}`,
+                `Blood Group: ${bloodGroup}`,
+                `Govt ID    : ${aadharVal}`,
+                `Location   : ${cityVal}`,
+                `Reg Date   : ${regDateVal}`,
+                `Hospital   : GM Hospital (${branchName})`
+            ].join('\n');
+
+            // Render high-contrast, sharp QR Code with white quiet zone margin
+            const qrContainer = document.getElementById('cardQrCodeContainer');
+            if (qrContainer) {
+                qrContainer.innerHTML = '';
+                if (typeof QRCode !== 'undefined' && QRCode.toDataURL) {
+                    QRCode.toDataURL(qrData, {
+                        width: 200,
+                        margin: 2, // Standard white quiet zone required for 100% scanner detection
+                        errorCorrectionLevel: 'M',
+                        color: {
+                            dark: '#000000',
+                            light: '#ffffff'
+                        }
+                    }, function(err, url) {
+                        if (!err && url) {
+                            qrContainer.innerHTML = `<img src="${url}" style="width:130px; height:130px; display:block; margin:0 auto;" alt="Patient QR Code">`;
+                        } else if (err) {
+                            console.error('QR generation error:', err);
+                        }
+                    });
+                } else {
+                    const encodedQr = encodeURIComponent(qrData);
+                    qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data=${encodedQr}&color=000000" style="width:130px; height:130px; display:block; margin:0 auto;" alt="Patient QR Code">`;
+                }
+            }
+
+            const barcodeIdEl = document.getElementById('cardBarcodeId');
+            if (barcodeIdEl) {
+                barcodeIdEl.textContent = patient.patient_id;
+            }
 
             // Show modal
             document.getElementById('patientCardModal').classList.remove('hidden');
