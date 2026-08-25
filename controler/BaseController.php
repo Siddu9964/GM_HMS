@@ -26,6 +26,9 @@ abstract class BaseController {
     protected $currentUser = null;
     
     public function __construct() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
         // Initialize components
         $this->db = SecureDatabase::getInstance();
         $this->config = SecurityConfig::getInstance();

@@ -82,8 +82,10 @@ class AuthController extends BaseController {
                 $this->auth->createSession($user, $detectedRole);
                 
                 // Save branch explicitly
-                $headerBranch = $_SERVER['HTTP_X_HOSPITAL_BRANCH'] ?? 'nagarabhavi';
-                $_SESSION['branch'] = strtolower($data['branch'] ?? $headerBranch);
+                $headerBranch = $_SERVER['HTTP_X_HOSPITAL_BRANCH'] ?? 'basaveshwaranagar';
+                $selectedBranch = strtolower(trim($data['branch'] ?? $headerBranch));
+                $_SESSION['branch'] = $selectedBranch;
+                $_SESSION['hospital_branch'] = $selectedBranch;
                 
                 // Determine redirect URL
                 $redirectUrl = '';

@@ -32,11 +32,13 @@ class Database {
             session_start();
         }
         
-        $branch = strtolower($_SERVER['HTTP_X_HOSPITAL_BRANCH'] ?? $_SESSION['hospital_branch'] ?? $_SESSION['branch'] ?? '');
-        if ($branch === 'basaveshwaranagar' || $branch === 'basaveshwranagara') {
+        $branch = strtolower(trim($_SERVER['HTTP_X_HOSPITAL_BRANCH'] ?? $_SESSION['hospital_branch'] ?? $_SESSION['branch'] ?? ''));
+        if (strpos($branch, 'basaveshwa') !== false || strpos($branch, 'hmsc_basavesh') !== false) {
             $this->db_name = 'hmsc_basaveshwranagara';
-        } elseif ($branch === 'nagarabhavi') {
+        } elseif (strpos($branch, 'nagara') !== false || strpos($branch, 'hmsci') !== false) {
             $this->db_name = 'hmsci';
+        } else {
+            $this->db_name = 'hmsc_basaveshwranagara';
         }
         
         try {

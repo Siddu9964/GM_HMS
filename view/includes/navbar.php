@@ -24,66 +24,72 @@ try {
 }
 ?>
 <!-- Top Navbar -->
-<header style="background: var(--gm-bg); border-bottom: 1px solid var(--gm-glass-border); padding: 1.1rem 1.5rem; height: 80px; position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
-    <div style="display: flex; align-items: center; flex: 1;">
-        <button id="sidebarToggle" class="text-gray-600 hover:text-gray-800 mr-4 lg:hidden" onclick="toggleSidebar()">
-            <i class="fas fa-bars text-xl"></i>
+<header class="bg-[var(--gm-bg)] border-b border-[var(--gm-glass-border)] px-3 sm:px-6 py-2 sm:py-3 h-16 sm:h-20 sticky top-0 z-40 flex items-center justify-between shadow-xs transition-all">
+    <div class="flex items-center flex-1 min-w-0 mr-2 sm:mr-4">
+        <button id="sidebarToggle" class="text-gray-600 hover:text-gray-800 p-2 mr-2 lg:hidden rounded-lg hover:bg-gray-100 transition-colors shrink-0" onclick="toggleSidebar()" aria-label="Toggle Sidebar Menu">
+            <i class="fas fa-bars text-lg sm:text-xl"></i>
         </button>
-        <div class="relative flex-1 max-w-md" style="position: relative;">
-            <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--gm-text-light);"></i>
-            <input type="text" placeholder="Search patients, doctors, appointments..." 
-                   style="width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem; border: 1px solid var(--gm-border); border-radius: var(--gm-r-md); background: var(--gm-bg); font-size: 0.9rem; color: var(--gm-text); outline: none; transition: border-color 0.2s;">
+        <div class="relative flex-1 max-w-xs sm:max-w-md">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs sm:text-sm"></i>
+            <input type="text" placeholder="Search patients, doctors..." 
+                   class="w-full pl-8 sm:pl-9 pr-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-[var(--gm-border)] rounded-[var(--gm-r-md)] bg-[var(--gm-bg)] text-[var(--gm-text)] outline-none focus:border-emerald-600 transition-colors">
         </div>
     </div>
     
-    <div style="display: flex; align-items: center; gap: 1.5rem;">
+    <div class="flex items-center gap-2 sm:gap-4 shrink-0">
         <!-- Notifications Dropdown Wrapper -->
-        <div style="position: relative; display: inline-block;" id="admin-notifications-wrapper">
-            <button onclick="toggleAdminNotifications(event)" style="position: relative; color: var(--gm-text-light); transition: color 0.2s; background: none; border: none; cursor: pointer;" onmouseover="this.style.color='var(--gm-accent)'" onmouseout="this.style.color='var(--gm-text-light)'">
-                <i class="fas fa-bell" style="font-size: 1.25rem;"></i>
-                <span id="navbar-notif-badge" style="position: absolute; top: -4px; right: -6px; background: var(--gm-danger); color: white; font-size: 0.65rem; font-weight: 700; height: 16px; min-width: 16px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--gm-white); <?php echo ($unreadNotifCount > 0) ? '' : 'display: none;'; ?>"><?php echo $unreadNotifCount; ?></span>
+        <div class="relative inline-block" id="admin-notifications-wrapper">
+            <button onclick="toggleAdminNotifications(event)" class="relative p-2 text-gray-500 hover:text-emerald-700 transition-colors bg-transparent border-none cursor-pointer rounded-lg hover:bg-gray-100" aria-label="Notifications">
+                <i class="fas fa-bell text-base sm:text-lg"></i>
+                <span id="navbar-notif-badge" class="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold h-4 min-w-[16px] px-1 rounded-full flex items-center justify-center border-2 border-white <?php echo ($unreadNotifCount > 0) ? '' : 'hidden'; ?>"><?php echo $unreadNotifCount; ?></span>
             </button>
             
-            <div id="adminNotificationsDropdown" style="display: none; position: absolute; top: 120%; right: 0; background: var(--gm-white); border-radius: var(--gm-r-md); box-shadow: var(--gm-shadow); min-width: 380px; max-width: 420px; border: 1px solid var(--gm-glass-border); overflow: hidden; z-index: 1000; padding: 14px; max-height: 480px; overflow-y: auto;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px 0; padding-bottom: 8px; border-bottom: 1px solid var(--gm-glass-border);">
-                    <h4 style="margin: 0; font-size: 0.9rem; font-weight: 800; color: var(--gm-text);"><i class="fas fa-clipboard-check text-primary mr-1"></i> Discharge Clearances</h4>
-                    <span id="admin-notif-count-pill" style="font-size: 0.7rem; font-weight: 700; background: var(--gm-primary-light); color: var(--gm-primary); padding: 2px 8px; border-radius: 10px;">0 Active</span>
+            <div id="adminNotificationsDropdown" class="hidden absolute top-full mt-2 right-0 bg-white rounded-xl shadow-xl w-[90vw] max-w-[380px] border border-gray-200 overflow-hidden z-[1000] p-3 max-h-[80vh] overflow-y-auto">
+                <div class="flex justify-between items-center pb-2 mb-2 border-b border-gray-100">
+                    <h4 class="m-0 text-xs sm:text-sm font-bold text-gray-800 flex items-center gap-1.5"><i class="fas fa-clipboard-check text-emerald-600"></i> Discharge Clearances</h4>
+                    <span id="admin-notif-count-pill" class="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">0 Active</span>
                 </div>
                 <div id="admin-notifications-list">
-                    <p style="text-align: center; color: var(--gm-text-light); font-size: 0.8rem; padding: 15px; margin: 0;">Loading clearance alerts...</p>
+                    <p class="text-center text-gray-400 text-xs py-4 m-0">Loading clearance alerts...</p>
                 </div>
             </div>
         </div>
         
         <!-- Messages -->
-        <button style="position: relative; color: var(--gm-text-light); transition: color 0.2s; background: none; border: none; cursor: pointer;" onmouseover="this.style.color='var(--gm-accent)'" onmouseout="this.style.color='var(--gm-text-light)'">
-            <i class="fas fa-envelope" style="font-size: 1.25rem;"></i>
-            <span style="position: absolute; top: -4px; right: -6px; background: var(--gm-primary); color: white; font-size: 0.65rem; font-weight: 700; height: 16px; min-width: 16px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--gm-white);">3</span>
+        <button class="relative p-2 text-gray-500 hover:text-emerald-700 transition-colors bg-transparent border-none cursor-pointer rounded-lg hover:bg-gray-100 hidden xs:block" aria-label="Messages">
+            <i class="fas fa-envelope text-base sm:text-lg"></i>
+            <span class="absolute top-1 right-1 bg-emerald-600 text-white text-[10px] font-bold h-4 min-w-[16px] px-1 rounded-full flex items-center justify-center border-2 border-white">3</span>
         </button>
         
+        <!-- Active Hospital Branch Badge -->
+        <span class="hidden md:inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full text-xs font-bold shadow-xs">
+            <i class="fas fa-hospital text-emerald-600 text-[11px]"></i>
+            <span class="truncate max-w-[120px]"><?php echo ucfirst(htmlspecialchars($_SESSION['branch'] ?? $_SESSION['hospital_branch'] ?? 'Basaveshwaranagar')); ?></span>
+        </span>
+        
         <!-- User Profile -->
-        <div class="relative" id="admin-profile-wrapper" style="position: relative; margin-left: 0.5rem; padding-left: 1.5rem; border-left: 1px solid var(--gm-glass-border);">
-            <button onclick="toggleDropdown()" id="admin-profile-btn" style="display: flex; align-items: center; gap: 0.75rem; background: none; border: none; cursor: pointer; text-align: left;">
+        <div class="relative pl-2 sm:pl-3 border-l border-gray-200" id="admin-profile-wrapper">
+            <button onclick="toggleDropdown()" id="admin-profile-btn" class="flex items-center gap-2 bg-transparent border-none cursor-pointer text-left p-1 rounded-lg hover:bg-gray-100 transition-colors">
                 <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($_SESSION['full_name'] ?? 'Admin'); ?>&background=1f6b4a&color=fff&bold=true" 
-                     style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--gm-glass-border); object-fit: cover;">
-                <div class="hidden md:block">
-                    <p style="margin: 0; font-size: 0.9rem; font-weight: 700; color: var(--gm-text);"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Admin User'); ?></p>
-                    <p style="margin: 0; font-size: 0.75rem; font-weight: 600; color: var(--gm-text-light);"><?php echo htmlspecialchars($_SESSION['designation'] ?? 'Administrator'); ?></p>
+                     class="w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-gray-200 object-cover shrink-0">
+                <div class="hidden lg:block">
+                    <p class="m-0 text-xs font-bold text-gray-800 truncate max-w-[110px]"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Admin User'); ?></p>
+                    <p class="m-0 text-[10px] font-medium text-gray-500 truncate max-w-[110px]"><?php echo htmlspecialchars($_SESSION['designation'] ?? 'Administrator'); ?></p>
                 </div>
-                <i class="fas fa-chevron-down" style="color: var(--gm-text-light); font-size: 0.8rem; margin-left: 0.25rem;"></i>
+                <i class="fas fa-chevron-down text-gray-400 text-[10px] hidden sm:inline"></i>
             </button>
             
             <!-- Dropdown -->
-            <div id="userDropdown" style="display: none; position: absolute; top: 110%; right: 0; background: var(--gm-white); border-radius: var(--gm-r-md); box-shadow: var(--gm-shadow); min-width: 220px; border: 1px solid var(--gm-glass-border); overflow: hidden; z-index: 1000;">
-                <a href="javascript:void(0)" onclick="typeof toggleProfileModal === 'function' && toggleProfileModal()" style="display: flex; align-items: center; padding: 0.8rem 1rem; color: var(--gm-text); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: background 0.2s;" onmouseover="this.style.background='var(--gm-bg)'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-user" style="width: 20px; color: var(--gm-text-light); margin-right: 0.5rem;"></i> Profile
+            <div id="userDropdown" class="hidden absolute top-full mt-2 right-0 bg-white rounded-xl shadow-xl w-48 border border-gray-200 overflow-hidden z-[1000] py-1">
+                <a href="javascript:void(0)" onclick="typeof toggleProfileModal === 'function' && toggleProfileModal()" class="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors font-medium">
+                    <i class="fas fa-user w-5 text-gray-400"></i> Profile
                 </a>
-                <a href="javascript:void(0)" onclick="toggleChangePasswordModal()" style="display: flex; align-items: center; padding: 0.8rem 1rem; color: var(--gm-text); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: background 0.2s;" onmouseover="this.style.background='var(--gm-bg)'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-key" style="width: 20px; color: var(--gm-text-light); margin-right: 0.5rem;"></i> Change Password
+                <a href="javascript:void(0)" onclick="toggleChangePasswordModal()" class="flex items-center px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors font-medium">
+                    <i class="fas fa-key w-5 text-gray-400"></i> Change Password
                 </a>
-                <div style="height: 1px; background: var(--gm-glass-border); margin: 0.25rem 0;"></div>
-                <a href="<?php echo $basePath; ?>logout.php" style="display: flex; align-items: center; padding: 0.8rem 1rem; color: var(--gm-danger); text-decoration: none; font-size: 0.9rem; font-weight: 600; transition: background 0.2s;" onmouseover="this.style.background='var(--gm-danger-light)'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-sign-out-alt" style="width: 20px; margin-right: 0.5rem;"></i> Logout
+                <div class="h-px bg-gray-100 my-1"></div>
+                <a href="<?php echo $basePath; ?>logout.php" class="flex items-center px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors font-bold">
+                    <i class="fas fa-sign-out-alt w-5"></i> Logout
                 </a>
             </div>
         </div>

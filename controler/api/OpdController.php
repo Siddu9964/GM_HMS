@@ -516,33 +516,124 @@ class OpdController extends BaseController
 
             $reports = [];
 
-            // 1. Daily OPD Count (Last 7 Days)
-            $reports['daily_trend'] = $this->db->fetchAll(
+            // 1. Daily Trend (Last 7 Days - OPD & IPD)
+            $last7Days = [];
+            for ($i = 6; $i >= 0; $i--) {
+                $last7Days[] = date('Y-m-d', strtotime("-$i days"));
+            }
+
+            $opdDaily = $this->db->fetchAll(
                 "SELECT DATE(appointment_date) as date, COUNT(*) as count 
                  FROM appointments 
-                 WHERE appointment_type = 'OPD' AND appointment_date >= DATE_SUB(?, INTERVAL 7 DAY)
-                 GROUP BY DATE(appointment_date) 
-                 ORDER BY date ASC",
+                 WHERE appointment_date >= DATE_SUB(?, INTERVAL 6 DAY)
+                 GROUP BY DATE(appointment_date)",
                 [$today]
             );
 
-            // 2. Doctor-wise Count (Today)
-            $reports['doctor_wise'] = $this->db->fetchAll(
-                "SELECT d.full_name, COUNT(a.appointment_id) as count 
-                 FROM appointments a 
-                 JOIN doctors d ON a.doctor_id = d.doctor_id 
-                 WHERE a.appointment_type = 'OPD' AND a.appointment_date = ? 
-                 GROUP BY d.doctor_id",
+            $ipdDaily = $this->db->fetchAll(
+                "SELECT DATE(admission_date) as date, COUNT(*) as count 
+                 FROM ipd_admissions 
+                 WHERE admission_date >= DATE_SUB(?, INTERVAL 6 DAY)
+                 GROUP BY DATE(admission_date)",
                 [$today]
             );
 
-            // 3. Revenue Breakdown (Month to Date)
-            $reports['revenue'] = $this->db->fetchOne(
-                "SELECT SUM(amount) as total, COUNT(invoice_id) as count 
+            $dailyTrend = [];
+            foreach ($last7Days as $day) {
+                $opdCnt = 0;
+                foreach ($opdDaily as $od) {
+                    if ($od['date'] == $day) {
+                        $opdCnt = (int)$od['count'];
+                        break;
+                    }
+                }
+                $ipdCnt = 0;
+                foreach ($ipdDaily as $id) {
+                    if ($id['date'] == $day) {
+                        $ipdCnt = (int)$id['count'];
+                        break;
+                    }
+                }
+                $dailyTrend[] = [
+                    'date' => $day,
+                    'count' => $opdCnt + $ipdCnt, // total
+                    'opd_count' => $opdCnt,
+                    'ipd_count' => $ipdCnt
+                ];
+            }
+            $reports['daily_trend'] = $dailyTrend;
+
+            // 2. Doctor-wise Workload (Today - OPD & IPD)
+            $doctorWiseSql = "SELECT 
+                                d.doctor_id,
+                                d.full_name,
+                                d.specialization,
+                                COALESCE(opd.opd_count, 0) as opd_count,
+                                COALESCE(ipd.ipd_count, 0) as ipd_count,
+                                (COALESCE(opd.opd_count, 0) + COALESCE(ipd.ipd_count, 0)) as count
+                             FROM doctors d
+                             LEFT JOIN (
+                                 SELECT doctor_id, COUNT(*) as opd_count
+                                 FROM appointments
+                                 WHERE appointment_date = ?
+                                 GROUP BY doctor_id
+                             ) opd ON d.doctor_id = opd.doctor_id
+                             LEFT JOIN (
+                                 SELECT admitting_doctor_id as doctor_id, COUNT(*) as ipd_count
+                                 FROM ipd_admissions
+                                 WHERE DATE(admission_date) = ?
+                                 GROUP BY admitting_doctor_id
+                             ) ipd ON d.doctor_id = ipd.doctor_id
+                             WHERE d.status = 'Active' AND (COALESCE(opd.opd_count, 0) + COALESCE(ipd.ipd_count, 0)) > 0
+                             ORDER BY count DESC";
+            $reports['doctor_wise'] = $this->db->fetchAll($doctorWiseSql, [$today, $today]);
+            
+            // If no active appointments today, return list of all active doctors
+            if (empty($reports['doctor_wise'])) {
+                $reports['doctor_wise'] = $this->db->fetchAll(
+                    "SELECT doctor_id, full_name, specialization, 0 as opd_count, 0 as ipd_count, 0 as count
+                     FROM doctors 
+                     WHERE status = 'Active' 
+                     ORDER BY full_name ASC LIMIT 10"
+                );
+            }
+
+            // 3. Revenue Breakdown (Month to Date - OPD vs IPD vs Total)
+            $opdRev = $this->db->fetchOne(
+                "SELECT COALESCE(SUM(amount), 0) as total, COUNT(invoice_id) as count 
                  FROM opd_invoice 
                  WHERE date >= ?",
                 [$startOfMonth]
             );
+
+            $ipdRevTotal = 0;
+            $ipdRevCount = 0;
+            try {
+                $ipdRev = $this->db->fetchOne(
+                    "SELECT COALESCE(SUM(CASE WHEN payment_type = 'REFUND' THEN -amount ELSE amount END), 0) as total, COUNT(payment_id) as count 
+                     FROM ipd_payment 
+                     WHERE COALESCE(payment_date, created_at) >= ?",
+                    [$startOfMonth]
+                );
+                $ipdRevTotal = (float)($ipdRev['total'] ?? 0);
+                $ipdRevCount = (int)($ipdRev['count'] ?? 0);
+            } catch (Exception $e) {
+                // fallback
+            }
+
+            $opdTotal = (float)($opdRev['total'] ?? 0);
+            $opdCount = (int)($opdRev['count'] ?? 0);
+            $totalRev = $opdTotal + $ipdRevTotal;
+            $totalCount = $opdCount + $ipdRevCount;
+
+            $reports['revenue'] = [
+                'total' => $totalRev,
+                'count' => $totalCount,
+                'opd_total' => $opdTotal,
+                'opd_count' => $opdCount,
+                'ipd_total' => $ipdRevTotal,
+                'ipd_count' => $ipdRevCount
+            ];
 
             $this->respondSuccess($reports);
 

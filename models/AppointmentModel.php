@@ -42,11 +42,13 @@ class AppointmentModel
                        a.total_amount,
                        a.payment_mode,
                        a.token_number,
-                       CASE 
-                           WHEN COALESCE(a.appointment_status, obm.last_status) = 'Cancelled' THEN 'Cancelled'
-                           WHEN (d.in_time IS NULL OR d.out_time IS NULL OR d.in_time = '' OR d.out_time = '' OR d.in_time = '00:00:00' OR d.out_time = '00:00:00') THEN 'Doctor On Leave'
-                           ELSE COALESCE(a.appointment_status, obm.last_status)
-                       END as appointment_status,
+                        CASE 
+                            WHEN a.appointment_status IN ('Cancelled', '2') THEN 'Cancelled'
+                            WHEN a.appointment_status IN ('Approved', '1') THEN 'Approved'
+                            WHEN a.appointment_status IN ('Pending', '0') THEN 'Pending'
+                            WHEN a.appointment_status IS NOT NULL THEN a.appointment_status
+                            ELSE 'Approved'
+                        END as appointment_status,
                        a.payment_status,
                        COALESCE(a.patient_id, p.patient_id) as patient_id,
                        a.phone as appointment_phone, 

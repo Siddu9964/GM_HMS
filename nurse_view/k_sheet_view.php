@@ -1,5 +1,4 @@
 <?php
-ob_start();
 session_start();
 
 // Allow all nurse roles and admins to view the page
@@ -1008,8 +1007,3 @@ try {
 </div><!-- /main-layout -->
 </body>
 </html>
-<?php 
-$html = ob_get_clean(); 
-file_put_contents(__DIR__ . '/../k_sheet_last_render.html', $html);
-echo $html; 
-?>

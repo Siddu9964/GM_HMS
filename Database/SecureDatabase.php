@@ -38,6 +38,28 @@ class SecureDatabase
         return self::$instance;
     }
 
+    private $currentDbName = null;
+
+    /**
+     * Resolve target database name based on branch session / header
+     */
+    public function resolveDatabaseName()
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $branch = strtolower(trim($_SERVER['HTTP_X_HOSPITAL_BRANCH'] ?? $_SESSION['hospital_branch'] ?? $_SESSION['branch'] ?? ''));
+        
+        if (strpos($branch, 'basaveshwa') !== false || strpos($branch, 'hmsc_basavesh') !== false) {
+            return $this->config->get('DB_NAME_BASAVESHWARANAGAR', 'hmsc_basaveshwranagara');
+        } elseif (strpos($branch, 'nagara') !== false || strpos($branch, 'hmsci') !== false) {
+            return $this->config->get('DB_NAME_NAGARABHAVI', 'hmsci');
+        } else {
+            return $this->config->get('DB_NAME_BASAVESHWARANAGAR', 'hmsc_basaveshwranagara');
+        }
+    }
+
     /**
      * Establish secure database connection
      */
@@ -45,13 +67,9 @@ class SecureDatabase
     {
         try {
             $dbConfig = $this->config->getDatabase();
-
-            $branch = strtolower($_SERVER['HTTP_X_HOSPITAL_BRANCH'] ?? $_SESSION['hospital_branch'] ?? $_SESSION['branch'] ?? '');
-            if ($branch === 'basaveshwaranagar' || $branch === 'basaveshwranagara') {
-                $dbConfig['name'] = $this->config->get('DB_NAME_BASAVESHWARANAGAR', 'hmsc_basaveshwranagara');
-            } elseif ($branch === 'nagarabhavi') {
-                $dbConfig['name'] = $this->config->get('DB_NAME_NAGARABHAVI', 'hmsci');
-            }
+            $targetDb = $this->resolveDatabaseName();
+            $dbConfig['name'] = $targetDb;
+            $this->currentDbName = $targetDb;
 
             mysqli_report(MYSQLI_REPORT_OFF);
 
@@ -61,7 +79,7 @@ class SecureDatabase
                 $dbConfig['password'],
                 $dbConfig['name'],
                 $dbConfig['port']
-                );
+            );
 
             if ($this->connection->connect_error) {
                 throw new Exception('Database connection failed');
@@ -80,19 +98,32 @@ class SecureDatabase
         }
     }
 
-    public function getConnection()
+    private function ensureBranchDatabase()
     {
         if ($this->connection === null || !$this->connection->ping()) {
             $this->connect();
+            return;
         }
+
+        $targetDb = $this->resolveDatabaseName();
+        if ($this->currentDbName !== $targetDb) {
+            if ($this->connection->select_db($targetDb)) {
+                $this->currentDbName = $targetDb;
+            } else {
+                $this->connect();
+            }
+        }
+    }
+
+    public function getConnection()
+    {
+        $this->ensureBranchDatabase();
         return $this->connection;
     }
 
     public function execute($query, $params = [], $types = null)
     {
-        if (!$this->connection->ping()) {
-            $this->connect();
-        }
+        $this->ensureBranchDatabase();
 
         $stmt = $this->connection->prepare($query);
         if ($stmt === false) {
