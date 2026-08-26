@@ -246,12 +246,12 @@ function renderProfileCard(patient) {
                     <div class="gp-emr-name-box">
                         <h2>${patient.full_name || 'Unknown Patient'}</h2>
                         <div class="gp-emr-badges">
-                            <span class="gp-emr-pid">${patient.patient_id || 'N/A'}</span>
+                            <span class="gp-emr-pid" style="background-color:#1f6b4a !important; color:#ffffff !important; font-weight:800 !important; text-shadow:0 1px 2px rgba(0,0,0,0.3); font-family:monospace; padding:3px 10px; border-radius:6px; display:inline-flex; align-items:center;">${patient.patient_id || 'N/A'}</span>
                             <span class="gp-emr-pill"><i class="fas fa-user" style="font-size:0.65rem; margin-right:3px;"></i> ${ageGender}</span>
                             <span class="gp-emr-pill"><i class="fas fa-tint" style="font-size:0.65rem; margin-right:3px;"></i> ${bloodVal}</span>
-                            <div class="gp-status-chip" id="heroActiveStatus">
-                                <span class="gp-status-dot"></span>
-                                <span>ACTIVE PATIENT</span>
+                            <div class="gp-status-chip" id="heroActiveStatus" style="background-color:#1f6b4a !important; color:#ffffff !important; border:1px solid #144d34;">
+                                <span class="gp-status-dot" style="background-color:#4ade80 !important; width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:4px;"></span>
+                                <span style="color:#ffffff !important; font-weight:800 !important; text-shadow:0 1px 2px rgba(0,0,0,0.3); letter-spacing:0.5px;">ACTIVE PATIENT</span>
                             </div>
                             ${badgeHtml}
                         </div>
@@ -373,9 +373,9 @@ function loadAppointments() {
                 if (heroStatusEl && appointments.length > 0) {
                     const latestStatus = (appointments[0].appointment_status || '').toString().toLowerCase();
                     if (latestStatus === '1' || latestStatus === 'completed') {
-                        heroStatusEl.innerHTML = `<span class="gp-status-dot" style="background:#f3efe6; opacity:0.6;"></span> <span style="color:#f3efe6; font-weight:800;">VISIT COMPLETED</span>`;
+                        heroStatusEl.innerHTML = `<span class="gp-status-dot" style="background-color:#ffffff !important; opacity:0.8; width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:4px;"></span> <span style="color:#ffffff !important; font-weight:800 !important; text-shadow:0 1px 2px rgba(0,0,0,0.3); letter-spacing:0.5px;">VISIT COMPLETED</span>`;
                     } else {
-                        heroStatusEl.innerHTML = `<span class="gp-status-dot"></span> <span style="color:#f3efe6; font-weight:800;">ACTIVE PATIENT</span>`;
+                        heroStatusEl.innerHTML = `<span class="gp-status-dot" style="background-color:#4ade80 !important; width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:4px;"></span> <span style="color:#ffffff !important; font-weight:800 !important; text-shadow:0 1px 2px rgba(0,0,0,0.3); letter-spacing:0.5px;">ACTIVE PATIENT</span>`;
                     }
                 }
 

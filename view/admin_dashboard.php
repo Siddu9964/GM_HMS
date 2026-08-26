@@ -759,7 +759,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                         <div class="min-w-0">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <h3 id="ipdCardPatientName" class="text-base sm:text-lg font-black text-[#1f6b4a] truncate">Patient Details</h3>
-                                <span id="ipdCardStatusBadge" class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-[#1f6b4a] text-[#f3efe6] border border-[#1f6b4a]">Active</span>
+                                <span id="ipdCardStatusBadge" class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-[#1f6b4a] text-white border border-[#1f6b4a]">Active</span>
                             </div>
                             <div class="flex items-center gap-2 text-xs text-[#1f6b4a] font-semibold flex-wrap mt-1">
                                 <span class="font-mono bg-white border border-[#1f6b4a] px-2 py-0.5 rounded text-[11px] font-bold text-[#1f6b4a]" id="ipdCardPid">PID</span>
@@ -2771,8 +2771,8 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
             document.getElementById('ipdCardBedWard').textContent = `Bed ${adm.bed_number || 'N/A'} • ${adm.ward_name || 'General Ward'}`;
             document.getElementById('ipdCardDoctor').textContent = `Dr. ${adm.doctor_name || 'Attending'}`;
 
-            // Status badge (Strictly #1f6b4a & #f3efe6)
-            document.getElementById('ipdCardStatusBadge').className = 'px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-[#1f6b4a] text-[#f3efe6] border border-[#1f6b4a]';
+            // Status badge (High contrast text-white on #1f6b4a)
+            document.getElementById('ipdCardStatusBadge').className = 'px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-[#1f6b4a] text-white border border-[#1f6b4a]';
             document.getElementById('ipdCardStatusBadge').textContent = adm.admission_status || 'Admitted';
 
             // Financial KPIs (Strictly #1f6b4a & #f3efe6)

@@ -149,20 +149,24 @@ $patientId = $_GET['id'] ?? '';
         }
 
         .gp-emr-pid {
-            background: #1f6b4a;
-            color: #f3efe6;
-            font-family: monospace;
-            font-size: 0.8rem;
-            font-weight: 700;
-            padding: 2px 8px;
+            background-color: #1f6b4a !important;
+            color: #ffffff !important;
+            font-family: 'Inter', monospace;
+            font-size: 0.82rem;
+            font-weight: 800 !important;
+            padding: 3px 10px;
             border-radius: 6px;
             letter-spacing: 0.5px;
+            border: 1px solid #144d34;
+            display: inline-flex;
+            align-items: center;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .gp-emr-pill {
             background: #ffffff;
             color: #1f6b4a;
-            border: 1px solid rgba(31, 107, 74, 0.35);
+            border: 1.5px solid rgba(31, 107, 74, 0.4);
             padding: 2px 10px;
             border-radius: 9999px;
             font-size: 0.75rem;
@@ -173,27 +177,46 @@ $patientId = $_GET['id'] ?? '';
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: #1f6b4a;
-            color: #f3efe6;
-            font-size: 0.72rem;
-            font-weight: 800;
-            padding: 3px 10px;
+            background-color: #1f6b4a !important;
+            color: #ffffff !important;
+            font-size: 0.74rem;
+            font-weight: 800 !important;
+            padding: 3px 12px;
             border-radius: 9999px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            border: 1px solid #144d34;
+            box-shadow: 0 1px 3px rgba(31, 107, 74, 0.25);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .gp-status-chip span,
+        .gp-status-chip * {
+            color: #ffffff !important;
+            font-weight: 800 !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .gp-status-chip.gp-chip-secondary {
-            background: #ffffff;
-            color: #1f6b4a;
-            border: 1px solid #1f6b4a;
+            background: #ffffff !important;
+            color: #1f6b4a !important;
+            border: 1.5px solid #1f6b4a;
+            text-shadow: none !important;
+        }
+
+        .gp-status-chip.gp-chip-secondary span,
+        .gp-status-chip.gp-chip-secondary * {
+            color: #1f6b4a !important;
+            font-weight: 800;
+            text-shadow: none !important;
         }
 
         .gp-status-dot {
             width: 7px;
             height: 7px;
             border-radius: 50%;
-            background: #f3efe6;
+            background-color: #4ade80 !important;
+            box-shadow: 0 0 6px rgba(74, 222, 128, 0.7);
         }
 
         /* Top Right Indicators (Counters) */
