@@ -380,16 +380,16 @@ function renderCreateFields() {
   container.innerHTML = buildFields(cat, {});
 }
 
-function buildFields(cat, vals) {
-  const fld = (label, name, val='', type='text', full=false) =>
+function buildFields(cat, vals, isEdit = false) {
+  const fld = (label, name, val='', type='text', full=false, readonly=false) =>
     `<div style="${full?'grid-column:1/-1;':''}">
       <label class="lis-label">${label}</label>
-      <input type="${type}" name="${name}" value="${escHtml(String(val))}" class="lis-input" step="0.01">
+      <input type="${type}" name="${name}" value="${escHtml(String(val))}" class="lis-input" step="0.01" ${readonly?'readonly style="background:#f1f5f9;opacity:0.75;"':''}>
     </div>`;
 
   if (cat === 'lab') return [
-    fld('Service ID', 'service_id', vals.service_id||''),
-    fld('Test Name', 'test_name', vals.test_name||''),
+    isEdit ? fld('Service ID', 'service_id', vals.service_id||'', 'text', false, true) : '',
+    fld('Test Name', 'test_name', vals.test_name||'', 'text', !isEdit),
     fld('OPD Rate (₹)', 'opd_rate', vals.opd_rate||0, 'number'),
     fld('GW Rate (₹)', 'gw_rate', vals.gw_rate||0, 'number'),
     fld('SPVT Rate (₹)', 'spvt_rate', vals.spvt_rate||0, 'number'),
@@ -398,7 +398,7 @@ function buildFields(cat, vals) {
   ].join('');
 
   if (cat === 'radiology') return [
-    fld('Service ID', 'service_id', vals.service_id||''),
+    isEdit ? fld('Service ID', 'service_id', vals.service_id||'', 'text', false, true) : '',
     fld('Billing Name', 'billing_name', vals.billing_name||''),
     fld('Modality', 'modality_name', vals.modality_name||''),
     fld('OPD Price (₹)', 'opd_price', vals.opd_price||0, 'number'),
@@ -410,8 +410,8 @@ function buildFields(cat, vals) {
 
   // other
   return [
-    fld('Service ID', 'service_id', vals.service_id||''),
-    fld('Billing Name', 'billing_name', vals.billing_name||''),
+    isEdit ? fld('Service ID', 'service_id', vals.service_id||'', 'text', false, true) : '',
+    fld('Billing Name', 'billing_name', vals.billing_name||'', 'text', !isEdit),
     fld('OP/GW Price (₹)', 'op_gw_price', vals.op_gw_price||0, 'number'),
     fld('Semi Private (₹)', 'semi_private_price', vals.semi_private_price||0, 'number'),
     fld('Private/ICU (₹)', 'private_icu_price', vals.private_icu_price||0, 'number'),
@@ -431,6 +431,7 @@ async function submitCreate() {
   const category = document.getElementById('create-category').value;
   const body     = collectFields('create-fields');
   body.category  = category;
+  body.type      = category;
 
   try {
     const res = await lisApi('POST', '/api/laboratory/services', body);
@@ -447,7 +448,7 @@ async function submitCreate() {
 function openEditModal(type, id, data) {
   document.getElementById('edit-type').value = type;
   document.getElementById('edit-id').value   = id;
-  document.getElementById('edit-fields').innerHTML = buildFields(type, data);
+  document.getElementById('edit-fields').innerHTML = buildFields(type, data, true);
   document.getElementById('editModal').classList.add('open');
 }
 

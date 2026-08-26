@@ -408,26 +408,23 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
             const fields = $('#create-dynamic-fields');
             fields.empty();
             
-            // Common Field
-            fields.append(renderFormField('Service ID', 'service_id', '', 'text', 'md:col-span-1'));
-            
             if (category === 'lab') {
-                fields.append(renderFormField('Test Name', 'test_name', '', 'text', 'md:col-span-1'));
+                fields.append(renderFormField('Test Name *', 'test_name', '', 'text', 'md:col-span-2', 'e.g. Complete Blood Count'));
                 fields.append(renderFormField('OPD Rate', 'opd_rate', '0', 'number'));
                 fields.append(renderFormField('GW Rate', 'gw_rate', '0', 'number'));
                 fields.append(renderFormField('SPVT Rate', 'spvt_rate', '0', 'number'));
                 fields.append(renderFormField('PVT/CCU Rate', 'pvt_ccu_rate', '0', 'number'));
                 fields.append(renderFormField('Suite Rate', 'suite_rate', '0', 'number'));
             } else if (category === 'radiology') {
-                fields.append(renderFormField('Billing Name', 'billing_name', '', 'text', 'md:col-span-1'));
-                fields.append(renderFormField('Modality', 'modality_name', '', 'text'));
+                fields.append(renderFormField('Billing Name *', 'billing_name', '', 'text', 'md:col-span-1', 'e.g. CHEST X-RAY'));
+                fields.append(renderFormField('Modality', 'modality_name', '', 'text', 'md:col-span-1', 'e.g. X-RAY, USG, MRI'));
                 fields.append(renderFormField('OPD Price', 'opd_price', '0', 'number'));
                 fields.append(renderFormField('General Ward', 'general_ward_price', '0', 'number'));
                 fields.append(renderFormField('Semi Private', 'semi_private_price', '0', 'number'));
                 fields.append(renderFormField('Private / ICU', 'private_icu_price', '0', 'number'));
                 fields.append(renderFormField('Suite Price', 'suite_price', '0', 'number'));
             } else {
-                fields.append(renderFormField('Billing Name', 'billing_name', '', 'text', 'md:col-span-1'));
+                fields.append(renderFormField('Billing Name *', 'billing_name', '', 'text', 'md:col-span-2', 'e.g. ECG'));
                 fields.append(renderFormField('OP/GW Price', 'op_gw_price', '0', 'number'));
                 fields.append(renderFormField('Semi Private', 'semi_private_price', '0', 'number'));
                 fields.append(renderFormField('Private / ICU', 'private_icu_price', '0', 'number'));
@@ -471,12 +468,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
         function closeEditModal() { $('#edit-modal').addClass('hidden'); }
 
-        function renderFormField(label, name, value, type='text', className='') {
+        function renderFormField(label, name, value, type='text', className='', placeholder='') {
             return `
                 <div class="${className} space-y-2">
                     <label class="text-[10px] font-black text-[#1f6b4a] uppercase tracking-widest ml-1">${label}</label>
-                    <input type="${type}" name="${name}" value="${value}" 
-                           class="w-full px-4 py-3 bg-[#f3efe6] border border-[#1f6b4a]/20 rounded-xl focus:ring-4 focus:ring-[#1f6b4a]/10 focus:border-[#1f6b4a] outline-none transition-all font-bold text-[#1f6b4a] shadow-inner placeholder-[#1f6b4a]/30">
+                    <input type="${type}" name="${name}" value="${value}" placeholder="${placeholder}"
+                           class="w-full px-4 py-3 bg-[#f3efe6] border border-[#1f6b4a]/20 rounded-xl focus:ring-4 focus:ring-[#1f6b4a]/10 focus:border-[#1f6b4a] outline-none transition-all font-bold text-[#1f6b4a] shadow-inner placeholder-[#1f6b4a]/40">
                 </div>
             `;
         }
@@ -519,6 +516,19 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
             const formData = {};
             $('#create-service-form').serializeArray().forEach(item => formData[item.name] = item.value);
             
+            const category = formData.category || $('#create-service-category').val();
+            formData.type = category;
+
+            // Client-side validation
+            if (category === 'lab' && (!formData.test_name || !formData.test_name.trim())) {
+                showToast('Please enter Test Name', 'error');
+                return;
+            }
+            if ((category === 'radiology' || category === 'other') && (!formData.billing_name || !formData.billing_name.trim())) {
+                showToast('Please enter Service / Billing Name', 'error');
+                return;
+            }
+
             $.ajax({
                 url: '../api/laboratory/services',
                 method: 'POST',
@@ -526,7 +536,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                 data: JSON.stringify(formData),
                 success: function(response) {
                     if (response.success) {
-                        showToast('Service inserted successfully!');
+                        showToast('Service added successfully!');
                         closeCreateModal();
                         fetchServices();
                     }

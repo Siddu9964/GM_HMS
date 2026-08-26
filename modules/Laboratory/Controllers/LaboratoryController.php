@@ -151,12 +151,17 @@ class LaboratoryController extends BaseController
         $this->requireAuth();
         try {
             $data = $this->getJsonInput();
-            $type = $data['type'] ?? '';
-            unset($data['type']);
+            $type = $data['type'] ?? $data['category'] ?? '';
+            unset($data['type'], $data['category']);
+            
+            if (empty($type)) {
+                $this->respondBadRequest('Service category/type is required (lab, radiology, or other)');
+                return;
+            }
             
             $result = $this->service->createService($type, $data);
             if ($result) {
-                $this->respondSuccess(null, 'Service created successfully');
+                $this->respondSuccess($result, 'Service created successfully');
             } else {
                 $this->respondBadRequest('Failed to create service or invalid type');
             }

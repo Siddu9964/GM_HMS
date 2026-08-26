@@ -182,9 +182,33 @@ class LaboratoryRepository
         return false;
     }
 
+    public function generateNextId($prefix)
+    {
+        $prefix = strtoupper($prefix);
+        $tableMap = [
+            'LAB' => 'lab_services',
+            'RDS' => 'radiology_services',
+            'OTH' => 'other_services'
+        ];
+        $table = $tableMap[$prefix] ?? 'lab_services';
+        
+        $row = $this->db->fetchOne(
+            "SELECT service_id FROM {$table} WHERE service_id LIKE ? ORDER BY LENGTH(service_id) DESC, service_id DESC LIMIT 1",
+            [$prefix . '%']
+        );
+        if ($row && !empty($row['service_id'])) {
+            if (preg_match('/(\d+)/', $row['service_id'], $m)) {
+                return $prefix . ((int)$m[1] + 1);
+            }
+        }
+        return $prefix . '1001';
+    }
+
     public function getOtherServices()
     {
-        return $this->db->fetchAll("SELECT * FROM other_services ORDER BY billing_name ASC");
+        return $this->db->fetchAll(
+            "SELECT sl_no, service_id, billing_name, op_gw_price, `Semi Private Room` AS semi_private_price, `Private Room` AS private_icu_price, suite_price, last_update FROM other_services ORDER BY billing_name ASC"
+        );
     }
 
     public function deleteLabService($id)
@@ -204,63 +228,97 @@ class LaboratoryRepository
 
     public function createLabService($data)
     {
-        return $this->db->execute(
+        $serviceId = !empty(trim($data['service_id'] ?? '')) ? strtoupper(trim($data['service_id'])) : $this->generateNextId('LAB');
+        $testName = trim($data['test_name'] ?? '');
+        $opdRate = isset($data['opd_rate']) && $data['opd_rate'] !== '' ? (float)$data['opd_rate'] : 0.00;
+        $gwRate = isset($data['gw_rate']) && $data['gw_rate'] !== '' ? (float)$data['gw_rate'] : 0.00;
+        $spvtRate = isset($data['spvt_rate']) && $data['spvt_rate'] !== '' ? (float)$data['spvt_rate'] : 0.00;
+        $pvtCcuRate = isset($data['pvt_ccu_rate']) && $data['pvt_ccu_rate'] !== '' ? (float)$data['pvt_ccu_rate'] : 0.00;
+        $suiteRate = isset($data['suite_rate']) && $data['suite_rate'] !== '' ? (float)$data['suite_rate'] : 0.00;
+
+        $res = $this->db->execute(
             "INSERT INTO lab_services (service_id, test_name, opd_rate, `General Ward`, `Semi Private Room`, `Private Room`, suite_rate) VALUES (?, ?, ?, ?, ?, ?, ?)",
             [
-                $data['service_id'],
-                $data['test_name'],
-                $data['opd_rate'],
-                $data['gw_rate'],
-                $data['spvt_rate'],
-                $data['pvt_ccu_rate'],
-                $data['suite_rate']
+                $serviceId,
+                $testName,
+                $opdRate,
+                $gwRate,
+                $spvtRate,
+                $pvtCcuRate,
+                $suiteRate
             ]
         );
+        return $res ? ['service_id' => $serviceId] : false;
     }
 
     public function createRadiologyService($data)
     {
-        return $this->db->execute(
+        $serviceId = !empty(trim($data['service_id'] ?? '')) ? strtoupper(trim($data['service_id'])) : $this->generateNextId('RDS');
+        $billingName = trim($data['billing_name'] ?? '');
+        $modalityName = trim($data['modality_name'] ?? '');
+        $opdPrice = isset($data['opd_price']) && $data['opd_price'] !== '' ? (float)$data['opd_price'] : 0.00;
+        $gwPrice = isset($data['general_ward_price']) && $data['general_ward_price'] !== '' ? (float)$data['general_ward_price'] : 0.00;
+        $spPrice = isset($data['semi_private_price']) && $data['semi_private_price'] !== '' ? (float)$data['semi_private_price'] : 0.00;
+        $pvtPrice = isset($data['private_icu_price']) && $data['private_icu_price'] !== '' ? (float)$data['private_icu_price'] : 0.00;
+        $suitePrice = isset($data['suite_price']) && $data['suite_price'] !== '' ? (float)$data['suite_price'] : 0.00;
+
+        $res = $this->db->execute(
             "INSERT INTO radiology_services (service_id, billing_name, modality_name, opd_price, general_ward_price, semi_private_price, private_icu_price, suite_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             [
-                $data['service_id'],
-                $data['billing_name'],
-                $data['modality_name'],
-                $data['opd_price'],
-                $data['general_ward_price'],
-                $data['semi_private_price'],
-                $data['private_icu_price'],
-                $data['suite_price']
+                $serviceId,
+                $billingName,
+                $modalityName,
+                $opdPrice,
+                $gwPrice,
+                $spPrice,
+                $pvtPrice,
+                $suitePrice
             ]
         );
+        return $res ? ['service_id' => $serviceId] : false;
     }
 
     public function createOtherService($data)
     {
-        return $this->db->execute(
-            "INSERT INTO other_services (service_id, billing_name, op_gw_price, semi_private_price, private_icu_price, suite_price) VALUES (?, ?, ?, ?, ?, ?)",
+        $serviceId = !empty(trim($data['service_id'] ?? '')) ? strtoupper(trim($data['service_id'])) : $this->generateNextId('OTH');
+        $billingName = trim($data['billing_name'] ?? '');
+        $opGwPrice = isset($data['op_gw_price']) && $data['op_gw_price'] !== '' ? (float)$data['op_gw_price'] : 0.00;
+        $spPrice = isset($data['semi_private_price']) && $data['semi_private_price'] !== '' ? (float)$data['semi_private_price'] : 0.00;
+        $pvtPrice = isset($data['private_icu_price']) && $data['private_icu_price'] !== '' ? (float)$data['private_icu_price'] : 0.00;
+        $suitePrice = isset($data['suite_price']) && $data['suite_price'] !== '' ? (float)$data['suite_price'] : 0.00;
+
+        $res = $this->db->execute(
+            "INSERT INTO other_services (service_id, billing_name, op_gw_price, `Semi Private Room`, `Private Room`, suite_price) VALUES (?, ?, ?, ?, ?, ?)",
             [
-                $data['service_id'],
-                $data['billing_name'],
-                $data['op_gw_price'],
-                $data['semi_private_price'],
-                $data['private_icu_price'],
-                $data['suite_price']
+                $serviceId,
+                $billingName,
+                $opGwPrice,
+                $spPrice,
+                $pvtPrice,
+                $suitePrice
             ]
         );
+        return $res ? ['service_id' => $serviceId] : false;
     }
 
     public function updateLabService($id, $data)
     {
+        $testName = trim($data['test_name'] ?? '');
+        $opdRate = isset($data['opd_rate']) && $data['opd_rate'] !== '' ? (float)$data['opd_rate'] : 0.00;
+        $gwRate = isset($data['gw_rate']) && $data['gw_rate'] !== '' ? (float)$data['gw_rate'] : 0.00;
+        $spvtRate = isset($data['spvt_rate']) && $data['spvt_rate'] !== '' ? (float)$data['spvt_rate'] : 0.00;
+        $pvtCcuRate = isset($data['pvt_ccu_rate']) && $data['pvt_ccu_rate'] !== '' ? (float)$data['pvt_ccu_rate'] : 0.00;
+        $suiteRate = isset($data['suite_rate']) && $data['suite_rate'] !== '' ? (float)$data['suite_rate'] : 0.00;
+
         return $this->db->execute(
             "UPDATE lab_services SET test_name = ?, opd_rate = ?, `General Ward` = ?, `Semi Private Room` = ?, `Private Room` = ?, suite_rate = ? WHERE service_id = ?",
             [
-                $data['test_name'],
-                $data['opd_rate'],
-                $data['gw_rate'],
-                $data['spvt_rate'],
-                $data['pvt_ccu_rate'],
-                $data['suite_rate'],
+                $testName,
+                $opdRate,
+                $gwRate,
+                $spvtRate,
+                $pvtCcuRate,
+                $suiteRate,
                 $id
             ]
         );
@@ -268,16 +326,24 @@ class LaboratoryRepository
 
     public function updateRadiologyService($id, $data)
     {
+        $billingName = trim($data['billing_name'] ?? '');
+        $modalityName = trim($data['modality_name'] ?? '');
+        $opdPrice = isset($data['opd_price']) && $data['opd_price'] !== '' ? (float)$data['opd_price'] : 0.00;
+        $gwPrice = isset($data['general_ward_price']) && $data['general_ward_price'] !== '' ? (float)$data['general_ward_price'] : 0.00;
+        $spPrice = isset($data['semi_private_price']) && $data['semi_private_price'] !== '' ? (float)$data['semi_private_price'] : 0.00;
+        $pvtPrice = isset($data['private_icu_price']) && $data['private_icu_price'] !== '' ? (float)$data['private_icu_price'] : 0.00;
+        $suitePrice = isset($data['suite_price']) && $data['suite_price'] !== '' ? (float)$data['suite_price'] : 0.00;
+
         return $this->db->execute(
             "UPDATE radiology_services SET billing_name = ?, modality_name = ?, opd_price = ?, general_ward_price = ?, semi_private_price = ?, private_icu_price = ?, suite_price = ? WHERE service_id = ?",
             [
-                $data['billing_name'],
-                $data['modality_name'],
-                $data['opd_price'],
-                $data['general_ward_price'],
-                $data['semi_private_price'],
-                $data['private_icu_price'],
-                $data['suite_price'],
+                $billingName,
+                $modalityName,
+                $opdPrice,
+                $gwPrice,
+                $spPrice,
+                $pvtPrice,
+                $suitePrice,
                 $id
             ]
         );
@@ -285,14 +351,20 @@ class LaboratoryRepository
 
     public function updateOtherService($id, $data)
     {
+        $billingName = trim($data['billing_name'] ?? '');
+        $opGwPrice = isset($data['op_gw_price']) && $data['op_gw_price'] !== '' ? (float)$data['op_gw_price'] : 0.00;
+        $spPrice = isset($data['semi_private_price']) && $data['semi_private_price'] !== '' ? (float)$data['semi_private_price'] : 0.00;
+        $pvtPrice = isset($data['private_icu_price']) && $data['private_icu_price'] !== '' ? (float)$data['private_icu_price'] : 0.00;
+        $suitePrice = isset($data['suite_price']) && $data['suite_price'] !== '' ? (float)$data['suite_price'] : 0.00;
+
         return $this->db->execute(
-            "UPDATE other_services SET billing_name = ?, op_gw_price = ?, semi_private_price = ?, private_icu_price = ?, suite_price = ? WHERE service_id = ?",
+            "UPDATE other_services SET billing_name = ?, op_gw_price = ?, `Semi Private Room` = ?, `Private Room` = ?, suite_price = ? WHERE service_id = ?",
             [
-                $data['billing_name'],
-                $data['op_gw_price'],
-                $data['semi_private_price'],
-                $data['private_icu_price'],
-                $data['suite_price'],
+                $billingName,
+                $opGwPrice,
+                $spPrice,
+                $pvtPrice,
+                $suitePrice,
                 $id
             ]
         );
