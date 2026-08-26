@@ -916,7 +916,23 @@
                     // Extract data array from the paginated response object, or fallback to the object itself if it is an array
                     allPatients = (result.data && Array.isArray(result.data.data)) ? result.data.data : (Array.isArray(result.data) ? result.data : []);
                     filteredPatients = [...allPatients];
-                    renderTable();
+
+                    // Check if search parameter exists in URL or sessionStorage
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const searchParam = urlParams.get('search') || urlParams.get('id');
+                    if (searchParam) {
+                        const searchInput = document.getElementById('searchInput');
+                        if (searchInput) {
+                            searchInput.value = searchParam;
+                        }
+                        // Clean up URL so variable is not exposed in address bar
+                        try {
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        } catch (e) {}
+                        filterPatients();
+                    } else {
+                        renderTable();
+                    }
                 } else {
                     showToast('Failed to load patients: ' + (result.error || 'Unknown error'), 'error');
                 }
@@ -986,7 +1002,10 @@
                         <td>${patient.date || 'N/A'}</td>
                         <td><span class="status-badge ${statusClass}">${patient.status || 'Active'}</span></td>
                         <td style="text-align: center;">
-                            <div style="display: inline-flex; gap: 4px;">
+                            <div style="display: inline-flex; gap: 4px; align-items: center;">
+                                <span class="action-icon view" onclick="openPatientCard('${patient.patient_id}')" title="View Patient Card / Profile" style="color: #10b981; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 4px 8px; border-radius: 6px; cursor: pointer;">
+                                    <i class="fas fa-id-card"></i>
+                                </span>
                                 <span class="action-icon edit" onclick="editPatient('${patient.patient_id}')" title="Edit Patient">
                                     <i class="fas fa-edit"></i>
                                 </span>
@@ -1000,6 +1019,13 @@
             }).join('');
             
             updatePaginationInfo();
+        }
+
+        // Direct navigation to individual patient card/profile via sessionStorage (no URL variables)
+        function openPatientCard(patientId) {
+            if (!patientId) return;
+            sessionStorage.setItem('currentPatientId', patientId);
+            window.location.href = '/GM_HMS/reception_view/patient_profile.php';
         }
         
         // Update pagination info

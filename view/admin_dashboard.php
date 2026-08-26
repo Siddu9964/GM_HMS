@@ -340,38 +340,44 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                     </div>
                 </div>
                 
-                <!-- Additional Stats Row -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Additional Stats Row (Compact Height) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
                     <!-- Bed Availability -->
-                    <div class="stat-card">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-gray-700 font-semibold">Bed Availability</h3>
-                            <i class="fas fa-bed text-purple-500 text-xl"></i>
+                    <div class="stat-card !p-4">
+                        <div class="flex items-center justify-between mb-2.5 pb-2 border-b border-gray-100">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-bed text-purple-600 text-sm"></i>
+                                <h3 class="text-gray-800 font-bold text-xs sm:text-sm">Bed Availability</h3>
+                            </div>
                         </div>
-                        <div id="bedAvailabilityContainer" class="space-y-4 max-h-96 overflow-y-auto pr-2">
-                            <p class="text-sm text-gray-500">Loading bed availability...</p>
+                        <div id="bedAvailabilityContainer" class="space-y-2 max-h-48 overflow-y-auto pr-1 text-xs">
+                            <p class="text-xs text-gray-500">Loading bed availability...</p>
                         </div>
                     </div>
                     
                     <!-- Department Summary -->
-                    <div class="stat-card">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-gray-700 font-semibold">Active Departments</h3>
-                            <i class="fas fa-building text-blue-500 text-xl"></i>
+                    <div class="stat-card !p-4">
+                        <div class="flex items-center justify-between mb-2.5 pb-2 border-b border-gray-100">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-building text-blue-600 text-sm"></i>
+                                <h3 class="text-gray-800 font-bold text-xs sm:text-sm">Active Departments</h3>
+                            </div>
                         </div>
-                        <div id="activeDepartmentsContainer" class="space-y-4 max-h-80 overflow-y-auto pr-2">
-                            <p class="text-sm text-gray-500">Loading departments...</p>
+                        <div id="activeDepartmentsContainer" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs">
+                            <p class="text-xs text-gray-500">Loading departments...</p>
                         </div>
                     </div>
                     
                     <!-- Operations Schedule -->
-                    <div class="stat-card">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-gray-700 font-semibold">Surgeries Today</h3>
-                            <i class="fas fa-procedures text-red-500 text-xl"></i>
+                    <div class="stat-card !p-4">
+                        <div class="flex items-center justify-between mb-2.5 pb-2 border-b border-gray-100">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-procedures text-rose-600 text-sm"></i>
+                                <h3 class="text-gray-800 font-bold text-xs sm:text-sm">Surgeries Today</h3>
+                            </div>
                         </div>
-                        <div class="space-y-3" id="operationsContainer">
-                            <p class="text-sm text-gray-500">Loading operations...</p>
+                        <div class="space-y-2 max-h-48 overflow-y-auto pr-1 text-xs" id="operationsContainer">
+                            <p class="text-xs text-gray-500">Loading operations...</p>
                         </div>
                     </div>
                 </div>
@@ -734,6 +740,168 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     </div>
 
     <!-- ============================================================ -->
+    <!-- INPATIENT DOSSIER & BILLING DETAILS CARD MODAL               -->
+    <!-- Theme strictly: #f3efe6 (Cream) & #1f6b4a (Forest Green)    -->
+    <!-- ============================================================ -->
+    <div id="ipdPatientCardModal" class="fixed inset-0 z-[110] hidden overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen p-2 sm:p-4 text-center">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true" onclick="closeIpdPatientCardModal()">
+                <div class="absolute inset-0 bg-[#1f6b4a]/40 backdrop-blur-sm"></div>
+            </div>
+            <div class="relative z-10 inline-block bg-[#f3efe6] rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all my-auto align-middle w-full max-w-full sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl border-2 border-[#1f6b4a] max-h-[92vh] flex flex-col">
+                
+                <!-- Modal Top Header Strip (Strictly #f3efe6 & #1f6b4a) -->
+                <div class="bg-[#f3efe6] px-4 sm:px-6 py-4 border-b-2 border-[#1f6b4a] flex flex-wrap items-center justify-between gap-3 shrink-0">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <div id="ipdCardAvatar" class="w-12 h-12 rounded-full bg-[#1f6b4a] text-[#f3efe6] font-black text-xl flex items-center justify-center border-2 border-[#1f6b4a] shadow-sm shrink-0">
+                            P
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h3 id="ipdCardPatientName" class="text-base sm:text-lg font-black text-[#1f6b4a] truncate">Patient Details</h3>
+                                <span id="ipdCardStatusBadge" class="px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-[#1f6b4a] text-[#f3efe6] border border-[#1f6b4a]">Active</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs text-[#1f6b4a] font-semibold flex-wrap mt-1">
+                                <span class="font-mono bg-white border border-[#1f6b4a] px-2 py-0.5 rounded text-[11px] font-bold text-[#1f6b4a]" id="ipdCardPid">PID</span>
+                                <span>•</span>
+                                <span class="font-mono bg-white border border-[#1f6b4a] px-2 py-0.5 rounded text-[11px] font-bold text-[#1f6b4a]" id="ipdCardAdmId">ADM</span>
+                                <span>•</span>
+                                <span id="ipdCardAgeGender" class="bg-white border border-[#1f6b4a] px-2 py-0.5 rounded text-[11px] font-semibold text-[#1f6b4a]">Age/Sex</span>
+                                <span>•</span>
+                                <span id="ipdCardBloodGroup" class="bg-white border border-[#1f6b4a] px-2 py-0.5 rounded text-[11px] font-semibold text-[#1f6b4a]">Blood Group</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="hidden sm:flex flex-col text-right text-xs">
+                            <span class="font-black text-[#1f6b4a]" id="ipdCardBedWard">Bed &amp; Ward</span>
+                            <span class="text-[#1f6b4a]/80 font-semibold text-[11px]" id="ipdCardDoctor">Attending Doctor</span>
+                        </div>
+                        <button onclick="closeIpdPatientCardModal()" class="w-8 h-8 rounded-lg bg-white hover:bg-[#1f6b4a] text-[#1f6b4a] hover:text-[#f3efe6] border border-[#1f6b4a] flex items-center justify-center transition-colors shadow-xs cursor-pointer" title="Close Modal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Financial & Stay KPI Strip (Strictly #f3efe6 & #1f6b4a) -->
+                <div class="bg-[#f3efe6] px-4 sm:px-6 py-3 border-b-2 border-[#1f6b4a]/30 grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 shrink-0">
+                    <div class="bg-white border-2 border-[#1f6b4a] rounded-xl p-2.5 text-center">
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-[#1f6b4a]">Grand Total</div>
+                        <div class="text-base sm:text-lg font-black text-[#1f6b4a]" id="ipdCardGrandTotal">₹0.00</div>
+                    </div>
+                    <div class="bg-white border-2 border-[#1f6b4a] rounded-xl p-2.5 text-center">
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-[#1f6b4a]">Amount Paid</div>
+                        <div class="text-base sm:text-lg font-black text-[#1f6b4a]" id="ipdCardAmountPaid">₹0.00</div>
+                    </div>
+                    <div class="bg-white border-2 border-[#1f6b4a] rounded-xl p-2.5 text-center">
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-[#1f6b4a]">Balance Due</div>
+                        <div class="text-base sm:text-lg font-black text-[#1f6b4a]" id="ipdCardBalanceDue">₹0.00</div>
+                    </div>
+                    <div class="bg-white border-2 border-[#1f6b4a] rounded-xl p-2.5 text-center">
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-[#1f6b4a]">Length of Stay</div>
+                        <div class="text-base sm:text-lg font-black text-[#1f6b4a]" id="ipdCardStayDays">0 Days</div>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1 bg-white border-2 border-[#1f6b4a] rounded-xl p-2.5 text-center">
+                        <div class="text-[10px] font-bold uppercase tracking-wider text-[#1f6b4a]">Payment Status</div>
+                        <div class="text-xs sm:text-sm font-black text-[#1f6b4a] mt-1" id="ipdCardPaymentStatus">Pending</div>
+                    </div>
+                </div>
+
+                <!-- Dossier Navigation Tabs (Strictly #f3efe6 & #1f6b4a) -->
+                <div class="bg-[#f3efe6] px-4 sm:px-6 py-2.5 border-b-2 border-[#1f6b4a] flex gap-2 overflow-x-auto shrink-0">
+                    <button id="ipdTabBtnBill" onclick="switchIpdCardTab('bill')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-[#1f6b4a] text-[#f3efe6] border border-[#1f6b4a] shadow-xs cursor-pointer">
+                        <i class="fas fa-file-invoice-dollar mr-1"></i> Billing Master &amp; Breakdown
+                    </button>
+                    <button id="ipdTabBtnItems" onclick="switchIpdCardTab('items')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-[#f3efe6] text-[#1f6b4a] hover:bg-[#1f6b4a] hover:text-[#f3efe6] border border-[#1f6b4a] cursor-pointer">
+                        <i class="fas fa-list-check mr-1"></i> Itemized Charges (<span id="ipdCardItemsCount">0</span>)
+                    </button>
+                    <button id="ipdTabBtnClinical" onclick="switchIpdCardTab('clinical')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-[#f3efe6] text-[#1f6b4a] hover:bg-[#1f6b4a] hover:text-[#f3efe6] border border-[#1f6b4a] cursor-pointer">
+                        <i class="fas fa-notes-medical mr-1"></i> Clinical Records (<span id="ipdCardClinicalCount">0</span>)
+                    </button>
+                </div>
+
+                <!-- Modal Body Content (Strictly #f3efe6 canvas) -->
+                <div class="p-4 sm:p-6 overflow-y-auto flex-1 bg-[#f3efe6]" id="ipdCardModalBody">
+                    <!-- Loading placeholder -->
+                    <div id="ipdCardLoading" class="py-16 text-center text-[#1f6b4a]">
+                        <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                        <p class="font-bold text-sm">Loading patient clinical and billing dossier...</p>
+                    </div>
+
+                    <!-- TAB 1: Billing Master & Department Breakdowns -->
+                    <div id="ipdTabPaneBill" class="hidden space-y-5">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3" id="ipdCategoriesGrid">
+                            <!-- Populated dynamically -->
+                        </div>
+
+                        <!-- Insurance & Billing Master Details -->
+                        <div class="bg-white border-2 border-[#1f6b4a] rounded-xl p-4 shadow-sm">
+                            <h4 class="text-xs font-black uppercase tracking-wider text-[#1f6b4a] mb-3 flex items-center gap-1.5">
+                                <i class="fas fa-shield-alt"></i> Coverage &amp; Billing Account Details
+                            </h4>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                <div class="bg-[#f3efe6] border border-[#1f6b4a] p-2.5 rounded-lg">
+                                    <span class="text-[#1f6b4a]/70 block text-[10px] font-bold">BILL ID</span>
+                                    <span class="font-mono font-bold text-[#1f6b4a]" id="ipdCardBillNo">-</span>
+                                </div>
+                                <div class="bg-[#f3efe6] border border-[#1f6b4a] p-2.5 rounded-lg">
+                                    <span class="text-[#1f6b4a]/70 block text-[10px] font-bold">BILL TYPE</span>
+                                    <span class="font-bold text-[#1f6b4a]" id="ipdCardBillType">SELF</span>
+                                </div>
+                                <div class="bg-[#f3efe6] border border-[#1f6b4a] p-2.5 rounded-lg">
+                                    <span class="text-[#1f6b4a]/70 block text-[10px] font-bold">SPONSOR / TPA</span>
+                                    <span class="font-bold text-[#1f6b4a]" id="ipdCardSponsor">None</span>
+                                </div>
+                                <div class="bg-[#f3efe6] border border-[#1f6b4a] p-2.5 rounded-lg">
+                                    <span class="text-[#1f6b4a]/70 block text-[10px] font-bold">POLICY / APPROVAL NO</span>
+                                    <span class="font-mono font-bold text-[#1f6b4a]" id="ipdCardPolicyNo">None</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: Itemized Charges Table -->
+                    <div id="ipdTabPaneItems" class="hidden">
+                        <div class="border-2 border-[#1f6b4a] rounded-xl overflow-hidden shadow-sm bg-white">
+                            <div class="max-h-[50vh] overflow-y-auto">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <thead class="bg-[#1f6b4a] text-[#f3efe6] sticky top-0 font-bold">
+                                        <tr>
+                                            <th class="px-3.5 py-2.5 border-b border-[#1f6b4a]">Date</th>
+                                            <th class="px-3.5 py-2.5 border-b border-[#1f6b4a]">Type</th>
+                                            <th class="px-3.5 py-2.5 border-b border-[#1f6b4a]">Charge Description</th>
+                                            <th class="px-3.5 py-2.5 text-right border-b border-[#1f6b4a]">Amount (₹)</th>
+                                            <th class="px-3.5 py-2.5 text-center border-b border-[#1f6b4a]">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ipdItemsTableBody" class="divide-y divide-[#1f6b4a]/20">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: Clinical Records & Diagnostic Tests -->
+                    <div id="ipdTabPaneClinical" class="hidden space-y-4">
+                        <div id="ipdClinicalList" class="space-y-4">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer (Strictly #f3efe6 & #1f6b4a) -->
+                <div class="bg-[#f3efe6] px-4 sm:px-6 py-3 border-t-2 border-[#1f6b4a] flex items-center justify-end gap-3 shrink-0">
+                    <button onclick="closeIpdPatientCardModal()" class="px-5 py-2 bg-[#1f6b4a] hover:bg-[#18543a] text-[#f3efe6] border border-[#1f6b4a] rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm">
+                        Close
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
     <!-- 3. OPD VISITS & QUEUE DRILLDOWN MODAL                         -->
     <!-- ============================================================ -->
     <div id="opdDrilldownModal" class="fixed inset-0 z-[100] hidden overflow-y-auto">
@@ -826,12 +994,11 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                                 <th class="px-3 sm:px-4 py-2.5 sm:py-3">Contact</th>
                                 <th class="px-3 sm:px-4 py-2.5 sm:py-3">Doctor & Specialization</th>
                                 <th class="px-3 sm:px-4 py-2.5 sm:py-3">Scheduled Time</th>
-                                <th class="px-3 sm:px-4 py-2.5 sm:py-3 text-center">Status</th>
                                 <th class="px-3 sm:px-4 py-2.5 sm:py-3 text-right">Fee (₹)</th>
                             </tr>
                         </thead>
                         <tbody id="opdModalTableBody" class="divide-y divide-gray-100">
-                            <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">Loading OPD consultations...</td></tr>
+                            <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">Loading OPD consultations...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1802,29 +1969,29 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                                 const color = colors[i % colors.length];
                                 const amt = op.amount ? `₹${parseFloat(op.amount).toLocaleString('en-IN')}` : '';
                                 return `
-                                <div class="p-2.5 bg-gray-50/80 hover:bg-gray-100/90 rounded-xl border border-gray-100 flex items-start justify-between gap-2 transition-all">
-                                    <div class="flex items-start gap-2.5">
-                                        <div class="w-8 h-8 rounded-lg bg-${color}-100 text-${color}-700 flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold shadow-xs">
+                                <div class="p-2 bg-gray-50/80 hover:bg-gray-100/90 rounded-lg border border-gray-100 flex items-start justify-between gap-2 transition-all">
+                                    <div class="flex items-start gap-2 min-w-0">
+                                        <div class="w-7 h-7 rounded-md bg-${color}-100 text-${color}-700 flex items-center justify-center shrink-0 mt-0.5 text-xs font-bold shadow-2xs">
                                             <i class="fas fa-procedures"></i>
                                         </div>
-                                        <div>
-                                            <p class="text-xs font-bold text-gray-900">${op.name || 'Surgical Procedure'}</p>
-                                            <p class="text-[11px] text-gray-500 font-medium">${op.patient_name || 'Patient'} • <span class="text-[10px] bg-${color}-50 text-${color}-700 font-semibold px-1.5 py-0.2 rounded border border-${color}-200">${op.type || 'OT'}</span></p>
+                                        <div class="min-w-0">
+                                            <p class="text-xs font-bold text-gray-900 truncate">${op.name || 'Surgical Procedure'}</p>
+                                            <p class="text-[10px] text-gray-500 font-medium truncate">${op.patient_name || 'Patient'} • <span class="text-[9px] bg-${color}-50 text-${color}-700 font-semibold px-1 py-0.2 rounded border border-${color}-200">${op.type || 'OT'}</span></p>
                                         </div>
                                     </div>
                                     <div class="text-right shrink-0">
                                         <span class="text-xs font-bold text-gray-800">${amt}</span>
-                                        <p class="text-[10px] text-gray-400 font-medium">${op.formatted_date || op.created_at || 'Today'}</p>
+                                        <p class="text-[9px] text-gray-400 font-medium">${op.formatted_date || op.created_at || 'Today'}</p>
                                     </div>
                                 </div>
                                 `;
                             }).join('');
                         } else {
                             opsContainer.innerHTML = `
-                                <div class="p-4 bg-gray-50 rounded-xl text-center border border-dashed border-gray-200">
-                                    <i class="fas fa-check-circle text-emerald-500 text-lg mb-1"></i>
+                                <div class="p-3 bg-gray-50 rounded-xl text-center border border-dashed border-gray-200">
+                                    <i class="fas fa-check-circle text-emerald-500 text-base mb-0.5"></i>
                                     <p class="text-xs font-semibold text-gray-700">No Surgeries Scheduled Today</p>
-                                    <p class="text-[10px] text-gray-400 mt-0.5">OT theater is currently in readiness mode</p>
+                                    <p class="text-[10px] text-gray-400 mt-0.5">OT theater is in readiness mode</p>
                                 </div>
                             `;
                         }
@@ -1945,23 +2112,19 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
         async function loadBedAvailability() {
             try {
                 const response = await fetch('/GM_HMS/api/admin/bed-availability');
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch bed availability');
-                }
-                
+                if (!response.ok) throw new Error('Failed to fetch bed availability');
                 const result = await response.json();
                 
                 if (result.success && result.data && result.data.bed_stats) {
                     const bedStats = result.data.bed_stats;
                     const container = document.getElementById('bedAvailabilityContainer');
+                    if (!container) return;
                     
                     if (bedStats.length === 0) {
-                        container.innerHTML = '<p class="text-sm text-gray-500">No bed data available</p>';
+                        container.innerHTML = '<p class="text-xs text-gray-500">No bed data available</p>';
                         return;
                     }
                     
-                    // Build HTML for bed stats
                     let html = '';
                     bedStats.forEach(stat => {
                         const percentage = stat.occupancy_percentage;
@@ -1970,33 +2133,30 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                         else if (percentage > 50) barColor = 'bg-orange-500';
                         
                         html += `
-                            <div class="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                                <div class="flex justify-between items-start mb-1">
-                                    <div>
-                                        <p class="text-xs font-bold text-gray-800">${stat.ward_name} - ${stat.room_name}</p>
-                                        <p class="text-[10px] text-gray-500">${stat.ward_type} | ${stat.room_category}</p>
+                            <div class="border-b border-gray-100 pb-2 mb-2 last:border-0 last:pb-0 last:mb-0">
+                                <div class="flex justify-between items-start mb-0.5">
+                                    <div class="min-w-0 pr-2">
+                                        <p class="text-xs font-bold text-gray-800 truncate">${stat.ward_name} - ${stat.room_name}</p>
+                                        <p class="text-[10px] text-gray-400 font-medium">${stat.ward_type} | ${stat.room_category}</p>
                                     </div>
-                                    <div class="text-right">
-                                        <span class="text-xs font-semibold text-gray-800">${stat.occupied_beds}/${stat.total_beds}</span>
+                                    <div class="text-right shrink-0">
+                                        <span class="text-xs font-bold text-gray-800">${stat.occupied_beds}/${stat.total_beds}</span>
                                         <p class="text-[10px] text-gray-400">Avl: ${stat.available_beds}</p>
                                     </div>
                                 </div>
-                                <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                                <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1">
                                     <div class="${barColor} h-1.5 rounded-full" style="width: ${percentage}%"></div>
                                 </div>
                             </div>
                         `;
                     });
-                    
                     container.innerHTML = html;
                 } else {
-                    document.getElementById('bedAvailabilityContainer').innerHTML = 
-                        '<p class="text-sm text-gray-500">Error loading bed data</p>';
+                    document.getElementById('bedAvailabilityContainer').innerHTML = '<p class="text-xs text-gray-500">Error loading bed data</p>';
                 }
             } catch (error) {
                 console.error('Error loading bed availability:', error);
-                document.getElementById('bedAvailabilityContainer').innerHTML = 
-                    '<p class="text-sm text-gray-500">Error loading bed data</p>';
+                document.getElementById('bedAvailabilityContainer').innerHTML = '<p class="text-xs text-gray-500">Error loading bed data</p>';
             }
         }
         
@@ -2004,19 +2164,16 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
         async function loadActiveDepartments() {
             try {
                 const response = await fetch('/GM_HMS/api/admin/active-departments');
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch departments');
-                }
-                
+                if (!response.ok) throw new Error('Failed to fetch departments');
                 const result = await response.json();
                 
                 if (result.success && result.data && result.data.department_stats) {
                     const deptStats = result.data.department_stats;
                     const container = document.getElementById('activeDepartmentsContainer');
+                    if (!container) return;
                     
                     if (deptStats.length === 0) {
-                        container.innerHTML = '<p class="text-sm text-gray-500">No active departments found</p>';
+                        container.innerHTML = '<p class="text-xs text-gray-500">No active departments found</p>';
                         return;
                     }
                     
@@ -2024,29 +2181,26 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                     deptStats.forEach(stat => {
                         const isEmergency = stat.department_name.toLowerCase().includes('emergency');
                         const statusBadge = isEmergency 
-                            ? `<span class="px-2 py-1 bg-red-100 text-red-600 rounded text-[10px] font-medium">24/7 Active</span>`
-                            : `<span class="px-2 py-1 bg-green-100 text-green-600 rounded text-[10px] font-medium">${stat.doctor_count} Doctors</span>`;
+                            ? `<span class="px-2 py-0.5 bg-red-100 text-red-600 rounded text-[10px] font-medium">24/7 Active</span>`
+                            : `<span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-medium">${stat.doctor_count} Drs</span>`;
                         
                         html += `
-                            <div class="flex justify-between items-center pb-2 border-b border-gray-50 last:border-0 last:pb-0">
-                                <div class="flex flex-col">
-                                    <span class="text-sm font-medium text-gray-700">${stat.department_name}</span>
-                                    <span class="text-[10px] text-gray-400 font-medium tracking-wide uppercase">${stat.department_type}</span>
+                            <div class="flex justify-between items-center py-1 border-b border-gray-50 last:border-0 last:pb-0">
+                                <div class="flex flex-col min-w-0 pr-2">
+                                    <span class="text-xs font-semibold text-gray-800 truncate">${stat.department_name}</span>
+                                    <span class="text-[9px] text-gray-400 font-medium tracking-wide uppercase">${stat.department_type}</span>
                                 </div>
                                 ${statusBadge}
                             </div>
                         `;
                     });
-                    
                     container.innerHTML = html;
                 } else {
-                    document.getElementById('activeDepartmentsContainer').innerHTML = 
-                        '<p class="text-sm text-gray-500">Error loading departments</p>';
+                    document.getElementById('activeDepartmentsContainer').innerHTML = '<p class="text-xs text-gray-500">Error loading departments</p>';
                 }
             } catch (error) {
                 console.error('Error loading departments:', error);
-                document.getElementById('activeDepartmentsContainer').innerHTML = 
-                    '<p class="text-sm text-gray-500">Error loading departments</p>';
+                document.getElementById('activeDepartmentsContainer').innerHTML = '<p class="text-xs text-gray-500">Error loading departments</p>';
             }
         }
         
@@ -2057,6 +2211,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
             loadActiveDepartments();
             loadAnalyticsData();
         });
+
         // Reports Modal Functionality
         let reportsLoaded = false;
         
@@ -2334,13 +2489,20 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                         <td class="px-4 py-3 text-center">${statusBadge}</td>
                         <td class="px-4 py-3 text-xs text-gray-500">${p.registration_date ? new Date(p.registration_date).toLocaleDateString('en-GB') : '-'}</td>
                         <td class="px-4 py-3 text-right">
-                            <a href="patient_registration.php?search=${encodeURIComponent(p.patient_id)}" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold rounded-lg border border-emerald-200 transition-colors inline-block">
-                                <i class="fas fa-id-card text-[10px] mr-1"></i> Card
-                            </a>
+                            <button onclick="openPatientCard('${p.patient_id}')" class="px-2.5 py-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold rounded-lg border border-emerald-200 transition-colors inline-flex items-center gap-1 cursor-pointer" title="View Patient Card">
+                                <i class="fas fa-id-card text-[10px]"></i> Card
+                            </button>
                         </td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        // Direct navigation to individual patient card/profile via sessionStorage (no URL variables)
+        function openPatientCard(patientId) {
+            if (!patientId) return;
+            sessionStorage.setItem('currentPatientId', patientId);
+            window.location.href = '/GM_HMS/reception_view/patient_profile.php';
         }
 
         // ============================================================
@@ -2498,13 +2660,246 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                             ${statusBadge}
                         </td>
                         <td class="px-4 py-3 text-right">
-                            <a href="ipd_billing.php?admission_id=${encodeURIComponent(a.admission_id)}" class="px-2.5 py-1 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold rounded-lg border border-purple-200 transition-colors inline-block">
-                                <i class="fas fa-file-invoice text-[10px] mr-1"></i> Bill
-                            </a>
+                            <button onclick="openIpdPatientFullCard('${a.admission_id}', '${a.patient_id || ''}')" class="px-2.5 py-1 text-xs bg-[#f3efe6] hover:bg-[#1f6b4a] text-[#1f6b4a] hover:text-[#f3efe6] font-bold rounded-lg border border-[#1f6b4a] transition-all inline-flex items-center gap-1 cursor-pointer shadow-xs" title="View Inpatient Dossier & Billing Card">
+                                <i class="fas fa-file-invoice text-[10px]"></i> Bill &amp; Details
+                            </button>
                         </td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        // ============================================================
+        // INPATIENT DOSSIER & FULL CARD CONTROLLER (NO REDIRECT)
+        // Strictly Theme: #f3efe6 (Warm Cream) & #1f6b4a (Forest Green)
+        // ============================================================
+        let currentIpdCardData = null;
+
+        async function openIpdPatientFullCard(admissionId, patientId) {
+            const modal = document.getElementById('ipdPatientCardModal');
+            if (!modal) return;
+
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            // Show loading state
+            const loading = document.getElementById('ipdCardLoading');
+            if (loading) {
+                loading.innerHTML = `
+                    <i class="fas fa-spinner fa-spin text-3xl mb-3 text-[#1f6b4a]"></i>
+                    <p class="font-bold text-sm text-[#1f6b4a]">Loading patient clinical and billing dossier...</p>
+                `;
+                loading.classList.remove('hidden');
+            }
+            document.getElementById('ipdTabPaneBill').classList.add('hidden');
+            document.getElementById('ipdTabPaneItems').classList.add('hidden');
+            document.getElementById('ipdTabPaneClinical').classList.add('hidden');
+
+            // Reset tabs to Bill
+            switchIpdCardTab('bill');
+
+            try {
+                const url = `/GM_HMS/api/admin/ipd-patient-details?admission_id=${encodeURIComponent(admissionId)}&patient_id=${encodeURIComponent(patientId || '')}`;
+                const res = await fetch(url);
+                const json = await res.json();
+
+                if (!json.success || !json.data) {
+                    throw new Error(json.error || 'Unable to load patient dossier');
+                }
+
+                currentIpdCardData = json.data;
+                renderIpdPatientFullCard(json.data);
+            } catch (err) {
+                console.error('Error loading patient dossier:', err);
+                const loading = document.getElementById('ipdCardLoading');
+                if (loading) {
+                    loading.innerHTML = `
+                        <div class="py-12 text-center text-[#1f6b4a]">
+                            <i class="fas fa-exclamation-triangle text-3xl mb-2 text-[#1f6b4a]"></i>
+                            <p class="font-bold text-sm text-[#1f6b4a]">Failed to load patient records</p>
+                            <p class="text-xs text-[#1f6b4a]/80 mt-1">${err.message}</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function closeIpdPatientCardModal() {
+            const modal = document.getElementById('ipdPatientCardModal');
+            if (modal) modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function switchIpdCardTab(tab) {
+            ['bill', 'items', 'clinical'].forEach(t => {
+                const btn = document.getElementById(`ipdTabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                const pane = document.getElementById(`ipdTabPane${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                if (btn && pane) {
+                    if (t === tab) {
+                        btn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-[#1f6b4a] text-[#f3efe6] border border-[#1f6b4a] shadow-xs cursor-pointer';
+                        if (!document.getElementById('ipdCardLoading').classList.contains('hidden')) {
+                            // still loading
+                        } else {
+                            pane.classList.remove('hidden');
+                        }
+                    } else {
+                        btn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-[#f3efe6] text-[#1f6b4a] hover:bg-[#1f6b4a] hover:text-[#f3efe6] border border-[#1f6b4a] cursor-pointer';
+                        pane.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        function renderIpdPatientFullCard(data) {
+            const adm = data.admission || {};
+            const m = data.billing_master || {};
+            const items = data.billing_items || [];
+            const clinical = data.clinical_records || [];
+
+            // Hide loading, show default tab
+            document.getElementById('ipdCardLoading').classList.add('hidden');
+            document.getElementById('ipdTabPaneBill').classList.remove('hidden');
+
+            // Header info
+            const name = adm.full_name || 'Patient';
+            document.getElementById('ipdCardAvatar').textContent = (name.charAt(0) || 'P').toUpperCase();
+            document.getElementById('ipdCardPatientName').textContent = name;
+            document.getElementById('ipdCardPid').textContent = adm.patient_id || 'N/A';
+            document.getElementById('ipdCardAdmId').textContent = adm.admission_id || 'N/A';
+            document.getElementById('ipdCardAgeGender').textContent = `${adm.age || '-'} yrs • ${adm.sex || '-'}`;
+            document.getElementById('ipdCardBloodGroup').textContent = `Blood: ${adm.blood_group || 'N/A'}`;
+            document.getElementById('ipdCardBedWard').textContent = `Bed ${adm.bed_number || 'N/A'} • ${adm.ward_name || 'General Ward'}`;
+            document.getElementById('ipdCardDoctor').textContent = `Dr. ${adm.doctor_name || 'Attending'}`;
+
+            // Status badge (Strictly #1f6b4a & #f3efe6)
+            document.getElementById('ipdCardStatusBadge').className = 'px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-[#1f6b4a] text-[#f3efe6] border border-[#1f6b4a]';
+            document.getElementById('ipdCardStatusBadge').textContent = adm.admission_status || 'Admitted';
+
+            // Financial KPIs (Strictly #1f6b4a & #f3efe6)
+            const grandTotal = parseFloat(m.grand_total || 0);
+            const amountPaid = parseFloat(m.amount_paid || 0);
+            const balanceDue = parseFloat(m.balance_due || (grandTotal - amountPaid));
+            const stayDays = adm.stay_days || m.total_days || 1;
+
+            document.getElementById('ipdCardGrandTotal').textContent = `₹${grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.getElementById('ipdCardGrandTotal').className = 'text-base sm:text-lg font-black text-[#1f6b4a]';
+
+            document.getElementById('ipdCardAmountPaid').textContent = `₹${amountPaid.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.getElementById('ipdCardAmountPaid').className = 'text-base sm:text-lg font-black text-[#1f6b4a]';
+
+            document.getElementById('ipdCardBalanceDue').textContent = `₹${balanceDue.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            document.getElementById('ipdCardBalanceDue').className = 'text-base sm:text-lg font-black text-[#1f6b4a]';
+
+            document.getElementById('ipdCardStayDays').textContent = `${stayDays} ${stayDays === 1 ? 'Day' : 'Days'}`;
+            document.getElementById('ipdCardStayDays').className = 'text-base sm:text-lg font-black text-[#1f6b4a]';
+
+            document.getElementById('ipdCardPaymentStatus').textContent = m.payment_status || (balanceDue <= 0 ? 'Paid' : 'Pending');
+            document.getElementById('ipdCardPaymentStatus').className = 'text-xs sm:text-sm font-black text-[#1f6b4a] mt-1';
+
+            // Counts on tabs
+            document.getElementById('ipdCardItemsCount').textContent = items.length;
+            document.getElementById('ipdCardClinicalCount').textContent = clinical.length;
+
+            // Tab 1: Category Breakdown Cards (Strictly #f3efe6 & #1f6b4a)
+            const catGrid = document.getElementById('ipdCategoriesGrid');
+            const categories = [
+                { label: 'Room & Bed Charges', val: m.room_charges, icon: 'fa-bed' },
+                { label: 'Doctor Consultations', val: m.doctor_charges, icon: 'fa-user-md' },
+                { label: 'Pharmacy & Meds', val: m.pharmacy_charges, icon: 'fa-pills' },
+                { label: 'Laboratory Tests', val: m.lab_charges, icon: 'fa-flask' },
+                { label: 'Radiology / Imaging', val: m.radiology_charges, icon: 'fa-x-ray' },
+                { label: 'Operation Theatre', val: m.ot_charges, icon: 'fa-hospital' },
+                { label: 'Clinical Procedures', val: m.procedure_charges, icon: 'fa-procedures' },
+                { label: 'Consumables & Misc', val: (parseFloat(m.consumable_charges || 0) + parseFloat(m.other_charges || 0)), icon: 'fa-box' }
+            ];
+
+            catGrid.innerHTML = categories.map(c => `
+                <div class="border-2 border-[#1f6b4a] rounded-xl p-3 bg-white hover:bg-[#f3efe6]/40 transition-all shadow-xs">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[11px] font-bold text-[#1f6b4a] truncate">${c.label}</span>
+                        <div class="w-7 h-7 rounded-lg bg-[#1f6b4a] text-[#f3efe6] flex items-center justify-center text-xs shadow-xs">
+                            <i class="fas ${c.icon}"></i>
+                        </div>
+                    </div>
+                    <div class="text-sm font-black text-[#1f6b4a]">₹${parseFloat(c.val || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</div>
+                </div>
+            `).join('');
+
+            // Coverage details
+            document.getElementById('ipdCardBillNo').textContent = m.bill_id || 'Not Finalized';
+            document.getElementById('ipdCardBillType').textContent = m.bill_type || 'SELF';
+            document.getElementById('ipdCardSponsor').textContent = m.sponsor || 'Self Pay';
+            document.getElementById('ipdCardPolicyNo').textContent = m.policy_number || 'N/A';
+
+            // Tab 2: Itemized Charges Table (Strictly #f3efe6 & #1f6b4a)
+            const tbody = document.getElementById('ipdItemsTableBody');
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-[#1f6b4a] font-semibold">No individual billing items logged yet for this admission.</td></tr>`;
+            } else {
+                tbody.innerHTML = items.map(it => `
+                    <tr class="hover:bg-[#f3efe6]/50 transition-colors">
+                        <td class="px-3.5 py-2 text-[#1f6b4a] font-mono text-[11px] font-semibold">${it.charge_date || '-'}</td>
+                        <td class="px-3.5 py-2">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#1f6b4a] text-[#f3efe6] border border-[#1f6b4a]">${it.charge_type || 'OTHER'}</span>
+                        </td>
+                        <td class="px-3.5 py-2 font-bold text-[#1f6b4a]">${it.description || '-'}</td>
+                        <td class="px-3.5 py-2 text-right font-black text-[#1f6b4a]">₹${parseFloat(it.total_amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                        <td class="px-3.5 py-2 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#f3efe6] text-[#1f6b4a] border border-[#1f6b4a]">${it.status || 'LOGGED'}</span>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // Tab 3: Clinical Records (Strictly #f3efe6 & #1f6b4a)
+            const clinicalList = document.getElementById('ipdClinicalList');
+            if (clinical.length === 0) {
+                clinicalList.innerHTML = `<div class="py-12 text-center text-[#1f6b4a] font-semibold">No clinical entries recorded for this patient yet.</div>`;
+            } else {
+                clinicalList.innerHTML = clinical.map((rec, idx) => {
+                    const visits = Array.isArray(rec.consultant_visits) ? rec.consultant_visits : [];
+                    const labs = Array.isArray(rec.lab_tests) ? rec.lab_tests : [];
+                    const rx = Array.isArray(rec.pharmacy_orders) ? rec.pharmacy_orders : [];
+
+                    return `
+                        <div class="border-2 border-[#1f6b4a] rounded-xl p-4 bg-white shadow-xs">
+                            <div class="flex items-center justify-between pb-2.5 mb-3 border-b-2 border-[#1f6b4a]/20">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-6 h-6 rounded-full bg-[#1f6b4a] text-[#f3efe6] text-xs font-black flex items-center justify-center">${idx + 1}</span>
+                                    <span class="font-black text-sm text-[#1f6b4a]">Clinical Day: ${rec.record_date || 'Date N/A'}</span>
+                                </div>
+                                <span class="text-xs text-[#1f6b4a] font-mono font-bold">${rec.created_at || ''}</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                                <!-- Labs -->
+                                <div class="bg-[#f3efe6] border border-[#1f6b4a] rounded-lg p-3 text-[#1f6b4a]">
+                                    <div class="font-black text-[#1f6b4a] mb-1.5 flex items-center gap-1.5"><i class="fas fa-flask"></i> Laboratory Investigations (${labs.length})</div>
+                                    ${labs.length > 0 ? labs.map(l => `<div class="py-0.5 text-[#1f6b4a] font-semibold">• ${l.data ? (l.data.name || l.data.test_name) : (l.test_name || l.name || (typeof l === 'string' ? l : 'Investigation'))}</div>`).join('') : '<div class="text-[#1f6b4a]/60 italic font-medium">No lab tests ordered</div>'}
+                                </div>
+
+                                <!-- Pharmacy -->
+                                <div class="bg-[#f3efe6] border border-[#1f6b4a] rounded-lg p-3 text-[#1f6b4a]">
+                                    <div class="font-black text-[#1f6b4a] mb-1.5 flex items-center gap-1.5"><i class="fas fa-pills"></i> Pharmacy Orders (${rx.length})</div>
+                                    ${rx.length > 0 ? rx.map(p => `<div class="py-0.5 text-[#1f6b4a] font-semibold">• ${p.medicine_name || p.name || (typeof p === 'string' ? p : 'Medication')}</div>`).join('') : '<div class="text-[#1f6b4a]/60 italic font-medium">No medications ordered</div>'}
+                                </div>
+
+                                <!-- Consultant Visits -->
+                                <div class="bg-[#f3efe6] border border-[#1f6b4a] rounded-lg p-3 text-[#1f6b4a]">
+                                    <div class="font-black text-[#1f6b4a] mb-1.5 flex items-center gap-1.5"><i class="fas fa-user-md"></i> Consultant Visits (${visits.length})</div>
+                                    ${visits.length > 0 ? visits.map(v => `<div class="py-0.5 text-[#1f6b4a] font-semibold">• ${v.doctor_name || v.name || (typeof v === 'string' ? v : 'Consultation')}</div>`).join('') : '<div class="text-[#1f6b4a]/60 italic font-medium">Routine rounds recorded</div>'}
+                                </div>
+
+                                <!-- Nursing Notes -->
+                                <div class="bg-[#f3efe6] border border-[#1f6b4a] rounded-lg p-3 text-[#1f6b4a]">
+                                    <div class="font-black text-[#1f6b4a] mb-1.5 flex items-center gap-1.5"><i class="fas fa-notes-medical"></i> Nursing &amp; Ward Notes</div>
+                                    <div class="text-[#1f6b4a] font-semibold">${rec.nursing_notes ? (typeof rec.nursing_notes === 'string' ? rec.nursing_notes : JSON.stringify(rec.nursing_notes)) : '<span class="text-[#1f6b4a]/60 italic font-medium">Patient stable, vitals monitored</span>'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
         }
 
         // ============================================================
@@ -2522,7 +2917,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
             document.body.style.overflow = 'hidden';
 
             const tbody = document.getElementById('opdModalTableBody');
-            tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin text-teal-600 text-xl mb-2"></i><br>Loading OPD queue...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-400"><i class="fas fa-spinner fa-spin text-teal-600 text-xl mb-2"></i><br>Loading OPD queue...</td></tr>';
 
             try {
                 const response = await fetch('/GM_HMS/api/admin/opd-details');
@@ -2543,11 +2938,11 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
                     renderOpdTable();
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-red-500">Failed to load OPD appointments</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-red-500">Failed to load OPD appointments</td></tr>';
                 }
             } catch (err) {
                 console.error('Error fetching OPD data:', err);
-                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-red-500">Error loading OPD appointments</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-red-500">Error loading OPD appointments</td></tr>';
             }
         }
 
@@ -2688,7 +3083,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                 if (currentOpdDateScope === 'today') {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="7" class="px-4 py-10 text-center">
+                            <td colspan="6" class="px-4 py-10 text-center">
                                 <div class="w-12 h-12 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-2 text-lg">
                                     <i class="fas fa-calendar-check"></i>
                                 </div>
@@ -2698,21 +3093,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                         </tr>
                     `;
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">No matching OPD appointments found for selected filters</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">No matching OPD appointments found for selected filters</td></tr>';
                 }
                 return;
             }
 
             tbody.innerHTML = list.map((apt, index) => {
                 const token = apt.token_number || (index + 1);
-                const status = apt.appointment_status || 'Pending';
-                let statusBadge = `<span class="bg-orange-100 text-orange-800 text-xs font-semibold px-2 py-0.5 rounded border border-orange-300">Pending</span>`;
-                if (status === 'Approved' || status === '1') {
-                    statusBadge = `<span class="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded border border-green-300">Approved</span>`;
-                } else if (status === 'Cancelled' || status === '2') {
-                    statusBadge = `<span class="bg-red-100 text-red-800 text-xs font-semibold px-2 py-0.5 rounded border border-red-300">Cancelled</span>`;
-                }
-
                 const fee = apt.consultation_fee || apt.total_amount || 0;
                 const formattedDate = apt.appointment_date ? new Date(apt.appointment_date).toLocaleDateString('en-GB') : 'Today';
 
@@ -2736,7 +3123,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                             <div>${apt.appointment_time || 'General'}</div>
                             <div class="text-[10px] text-gray-400">${formattedDate}</div>
                         </td>
-                        <td class="px-4 py-3 text-center">${statusBadge}</td>
                         <td class="px-4 py-3 text-right font-bold text-xs text-gray-900">₹${parseFloat(fee).toLocaleString('en-IN')}</td>
                     </tr>
                 `;
@@ -3036,16 +3422,20 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                 const amtPaid = parseFloat(tx.amount_paid || 0);
                 const balDue = parseFloat(tx.balance_due || 0);
 
-                const billLink = isIpd
-                    ? `ipd_billing.php?bill_id=${encodeURIComponent(tx.bill_id || tx.transaction_id)}`
-                    : `opd_billing_entry.php?bill_id=${encodeURIComponent(tx.bill_id || tx.transaction_id)}`;
+                let billLinkHtml;
+                if (isIpd && (tx.admission_id || tx.bill_id)) {
+                    billLinkHtml = `<button onclick="openIpdPatientBilling('${tx.admission_id || tx.bill_id}', '${tx.patient_id || ''}')" class="font-mono font-bold text-xs text-emerald-700 hover:underline cursor-pointer">#${tx.transaction_id}</button>`;
+                } else {
+                    const billLink = isIpd
+                        ? `ipd_billing.php`
+                        : `opd_billing_entry.php?bill_id=${encodeURIComponent(tx.bill_id || tx.transaction_id)}`;
+                    billLinkHtml = `<a href="${billLink}" class="font-mono font-bold text-xs text-emerald-700 hover:underline">#${tx.transaction_id}</a>`;
+                }
 
                 return `
                     <tr class="bg-white hover:bg-gray-50/80 transition-colors">
                         <td class="px-4 py-3">
-                            <a href="${billLink}" class="font-mono font-bold text-xs text-emerald-700 hover:underline">
-                                #${tx.transaction_id}
-                            </a>
+                            ${billLinkHtml}
                             <div class="text-[10px] text-gray-400 font-medium">${tx.category || ''}</div>
                         </td>
                         <td class="px-4 py-3 text-xs text-gray-600">

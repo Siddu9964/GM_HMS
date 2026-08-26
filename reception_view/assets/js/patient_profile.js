@@ -198,21 +198,28 @@ function loadPatientProfile() {
         .catch(err => {
             document.getElementById('profileCard').innerHTML = `
                 <div class="gp-hero">
-                    <div class="gp-hero-bar"></div>
-                    <div style="padding:60px;text-align:center;">
-                        <div class="gp-empty-ico" style="margin:0 auto 16px;"><i class="fas fa-exclamation-triangle"></i></div>
-                        <p style="color:#9a8f82;font-weight:600;">${err.message}</p>
+                    <div class="gp-emr-header">
+                        <div class="gp-emr-identity">
+                            <div class="gp-emr-avatar" style="background:#1f6b4a; color:#f3efe6;"><i class="fas fa-exclamation-triangle"></i></div>
+                            <div class="gp-emr-name-box">
+                                <h2>Patient Record Notice</h2>
+                                <span class="gp-emr-pid">RECORD STATUS</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="padding:32px 24px; text-align:center; color:#1f6b4a; font-weight:600;">
+                        <p>${err.message}</p>
                     </div>
                 </div>`;
         });
 }
 
-/* ─── RENDER PROFILE CARD (HTML only changes) ─────────────── */
+/* ─── RENDER PROFESSIONAL PATIENT DOSSIER (EMR BANNER) ──────── */
 function renderProfileCard(patient) {
     const isOld = patient.latest_appointment_status || patient.last_visit;
     const badgeHtml = isOld
-        ? `<div class="gp-status-chip"><i class="fas fa-history"></i> RETURNING</div>`
-        : `<div class="gp-status-chip"><i class="fas fa-star"></i> NEW PATIENT</div>`;
+        ? `<div class="gp-status-chip gp-chip-secondary"><i class="fas fa-history" style="font-size:0.65rem;"></i> RETURNING</div>`
+        : `<div class="gp-status-chip gp-chip-secondary"><i class="fas fa-star" style="font-size:0.65rem;"></i> NEW PATIENT</div>`;
 
     const initial = (patient.first_name || patient.full_name || 'P').charAt(0).toUpperCase();
     const addressParts = [patient.address, patient.area, patient.city, patient.state, patient.pincode].filter(Boolean);
@@ -221,137 +228,107 @@ function renderProfileCard(patient) {
         ? new Date(patient.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
         : 'N/A';
     const ageGender = (patient.age ? patient.age + ' yrs' : 'N/A') + ' • ' + (patient.gender || 'N/A');
+    const emailVal = patient.email || 'Not Provided';
+    const phoneVal = patient.phone || 'Not Provided';
+    const aadhaarVal = patient.aadhaar_number || 'Not Linked';
+    const emergencyVal = patient.emergency_contact || 'Not Provided';
+    const insuranceVal = patient.insurance_status || 'Self Pay / Cash';
+    const occupationVal = patient.occupation || 'Not Provided';
+    const doctorVal = patient.assigned_doctor || 'Not Assigned';
+    const bloodVal = patient.blood_group ? patient.blood_group : 'Not Tested';
 
     const html = `
         <div class="gp-hero">
-            <div class="gp-hero-inner">
-
-                <!-- LEFT: dark green panel -->
-                <div class="gp-hero-left">
-                    <div style="display:flex; align-items:center; gap:20px;">
-                        <div class="gp-avatar-wrap">
-                            <div class="gp-avatar">${initial}</div>
+            <!-- TOP STRIP: Master Patient Identity & Quick Indicators -->
+            <div class="gp-emr-header">
+                <div class="gp-emr-identity">
+                    <div class="gp-emr-avatar">${initial}</div>
+                    <div class="gp-emr-name-box">
+                        <h2>${patient.full_name || 'Unknown Patient'}</h2>
+                        <div class="gp-emr-badges">
+                            <span class="gp-emr-pid">${patient.patient_id || 'N/A'}</span>
+                            <span class="gp-emr-pill"><i class="fas fa-user" style="font-size:0.65rem; margin-right:3px;"></i> ${ageGender}</span>
+                            <span class="gp-emr-pill"><i class="fas fa-tint" style="font-size:0.65rem; margin-right:3px;"></i> ${bloodVal}</span>
+                            <div class="gp-status-chip" id="heroActiveStatus">
+                                <span class="gp-status-dot"></span>
+                                <span>ACTIVE PATIENT</span>
+                            </div>
+                            ${badgeHtml}
                         </div>
-                        <div>
-                            <h2 class="gp-pname" style="color:#ffffff !important;">${patient.full_name}</h2>
-                            <div class="gp-pid">${patient.patient_id}</div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top:24px; display:flex; flex-direction:column; align-items:flex-start; gap:0;">
-                        <div class="gp-status-chip" id="heroActiveStatus" style="margin:0 0 12px 0;">
-                            <span class="gp-status-dot"></span>
-                            <span>ACTIVE PATIENT</span>
-                        </div>
-                        ${badgeHtml}
                     </div>
                 </div>
 
-                <!-- RIGHT: stats & info tiles -->
-                <div class="gp-hero-right">
-                    
-                    <div class="gp-mini-stats">
-                        <div class="gp-mini-stat">
-                            <div class="gp-mini-stat-ico"><i class="fas fa-calendar-check"></i></div>
-                            <div class="gp-mini-stat-val" id="kpiAppt">—</div>
-                            <div class="gp-mini-stat-lbl">Appointments</div>
-                        </div>
-                        <div class="gp-mini-stat">
-                            <div class="gp-mini-stat-ico"><i class="fas fa-file-invoice-dollar"></i></div>
-                            <div class="gp-mini-stat-val" id="kpiBills">—</div>
-                            <div class="gp-mini-stat-lbl">Bills</div>
-                        </div>
-                        <div class="gp-mini-stat">
-                            <div class="gp-mini-stat-ico"><i class="fas fa-tint"></i></div>
-                            <div class="gp-mini-stat-val">${patient.blood_group || '—'}</div>
-                            <div class="gp-mini-stat-lbl">Blood Group</div>
-                        </div>
-                        <div class="gp-mini-stat">
-                            <div class="gp-mini-stat-ico"><i class="fas fa-user-check"></i></div>
-                            <div class="gp-mini-stat-val">${isOld ? 'Returning' : 'New'}</div>
-                            <div class="gp-mini-stat-lbl">Status</div>
-                        </div>
+                <div class="gp-emr-metrics">
+                    <div class="gp-emr-metric-box">
+                        <div class="gp-emr-metric-val" id="kpiAppt">—</div>
+                        <div class="gp-emr-metric-lbl">Appointments</div>
                     </div>
+                    <div class="gp-emr-metric-box">
+                        <div class="gp-emr-metric-val" id="kpiBills">—</div>
+                        <div class="gp-emr-metric-lbl">Bills</div>
+                    </div>
+                    <div class="gp-emr-metric-box">
+                        <div class="gp-emr-metric-val" style="font-size:0.95rem;">${regDate}</div>
+                        <div class="gp-emr-metric-lbl">Registered</div>
+                    </div>
+                </div>
+            </div>
 
-                    <div class="gp-info-grid">
-                        <div class="gp-info-tile">
-                            <div class="gp-tile-ico"><i class="fas fa-phone-alt"></i></div>
-                            <div>
-                                <div class="gp-tile-lbl">Phone</div>
-                                <div class="gp-tile-val">${patient.phone || '—'}</div>
-                            </div>
-                        </div>
-                        <div class="gp-info-tile">
-                            <div class="gp-tile-ico"><i class="fas fa-envelope"></i></div>
-                            <div>
-                                <div class="gp-tile-lbl">Email Address</div>
-                                <div class="gp-tile-val" style="word-break:break-all;">${patient.email || '—'}</div>
-                            </div>
-                        </div>
-                        <div class="gp-info-tile">
-                            <div class="gp-tile-ico"><i class="fas fa-user"></i></div>
-                            <div>
-                                <div class="gp-tile-lbl">Age & Gender</div>
-                                <div class="gp-tile-val">${ageGender}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="gp-info-tile">
-                            <div class="gp-tile-ico"><i class="fas fa-calendar-day"></i></div>
-                            <div>
-                                <div class="gp-tile-lbl">Registered</div>
-                                <div class="gp-tile-val">${regDate}</div>
-                            </div>
-                        </div>
-                        <div class="gp-info-tile">
-                            <div class="gp-tile-ico"><i class="fas fa-user-md"></i></div>
-                            <div>
-                                <div class="gp-tile-lbl">Assigned Doctor</div>
-                                <div class="gp-tile-val" id="heroAssignedDoctor">${patient.assigned_doctor || 'Not Assigned'}</div>
-                            </div>
-                        </div>
-                        <div class="gp-info-tile">
-                            <div class="gp-tile-ico"><i class="fas fa-id-card"></i></div>
-                            <div>
-                                <div class="gp-tile-lbl">Aadhaar Number</div>
-                                <div class="gp-tile-val">${patient.aadhaar_number || 'Not Linked'}</div>
-                            </div>
-                        </div>
+            <!-- BOTTOM SECTION: Medical Dossier Columns -->
+            <div class="gp-emr-dossier">
+                <!-- Col 1: Contact -->
+                <div class="gp-dossier-col">
+                    <div class="gp-dossier-header"><i class="fas fa-phone-alt"></i> Contact Details</div>
+                    <div class="gp-dossier-row">
+                        <div class="gp-dossier-label">Primary Mobile</div>
+                        <div class="gp-dossier-value">${phoneVal}</div>
+                    </div>
+                    <div class="gp-dossier-row">
+                        <div class="gp-dossier-label">Email Address</div>
+                        <div class="gp-dossier-value" style="word-break:break-all;">${emailVal}</div>
+                    </div>
+                </div>
 
-                        <div class="gp-info-tile">
-                            <div class="gp-tile-ico"><i class="fas fa-ambulance"></i></div>
-                            <div>
-                                <div class="gp-tile-lbl">Emergency Contact</div>
-                                <div class="gp-tile-val">${patient.emergency_contact || 'Not Provided'}</div>
-                            </div>
-                        </div>
-                        <div class="gp-info-tile">
-                            <div class="gp-tile-ico"><i class="fas fa-shield-alt"></i></div>
-                            <div>
-                                <div class="gp-tile-lbl">Insurance Status</div>
-                                <div class="gp-tile-val" style="color:#b7f5d4;">${patient.insurance_status || 'Not Provided'}</div>
-                            </div>
-                        </div>
-                        <div class="gp-info-tile">
-                            <div class="gp-tile-ico"><i class="fas fa-briefcase"></i></div>
-                            <div>
-                                <div class="gp-tile-lbl">Occupation</div>
-                                <div class="gp-tile-val">${patient.occupation || 'Not Provided'}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="gp-info-tile gp-full">
-                            <div class="gp-tile-ico"><i class="fas fa-map-marker-alt"></i></div>
-                            <div>
-                                <div class="gp-tile-lbl">Complete Address</div>
-                                <div class="gp-tile-val">${fullAddress}</div>
-                            </div>
-                        </div>
+                <!-- Col 2: Clinical Team -->
+                <div class="gp-dossier-col">
+                    <div class="gp-dossier-header"><i class="fas fa-user-md"></i> Clinical Care Team</div>
+                    <div class="gp-dossier-row">
+                        <div class="gp-dossier-label">Attending Doctor</div>
+                        <div class="gp-dossier-value" id="heroAssignedDoctor" style="font-weight:700;">${doctorVal}</div>
+                    </div>
+                    <div class="gp-dossier-row">
+                        <div class="gp-dossier-label">Emergency Contact</div>
+                        <div class="gp-dossier-value">${emergencyVal}</div>
+                    </div>
+                </div>
+
+                <!-- Col 3: Identification & Coverage -->
+                <div class="gp-dossier-col">
+                    <div class="gp-dossier-header"><i class="fas fa-id-card"></i> Identity &amp; Coverage</div>
+                    <div class="gp-dossier-row">
+                        <div class="gp-dossier-label">Aadhaar / National ID</div>
+                        <div class="gp-dossier-value">${aadhaarVal}</div>
+                    </div>
+                    <div class="gp-dossier-row">
+                        <div class="gp-dossier-label">Insurance / Billing Status</div>
+                        <div class="gp-dossier-value">${insuranceVal}</div>
+                    </div>
+                    <div class="gp-dossier-row">
+                        <div class="gp-dossier-label">Occupation</div>
+                        <div class="gp-dossier-value">${occupationVal}</div>
+                    </div>
+                </div>
+
+                <!-- Col 4: Residential Location -->
+                <div class="gp-dossier-col">
+                    <div class="gp-dossier-header"><i class="fas fa-map-marker-alt"></i> Residential Address</div>
+                    <div class="gp-dossier-row">
+                        <div class="gp-dossier-label">Full Address</div>
+                        <div class="gp-dossier-value" style="line-height:1.4;">${fullAddress}</div>
                     </div>
                 </div>
             </div>
         </div>`;
-
 
     document.getElementById('profileCard').innerHTML = html;
 }
@@ -396,10 +373,9 @@ function loadAppointments() {
                 if (heroStatusEl && appointments.length > 0) {
                     const latestStatus = (appointments[0].appointment_status || '').toString().toLowerCase();
                     if (latestStatus === '1' || latestStatus === 'completed') {
-                        heroStatusEl.innerHTML = `<span class="gp-status-dot" style="background:#a0a0a0; box-shadow:none; animation:none;"></span> <span style="color:#ffffff !important; font-weight:800;">VISIT COMPLETED</span>`;
-                        heroStatusEl.style.borderColor = 'rgba(255,255,255,0.15)';
+                        heroStatusEl.innerHTML = `<span class="gp-status-dot" style="background:#f3efe6; opacity:0.6;"></span> <span style="color:#f3efe6; font-weight:800;">VISIT COMPLETED</span>`;
                     } else {
-                        heroStatusEl.innerHTML = `<span class="gp-status-dot"></span> <span style="color:#b7f5d4; font-weight:800;">ACTIVE PATIENT</span>`;
+                        heroStatusEl.innerHTML = `<span class="gp-status-dot"></span> <span style="color:#f3efe6; font-weight:800;">ACTIVE PATIENT</span>`;
                     }
                 }
 

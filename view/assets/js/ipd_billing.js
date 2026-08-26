@@ -41,12 +41,26 @@ const billing = (function () {
         initSponsorSearch();
         loadAllAdmittedPatients();
 
-        // Check if admission_id or patient_id passed in URL
+        // Check if admission_id or patient_id passed in sessionStorage or URL
         const urlParams = new URLSearchParams(window.location.search);
         const urlAdm = urlParams.get('admission_id');
         const urlPat = urlParams.get('patient_id');
-        if (urlAdm) {
-            loadAdmission(urlAdm, urlPat || '');
+
+        const sessionAdm = sessionStorage.getItem('currentAdmissionId');
+        const sessionPat = sessionStorage.getItem('currentPatientId');
+
+        const targetAdm = sessionAdm || urlAdm;
+        const targetPat = sessionPat || urlPat || '';
+
+        // If URL contained query parameters, clean the URL immediately so variables are not exposed in address bar
+        if (urlAdm || urlPat) {
+            try {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } catch (e) {}
+        }
+
+        if (targetAdm) {
+            loadAdmission(targetAdm, targetPat);
         }
     }
 
@@ -118,6 +132,10 @@ const billing = (function () {
 
         currentAdmissionId = admissionId;
         currentPatientId = patientId;
+
+        // Keep sessionStorage updated so reloads keep active patient without URL variables
+        if (admissionId) sessionStorage.setItem('currentAdmissionId', admissionId);
+        if (patientId) sessionStorage.setItem('currentPatientId', patientId);
 
         showToast('Loading patient details...', 'info');
 
@@ -4507,6 +4525,10 @@ const billing = (function () {
         currentBillId = null;
         currentPatientId = null;
         currentBedInfo = null;
+
+        // Clear stored admission from sessionStorage
+        sessionStorage.removeItem('currentAdmissionId');
+        sessionStorage.removeItem('currentPatientId');
 
         // optionally refresh patients list to get latest status
         loadAllAdmittedPatients();

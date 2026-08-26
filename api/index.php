@@ -64,6 +64,7 @@ $router->add('GET', '#^/api/admin/ipd-summary/?$#', 'GM_HMS\Controllers\api\Admi
 $router->add('GET', '#^/api/admin/bed-details/?$#', 'GM_HMS\Controllers\api\AdminInfoController', 'getBedDetails');
 $router->add('GET', '#^/api/admin/opd-details/?$#', 'GM_HMS\Controllers\api\AdminInfoController', 'getOpdDetails');
 $router->add('GET', '#^/api/admin/ipd-details/?$#', 'GM_HMS\Controllers\api\AdminInfoController', 'getIpdDetails');
+$router->add('GET', '#^/api/admin/ipd-patient-details/?$#', 'GM_HMS\Controllers\api\AdminInfoController', 'getIpdPatientFullDetails');
 $router->add('GET', '#^/api/admin/patients-details/?$#', 'GM_HMS\Controllers\api\AdminInfoController', 'getPatientsDetails');
 $router->add('GET', '#^/api/admin/revenue-details/?$#', 'GM_HMS\Controllers\api\AdminInfoController', 'getRevenueDetails');
 $router->add('GET', '#^/api/admin/dashboard-summary/?$#', 'GM_HMS\Controllers\api\AdminInfoController', 'getDashboardSummary');

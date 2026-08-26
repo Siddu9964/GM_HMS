@@ -87,146 +87,234 @@ $patientId = $_GET['id'] ?? '';
             box-shadow: none; cursor: not-allowed; transform: none;
         }
 
-        /* ── HERO PROFILE CARD ────────────────────────────── */
+        /* ── PROFESSIONAL HOSPITAL PATIENT MASTER DOSSIER (EHR BANNER) ── */
         .gp-hero {
-            background: #143e2f; /* Solid dark green from image */
-            border-radius: 28px;
-            border: 2px solid #e8e0cc;
-            box-shadow: 0 10px 40px rgba(20,62,47,0.3);
+            background: #ffffff;
+            border-radius: 14px;
+            border: 1.5px solid #1f6b4a;
+            border-top: 5px solid #1f6b4a;
+            box-shadow: 0 4px 20px rgba(31, 107, 74, 0.08);
             margin-bottom: 24px;
             overflow: hidden;
-            position: relative;
         }
 
-        .gp-hero-inner {
-            display: flex; align-items: stretch; gap: 0;
+        /* Top Header Strip — Patient Identity & Primary Vitals */
+        .gp-emr-header {
+            background: #f3efe6;
+            padding: 16px 24px;
+            border-bottom: 1.5px solid rgba(31, 107, 74, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
         }
 
-        /* LEFT — dark green panel */
-        .gp-hero-left {
-            width: 320px; min-width: 320px;
-            background: transparent;
-            padding: 24px 32px;
-            display: flex; flex-direction: column;
-            border-right: 1px solid rgba(255,255,255,0.15);
-            position: relative; overflow: hidden;
+        .gp-emr-identity {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
-        /* Avatar */
-        .gp-avatar-wrap {
-            position: relative; width: 76px; height: 76px;
+        .gp-emr-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #1f6b4a;
+            color: #f3efe6;
+            font-size: 1.6rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 8px rgba(31, 107, 74, 0.25);
             flex-shrink: 0;
         }
-        .gp-avatar {
-            width: 76px; height: 76px; border-radius: 50%;
-            background: #143e2f;
-            border: 2px solid #e8e0cc;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2rem; font-weight: 800; color: #fff;
+
+        .gp-emr-name-box h2 {
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: #1f6b4a;
+            margin: 0 0 4px 0;
+            line-height: 1.2;
+            letter-spacing: -0.2px;
         }
 
-        .gp-pname {
-            font-size: 1.5rem; font-weight: 800; color: #ffffff !important;
-            letter-spacing: -0.3px; line-height: 1.2; margin: 0 0 4px 0;
+        .gp-emr-badges {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
         }
-        .gp-pid {
-            color: #bfae96; font-size: 0.9rem;
-            font-weight: 600; font-family: monospace; letter-spacing: 0.5px;
+
+        .gp-emr-pid {
+            background: #1f6b4a;
+            color: #f3efe6;
+            font-family: monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .gp-emr-pill {
+            background: #ffffff;
+            color: #1f6b4a;
+            border: 1px solid rgba(31, 107, 74, 0.35);
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
         }
 
         .gp-status-chip {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
-            color: #d8ceb8; font-size: 0.8rem; font-weight: 700;
-            padding: 8px 16px; border-radius: 20px; margin-bottom: 12px; margin-top: 24px;
-            text-transform: uppercase; letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #1f6b4a;
+            color: #f3efe6;
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
+
+        .gp-status-chip.gp-chip-secondary {
+            background: #ffffff;
+            color: #1f6b4a;
+            border: 1px solid #1f6b4a;
+        }
+
         .gp-status-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: #e8e0cc;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #f3efe6;
         }
 
-        /* Stats row */
-        .gp-stats {
-            display: flex; gap: 1px; width: 100%;
-            background: rgba(255,255,255,0.08);
-            border-radius: 16px; overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.1);
-            position: relative; z-index: 1;
-        }
-        .gp-stat {
-            flex: 1; padding: 14px 8px; text-align: center;
-            background: rgba(255,255,255,0.05);
-            border-right: 1px solid rgba(255,255,255,0.08);
-            transition: background 0.2s;
-        }
-        .gp-stat:last-child { border-right: none; }
-        .gp-stat:hover { background: rgba(255,255,255,0.1); }
-        .gp-stat-num {
-            font-size: 1.6rem; font-weight: 900; color: #fff;
-            letter-spacing: -0.5px; line-height: 1;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .gp-stat-lbl { font-size: 0.62rem; color: rgba(255,255,255,0.55); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
-
-        /* RIGHT — info grid */
-        .gp-hero-right {
-            flex: 1; padding: 24px 32px;
-            background: transparent;
-            display: flex; flex-direction: column; justify-content: center;
-        }
-
-        /* ── MINI STATS STRIP (inside right panel) ──────── */
-        .gp-mini-stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            margin-bottom: 12px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.15);
-        }
-        .gp-mini-stat {
-            background: rgba(0,0,0,0.15);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 10px;
-            padding: 8px;
-            text-align: center;
-        }
-        .gp-mini-stat-ico {
-            color: #d8ceb8; font-size: 1rem; margin-bottom: 4px;
-        }
-        .gp-mini-stat-val {
-            font-size: 1rem; font-weight: 800; color: #fff; line-height: 1.2;
-        }
-        .gp-mini-stat-lbl {
-            font-size: 0.6rem; color: #bfae96; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;
-        }
-
-        /* ── INFO TILES GRID ──────────────────────────────── */
-        .gp-info-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+        /* Top Right Indicators (Counters) */
+        .gp-emr-metrics {
+            display: flex;
+            align-items: center;
             gap: 10px;
         }
-        .gp-info-tile {
-            background: rgba(0,0,0,0.15);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 10px; padding: 8px 12px;
-            display: flex; align-items: center; gap: 10px;
-        }
-        .gp-info-tile.gp-full { grid-column: 1 / -1; }
 
-        .gp-tile-ico {
-            color: #d8ceb8; font-size: 1.1rem; flex-shrink: 0;
-            width: 24px; text-align: center;
+        .gp-emr-metric-box {
+            background: #ffffff;
+            border: 1px solid rgba(31, 107, 74, 0.25);
+            border-radius: 8px;
+            padding: 6px 14px;
+            text-align: center;
+            min-width: 85px;
         }
-        .gp-tile-lbl {
-            font-size: 0.6rem; color: #bfae96; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;
+
+        .gp-emr-metric-val {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #1f6b4a;
+            line-height: 1.1;
         }
-        .gp-tile-val {
-            font-size: 0.8rem; color: #fff; font-weight: 600; line-height: 1.2;
+
+        .gp-emr-metric-lbl {
+            font-size: 0.62rem;
+            font-weight: 700;
+            color: #1f6b4a;
+            opacity: 0.85;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        /* Bottom Clinical Dossier Section (Table Grid) */
+        .gp-emr-dossier {
+            padding: 20px 24px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            background: #ffffff;
+        }
+
+        .gp-dossier-col {
+            border-right: 1px solid rgba(31, 107, 74, 0.12);
+            padding-right: 16px;
+        }
+
+        .gp-dossier-col:last-child {
+            border-right: none;
+            padding-right: 0;
+        }
+
+        .gp-dossier-header {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #1f6b4a;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1.5px solid rgba(31, 107, 74, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .gp-dossier-row {
+            margin-bottom: 10px;
+        }
+
+        .gp-dossier-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .gp-dossier-label {
+            font-size: 0.66rem;
+            font-weight: 700;
+            color: #1f6b4a;
+            opacity: 0.75;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .gp-dossier-value {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #1f6b4a;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        @media (max-width: 1024px) {
+            .gp-emr-dossier {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .gp-dossier-col {
+                border-right: none;
+                border-bottom: 1px solid rgba(31, 107, 74, 0.12);
+                padding-bottom: 14px;
+                padding-right: 0;
+            }
+            .gp-dossier-col:last-child {
+                border-bottom: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .gp-emr-dossier {
+                grid-template-columns: 1fr;
+            }
+            .gp-emr-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .gp-emr-metrics {
+                width: 100%;
+                justify-content: space-between;
+            }
         }
 
         /* ── KPI CARDS ─────────────────────────────────────── */
@@ -497,20 +585,22 @@ $patientId = $_GET['id'] ?? '';
                 </button>
             </div>
 
-            <!-- ── HERO CARD — populated by JS ── -->
+            <!-- ── PATIENT MASTER DOSSIER BANNER — populated by JS ── -->
             <div id="profileCard">
                 <div class="gp-hero">
-                    <div class="gp-hero-bar"></div>
-                    <div class="gp-hero-inner">
-                        <div class="gp-hero-left" style="align-items:center;justify-content:center;">
-                            <div style="text-align:center; z-index:1; position:relative;">
-                                <i class="fas fa-spinner fa-spin" style="font-size:2rem; color:rgba(255,255,255,0.4);"></i>
-                                <p style="color:rgba(255,255,255,0.4); margin-top:12px; font-weight:600; font-size:0.9rem;">Loading…</p>
+                    <div class="gp-emr-header">
+                        <div class="gp-emr-identity">
+                            <div class="gp-emr-avatar">
+                                <i class="fas fa-spinner fa-spin" style="font-size:1.3rem;"></i>
+                            </div>
+                            <div class="gp-emr-name-box">
+                                <div style="height:22px; width:200px; background:rgba(31,107,74,0.18); border-radius:4px; margin-bottom:8px;"></div>
+                                <div style="height:14px; width:140px; background:rgba(31,107,74,0.1); border-radius:4px;"></div>
                             </div>
                         </div>
-                        <div class="gp-hero-right" style="display:flex;align-items:center;justify-content:center;">
-                            <p style="color:#9a8f82; font-weight:600;">Fetching patient data…</p>
-                        </div>
+                    </div>
+                    <div style="padding:32px 24px; text-align:center; color:#1f6b4a; font-weight:600; font-size:0.95rem;">
+                        <i class="fas fa-spinner fa-spin mr-2"></i> Loading patient clinical dossier &amp; medical records…
                     </div>
                 </div>
             </div>

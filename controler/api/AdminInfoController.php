@@ -185,6 +185,129 @@ class AdminInfoController extends BaseController {
     }
 
     /**
+     * Get Full IPD Inpatient Dossier including clinical records, billing items, and billing master
+     */
+    public function getIpdPatientFullDetails() {
+        try {
+            $admissionId = trim($_GET['admission_id'] ?? '');
+            $patientId   = trim($_GET['patient_id'] ?? '');
+
+            if (empty($admissionId) && empty($patientId)) {
+                $this->respondError('Admission ID or Patient ID is required', 400);
+                return;
+            }
+
+            // 1. Admission & Patient Demographics
+            $admSql = "SELECT 
+                        ia.admission_id,
+                        ia.patient_id,
+                        ia.admission_date,
+                        ia.discharge_date,
+                        ia.status as admission_status,
+                        ia.chief_complaint,
+                        ia.diagnosis,
+                        DATEDIFF(COALESCE(ia.discharge_date, CURDATE()), ia.admission_date) as stay_days,
+                        p.first_name,
+                        p.last_name,
+                        TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) as full_name,
+                        p.age,
+                        p.sex,
+                        p.phone,
+                        p.blood_group,
+                        p.address,
+                        p.city,
+                        ia.emergency_contact_phone as emergency_contact,
+                        hb.bed_number,
+                        hb.ward_name,
+                        hb.room_number,
+                        hb.room_name,
+                        hb.amount_per_day as daily_bed_charge,
+                        d.full_name as doctor_name,
+                        d.specialization as doctor_specialization,
+                        d.mobile_number as doctor_phone
+                    FROM ipd_admissions ia
+                    LEFT JOIN patient p ON ia.patient_id COLLATE utf8mb4_unicode_ci = p.patient_id COLLATE utf8mb4_unicode_ci
+                    LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
+                    LEFT JOIN doctors d ON ia.admitting_doctor_id = d.doctor_id
+                    WHERE " . (!empty($admissionId) ? "ia.admission_id = ?" : "ia.patient_id = ? ORDER BY ia.created_at DESC LIMIT 1");
+
+            $param = !empty($admissionId) ? $admissionId : $patientId;
+            $admission = $this->db->fetchOne($admSql, [$param]);
+
+            if (!$admission) {
+                // If not found in ipd_admissions, fallback to patient record
+                $patient = $this->db->fetchOne("SELECT * FROM patient WHERE patient_id = ?", [$param]);
+                if (!$patient) {
+                    $this->respondError('Patient or admission record not found', 404);
+                    return;
+                }
+                $admission = [
+                    'admission_id' => $admissionId ?: 'N/A',
+                    'patient_id' => $patient['patient_id'],
+                    'full_name' => trim(($patient['first_name'] ?? '') . ' ' . ($patient['last_name'] ?? '')),
+                    'age' => $patient['age'] ?? 'N/A',
+                    'sex' => $patient['sex'] ?? 'N/A',
+                    'phone' => $patient['phone'] ?? 'N/A',
+                    'blood_group' => $patient['blood_group'] ?? 'N/A',
+                    'city' => $patient['city'] ?? '',
+                    'address' => $patient['address'] ?? '',
+                    'admission_status' => 'Admitted',
+                    'admission_date' => date('Y-m-d'),
+                    'stay_days' => 1,
+                    'bed_number' => 'N/A',
+                    'ward_name' => 'General',
+                    'room_number' => 'N/A',
+                    'doctor_name' => 'Attending Physician'
+                ];
+            }
+
+            $effAdmId = $admission['admission_id'] ?? $admissionId;
+            $effPatId = $admission['patient_id'] ?? $patientId;
+
+            // 2. IPD Billing Master
+            $masterSql = "SELECT * FROM ipd_billing_master WHERE admission_id = ? OR (patient_id = ? AND patient_id != '') ORDER BY created_at DESC LIMIT 1";
+            $billingMaster = $this->db->fetchOne($masterSql, [$effAdmId, $effPatId]);
+
+            // 3. IPD Billing Items
+            $billId = $billingMaster['bill_id'] ?? '';
+            $itemsSql = "SELECT * FROM ipd_billing_items WHERE admission_id = ? OR (bill_id IS NOT NULL AND bill_id = ? AND bill_id != '') ORDER BY charge_date DESC, item_id DESC";
+            $billingItems = $this->db->fetchAll($itemsSql, [$effAdmId, $billId]);
+
+            // 4. IPD Clinical Records
+            $clinicalSql = "SELECT * FROM ipd_clinical_records WHERE admission_id = ? OR (patient_id = ? AND patient_id != '') ORDER BY record_date DESC, id DESC LIMIT 15";
+            $rawClinical = $this->db->fetchAll($clinicalSql, [$effAdmId, $effPatId]);
+
+            $clinicalRecords = [];
+            foreach ($rawClinical as $rec) {
+                $clinicalRecords[] = [
+                    'id' => $rec['id'],
+                    'record_date' => $rec['record_date'],
+                    'admission_status' => $rec['admission_status'],
+                    'consultant_visits' => json_decode($rec['consultant_visits'] ?? '[]', true) ?: [],
+                    'lab_tests' => json_decode($rec['lab_tests'] ?? '[]', true) ?: [],
+                    'radiology_tests' => json_decode($rec['radiology_tests'] ?? '[]', true) ?: [],
+                    'other_tests' => json_decode($rec['other_tests'] ?? '[]', true) ?: [],
+                    'pharmacy_orders' => json_decode($rec['pharmacy_orders'] ?? '[]', true) ?: [],
+                    'pharmacy_returns' => json_decode($rec['pharmacy_returns'] ?? '[]', true) ?: [],
+                    'nursing_notes' => json_decode($rec['nursing_notes'] ?? '[]', true) ?: ($rec['nursing_notes'] ?? ''),
+                    'procedures' => json_decode($rec['procedures'] ?? '[]', true) ?: [],
+                    'bp_chart' => json_decode($rec['bp_chart'] ?? '[]', true) ?: [],
+                    'created_at' => $rec['created_at']
+                ];
+            }
+
+            $this->respondSuccess([
+                'admission' => $admission,
+                'billing_master' => $billingMaster ?: null,
+                'billing_items' => $billingItems ?: [],
+                'clinical_records' => $clinicalRecords ?: []
+            ]);
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    /**
      * Get Comprehensive Patient Details for Drilldown Modal
      */
     public function getPatientsDetails() {
