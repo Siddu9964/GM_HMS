@@ -274,8 +274,9 @@ const billing = (function() {
             
             if (json.success) {
                 renderItemsTable(json.data.items);
-                document.getElementById('itemCountBadge').textContent = json.data.count;
-                if (!type) document.getElementById('qsItemCount').textContent = json.data.count;
+                const activeCount = json.data.items.filter(it => it.status !== 'CANCELLED').length;
+                document.getElementById('itemCountBadge').textContent = activeCount;
+                if (!type) document.getElementById('qsItemCount').textContent = activeCount;
             }
         } catch (e) {
             console.error('Error loading items', e);
@@ -1243,31 +1244,18 @@ const billing = (function() {
         toggleInsFields();
         
         // Reset fields
-        document.getElementById('insCompanyName').value = currentMaster.insurance_company_id || '';
-        document.getElementById('insTpaName').value = '';
-        document.getElementById('insPolicyNo').value = currentMaster.policy_number || '';
-        document.getElementById('insClaimNo').value = '';
-        document.getElementById('insApprovalNo').value = currentMaster.approval_number || '';
-        document.getElementById('insApprovedAmt').value = parseFloat(currentMaster.insurance_approved_amount) || '';
-        document.getElementById('insClaimStatus').value = 'PENDING';
+        const existingName = currentMaster.sponsor || currentMaster.insurance_company_name || '';
+        document.getElementById('insCompanyName').value = (existingName !== 'SELF' ? existingName : '');
         
         // Try fetch existing full record
         try {
             const res = await fetch(`${API_URL}ipd-insurance?bill_id=${currentBillId}`);
             const json = await res.json();
-            if (json.success && json.data) {
-                const ins = json.data;
-                document.getElementById('insCompanyName').value = ins.company_name || '';
-                document.getElementById('insTpaName').value = ins.tpa_name || '';
-                document.getElementById('insPolicyNo').value = ins.policy_number || '';
-                document.getElementById('insClaimNo').value = ins.claim_number || '';
-                document.getElementById('insApprovalNo').value = ins.approval_number || '';
-                document.getElementById('insApprovedAmt').value = ins.approved_amount || '';
-                document.getElementById('insClaimStatus').value = ins.claim_status || 'PENDING';
+            if (json.success && json.data && json.data.company_name) {
+                document.getElementById('insCompanyName').value = json.data.company_name;
             }
         } catch(e) {}
         
-        calcInsPatientPayable();
         openModal('modalInsurance');
     };
 
@@ -1287,15 +1275,7 @@ const billing = (function() {
         }
     }
 
-    window.calcInsPatientPayable = function() {
-        const gt = parseFloat(currentMaster.grand_total) || 0;
-        const app = parseFloat(document.getElementById('insApprovedAmt').value) || 0;
-        const pp = Math.max(0, gt - app);
-        
-        document.getElementById('insGtDisplay').textContent = `₹${gt.toLocaleString('en-IN', {minimumFractionDigits:2})}`;
-        document.getElementById('insApprDisplay').textContent = `₹${app.toLocaleString('en-IN', {minimumFractionDigits:2})}`;
-        document.getElementById('insPpDisplay').textContent = `₹${pp.toLocaleString('en-IN', {minimumFractionDigits:2})}`;
-    };
+    window.calcInsPatientPayable = function() {};
 
     window.saveInsuranceDetails = async function() {
         if (currentBillType !== 'SELF') {
@@ -1305,6 +1285,8 @@ const billing = (function() {
         }
         
         try {
+            const compName = document.getElementById('insCompanyName')?.value.trim() || '';
+
             // First save bill type on master
             await fetch(`${API_URL}ipd-billing-master`, {
                 method: 'POST',
@@ -1312,7 +1294,9 @@ const billing = (function() {
                 body: JSON.stringify({
                     action: 'bill_type',
                     bill_id: currentBillId,
-                    bill_type: currentBillType
+                    bill_type: currentBillType,
+                    company_name: compName,
+                    sponsor: compName
                 })
             });
             
@@ -1327,25 +1311,21 @@ const billing = (function() {
                         admission_id: currentAdmissionId,
                         patient_id: currentPatientId,
                         insurance_type: currentBillType,
-                        company_name: document.getElementById('insCompanyName').value,
-                        tpa_name: document.getElementById('insTpaName').value,
-                        policy_number: document.getElementById('insPolicyNo').value,
-                        claim_number: document.getElementById('insClaimNo').value,
-                        approval_number: document.getElementById('insApprovalNo').value,
-                        approved_amount: document.getElementById('insApprovedAmt').value,
-                        claim_status: document.getElementById('insClaimStatus').value
+                        company_name: compName,
+                        tpa_name: (currentBillType === 'TPA' ? compName : ''),
+                        claim_status: 'PENDING'
                     })
                 });
                 const json = await res.json();
-                if(json.success) {
-                    currentMaster = json.data.financial;
+                if(json.success && json.data && json.data.financial) {
+                    currentMaster = { ...currentMaster, ...json.data.financial };
                 }
-            } else {
-                // Self - reload master to get updated bill_type and zeroed insurance values
-                const res = await fetch(`${API_URL}ipd-billing-master?bill_id=${currentBillId}`);
-                const json = await res.json();
-                if(json.success) currentMaster = json.data;
             }
+
+            // Reload fresh master to update sponsor header
+            const mRes = await fetch(`${API_URL}ipd-billing-master?bill_id=${currentBillId}&_t=${Date.now()}`);
+            const mJson = await mRes.json();
+            if(mJson.success) currentMaster = mJson.data;
             
             showToast('Insurance details updated', 'success');
             closeModal('modalInsurance');
@@ -1465,7 +1445,7 @@ const billing = (function() {
 
     window.printInterim = function() {
         if(!currentBillId) return;
-        openPrintPage('/GM_HMS/reception_view/print_ipd_interim.php', { bill_id: currentBillId });
+        openPrintPage('/GM_HMS/reception_view/print_interim.php', { bill_id: currentBillId });
     };
     
     window.printFinal = function() {
@@ -1474,12 +1454,12 @@ const billing = (function() {
             showToast('Final bill can only be printed after status is Finalized', 'warning');
             return;
         }
-        openPrintPage('/GM_HMS/reception_view/print_ipd_final.php', { bill_id: currentBillId });
+        openPrintPage('/GM_HMS/reception_view/print_final.php', { bill_id: currentBillId });
     };
     
     window.printReceipt = function() {
         if(!currentBillId) return;
-        openPrintPage('/GM_HMS/reception_view/print_ipd_receipt.php', { bill_id: currentBillId });
+        openPrintPage('/GM_HMS/reception_view/print_receipt.php', { bill_id: currentBillId });
     };
 
     // Export exposed functions

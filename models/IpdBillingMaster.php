@@ -343,12 +343,21 @@ class IpdBillingMaster extends IpdBaseModel {
                     hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
                     ia.admission_id AS adm_id, ia.bed_id, ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount,
                     COALESCE(ia.admission_date, bm.admission_date) AS admission_date,
-                    COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date
+                    COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date,
+                    ins.insurance_type,
+                    COALESCE(ins.company_name, '') AS insurance_company_name,
+                    COALESCE(ins.tpa_name, '') AS tpa_name,
+                    ins.policy_number,
+                    ins.claim_number,
+                    ins.approval_number,
+                    ins.approved_amount AS insurance_approved_amount,
+                    ins.claim_status AS insurance_claim_status
              FROM ipd_billing_master bm
              LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
              LEFT JOIN patient p ON COALESCE(ia.patient_id, bm.patient_id) = p.patient_id
              LEFT JOIN doctors d ON COALESCE(ia.admitting_doctor_id, bm.doctor_id) = d.doctor_id
              LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
+             LEFT JOIN ipd_insurance ins ON bm.bill_id = ins.bill_id COLLATE utf8mb4_unicode_ci
              WHERE bm.bill_id = ?",
             [$billId]
         );
@@ -369,12 +378,21 @@ class IpdBillingMaster extends IpdBaseModel {
                     hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
                     ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount,
                     COALESCE(ia.admission_date, bm.admission_date) AS admission_date,
-                    COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date
+                    COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date,
+                    ins.insurance_type,
+                    COALESCE(ins.company_name, '') AS insurance_company_name,
+                    COALESCE(ins.tpa_name, '') AS tpa_name,
+                    ins.policy_number,
+                    ins.claim_number,
+                    ins.approval_number,
+                    ins.approved_amount AS insurance_approved_amount,
+                    ins.claim_status AS insurance_claim_status
              FROM ipd_billing_master bm
              LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
              LEFT JOIN patient p ON COALESCE(ia.patient_id, bm.patient_id) = p.patient_id
              LEFT JOIN doctors d ON COALESCE(ia.admitting_doctor_id, bm.doctor_id) = d.doctor_id
              LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
+             LEFT JOIN ipd_insurance ins ON bm.bill_id = ins.bill_id COLLATE utf8mb4_unicode_ci
              WHERE bm.admission_id = ?",
             [$admissionId]
         );
@@ -547,18 +565,124 @@ class IpdBillingMaster extends IpdBaseModel {
      * 6. UPDATE BILL TYPE (SELF / INSURANCE / CORPORATE)
      * ─────────────────────────────────────────────────────────────── */
     public function updateBillType(string $billId, string $billType, array $insuranceData, string $updatedBy): bool {
+        $now = date('Y-m-d H:i:s');
         $data = [
             'bill_type'   => $billType,
             'updated_by'  => $updatedBy,
-            'updated_at'  => date('Y-m-d H:i:s'),
+            'updated_at'  => $now,
         ];
         if ($billType !== 'SELF') {
+            if (!empty($insuranceData['company_name'])) {
+                $data['sponsor'] = $insuranceData['company_name'];
+            } elseif (!empty($insuranceData['sponsor'])) {
+                $data['sponsor'] = $insuranceData['sponsor'];
+            }
             $data['insurance_company_id'] = $insuranceData['insurance_company_id'] ?? null;
             $data['policy_number']        = $insuranceData['policy_number']        ?? null;
             $data['approval_number']      = $insuranceData['approval_number']      ?? null;
             $data['insurance_approved_amount'] = $insuranceData['approved_amount'] ?? 0;
+        } else {
+            $data['sponsor'] = 'SELF';
         }
         $this->db->update('ipd_billing_master', $data, "`bill_id` = ?", [$billId]);
+
+        // Sync to ipd_admissions
+        $bm = $this->fetchOne("SELECT admission_id FROM ipd_billing_master WHERE bill_id = ?", [$billId]);
+        if (!empty($bm['admission_id'])) {
+            $admUpdate = [
+                'admission_type' => ($billType === 'SELF' ? 'General' : 'Insurance'),
+                'credit_type'    => ($billType === 'SELF' ? 'SELF' : 'INSURANCE'),
+                'updated_at'     => $now
+            ];
+            if (!empty($data['sponsor'])) {
+                $admUpdate['sponsor'] = $data['sponsor'];
+            }
+            $this->db->update('ipd_admissions', $admUpdate, "`admission_id` = ?", [$bm['admission_id']]);
+        }
+
+        if ($billType !== 'SELF') {
+            // Unbundle any past lumped ROOM_RENT charges for this bill
+            $lumpedItems = $this->fetchAll(
+                "SELECT bi.*, hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, COALESCE(hb.service_charge, 500) as service_charge, hb.total_bed_amount, hb.room_name, hb.bed_number, ia.admission_id, ia.patient_id
+                 FROM ipd_billing_items bi
+                 JOIN ipd_billing_master bm ON bi.bill_id = bm.bill_id
+                 JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
+                 JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
+                 WHERE bi.bill_id = ? AND bi.charge_type = 'ROOM_RENT' AND bi.status != 'CANCELLED'
+                   AND bi.total_amount >= hb.total_bed_amount AND hb.total_bed_amount > hb.amount_per_day",
+                [$billId]
+            );
+
+            foreach ($lumpedItems as $lump) {
+                $baseRent = (float)$lump['amount_per_day'];
+                $nursing = (float)$lump['nursig_charge'];
+                $doc = (float)$lump['doctor_charge'];
+                $svc = (float)$lump['service_charge'];
+                $cDate = $lump['charge_date'];
+                $admId = $lump['admission_id'];
+                $patId = $lump['patient_id'];
+
+                // 1. Update the original ROOM_RENT item to pure room rent
+                $this->db->update('ipd_billing_items', [
+                    'description' => "Room Rent - " . ($lump['room_name'] ?? 'Room') . " (Bed " . ($lump['bed_number'] ?? '') . ")",
+                    'total_amount'=> $baseRent,
+                    'items_json'  => json_encode([['name' => 'Room Rent', 'qty' => 1, 'price' => $baseRent, 'total' => $baseRent]]),
+                    'updated_at'  => $now
+                ], 'item_id = ?', [$lump['item_id']]);
+
+                // 2. Add Nursing
+                if ($nursing > 0) {
+                    $this->db->insert('ipd_billing_items', [
+                        'bill_id'     => $billId,
+                        'admission_id'=> $admId,
+                        'patient_id'  => $patId,
+                        'charge_type' => 'PROCEDURE',
+                        'description' => "Nursing Charges - " . ($lump['room_name'] ?? 'Room') . " (Bed " . ($lump['bed_number'] ?? '') . ")",
+                        'total_amount'=> $nursing,
+                        'charge_date' => $cDate,
+                        'status'      => 'COMPLETED',
+                        'created_by'  => $updatedBy,
+                        'created_at'  => $now,
+                        'updated_at'  => $now
+                    ]);
+                }
+
+                // 3. Add Doctor
+                if ($doc > 0) {
+                    $this->db->insert('ipd_billing_items', [
+                        'bill_id'     => $billId,
+                        'admission_id'=> $admId,
+                        'patient_id'  => $patId,
+                        'charge_type' => 'DOCTOR_VISIT',
+                        'description' => "Duty Doctor Charges - " . ($lump['room_name'] ?? 'Room') . " (Bed " . ($lump['bed_number'] ?? '') . ")",
+                        'total_amount'=> $doc,
+                        'charge_date' => $cDate,
+                        'status'      => 'COMPLETED',
+                        'created_by'  => $updatedBy,
+                        'created_at'  => $now,
+                        'updated_at'  => $now
+                    ]);
+                }
+
+                // 4. Add Service
+                if ($svc > 0) {
+                    $this->db->insert('ipd_billing_items', [
+                        'bill_id'     => $billId,
+                        'admission_id'=> $admId,
+                        'patient_id'  => $patId,
+                        'charge_type' => 'MISC',
+                        'description' => "Service Charges - " . ($lump['room_name'] ?? 'Room') . " (Bed " . ($lump['bed_number'] ?? '') . ")",
+                        'total_amount'=> $svc,
+                        'charge_date' => $cDate,
+                        'status'      => 'COMPLETED',
+                        'created_by'  => $updatedBy,
+                        'created_at'  => $now,
+                        'updated_at'  => $now
+                    ]);
+                }
+            }
+        }
+
         $this->recalculateMaster($billId, $updatedBy);
         return true;
     }
@@ -727,11 +851,23 @@ class IpdBillingMaster extends IpdBaseModel {
         $periodsToAdd = $totalPeriods - $existingCount;
 
         if ($periodsToAdd > 0) {
-            $roomPrice = (float)$admission['total_bed_amount'];
+            $baseBedRent = (float)($admission['amount_per_day'] ?? 0);
+            $baseNursing = (float)($admission['nursig_charge'] ?? 0);
+            $baseDoctor = (float)($admission['doctor_charge'] ?? 0);
+            $baseService = isset($admission['service_charge']) ? (float)$admission['service_charge'] : 0;
+            $roomPrice = (float)($admission['total_bed_amount'] ?? 0);
             $foodPrice = 570.00; // Default fixed food charge
-            $nursingPrice = 0;
-            $doctorPrice = 0;
-            $servicePrice = 0;
+
+            // Determine if patient is admitted under insurance
+            $isInsurance = false;
+            if (!empty($admission['admission_type']) && strcasecmp($admission['admission_type'], 'Insurance') === 0) $isInsurance = true;
+            if (!empty($admission['bill_type']) && strcasecmp($admission['bill_type'], 'INSURANCE') === 0) $isInsurance = true;
+            if (!empty($admission['credit_type']) && strcasecmp($admission['credit_type'], 'INSURANCE') === 0) $isInsurance = true;
+            if (!empty($admission['sponsor']) && strcasecmp($admission['sponsor'], 'SELF') !== 0 && trim($admission['sponsor']) !== '') $isInsurance = true;
+            if (!$isInsurance) {
+                $insCheck = $this->fetchOne("SELECT insurance_id FROM ipd_insurance WHERE bill_id = ? AND (approved_amount > 0 OR (company_name IS NOT NULL AND company_name != ''))", [$billId]);
+                if ($insCheck) $isInsurance = true;
+            }
 
             // Loop and add the missing periods
             for ($i = 0; $i < $periodsToAdd; $i++) {
@@ -747,32 +883,107 @@ class IpdBillingMaster extends IpdBaseModel {
                     [$billId, $chargeDate]
                 );
 
-                if (!$dup && $roomPrice > 0) {
-                    $itemsJson = json_encode([
-                        ['name' => 'Room Rent', 'qty' => 1, 'price' => $roomPrice, 'total' => $roomPrice]
-                    ]);
+                if (!$dup) {
+                    if ($isInsurance) {
+                        // Under insurance, Room Rent MUST NOT include Nursing, Duty Doctor, or Service charges
+                        if ($baseBedRent > 0) {
+                            $this->db->insert('ipd_billing_items', [
+                                'bill_id'     => $billId,
+                                'patient_id'  => $admission['patient_id'],
+                                'admission_id'=> $admission['admission_id'],
+                                'charge_date' => $chargeDate,
+                                'charge_type' => 'ROOM_RENT',
+                                'description' => "Room Rent - " . $roomName . " - Day " . $dayNumber,
+                                'total_amount'=> $baseBedRent,
+                                'items_json'  => json_encode([['name' => 'Room Rent', 'qty' => 1, 'price' => $baseBedRent, 'total' => $baseBedRent]]),
+                                'status'      => 'COMPLETED',
+                                'created_by'  => $updatedBy,
+                                'created_at'  => date('Y-m-d H:i:s')
+                            ]);
+                        }
 
-                    $baseBedRent = (float)$admission['amount_per_day'];
-                    $baseNursing = (float)$admission['nursig_charge'];
-                    $baseDoctor = (float)$admission['doctor_charge'];
-                    $baseService = isset($admission['service_charge']) ? (float)$admission['service_charge'] : 0;
-                    
-                    $breakdownText = "Room Rent: ₹" . number_format($baseBedRent, 0) . " | Nursing Charges: ₹" . number_format($baseNursing, 0) . " | Duty Doctor Charges: ₹" . number_format($baseDoctor, 0) . " | Service Charges: ₹" . number_format($baseService, 0);
-                    $roomDesc = "Room Rent - " . $roomName . " - Day " . $dayNumber . "<br><small style='color: #6c757d; font-size: 0.85em;'>" . $breakdownText . "</small>";
+                        // Nursing Charges separate item
+                        if ($baseNursing > 0) {
+                            $dupNurse = $this->fetchOne(
+                                "SELECT item_id FROM ipd_billing_items WHERE bill_id = ? AND charge_date = ? AND charge_type = 'PROCEDURE' AND description LIKE 'Nursing Charges%' AND status != 'CANCELLED'",
+                                [$billId, $chargeDate]
+                            );
+                            if (!$dupNurse) {
+                                $this->db->insert('ipd_billing_items', [
+                                    'bill_id'     => $billId,
+                                    'patient_id'  => $admission['patient_id'],
+                                    'admission_id'=> $admission['admission_id'],
+                                    'charge_date' => $chargeDate,
+                                    'charge_type' => 'PROCEDURE',
+                                    'description' => "Nursing Charges - Day " . $dayNumber,
+                                    'total_amount'=> $baseNursing,
+                                    'status'      => 'COMPLETED',
+                                    'created_by'  => $updatedBy,
+                                    'created_at'  => date('Y-m-d H:i:s')
+                                ]);
+                            }
+                        }
 
-                    $this->db->insert('ipd_billing_items', [
-                        'bill_id'     => $billId,
-                        'patient_id'  => $admission['patient_id'],
-                        'admission_id'=> $admission['admission_id'],
-                        'charge_date' => $chargeDate,
-                        'charge_type' => 'ROOM_RENT',
-                        'description' => $roomDesc,
-                        'total_amount'=> $roomPrice,
-                        'items_json'  => $itemsJson,
-                        'status'      => 'COMPLETED',
-                        'created_by'  => $updatedBy,
-                        'created_at'  => date('Y-m-d H:i:s')
-                    ]);
+                        // Duty Doctor Charges separate item
+                        if ($baseDoctor > 0) {
+                            $dupDoc = $this->fetchOne(
+                                "SELECT item_id FROM ipd_billing_items WHERE bill_id = ? AND charge_date = ? AND charge_type = 'DOCTOR_VISIT' AND description LIKE 'Duty Doctor Charges%' AND status != 'CANCELLED'",
+                                [$billId, $chargeDate]
+                            );
+                            if (!$dupDoc) {
+                                $this->db->insert('ipd_billing_items', [
+                                    'bill_id'     => $billId,
+                                    'patient_id'  => $admission['patient_id'],
+                                    'admission_id'=> $admission['admission_id'],
+                                    'charge_date' => $chargeDate,
+                                    'charge_type' => 'DOCTOR_VISIT',
+                                    'description' => "Duty Doctor Charges - Day " . $dayNumber,
+                                    'total_amount'=> $baseDoctor,
+                                    'status'      => 'COMPLETED',
+                                    'created_by'  => $updatedBy,
+                                    'created_at'  => date('Y-m-d H:i:s')
+                                ]);
+                            }
+                        }
+
+                        // Service Charges separate item
+                        if ($baseService > 0) {
+                            $dupServ = $this->fetchOne(
+                                "SELECT item_id FROM ipd_billing_items WHERE bill_id = ? AND charge_date = ? AND charge_type = 'MISC' AND description LIKE 'Service Charges%' AND status != 'CANCELLED'",
+                                [$billId, $chargeDate]
+                            );
+                            if (!$dupServ) {
+                                $this->db->insert('ipd_billing_items', [
+                                    'bill_id'     => $billId,
+                                    'patient_id'  => $admission['patient_id'],
+                                    'admission_id'=> $admission['admission_id'],
+                                    'charge_date' => $chargeDate,
+                                    'charge_type' => 'MISC',
+                                    'description' => "Service Charges - Day " . $dayNumber,
+                                    'total_amount'=> $baseService,
+                                    'status'      => 'COMPLETED',
+                                    'created_by'  => $updatedBy,
+                                    'created_at'  => date('Y-m-d H:i:s')
+                                ]);
+                            }
+                        }
+                    } else if ($roomPrice > 0) {
+                        $breakdownText = "Room Rent: ₹" . number_format($baseBedRent, 0) . " | Nursing Charges: ₹" . number_format($baseNursing, 0) . " | Duty Doctor Charges: ₹" . number_format($baseDoctor, 0) . " | Service Charges: ₹" . number_format($baseService, 0);
+                        $roomDesc = "Room Rent - " . $roomName . " - Day " . $dayNumber . "<br><small style='color: #6c757d; font-size: 0.85em;'>" . $breakdownText . "</small>";
+                        $this->db->insert('ipd_billing_items', [
+                            'bill_id'     => $billId,
+                            'patient_id'  => $admission['patient_id'],
+                            'admission_id'=> $admission['admission_id'],
+                            'charge_date' => $chargeDate,
+                            'charge_type' => 'ROOM_RENT',
+                            'description' => $roomDesc,
+                            'total_amount'=> $roomPrice,
+                            'items_json'  => json_encode([['name' => 'Room Rent', 'qty' => 1, 'price' => $roomPrice, 'total' => $roomPrice]]),
+                            'status'      => 'COMPLETED',
+                            'created_by'  => $updatedBy,
+                            'created_at'  => date('Y-m-d H:i:s')
+                        ]);
+                    }
 
                     // Add Food Charge for this day under MISC if not already present
                     if ($foodPrice > 0) {

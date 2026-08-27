@@ -59,8 +59,11 @@ class IpdInsurance extends IpdBaseModel {
             $this->db->insert('ipd_insurance', $record);
         }
 
+        $sponsorName = !empty($data['company_name']) ? $data['company_name'] : (!empty($data['tpa_name']) ? $data['tpa_name'] : ($data['insurance_type'] ?? 'INSURANCE'));
+
         // Update master insurance fields
         $this->db->update('ipd_billing_master', [
+            'sponsor'                    => $sponsorName,
             'bill_type'                  => $data['insurance_type'] === 'CORPORATE' ? 'CORPORATE' : 'INSURANCE',
             'insurance_company_id'       => $data['insurance_company_id'] ?? null,
             'policy_number'              => $data['policy_number']        ?? null,
@@ -69,6 +72,21 @@ class IpdInsurance extends IpdBaseModel {
             'patient_payable'            => $patientPayable,
             'updated_at'                 => $now,
         ], '`bill_id` = ?', [$billId]);
+
+        // Also sync to ipd_admissions if admission_id is present
+        $admId = $data['admission_id'] ?? null;
+        if (!$admId) {
+            $bm = $this->fetchOne("SELECT admission_id FROM ipd_billing_master WHERE bill_id = ?", [$billId]);
+            $admId = $bm['admission_id'] ?? null;
+        }
+        if ($admId) {
+            $this->db->update('ipd_admissions', [
+                'sponsor'        => $sponsorName,
+                'admission_type' => 'Insurance',
+                'credit_type'    => $data['insurance_type'] ?? 'INSURANCE',
+                'updated_at'     => $now,
+            ], '`admission_id` = ?', [$admId]);
+        }
 
         // Recalculate master
         require_once __DIR__ . '/IpdBillingMaster.php';

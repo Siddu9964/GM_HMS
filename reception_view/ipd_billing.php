@@ -532,10 +532,17 @@ try {
                                         <div class="bm-form-group" style="margin-bottom: 0;">
                                             <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Payment Type <span class="req">*</span></label>
                                             <div class="pay-type-group" id="inlinePayTypeGroup">
-                                                <button class="pay-type-btn" data-type="ADVANCE">Advance</button>
-                                                <button class="pay-type-btn active" data-type="PARTIAL">Partial</button>
-                                                <button class="pay-type-btn" data-type="FINAL">Final</button>
-                                                <button class="pay-type-btn refund-btn" data-type="REFUND">Refund</button>
+                                                <button type="button" class="pay-type-btn" data-type="ADVANCE">Advance</button>
+                                                <button type="button" class="pay-type-btn active" data-type="PARTIAL">Partial</button>
+                                                <button type="button" class="pay-type-btn" data-type="FINAL">Final</button>
+                                                <button type="button" class="pay-type-btn refund-btn" data-type="REFUND">Refund</button>
+                                            </div>
+                                            <div class="advance-quick-chips" id="inlineAdvanceChips" style="display: flex; gap: 6px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
+                                                <span style="font-size: 10px; font-weight: 700; color: #1f6b4a; text-transform: uppercase;">Quick Deposit:</span>
+                                                <button type="button" class="adv-chip-btn" onclick="billing.setQuickAdvance(2000)" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; background: #e6f0eb; color: #1f6b4a; border: 1px solid #1f6b4a; cursor: pointer;">₹2,000</button>
+                                                <button type="button" class="adv-chip-btn" onclick="billing.setQuickAdvance(5000)" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; background: #e6f0eb; color: #1f6b4a; border: 1px solid #1f6b4a; cursor: pointer;">₹5,000</button>
+                                                <button type="button" class="adv-chip-btn" onclick="billing.setQuickAdvance(10000)" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; background: #e6f0eb; color: #1f6b4a; border: 1px solid #1f6b4a; cursor: pointer;">₹10,000</button>
+                                                <button type="button" class="adv-chip-btn" onclick="billing.setQuickAdvance(25000)" style="padding: 2px 8px; font-size: 11px; font-weight: 700; border-radius: 4px; background: #e6f0eb; color: #1f6b4a; border: 1px solid #1f6b4a; cursor: pointer;">₹25,000</button>
                                             </div>
                                         </div>
                                     </div>
@@ -543,39 +550,42 @@ try {
                                     <div class="bm-form-group" style="margin-bottom: 12px;">
                                         <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Payment Mode <span class="req">*</span></label>
                                         <div class="pay-mode-group" id="inlinePayModeGroup">
-                                            <button class="pay-mode-btn active" data-mode="CASH"><i data-lucide="banknote"></i> Cash</button>
-                                            <button class="pay-mode-btn" data-mode="UPI"><i data-lucide="smartphone"></i> UPI</button>
-                                            <button class="pay-mode-btn" data-mode="CARD"><i data-lucide="credit-card"></i> Card</button>
-                                            <button class="pay-mode-btn" data-mode="BANK"><i data-lucide="landmark"></i> Bank</button>
-                                            <button class="pay-mode-btn" data-mode="CHEQUE"><i data-lucide="receipt"></i> Cheque</button>
-                                            <button class="pay-mode-btn" data-mode="INSURANCE"><i data-lucide="shield"></i> Insurance</button>
+                                            <button type="button" class="pay-mode-btn active" data-mode="CASH"><i data-lucide="banknote"></i> Cash</button>
+                                            <button type="button" class="pay-mode-btn" data-mode="UPI"><i data-lucide="smartphone"></i> UPI</button>
+                                            <button type="button" class="pay-mode-btn" data-mode="CARD"><i data-lucide="credit-card"></i> Card</button>
+                                            <button type="button" class="pay-mode-btn" data-mode="BANK"><i data-lucide="landmark"></i> Bank</button>
+                                            <button type="button" class="pay-mode-btn" data-mode="CHEQUE"><i data-lucide="receipt"></i> Cheque</button>
+                                            <button type="button" class="pay-mode-btn" data-mode="INSURANCE"><i data-lucide="shield"></i> Insurance</button>
                                         </div>
                                     </div>
 
-                                    <!-- Insurance Sub-section -->
+                                    <!-- Insurance / TPA Sub-section (Sponsor Type & Company Name) -->
                                     <div id="inlineInsuranceBlock" style="display:none; background: rgba(31,107,74,0.05); border: 1.5px dashed #1f6b4a; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-                                        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
-                                            <label style="font-size: 11px; font-weight: 800; color: #1f6b4a; text-transform: uppercase; margin: 0;">Sponsor Type <span class="req">*</span>:</label>
-                                            <div class="pay-type-group" id="inlineSponsorTypeGroup" style="display: flex; gap: 6px;">
-                                                <button type="button" class="pay-type-btn active" data-sponsor-type="INSURANCE" style="padding: 4px 14px; min-height: 32px; font-size: 12px;"><i data-lucide="shield"></i> Insurance</button>
-                                                <button type="button" class="pay-type-btn" data-sponsor-type="TPA" style="padding: 4px 14px; min-height: 32px; font-size: 12px;"><i data-lucide="building-2"></i> TPA</button>
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px dashed rgba(31,107,74,0.2);">
+                                            <div style="display: flex; gap: 10px; align-items: center;">
+                                                <label style="font-size: 11px; font-weight: 800; color: #1f6b4a; text-transform: uppercase; margin: 0;">Sponsor Type <span class="req">*</span>:</label>
+                                                <div class="pay-type-group" id="inlineSponsorTypeGroup" style="display: flex; gap: 6px;">
+                                                    <button type="button" class="pay-type-btn active" data-sponsor-type="INSURANCE" style="padding: 4px 14px; min-height: 30px; font-size: 12px;"><i data-lucide="shield"></i> Insurance</button>
+                                                    <button type="button" class="pay-type-btn" data-sponsor-type="TPA" style="padding: 4px 14px; min-height: 30px; font-size: 12px;"><i data-lucide="building-2"></i> TPA</button>
+                                                </div>
                                             </div>
+                                            <span style="font-size: 10px; font-weight: 800; background: #1f6b4a; color: #fff; padding: 2px 8px; border-radius: 12px;"><i class="fas fa-file-medical"></i> Advance Insurance View</span>
                                         </div>
 
-                                        <div style="position: relative;">
+                                        <div style="position: relative; margin-bottom: 4px;">
                                             <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">
                                                 <span id="inlineSponsorLabel">Insurance Company Name</span> <span class="req">*</span>
                                                 <span style="background: #1f6b4a; color: #f3efe6; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 700;"><i class="fas fa-search"></i> Advance Search</span>
                                             </label>
                                             <input type="text" id="inlineSponsorSearchInput" placeholder="Type to search Insurance company (e.g. Star Health, HDFC ERGO...)" autocomplete="off" style="width: 100%; height: 38px; padding: 0 10px; border: 1.5px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a; font-weight: 700;">
                                             <input type="hidden" id="inlineSelectedSponsorName">
-                                            <div id="inlineSponsorResults" style="display:none; position:absolute; left:0; right:0; top:100%; z-index:100; background:#ffffff; border:1.5px solid #1f6b4a; border-radius:6px; max-height:220px; overflow-y:auto; box-shadow:0 4px 12px rgba(31,107,74,0.15); margin-top:2px;"></div>
+                                            <div id="inlineSponsorResults" style="display:none; position:absolute; left:0; right:0; top:100%; z-index:1000; background:#ffffff; border:1.5px solid #1f6b4a; border-radius:6px; max-height:220px; overflow-y:auto; box-shadow:0 6px 18px rgba(0,0,0,0.18); margin-top:2px;"></div>
                                         </div>
                                     </div>
 
                                     <div class="bm-form-row two-col" style="margin-bottom: 12px;">
                                         <div class="bm-form-group" style="margin-bottom: 0;">
-                                            <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Amount (₹) <span class="req">*</span></label>
+                                            <label id="inlineAmountLabel" style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Amount (₹) <span class="req">*</span></label>
                                             <div style="position:relative;">
                                                 <input type="number" id="inlinePayAmount" min="0.01" step="0.01" placeholder="0.00" oninput="billing.updateInlinePayPreview()" style="width: 100%; height: 38px; padding: 0 50px 0 10px; border: 1px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a; font-weight: 800; font-size: 15px;">
                                                 <button class="btn-full-amount" id="btnInlineFullAmount" onclick="billing.fillInlineFullAmount()" title="Fill full balance" style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px; background: #1f6b4a; color: #f3efe6; border: none; font-weight: 700; cursor: pointer;">Full</button>
@@ -666,8 +676,8 @@ try {
                                 </div>
                             </div>
 
-                            <!-- Billing Items Section (Collapsible / Hidden by default) -->
-                            <div class="panel-card" id="billingItemsCard" style="display:none; margin-top: 16px;">
+                            <!-- Billing Items Section (Always visible) -->
+                            <div class="panel-card" id="billingItemsCard" style="margin-top: 16px;">
                                 <div class="panel-card-head">
                                     <div class="panel-card-title">
                                         <i data-lucide="list"></i> Billing Items Breakdown
@@ -1686,25 +1696,9 @@ try {
                 </select>
             </div>
             <div id="insFieldsBlock" style="display:none;">
-                <div class="bm-form-row two-col">
-                    <div class="bm-form-group">
-                        <label>Company / TPA Name</label>
-                        <input type="text" id="insCompanyName" placeholder="e.g. Star Health, Medi Assist">
-                    </div>
-                    <div class="bm-form-group">
-                        <label>Policy Number</label>
-                        <input type="text" id="insPolicyNo" placeholder="Policy / Card no.">
-                    </div>
-                </div>
-                <div class="bm-form-row two-col">
-                    <div class="bm-form-group">
-                        <label>Approval / CCN No.</label>
-                        <input type="text" id="insApprovalNo" placeholder="CCN / Pre-auth code">
-                    </div>
-                    <div class="bm-form-group">
-                        <label>Approved Amount (₹)</label>
-                        <input type="number" id="insApprovedAmount" min="0" step="0.01" placeholder="0.00">
-                    </div>
+                <div class="bm-form-group">
+                    <label>Insurance / TPA Company Name <span class="req">*</span></label>
+                    <input type="text" id="insCompanyName" placeholder="e.g. Star Health, Medi Assist, HDFC ERGO...">
                 </div>
             </div>
         </div>

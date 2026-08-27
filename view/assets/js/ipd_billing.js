@@ -349,8 +349,9 @@ const billing = (function () {
 
             if (json.success) {
                 renderItemsTable(json.data.items);
-                document.getElementById('itemCountBadge').textContent = json.data.count;
-                if (!type) document.getElementById('qsItemCount').textContent = json.data.count;
+                const activeCount = json.data.items.filter(it => it.status !== 'CANCELLED').length;
+                document.getElementById('itemCountBadge').textContent = activeCount;
+                if (!type) document.getElementById('qsItemCount').textContent = activeCount;
             }
         } catch (e) {
             console.error('Error loading items', e);
@@ -410,6 +411,7 @@ const billing = (function () {
                     charge_type: cType,
                     total_amount: 0,
                     count: 0,
+                    active_count: 0,
                     items: []
                 };
             }
@@ -417,6 +419,7 @@ const billing = (function () {
             
             if (item.status !== 'CANCELLED') {
                 grouped[cType].total_amount += parseFloat(item.total_amount || 0);
+                grouped[cType].active_count++;
             }
             grouped[cType].count++;
         });
@@ -437,7 +440,7 @@ const billing = (function () {
             if (rawType === 'RADIOLOGY') { badgeClass = 'badge-RADIOLOGY'; icon = 'radio'; catName = 'Radiology'; }
             if (rawType === 'PHARMACY') { badgeClass = 'badge-PHARMACY'; icon = 'pill'; catName = 'Pharmacy'; }
             if (rawType === 'OT') { badgeClass = 'badge-OT'; icon = 'syringe'; catName = 'Operation Theatre'; }
-            if (rawType === 'PROCEDURE') { badgeClass = 'badge-PROCEDURE'; icon = 'activity'; catName = 'Procedure'; }
+            if (rawType === 'PROCEDURE') { badgeClass = 'badge-PROCEDURE'; icon = 'activity'; catName = 'Procedure & Nursing'; }
             if (rawType === 'DIALYSIS') { badgeClass = 'badge-DIALYSIS'; icon = 'filter'; catName = 'Dialysis'; }
             if (rawType === 'OXYGEN') { badgeClass = 'badge-OXYGEN'; icon = 'wind'; catName = 'Oxygen'; }
             if (rawType === 'VENTILATION') { badgeClass = 'badge-VENTILATION'; icon = 'activity'; catName = 'Ventilator'; }
@@ -447,6 +450,9 @@ const billing = (function () {
             if (rawType === 'OTHER') { badgeClass = 'badge-OTHER'; icon = 'layers'; catName = 'Other'; }
 
             const groupTotal = group.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            const countLabel = group.count > group.active_count
+                ? `${group.active_count} active${group.active_count === 0 ? '' : `, ${group.count - group.active_count} cancelled`}`
+                : `${group.active_count} items`;
             
             // Parent Row (Expanded by default, click to collapse/expand)
             html += `
@@ -454,7 +460,7 @@ const billing = (function () {
                     <td colspan="4" style="font-weight: 700; padding: 12px 16px;">
                         <i data-lucide="chevron-right" class="group-icon-${safeId}" style="transform: rotate(90deg); transition: transform 0.2s ease; width: 16px; height: 16px; vertical-align: text-bottom; margin-right: 8px; color: #1f6b4a; display: inline-block;"></i>
                         <div class="charge-type-badge" style="display:inline-flex; background: #1f6b4a; color: #f3efe6; padding: 4px 10px; border-radius: 12px; font-weight: 700; gap: 6px; font-size: 0.8rem;">
-                            <i data-lucide="${icon}" style="width: 14px; height: 14px;"></i> ${catName} (${group.count} items)
+                            <i data-lucide="${icon}" style="width: 14px; height: 14px;"></i> ${catName} (${countLabel})
                         </div>
                     </td>
                     <td colspan="2"></td>
@@ -2800,16 +2806,22 @@ const billing = (function () {
             suggestedType = 'FINAL';
         }
 
-        document.querySelectorAll('.pay-type-btn').forEach(b => {
-            b.classList.remove('active');
-            if (b.dataset.type === suggestedType) b.classList.add('active');
-        });
+        const ptGroup = document.getElementById('payTypeGroup');
+        if (ptGroup) {
+            ptGroup.querySelectorAll('.pay-type-btn').forEach(b => {
+                b.classList.remove('active');
+                if (b.dataset.type === suggestedType) b.classList.add('active');
+            });
+        }
         currentPayType = suggestedType;
 
-        document.querySelectorAll('.pay-mode-btn').forEach(b => {
-            b.classList.remove('active');
-            if (b.dataset.mode === 'CASH') b.classList.add('active');
-        });
+        const pmGroup = document.getElementById('payModeGroup');
+        if (pmGroup) {
+            pmGroup.querySelectorAll('.pay-mode-btn').forEach(b => {
+                b.classList.remove('active');
+                if (b.dataset.mode === 'CASH') b.classList.add('active');
+            });
+        }
         currentPayMode = 'CASH';
 
         const curDiscAmt = parseFloat(currentMaster.discount_amount) || 0;
@@ -2858,7 +2870,7 @@ const billing = (function () {
     document.getElementById('payTypeGroup').addEventListener('click', function (e) {
         const btn = e.target.closest('.pay-type-btn');
         if (btn) {
-            document.querySelectorAll('.pay-type-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('payTypeGroup').querySelectorAll('.pay-type-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentPayType = btn.dataset.type;
             togglePaymentFields();
@@ -2869,7 +2881,7 @@ const billing = (function () {
     document.getElementById('payModeGroup').addEventListener('click', function (e) {
         const btn = e.target.closest('.pay-mode-btn');
         if (btn) {
-            document.querySelectorAll('.pay-mode-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('payModeGroup').querySelectorAll('.pay-mode-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentPayMode = btn.dataset.mode;
             togglePaymentFields();
@@ -3098,6 +3110,17 @@ const billing = (function () {
                     typeGrp.querySelectorAll('.pay-type-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     currentInlinePayType = btn.dataset.type;
+
+                    // If user selects Advance and amount is empty/zero, suggest initial deposit
+                    if (currentInlinePayType === 'ADVANCE') {
+                        const amtInp = document.getElementById('inlinePayAmount');
+                        if (amtInp && (!amtInp.value || parseFloat(amtInp.value) <= 0)) {
+                            const bal = parseFloat(currentMaster?.balance_due) || 0;
+                            amtInp.value = bal > 0 ? bal.toFixed(2) : '5000.00';
+                            amtInp.select();
+                        }
+                    }
+
                     toggleInlinePaymentFields();
                     updateInlinePayPreview();
                 }
@@ -3112,11 +3135,44 @@ const billing = (function () {
                     modeGrp.querySelectorAll('.pay-mode-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     currentInlinePayMode = btn.dataset.mode;
+
+                    // When switching to INSURANCE, ensure amount is populated
+                    if (currentInlinePayMode === 'INSURANCE') {
+                        const amtInp = document.getElementById('inlinePayAmount');
+                        if (amtInp && (!amtInp.value || parseFloat(amtInp.value) <= 0)) {
+                            const bal = parseFloat(currentMaster?.balance_due) || 0;
+                            const app = parseFloat(currentMaster?.insurance_approved_amount) || 0;
+                            const fill = app > 0 ? app : (bal > 0 ? bal : 0);
+                            if (fill > 0) amtInp.value = fill.toFixed(2);
+                        }
+                    }
+
                     toggleInlinePaymentFields();
+                    updateInlinePayPreview();
                 }
             });
         }
     }
+
+    function setQuickAdvance(amt) {
+        const amtInp = document.getElementById('inlinePayAmount');
+        if (amtInp) {
+            amtInp.value = parseFloat(amt).toFixed(2);
+        }
+        const typeGrp = document.getElementById('inlinePayTypeGroup');
+        if (typeGrp) {
+            typeGrp.querySelectorAll('.pay-type-btn').forEach(b => {
+                b.classList.remove('active');
+                if (b.dataset.type === 'ADVANCE') b.classList.add('active');
+            });
+            currentInlinePayType = 'ADVANCE';
+        }
+        updateInlinePayPreview();
+        showToast(`Advance deposit set to ₹${parseFloat(amt).toLocaleString('en-IN')}`, 'info');
+    }
+
+    function syncInlineApprovedAmount(val) {}
+    function applyApprovedToPayment() {}
 
     function toggleInlinePaymentFields() {
         const refGrp = document.getElementById('inlinePayRefGroup');
@@ -3134,12 +3190,35 @@ const billing = (function () {
             if (currentInlinePayMode === 'CHEQUE') refInp.placeholder = 'Cheque No. & Bank Name';
         }
 
+        const amtLabel = document.getElementById('inlineAmountLabel');
+        const saveBtn = document.getElementById('btnSaveInlinePayment');
+
         if (insBlock) {
             if (currentInlinePayMode === 'INSURANCE') {
                 insBlock.style.display = 'block';
+                if (amtLabel) amtLabel.innerHTML = 'Amount (₹) <span style="font-size:10px; font-weight:500; opacity:0.85; text-transform:none;">(Optional - leave 0.00 to save insurance without payment)</span>';
+                if (saveBtn) {
+                    const curAmt = parseFloat(document.getElementById('inlinePayAmount')?.value) || 0;
+                    saveBtn.innerHTML = (curAmt > 0) ? '<i class="fas fa-check-circle"></i> Record Payment & Insurance' : '<i class="fas fa-shield-alt"></i> Save Insurance Details';
+                }
+                
+                // Pre-fill existing patient insurance sponsor name if available
+                if (currentMaster) {
+                    const spInp = document.getElementById('inlineSponsorSearchInput');
+                    const spHid = document.getElementById('inlineSelectedSponsorName');
+
+                    const existingName = currentMaster.insurance_company_name || currentMaster.tpa_name || currentMaster.sponsor || '';
+                    if (spInp && !spInp.value && existingName && existingName !== 'SELF') {
+                        spInp.value = existingName;
+                        if (spHid) spHid.value = existingName;
+                    }
+                }
+
                 fetchSponsors('', currentInlineSponsorType, 'inlineSponsorResults', 'inlineSponsorSearchInput', 'inlineSelectedSponsorName');
             } else {
                 insBlock.style.display = 'none';
+                if (amtLabel) amtLabel.innerHTML = 'Amount (₹) <span class="req">*</span>';
+                if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-check-circle"></i> Record Payment';
             }
         }
 
@@ -3230,6 +3309,11 @@ const billing = (function () {
                 preview.style.color = '#1f6b4a';
             }
         }
+
+        const saveBtn = document.getElementById('btnSaveInlinePayment');
+        if (saveBtn && currentInlinePayMode === 'INSURANCE') {
+            saveBtn.innerHTML = (amt > 0) ? '<i class="fas fa-check-circle"></i> Record Payment & Insurance' : '<i class="fas fa-shield-alt"></i> Save Insurance Details';
+        }
     }
 
     function updateInlinePaymentUI() {
@@ -3272,7 +3356,7 @@ const billing = (function () {
     async function saveInlinePayment() {
         if (!currentMaster || isSavingInlinePayment) return;
 
-        const amt = parseFloat(document.getElementById('inlinePayAmount').value) || 0;
+        let amt = parseFloat(document.getElementById('inlinePayAmount').value) || 0;
         const discAmt = parseFloat(document.getElementById('inlinePayDiscount')?.value) || 0;
         const discPct = parseFloat(document.getElementById('inlinePayDiscountPct')?.value) || 0;
         const discReason = document.getElementById('inlinePayDiscountReason')?.value.trim() || '';
@@ -3280,8 +3364,20 @@ const billing = (function () {
         const curMasterDiscAmt = parseFloat(currentMaster.discount_amount) || 0;
         const isDiscountChanged = (discAmt !== curMasterDiscAmt);
 
-        if (amt <= 0 && !isDiscountChanged) {
-            showToast('Enter a valid payment amount or discount', 'warning');
+        let sponsorName = null;
+        if (currentInlinePayMode === 'INSURANCE') {
+            sponsorName = document.getElementById('inlineSelectedSponsorName')?.value.trim() || document.getElementById('inlineSponsorSearchInput')?.value.trim();
+            if (!sponsorName) {
+                showToast('Please enter or select an Insurance / TPA company name', 'warning');
+                document.getElementById('inlineSponsorSearchInput')?.focus();
+                return;
+            }
+        }
+
+        // Only require payment amount if NOT in Insurance mode (or if no discount changed)
+        if (currentInlinePayMode !== 'INSURANCE' && amt <= 0 && !isDiscountChanged) {
+            showToast('Please enter a valid payment / deposit amount', 'warning');
+            document.getElementById('inlinePayAmount')?.focus();
             return;
         }
 
@@ -3290,18 +3386,9 @@ const billing = (function () {
             return;
         }
 
-        if (amt > 0 && currentInlinePayMode !== 'CASH' && currentInlinePayMode !== 'INSURANCE' && !document.getElementById('inlinePayRef').value.trim()) {
+        if (amt > 0 && currentInlinePayMode !== 'CASH' && currentInlinePayMode !== 'INSURANCE' && !document.getElementById('inlinePayRef')?.value.trim()) {
             showToast('Reference No. is required for non-cash modes', 'warning');
             return;
-        }
-
-        let sponsorName = null;
-        if (amt > 0 && currentInlinePayMode === 'INSURANCE') {
-            sponsorName = document.getElementById('inlineSelectedSponsorName')?.value || document.getElementById('inlineSponsorSearchInput')?.value.trim();
-            if (!sponsorName) {
-                showToast('Please select or search an Insurance / TPA sponsor from the list', 'warning');
-                return;
-            }
         }
 
         let refundReason = null;
@@ -3347,9 +3434,50 @@ const billing = (function () {
                 }
             }
 
-            // 2. If payment amount is provided, record payment
+            // 2. If insurance mode, always update master sponsor and ipd_insurance
+            if (currentInlinePayMode === 'INSURANCE' && sponsorName) {
+                try {
+                    await fetch(`${API_URL}ipd-billing-master`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'bill_type',
+                            bill_id: currentBillId,
+                            bill_type: 'INSURANCE',
+                            company_name: sponsorName,
+                            sponsor: sponsorName
+                        })
+                    });
+
+                    await fetch(`${API_URL}ipd-insurance`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'save',
+                            bill_id: currentBillId,
+                            admission_id: currentAdmissionId,
+                            patient_id: currentPatientId,
+                            insurance_type: currentInlineSponsorType,
+                            company_name: sponsorName,
+                            tpa_name: (currentInlineSponsorType === 'TPA' ? sponsorName : ''),
+                            claim_status: 'PENDING'
+                        })
+                    });
+                } catch (e) {
+                    console.warn('Could not sync ipd-insurance record', e);
+                }
+            }
+
+            // 3. If payment amount > 0, record actual payment in ipd_payment
             if (amt > 0) {
                 const action = currentInlinePayType === 'REFUND' ? 'refund' : 'pay';
+                let remarks = document.getElementById('inlinePayRemarks').value.trim();
+                if (sponsorName) {
+                    let insParts = [`Sponsor: ${sponsorName} (${currentInlineSponsorType})`];
+                    if (remarks) insParts.push(remarks);
+                    remarks = insParts.join(' | ');
+                }
+
                 const res = await fetch(`${API_URL}ipd-payment`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -3362,8 +3490,8 @@ const billing = (function () {
                         payment_type: currentInlinePayType,
                         payment_mode: currentInlinePayMode,
                         amount: amt,
-                        reference_no: document.getElementById('inlinePayRef').value,
-                        remarks: sponsorName ? `Sponsor: ${sponsorName} (${currentInlineSponsorType})` + (document.getElementById('inlinePayRemarks').value ? ` | ${document.getElementById('inlinePayRemarks').value}` : '') : document.getElementById('inlinePayRemarks').value,
+                        reference_no: document.getElementById('inlinePayRef')?.value || null,
+                        remarks: remarks,
                         refund_reason: refundReason,
                         approved_by: approvedBy
                     })
@@ -3372,8 +3500,6 @@ const billing = (function () {
 
                 if (json.success) {
                     showToast('Payment recorded successfully', 'success');
-                    // Reset payment fields
-                    document.getElementById('inlinePayAmount').value = '';
                     document.getElementById('inlinePayRef').value = '';
                     document.getElementById('inlinePayRemarks').value = '';
                     if (document.getElementById('inlineSponsorSearchInput')) document.getElementById('inlineSponsorSearchInput').value = '';
@@ -3381,10 +3507,17 @@ const billing = (function () {
                     if (document.getElementById('inlineRefundReason')) document.getElementById('inlineRefundReason').value = '';
                     if (document.getElementById('inlineRefundApprovedBy')) document.getElementById('inlineRefundApprovedBy').value = '';
 
-                    currentMaster = { ...currentMaster, ...json.data.financial };
+                    if (json.data && json.data.financial) {
+                        currentMaster = { ...currentMaster, ...json.data.financial };
+                    }
                 } else {
                     showToast(json.message || 'Failed to record payment', 'error');
                 }
+            } else if (currentInlinePayMode === 'INSURANCE' && sponsorName) {
+                showToast(`Insurance / TPA (${sponsorName}) saved successfully`, 'success');
+                const mRes = await fetch(`${API_URL}ipd-billing-master?bill_id=${currentBillId}&_t=${Date.now()}`);
+                const mJson = await mRes.json();
+                if (mJson.success) currentMaster = mJson.data;
             } else if (isDiscountChanged) {
                 showToast('Discount applied successfully', 'success');
             }
@@ -3393,7 +3526,7 @@ const billing = (function () {
             loadPayments();
         } catch (e) {
             console.error(e);
-            showToast('Network error while recording payment/discount', 'error');
+            showToast('Network error while processing', 'error');
         } finally {
             isSavingInlinePayment = false;
             if (btn) {
@@ -3401,8 +3534,13 @@ const billing = (function () {
                 btn.classList.remove('loading');
                 btn.style.pointerEvents = 'auto';
                 btn.style.opacity = '1';
-                btn.innerHTML = '<i data-lucide="check-circle-2" style="width: 18px; height: 18px;"></i> Record Payment';
-                if (window.lucide) lucide.createIcons();
+                const curAmt = parseFloat(document.getElementById('inlinePayAmount')?.value) || 0;
+                if (currentInlinePayMode === 'INSURANCE' && curAmt <= 0) {
+                    btn.innerHTML = '<i class="fas fa-shield-alt"></i> Save Insurance Details';
+                } else {
+                    btn.innerHTML = '<i data-lucide="check-circle-2" style="width: 18px; height: 18px;"></i> Record Payment';
+                    if (window.lucide) lucide.createIcons();
+                }
             }
         }
     }
@@ -3470,11 +3608,13 @@ const billing = (function () {
                 fetchSponsors(this.value.trim(), currentInlineSponsorType, 'inlineSponsorResults', 'inlineSponsorSearchInput', 'inlineSelectedSponsorName');
             });
             inInp.addEventListener('input', function() {
-                clearTimeout(inlineSponsorSearchDebounce);
                 const q = this.value.trim();
+                const hid = document.getElementById('inlineSelectedSponsorName');
+                if (hid) hid.value = q;
+                clearTimeout(inlineSponsorSearchDebounce);
                 inlineSponsorSearchDebounce = setTimeout(() => {
                     fetchSponsors(q, currentInlineSponsorType, 'inlineSponsorResults', 'inlineSponsorSearchInput', 'inlineSelectedSponsorName');
-                }, 200);
+                }, 150);
             });
         }
 
@@ -3485,21 +3625,23 @@ const billing = (function () {
                 fetchSponsors(this.value.trim(), currentModalSponsorType, 'modalSponsorResults', 'modalSponsorSearchInput', 'modalSelectedSponsorName');
             });
             modInp.addEventListener('input', function() {
-                clearTimeout(modalSponsorSearchDebounce);
                 const q = this.value.trim();
+                const hid = document.getElementById('modalSelectedSponsorName');
+                if (hid) hid.value = q;
+                clearTimeout(modalSponsorSearchDebounce);
                 modalSponsorSearchDebounce = setTimeout(() => {
                     fetchSponsors(q, currentModalSponsorType, 'modalSponsorResults', 'modalSponsorSearchInput', 'modalSelectedSponsorName');
-                }, 200);
+                }, 150);
             });
         }
 
-        // Close dropdown when clicking outside
+        // Close dropdown when clicking outside (do NOT close when clicking insurance block or pay mode button)
         document.addEventListener('click', function(e) {
-            if (!e.target.closest('#inlineInsuranceBlock')) {
+            if (!e.target.closest('#inlineInsuranceBlock') && !e.target.closest('#inlinePayModeGroup')) {
                 const res = document.getElementById('inlineSponsorResults');
                 if (res) res.style.display = 'none';
             }
-            if (!e.target.closest('#modalInsuranceBlock')) {
+            if (!e.target.closest('#modalInsuranceBlock') && !e.target.closest('#payModeGroup')) {
                 const res = document.getElementById('modalSponsorResults');
                 if (res) res.style.display = 'none';
             }
@@ -3533,7 +3675,15 @@ const billing = (function () {
                 container.innerHTML = html;
                 container.style.display = 'block';
             } else {
-                container.innerHTML = `<div style="padding: 12px; text-align: center; color: #64748b; font-size: 12px;">No matching ${type} sponsors found in sponsors_data.</div>`;
+                const safeQ = (query || '').replace(/'/g, "\\'");
+                container.innerHTML = `
+                    <div style="padding: 12px; text-align: center; color: #64748b; font-size: 12px;">
+                        No exact match for "<strong>${query}</strong>".<br>
+                        <button type="button" onclick="billing.selectSponsor('${safeQ}', '${inputId}', '${hiddenId}', '${resultsContainerId}')" style="margin-top: 6px; padding: 4px 12px; background: #1f6b4a; color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                            <i class="fas fa-plus"></i> Use "${query}" as Custom ${type}
+                        </button>
+                    </div>
+                `;
                 container.style.display = 'block';
             }
         } catch (e) {
@@ -4306,13 +4456,13 @@ const billing = (function () {
         toggleInsFields();
 
         // Reset fields
-        document.getElementById('insCompanyName').value = currentMaster.sponsor || currentMaster.insurance_company_name || currentMaster.insurance_company_id || '';
-        document.getElementById('insTpaName').value = '';
-        document.getElementById('insPolicyNo').value = currentMaster.policy_number || '';
-        document.getElementById('insClaimNo').value = '';
-        document.getElementById('insApprovalNo').value = currentMaster.approval_number || '';
-        document.getElementById('insApprovedAmt').value = parseFloat(currentMaster.insurance_approved_amount) || '';
-        document.getElementById('insClaimStatus').value = 'PENDING';
+        const existingName = currentMaster.sponsor || currentMaster.insurance_company_name || '';
+        if (document.getElementById('insCompanyName')) {
+            document.getElementById('insCompanyName').value = (existingName !== 'SELF' ? existingName : '');
+        }
+        if (document.getElementById('modalInsSponsorType')) {
+            document.getElementById('modalInsSponsorType').value = (currentMaster.credit_type === 'TPA' ? 'TPA' : 'INSURANCE');
+        }
 
         // Try fetch existing full record
         try {
@@ -4320,17 +4470,15 @@ const billing = (function () {
             const json = await res.json();
             if (json.success && json.data) {
                 const ins = json.data;
-                document.getElementById('insCompanyName').value = ins.company_name || '';
-                document.getElementById('insTpaName').value = ins.tpa_name || '';
-                document.getElementById('insPolicyNo').value = ins.policy_number || '';
-                document.getElementById('insClaimNo').value = ins.claim_number || '';
-                document.getElementById('insApprovalNo').value = ins.approval_number || '';
-                document.getElementById('insApprovedAmt').value = ins.approved_amount || '';
-                document.getElementById('insClaimStatus').value = ins.claim_status || 'PENDING';
+                if (document.getElementById('insCompanyName') && ins.company_name) {
+                    document.getElementById('insCompanyName').value = ins.company_name;
+                }
+                if (document.getElementById('modalInsSponsorType') && ins.insurance_type) {
+                    document.getElementById('modalInsSponsorType').value = ins.insurance_type;
+                }
             }
         } catch (e) { }
 
-        calcInsPatientPayable();
         openModal('modalInsurance');
     }
 
@@ -4350,15 +4498,7 @@ const billing = (function () {
         }
     }
 
-    function calcInsPatientPayable() {
-        const gt = parseFloat(currentMaster.grand_total) || 0;
-        const app = parseFloat(document.getElementById('insApprovedAmt').value) || 0;
-        const pp = Math.max(0, gt - app);
-
-        document.getElementById('insGtDisplay').textContent = `₹${gt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-        document.getElementById('insApprDisplay').textContent = `₹${app.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-        document.getElementById('insPpDisplay').textContent = `₹${pp.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    }
+    function calcInsPatientPayable() {}
 
     async function saveInsuranceDetails() {
         if (currentBillType !== 'SELF') {
@@ -4368,6 +4508,9 @@ const billing = (function () {
         }
 
         try {
+            const compName = document.getElementById('insCompanyName')?.value.trim() || '';
+            const sponsorType = document.getElementById('modalInsSponsorType')?.value || currentBillType || 'INSURANCE';
+
             // First save bill type on master
             await fetch(`${API_URL}ipd-billing-master`, {
                 method: 'POST',
@@ -4375,7 +4518,9 @@ const billing = (function () {
                 body: JSON.stringify({
                     action: 'bill_type',
                     bill_id: currentBillId,
-                    bill_type: currentBillType
+                    bill_type: currentBillType,
+                    company_name: compName,
+                    sponsor: compName
                 })
             });
 
@@ -4389,26 +4534,22 @@ const billing = (function () {
                         bill_id: currentBillId,
                         admission_id: currentAdmissionId,
                         patient_id: currentPatientId,
-                        insurance_type: currentBillType,
-                        company_name: document.getElementById('insCompanyName').value,
-                        tpa_name: document.getElementById('insTpaName').value,
-                        policy_number: document.getElementById('insPolicyNo').value,
-                        claim_number: document.getElementById('insClaimNo').value,
-                        approval_number: document.getElementById('insApprovalNo').value,
-                        approved_amount: document.getElementById('insApprovedAmt').value,
-                        claim_status: document.getElementById('insClaimStatus').value
+                        insurance_type: sponsorType,
+                        company_name: compName,
+                        tpa_name: (sponsorType === 'TPA' ? compName : ''),
+                        claim_status: 'PENDING'
                     })
                 });
                 const json = await res.json();
-                if (json.success) {
+                if (json.success && json.data && json.data.financial) {
                     currentMaster = { ...currentMaster, ...json.data.financial };
                 }
-            } else {
-                // Self - reload master to get updated bill_type and zeroed insurance values
-                const res = await fetch(`${API_URL}ipd-billing-master?bill_id=${currentBillId}`);
-                const json = await res.json();
-                if (json.success) currentMaster = json.data;
             }
+
+            // Always reload master to get fresh joined insurance, sponsor, and admission data
+            const mRes = await fetch(`${API_URL}ipd-billing-master?bill_id=${currentBillId}&_t=${Date.now()}`);
+            const mJson = await mRes.json();
+            if (mJson.success) currentMaster = mJson.data;
 
             showToast('Insurance details updated', 'success');
             closeModal('modalInsurance');
@@ -4653,6 +4794,9 @@ const billing = (function () {
         fillInlineFullAmount,
         updateInlinePayPreview,
         saveInlinePayment,
+        setQuickAdvance,
+        syncInlineApprovedAmount,
+        applyApprovedToPayment,
         // Sponsor Search
         selectSponsor,
         fetchSponsors,

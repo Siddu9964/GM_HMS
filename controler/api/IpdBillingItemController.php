@@ -20,8 +20,10 @@ class IpdBillingItemController extends IpdBaseController {
         switch ($action) {
             case 'list':
                 if (!$billId) { $this->error('bill_id required', 400); return; }
-                $type  = $this->getParam('charge_type', '');
-                $items = $this->model->getByBill($billId, $type);
+                $type             = $this->getParam('charge_type', '');
+                $status           = $this->getParam('status', '');
+                $excludeCancelled = filter_var($this->getParam('exclude_cancelled', false), FILTER_VALIDATE_BOOLEAN);
+                $items            = $this->model->getByBill($billId, $type, $status, $excludeCancelled);
                 $this->success(['items' => $items, 'count' => count($items)]);
                 break;
 

@@ -376,18 +376,124 @@ class IpdBillingMaster extends BaseModel {
      * 6. UPDATE BILL TYPE (SELF / INSURANCE / CORPORATE)
      * ─────────────────────────────────────────────────────────────── */
     public function updateBillType(string $billId, string $billType, array $insuranceData, string $updatedBy): bool {
+        $now = date('Y-m-d H:i:s');
         $data = [
             'bill_type'   => $billType,
             'updated_by'  => $updatedBy,
-            'updated_at'  => date('Y-m-d H:i:s'),
+            'updated_at'  => $now,
         ];
         if ($billType !== 'SELF') {
+            if (!empty($insuranceData['company_name'])) {
+                $data['sponsor'] = $insuranceData['company_name'];
+            } elseif (!empty($insuranceData['sponsor'])) {
+                $data['sponsor'] = $insuranceData['sponsor'];
+            }
             $data['insurance_company_id'] = $insuranceData['insurance_company_id'] ?? null;
             $data['policy_number']        = $insuranceData['policy_number']        ?? null;
             $data['approval_number']      = $insuranceData['approval_number']      ?? null;
             $data['insurance_approved_amount'] = $insuranceData['approved_amount'] ?? 0;
+        } else {
+            $data['sponsor'] = 'SELF';
         }
         $this->db->update('ipd_billing_master', $data, "`bill_id` = ?", [$billId]);
+
+        // Sync to ipd_admissions
+        $bm = $this->fetchOne("SELECT admission_id FROM ipd_billing_master WHERE bill_id = ?", [$billId]);
+        if (!empty($bm['admission_id'])) {
+            $admUpdate = [
+                'admission_type' => ($billType === 'SELF' ? 'General' : 'Insurance'),
+                'credit_type'    => ($billType === 'SELF' ? 'SELF' : 'INSURANCE'),
+                'updated_at'     => $now
+            ];
+            if (!empty($data['sponsor'])) {
+                $admUpdate['sponsor'] = $data['sponsor'];
+            }
+            $this->db->update('ipd_admissions', $admUpdate, "`admission_id` = ?", [$bm['admission_id']]);
+        }
+
+        if ($billType !== 'SELF') {
+            // Unbundle any past lumped ROOM_RENT charges for this bill
+            $lumpedItems = $this->fetchAll(
+                "SELECT bi.*, hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, COALESCE(hb.service_charge, 500) as service_charge, hb.total_bed_amount, hb.room_name, hb.bed_number, ia.admission_id, ia.patient_id
+                 FROM ipd_billing_items bi
+                 JOIN ipd_billing_master bm ON bi.bill_id = bm.bill_id
+                 JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
+                 JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
+                 WHERE bi.bill_id = ? AND bi.charge_type = 'ROOM_RENT' AND bi.status != 'CANCELLED'
+                   AND bi.total_amount >= hb.total_bed_amount AND hb.total_bed_amount > hb.amount_per_day",
+                [$billId]
+            );
+
+            foreach ($lumpedItems as $lump) {
+                $baseRent = (float)$lump['amount_per_day'];
+                $nursing = (float)$lump['nursig_charge'];
+                $doc = (float)$lump['doctor_charge'];
+                $svc = (float)$lump['service_charge'];
+                $cDate = $lump['charge_date'];
+                $admId = $lump['admission_id'];
+                $patId = $lump['patient_id'];
+
+                // 1. Update the original ROOM_RENT item to pure room rent
+                $this->db->update('ipd_billing_items', [
+                    'description' => "Room Rent - " . ($lump['room_name'] ?? 'Room') . " (Bed " . ($lump['bed_number'] ?? '') . ")",
+                    'total_amount'=> $baseRent,
+                    'items_json'  => json_encode([['name' => 'Room Rent', 'qty' => 1, 'price' => $baseRent, 'total' => $baseRent]]),
+                    'updated_at'  => $now
+                ], 'item_id = ?', [$lump['item_id']]);
+
+                // 2. Add Nursing
+                if ($nursing > 0) {
+                    $this->db->insert('ipd_billing_items', [
+                        'bill_id'     => $billId,
+                        'admission_id'=> $admId,
+                        'patient_id'  => $patId,
+                        'charge_type' => 'PROCEDURE',
+                        'description' => "Nursing Charges - " . ($lump['room_name'] ?? 'Room') . " (Bed " . ($lump['bed_number'] ?? '') . ")",
+                        'total_amount'=> $nursing,
+                        'charge_date' => $cDate,
+                        'status'      => 'COMPLETED',
+                        'created_by'  => $updatedBy,
+                        'created_at'  => $now,
+                        'updated_at'  => $now
+                    ]);
+                }
+
+                // 3. Add Doctor
+                if ($doc > 0) {
+                    $this->db->insert('ipd_billing_items', [
+                        'bill_id'     => $billId,
+                        'admission_id'=> $admId,
+                        'patient_id'  => $patId,
+                        'charge_type' => 'DOCTOR_VISIT',
+                        'description' => "Duty Doctor Charges - " . ($lump['room_name'] ?? 'Room') . " (Bed " . ($lump['bed_number'] ?? '') . ")",
+                        'total_amount'=> $doc,
+                        'charge_date' => $cDate,
+                        'status'      => 'COMPLETED',
+                        'created_by'  => $updatedBy,
+                        'created_at'  => $now,
+                        'updated_at'  => $now
+                    ]);
+                }
+
+                // 4. Add Service
+                if ($svc > 0) {
+                    $this->db->insert('ipd_billing_items', [
+                        'bill_id'     => $billId,
+                        'admission_id'=> $admId,
+                        'patient_id'  => $patId,
+                        'charge_type' => 'MISC',
+                        'description' => "Service Charges - " . ($lump['room_name'] ?? 'Room') . " (Bed " . ($lump['bed_number'] ?? '') . ")",
+                        'total_amount'=> $svc,
+                        'charge_date' => $cDate,
+                        'status'      => 'COMPLETED',
+                        'created_by'  => $updatedBy,
+                        'created_at'  => $now,
+                        'updated_at'  => $now
+                    ]);
+                }
+            }
+        }
+
         $this->recalculateMaster($billId, $updatedBy);
         return true;
     }

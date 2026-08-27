@@ -64,7 +64,7 @@ class IpdBilling extends BaseModel {
         
         if ($bill) {
             $bill['items'] = $this->fetchAll(
-                "SELECT * FROM ipd_billing_items WHERE bill_id = ? ORDER BY charge_date, item_id",
+                "SELECT * FROM ipd_billing_items WHERE bill_id = ? AND status != 'CANCELLED' ORDER BY charge_date, item_id",
                 [$billId]
             );
         }

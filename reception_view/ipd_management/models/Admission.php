@@ -453,16 +453,50 @@ class Admission extends BaseModel {
                 );
             }
 
+            // Check if patient is admitted under insurance
+            $isInsurance = (isset($filteredData['admission_type']) && strcasecmp($filteredData['admission_type'], 'Insurance') === 0) 
+                        || (isset($data['bill_type']) && strcasecmp($data['bill_type'], 'INSURANCE') === 0)
+                        || (isset($filteredData['credit_type']) && strcasecmp($filteredData['credit_type'], 'INSURANCE') === 0)
+                        || (isset($filteredData['sponsor']) && strcasecmp($filteredData['sponsor'], 'SELF') !== 0 && trim($filteredData['sponsor']) !== '');
+
             // 4. Room Rent Day 1 check
             $existingRoom = $this->fetchOne(
                 "SELECT item_id FROM ipd_billing_items WHERE bill_id = ? AND charge_date = CURDATE() AND charge_type = 'ROOM_RENT' AND status != 'CANCELLED'",
                 [$billId]
             );
-            if (!$existingRoom && $roomCharge > 0) {
-                $this->query(
-                    "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'ROOM_RENT', ?, ?, 'COMPLETED', ?, NOW())",
-                    [$billId, $filteredData['patient_id'], $data['admission_id'], $roomDesc, $roomCharge, $createdBy]
-                );
+            if (!$existingRoom) {
+                if ($isInsurance) {
+                    // Under insurance, Room Rent MUST NOT include Nursing, Duty Doctor, or Service charges
+                    if ($roomRentBase > 0) {
+                        $this->query(
+                            "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'ROOM_RENT', ?, ?, 'COMPLETED', ?, NOW())",
+                            [$billId, $filteredData['patient_id'], $data['admission_id'], "Room Rent - {$roomName} - Day 1", $roomRentBase, $createdBy]
+                        );
+                    }
+                    if ($nursingCharge > 0) {
+                        $this->query(
+                            "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'PROCEDURE', ?, ?, 'COMPLETED', ?, NOW())",
+                            [$billId, $filteredData['patient_id'], $data['admission_id'], "Nursing Charges - Day 1", $nursingCharge, $createdBy]
+                        );
+                    }
+                    if ($doctorCharge > 0) {
+                        $this->query(
+                            "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'DOCTOR_VISIT', ?, ?, 'COMPLETED', ?, NOW())",
+                            [$billId, $filteredData['patient_id'], $data['admission_id'], "Duty Doctor Charges - Day 1", $doctorCharge, $createdBy]
+                        );
+                    }
+                    if ($serviceCharge > 0) {
+                        $this->query(
+                            "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'MISC', ?, ?, 'COMPLETED', ?, NOW())",
+                            [$billId, $filteredData['patient_id'], $data['admission_id'], "Service Charges - Day 1", $serviceCharge, $createdBy]
+                        );
+                    }
+                } else if ($roomCharge > 0) {
+                    $this->query(
+                        "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'ROOM_RENT', ?, ?, 'COMPLETED', ?, NOW())",
+                        [$billId, $filteredData['patient_id'], $data['admission_id'], $roomDesc, $roomCharge, $createdBy]
+                    );
+                }
             }
 
             // Recalculate Master accurately using IpdBillingMaster

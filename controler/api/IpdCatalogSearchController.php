@@ -370,33 +370,133 @@ class IpdCatalogSearchController extends IpdBaseController {
     }
 
     /**
-     * Search Sponsors / Insurance / TPA from sponsors_data
+     * Search Sponsors / Insurance / TPA from sponsors_data and standard catalog
      */
     private function searchSponsors(string $query, string $type): array {
         $targetType = (in_array(strtoupper($type), ['TPA', 'TPS'])) ? 'TPA' : 'Insurance';
 
-        if ($query === '') {
-            $sql = "SELECT sl_no as id, 
-                           sponsor_name as name, 
-                           sponsor_type, 
-                           tpa_name, 
-                           status 
-                    FROM sponsors_data 
-                    WHERE sponsor_type LIKE ? AND sponsor_name IS NOT NULL AND sponsor_name != ''
-                    ORDER BY sponsor_name ASC LIMIT 50";
-            return $this->db->fetchAll($sql, ["%{$targetType}%"]);
+        $standardCatalog = [
+            'Insurance' => [
+                'Star Health & Allied Insurance',
+                'HDFC ERGO General Insurance',
+                'ICICI Lombard General Insurance',
+                'Care Health Insurance (Religare)',
+                'Niva Bupa Health Insurance (Max Bupa)',
+                'Bajaj Allianz General Insurance',
+                'Tata AIG General Insurance',
+                'Aditya Birla Health Insurance',
+                'SBI General Insurance',
+                'United India Insurance Company',
+                'The New India Assurance Company',
+                'National Insurance Company',
+                'Oriental Insurance Company',
+                'Reliance General Insurance',
+                'Chola MS General Insurance',
+                'Go Digit General Insurance',
+                'Navi General Insurance',
+                'ManipalCigna Health Insurance',
+                'Future Generali India Insurance',
+                'Royal Sundaram General Insurance',
+                'IFFCO Tokio General Insurance',
+                'Universal Sompo General Insurance',
+                'Magma HDI General Insurance',
+                'Kotak Mahindra General Insurance'
+            ],
+            'TPA' => [
+                'Medi Assist Insurance TPA',
+                'Paramount Health Services & Insurance TPA',
+                'Vidal Health Insurance TPA',
+                'MDIndia Health Insurance TPA',
+                'Heritage Health Insurance TPA',
+                'Raksha Health Insurance TPA',
+                'Health India Insurance TPA',
+                'Family Health Plan Insurance TPA',
+                'Vipul MedCorp Insurance TPA',
+                'Dedicated Healthcare Services TPA',
+                'Genins India Insurance TPA',
+                'Park Mediclaim TPA',
+                'Ericson Insurance TPA',
+                'Safe Way Insurance TPA',
+                'Alankit Insurance TPA',
+                'Good Health Insurance TPA'
+            ]
+        ];
+
+        $dbResults = [];
+        try {
+            if ($query === '') {
+                $sql = "SELECT sl_no as id, 
+                               sponsor_name as name, 
+                               sponsor_type, 
+                               tpa_name, 
+                               status 
+                        FROM sponsors_data 
+                        WHERE sponsor_type LIKE ? AND sponsor_name IS NOT NULL AND sponsor_name != ''
+                        ORDER BY sponsor_name ASC LIMIT 50";
+                $dbResults = $this->db->fetchAll($sql, ["%{$targetType}%"]);
+            } else {
+                $sql = "SELECT sl_no as id, 
+                               sponsor_name as name, 
+                               sponsor_type, 
+                               tpa_name, 
+                               status 
+                        FROM sponsors_data 
+                        WHERE sponsor_type LIKE ? AND sponsor_name LIKE ? 
+                        ORDER BY CASE WHEN sponsor_name LIKE ? THEN 0 ELSE 1 END, sponsor_name ASC 
+                        LIMIT 50";
+                $dbResults = $this->db->fetchAll($sql, ["%{$targetType}%", "%{$query}%", "{$query}%"]);
+            }
+        } catch (\Throwable $e) {
+            $dbResults = [];
         }
 
-        $sql = "SELECT sl_no as id, 
-                       sponsor_name as name, 
-                       sponsor_type, 
-                       tpa_name, 
-                       status 
-                FROM sponsors_data 
-                WHERE sponsor_type LIKE ? AND sponsor_name LIKE ? 
-                ORDER BY CASE WHEN sponsor_name LIKE ? THEN 0 ELSE 1 END, sponsor_name ASC 
-                LIMIT 50";
-        return $this->db->fetchAll($sql, ["%{$targetType}%", "%{$query}%", "{$query}%"]);
+        $existingNames = [];
+        $finalResults = [];
+
+        foreach ($dbResults as $r) {
+            $cleanName = trim($r['name']);
+            $norm = strtolower($cleanName);
+            if (!isset($existingNames[$norm])) {
+                $existingNames[$norm] = true;
+                $finalResults[] = [
+                    'id'           => $r['id'],
+                    'name'         => $cleanName,
+                    'sponsor_type' => $r['sponsor_type'] ?: $targetType,
+                    'tpa_name'     => $r['tpa_name'] ?? null,
+                    'status'       => $r['status'] ?? 'Active'
+                ];
+            }
+        }
+
+        // Merge standard catalog items
+        $catalogList = $standardCatalog[$targetType] ?? [];
+        $queryLower = strtolower(trim($query));
+
+        foreach ($catalogList as $item) {
+            $itemLower = strtolower($item);
+            if ($queryLower === '' || strpos($itemLower, $queryLower) !== false) {
+                // Deduplicate with normalized comparison
+                $isDupe = false;
+                foreach (array_keys($existingNames) as $existing) {
+                    if (strpos($itemLower, $existing) !== false || strpos($existing, $itemLower) !== false) {
+                        $isDupe = true;
+                        break;
+                    }
+                }
+                if (!$isDupe) {
+                    $existingNames[$itemLower] = true;
+                    $finalResults[] = [
+                        'id'           => 'std_' . substr(md5($item), 0, 8),
+                        'name'         => $item,
+                        'sponsor_type' => $targetType,
+                        'tpa_name'     => null,
+                        'status'       => 'Active'
+                    ];
+                }
+            }
+        }
+
+        return $finalResults;
     }
 }
 

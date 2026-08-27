@@ -192,21 +192,30 @@ function fmtDateOnly(d) {
 
 async function loadBill() {
     try {
-        const [masterRes, itemsRes, pmtsRes] = await Promise.all([
+        const [masterRes, itemsRes, pmtsRes, insRes] = await Promise.all([
             fetch(`/GM_HMS/api/ipd-billing-master?action=get&bill_id=${encodeURIComponent(BILL_ID)}`),
-            fetch(`/GM_HMS/api/ipd-billing-items?bill_id=${encodeURIComponent(BILL_ID)}`),
-            fetch(`/GM_HMS/api/ipd-payment?bill_id=${encodeURIComponent(BILL_ID)}`)
+            fetch(`/GM_HMS/api/ipd-billing-items?bill_id=${encodeURIComponent(BILL_ID)}&exclude_cancelled=1`),
+            fetch(`/GM_HMS/api/ipd-payment?bill_id=${encodeURIComponent(BILL_ID)}`),
+            fetch(`/GM_HMS/api/ipd-insurance?bill_id=${encodeURIComponent(BILL_ID)}`).catch(() => null)
         ]);
         
         const m = await masterRes.json();
         const i = await itemsRes.json();
         const p = await pmtsRes.json();
+        let insData = null;
+        if (insRes) {
+            try {
+                const insJson = await insRes.json();
+                if (insJson.success && insJson.data) insData = insJson.data;
+            } catch (_) {}
+        }
         
         if (!m.success) throw new Error(m.message || "Failed to load bill master");
         
         const bill = m.data;
         bill.items = (i.data && i.data.items) ? i.data.items : [];
         bill.payments = (p.data && p.data.payments) ? p.data.payments : (p.data || []);
+        bill.insurance = insData;
         
         renderBill(bill);
     } catch(e) {
@@ -228,6 +237,78 @@ function renderBill(b) {
         <div>Bill Date : ${fmtDate(b.created_at)}</div>
     `;
 
+    // Sponsor Details Resolution
+    let sponsorType = 'SELF';
+    let sponsorName = 'SELF';
+    let policyNo = '';
+    let claimNo = '';
+
+    // 1. Check insurance record from ipd_insurance (via bill.insurance or joined master fields)
+    const ins = b.insurance || (b.insurance_company_name ? {
+        insurance_type: b.insurance_type,
+        company_name: b.insurance_company_name,
+        tpa_name: b.tpa_name,
+        policy_number: b.policy_number,
+        claim_number: b.claim_number,
+        approval_number: b.approval_number,
+        approved_amount: b.insurance_approved_amount
+    } : null);
+
+    if (ins && (ins.company_name || ins.tpa_name || ins.insurance_type)) {
+        if (ins.tpa_name && ins.tpa_name.trim() !== '') {
+            sponsorType = 'TPA';
+            sponsorName = ins.company_name ? `${ins.company_name} (TPA: ${ins.tpa_name})` : ins.tpa_name;
+        } else if (ins.insurance_type) {
+            sponsorType = ins.insurance_type.toUpperCase();
+            sponsorName = ins.company_name || ins.tpa_name || sponsorType;
+        } else if (ins.company_name) {
+            sponsorType = 'INSURANCE';
+            sponsorName = ins.company_name;
+        }
+        policyNo = ins.policy_number || '';
+        claimNo = ins.claim_number || ins.approval_number || '';
+    }
+
+    // 2. If not found in insurance, check payment remarks (where inline/modal sponsor is recorded)
+    if (sponsorType === 'SELF' || sponsorName === 'SELF') {
+        const pmts = b.payments || [];
+        for (const p of pmts) {
+            if (p.payment_mode === 'INSURANCE' || (p.remarks && p.remarks.includes('Sponsor:'))) {
+                const match = (p.remarks || '').match(/Sponsor:\s*([^(|]+)(?:\(([^)]+)\))?/i);
+                if (match) {
+                    sponsorName = match[1].trim();
+                    if (match[2]) {
+                        sponsorType = match[2].trim().toUpperCase();
+                    } else {
+                        sponsorType = 'INSURANCE';
+                    }
+                    if (!claimNo && p.reference_no) {
+                        claimNo = p.reference_no;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    // 3. Check admission sponsor and credit_type
+    if (sponsorType === 'SELF' && b.credit_type && b.credit_type.toUpperCase() !== 'CASH') {
+        sponsorType = b.credit_type.toUpperCase();
+    }
+    if (sponsorName === 'SELF' && b.sponsor && b.sponsor.trim() !== '' && b.sponsor.toUpperCase() !== 'SELF') {
+        sponsorName = b.sponsor.trim();
+        if (sponsorType === 'SELF') {
+            sponsorType = (b.credit_type && b.credit_type.toUpperCase() !== 'CASH') ? b.credit_type.toUpperCase() : 'INSURANCE';
+        }
+    }
+
+    // 4. Check bill_type
+    if (sponsorType === 'SELF' && (b.bill_type === 'INSURANCE' || b.bill_type === 'CORPORATE')) {
+        sponsorType = b.bill_type;
+    }
+
+    const policyClaimDetails = [policyNo ? `Pol: ${policyNo}` : '', claimNo ? `Claim/Appr: ${claimNo}` : ''].filter(Boolean).join(' | ');
+
     // Meta Details
     document.getElementById('metaDetails').innerHTML = `
         <div>
@@ -241,56 +322,110 @@ function renderBill(b) {
             <div class="meta-row"><div class="meta-label">Age/Sex/Mobile No</div><div class="meta-val">: ${b.age||''} / ${b.sex||''} / ${b.phone||''}</div></div>
             <div class="meta-row"><div class="meta-label">Admission Date</div><div class="meta-val">: ${fmtDate(b.admission_date)}</div></div>
             <div class="meta-row"><div class="meta-label">Discharge Date</div><div class="meta-val">: ${b.discharge_date ? fmtDate(b.discharge_date) : 'Not Discharged'}</div></div>
-            <div class="meta-row"><div class="meta-label">Sponsor Name</div><div class="meta-val">: ${b.insurance_company_id || 'SELF'}</div></div>
+            <div class="meta-row"><div class="meta-label">Sponsor Type</div><div class="meta-val">: <strong>${sponsorType}</strong></div></div>
+            <div class="meta-row"><div class="meta-label">Sponsor Name</div><div class="meta-val">: ${sponsorName}</div></div>
+            ${policyClaimDetails ? `<div class="meta-row"><div class="meta-label">Policy / Claim No</div><div class="meta-val">: ${policyClaimDetails}</div></div>` : ''}
         </div>
     `;
 
-    // Items Grouping
-    const items = b.items || [];
+    // Items Grouping (Strictly filter out CANCELLED items so they are never printed or billed)
+    const rawItems = b.items || [];
+    const items = rawItems.filter(it => it.status !== 'CANCELLED');
     const grouped = {};
     items.forEach(it => {
         let type = it.charge_type;
-        if(type === 'ROOM_RENT') type = 'BED CHARGES';
-        else if(type === 'DOCTOR_VISIT') type = 'DOCTOR FEE';
+        const desc = (it.description || '').toLowerCase();
+
+        if (type === 'ROOM_RENT') {
+            type = 'BED CHARGES / ROOM RENT';
+        } else if (desc.includes('nursing charge')) {
+            type = 'NURSING CHARGES';
+        } else if (desc.includes('duty doctor')) {
+            type = 'DUTY DOCTOR CHARGES';
+        } else if (desc.includes('service charge')) {
+            type = 'SERVICE CHARGES';
+        } else if (type === 'DOCTOR_VISIT') {
+            type = 'DOCTOR CONSULTATION & ROUND VISITS';
+        } else if (type === 'LAB') {
+            type = 'LABORATORY INVESTIGATIONS';
+        } else if (type === 'RADIOLOGY') {
+            type = 'RADIOLOGY & IMAGING SERVICES';
+        } else if (type === 'PHARMACY') {
+            type = 'PHARMACY MEDICINES & CONSUMABLES';
+        } else if (type === 'OT') {
+            type = 'OPERATION THEATRE (OT) CHARGES';
+        } else if (type === 'PROCEDURE') {
+            type = 'PROCEDURE CHARGES';
+        } else if (type === 'DIALYSIS') {
+            type = 'DIALYSIS SERVICES';
+        } else if (type === 'OXYGEN') {
+            type = 'OXYGEN THERAPY';
+        } else if (type === 'VENTILATION') {
+            type = 'VENTILATOR SUPPORT';
+        } else if (type === 'BLOOD_TRANSFUSION') {
+            type = 'BLOOD TRANSFUSION';
+        } else if (type === 'WARD_TRANSFER') {
+            type = 'WARD TRANSFER CHARGES';
+        } else if (type === 'CONSUMABLE') {
+            type = 'CONSUMABLES';
+        } else if (type === 'MISC' || type === 'OTHER') {
+            type = 'OTHER CHARGES';
+        }
         if(!grouped[type]) grouped[type] = [];
         grouped[type].push(it);
     });
 
     let html = '';
-    for(const [type, list] of Object.entries(grouped)) {
-        html += `<tr><td colspan="6" class="group-header">${type}</td></tr>`;
-        
-        let typeTotal = 0;
-        list.forEach(it => {
-            typeTotal += parseFloat(it.total_amount || it.total_price || 0);
+    let computedGross = 0;
+    const groupKeys = Object.keys(grouped);
+
+    if (groupKeys.length === 0) {
+        html = `<tr><td colspan="6" style="text-align:center; padding: 25px; color:#6b7280; font-style:italic;">No active billable charges recorded.</td></tr>`;
+    } else {
+        for(const [type, list] of Object.entries(grouped)) {
+            if(!list || list.length === 0) continue;
+            html += `<tr><td colspan="6" class="group-header">${type}</td></tr>`;
+            
+            let typeTotal = 0;
+            list.forEach(it => {
+                const itemTotal = parseFloat(it.total_amount || it.total_price || 0);
+                typeTotal += itemTotal;
+                html += `
+                <tr>
+                    <td>${fmtDateOnly(it.charge_date || it.created_at)}</td>
+                    <td>${it.description || it.item_name}</td>
+                    <td></td>
+                    <td class="right">${it.quantity || '1.00'}</td>
+                    <td class="right">${fmt(it.unit_price)}</td>
+                    <td class="right">${fmt(itemTotal)}</td>
+                </tr>`;
+            });
+            
+            computedGross += typeTotal;
             html += `
             <tr>
-                <td>${fmtDateOnly(it.charge_date || it.created_at)}</td>
-                <td>${it.description || it.item_name}</td>
-                <td></td>
-                <td class="right">${it.quantity || '1.00'}</td>
-                <td class="right">${fmt(it.unit_price)}</td>
-                <td class="right">${fmt(it.total_amount || it.total_price)}</td>
+                <td colspan="4"></td>
+                <td style="border-top:1px solid #000; border-bottom:1px solid #000;"></td>
+                <td class="right" style="border-top:1px solid #000; border-bottom:1px solid #000; font-weight:bold;">${fmt(typeTotal)}</td>
             </tr>`;
-        });
-        
-        html += `
-        <tr>
-            <td colspan="4"></td>
-            <td style="border-top:1px solid #000; border-bottom:1px solid #000;"></td>
-            <td class="right" style="border-top:1px solid #000; border-bottom:1px solid #000; font-weight:bold;">${fmt(typeTotal)}</td>
-        </tr>`;
+        }
     }
     
     document.getElementById('itemsBody').innerHTML = html;
 
     // Totals
+    const subtotal = parseFloat(b.subtotal ?? computedGross);
+    const discount = parseFloat(b.discount_amount || 0);
+    const grandTotal = parseFloat(b.grand_total ?? Math.max(0, subtotal - discount));
+    const amountPaid = parseFloat(b.amount_paid || 0);
+    const balanceDue = parseFloat(b.balance_due ?? Math.max(0, grandTotal - amountPaid));
+
     document.getElementById('totalsBox').innerHTML = `
-        <div class="total-row"><span>Total Gross Amount</span><span>${fmt(b.subtotal)}</span></div>
-        <div class="total-row"><span>Discount</span><span>${fmt(b.discount_amount)}</span></div>
-        <div class="total-row"><span>Net Amount</span><span>${fmt(b.grand_total)}</span></div>
-        <div class="total-row"><span>Advance/Paid</span><span>${fmt(b.amount_paid)}</span></div>
-        <div class="total-row grand"><span>Balance Due</span><span>${fmt(b.balance_due)}</span></div>
+        <div class="total-row"><span>Total Gross Amount</span><span>${fmt(subtotal)}</span></div>
+        <div class="total-row"><span>Discount</span><span>${fmt(discount)}</span></div>
+        <div class="total-row"><span>Net Amount</span><span>${fmt(grandTotal)}</span></div>
+        <div class="total-row"><span>Advance/Paid</span><span>${fmt(amountPaid)}</span></div>
+        <div class="total-row grand"><span>Balance Due</span><span>${fmt(balanceDue)}</span></div>
     `;
 }
 

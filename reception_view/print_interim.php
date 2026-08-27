@@ -189,21 +189,30 @@ function fmtDateOnly(d) {
 
 async function loadBill() {
     try {
-        const [masterRes, itemsRes, pmtsRes] = await Promise.all([
+        const [masterRes, itemsRes, pmtsRes, insRes] = await Promise.all([
             fetch(`/GM_HMS/api/ipd-billing-master?action=get&bill_id=${encodeURIComponent(BILL_ID)}`),
             fetch(`/GM_HMS/api/ipd-billing-items?bill_id=${encodeURIComponent(BILL_ID)}`),
-            fetch(`/GM_HMS/api/ipd-payment?bill_id=${encodeURIComponent(BILL_ID)}`)
+            fetch(`/GM_HMS/api/ipd-payment?bill_id=${encodeURIComponent(BILL_ID)}`),
+            fetch(`/GM_HMS/api/ipd-insurance?bill_id=${encodeURIComponent(BILL_ID)}`).catch(() => null)
         ]);
         
         const m = await masterRes.json();
         const i = await itemsRes.json();
         const p = await pmtsRes.json();
+        let insData = null;
+        if (insRes) {
+            try {
+                const insJson = await insRes.json();
+                if (insJson.success && insJson.data) insData = insJson.data;
+            } catch (_) {}
+        }
         
         if (!m.success) throw new Error(m.message || "Failed to load bill master");
         
         const bill = m.data;
         bill.items = (i.data && i.data.items) ? i.data.items : [];
         bill.payments = (p.data && p.data.payments) ? p.data.payments : (p.data || []);
+        bill.insurance = insData;
         
         renderBill(bill);
     } catch(e) {
@@ -225,6 +234,78 @@ function renderBill(b) {
         <div>Bill Date : ${fmtDate(b.created_at)}</div>
     `;
 
+    // Sponsor Details Resolution
+    let sponsorType = 'SELF';
+    let sponsorName = 'SELF';
+    let policyNo = '';
+    let claimNo = '';
+
+    // 1. Check insurance record from ipd_insurance (via bill.insurance or joined master fields)
+    const ins = b.insurance || (b.insurance_company_name ? {
+        insurance_type: b.insurance_type,
+        company_name: b.insurance_company_name,
+        tpa_name: b.tpa_name,
+        policy_number: b.policy_number,
+        claim_number: b.claim_number,
+        approval_number: b.approval_number,
+        approved_amount: b.insurance_approved_amount
+    } : null);
+
+    if (ins && (ins.company_name || ins.tpa_name || ins.insurance_type)) {
+        if (ins.tpa_name && ins.tpa_name.trim() !== '') {
+            sponsorType = 'TPA';
+            sponsorName = ins.company_name ? `${ins.company_name} (TPA: ${ins.tpa_name})` : ins.tpa_name;
+        } else if (ins.insurance_type) {
+            sponsorType = ins.insurance_type.toUpperCase();
+            sponsorName = ins.company_name || ins.tpa_name || sponsorType;
+        } else if (ins.company_name) {
+            sponsorType = 'INSURANCE';
+            sponsorName = ins.company_name;
+        }
+        policyNo = ins.policy_number || '';
+        claimNo = ins.claim_number || ins.approval_number || '';
+    }
+
+    // 2. If not found in insurance, check payment remarks (where inline/modal sponsor is recorded)
+    if (sponsorType === 'SELF' || sponsorName === 'SELF') {
+        const pmts = b.payments || [];
+        for (const p of pmts) {
+            if (p.payment_mode === 'INSURANCE' || (p.remarks && p.remarks.includes('Sponsor:'))) {
+                const match = (p.remarks || '').match(/Sponsor:\s*([^(|]+)(?:\(([^)]+)\))?/i);
+                if (match) {
+                    sponsorName = match[1].trim();
+                    if (match[2]) {
+                        sponsorType = match[2].trim().toUpperCase();
+                    } else {
+                        sponsorType = 'INSURANCE';
+                    }
+                    if (!claimNo && p.reference_no) {
+                        claimNo = p.reference_no;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    // 3. Check admission sponsor and credit_type
+    if (sponsorType === 'SELF' && b.credit_type && b.credit_type.toUpperCase() !== 'CASH') {
+        sponsorType = b.credit_type.toUpperCase();
+    }
+    if (sponsorName === 'SELF' && b.sponsor && b.sponsor.trim() !== '' && b.sponsor.toUpperCase() !== 'SELF') {
+        sponsorName = b.sponsor.trim();
+        if (sponsorType === 'SELF') {
+            sponsorType = (b.credit_type && b.credit_type.toUpperCase() !== 'CASH') ? b.credit_type.toUpperCase() : 'INSURANCE';
+        }
+    }
+
+    // 4. Check bill_type
+    if (sponsorType === 'SELF' && (b.bill_type === 'INSURANCE' || b.bill_type === 'CORPORATE')) {
+        sponsorType = b.bill_type;
+    }
+
+    const policyClaimDetails = [policyNo ? `Pol: ${policyNo}` : '', claimNo ? `Claim/Appr: ${claimNo}` : ''].filter(Boolean).join(' | ');
+
     // Meta Details
     document.getElementById('metaDetails').innerHTML = `
         <div>
@@ -238,26 +319,31 @@ function renderBill(b) {
             <div class="meta-row"><div class="meta-label">Age/Sex/Mobile No</div><div class="meta-val">: ${b.age||''} / ${b.sex||''} / ${b.phone||''}</div></div>
             <div class="meta-row"><div class="meta-label">Admission Date</div><div class="meta-val">: ${fmtDate(b.admission_date)}</div></div>
             <div class="meta-row"><div class="meta-label">Discharge Date</div><div class="meta-val">: ${b.discharge_date ? fmtDate(b.discharge_date) : 'Under Treatment (Admitted)'}</div></div>
-            <div class="meta-row"><div class="meta-label">Sponsor Name</div><div class="meta-val">: ${b.sponsor || b.insurance_company_name || b.insurance_company_id || 'SELF'}</div></div>
+            <div class="meta-row"><div class="meta-label">Sponsor Type</div><div class="meta-val">: <strong>${sponsorType}</strong></div></div>
+            <div class="meta-row"><div class="meta-label">Sponsor Name</div><div class="meta-val">: ${sponsorName}</div></div>
+            ${policyClaimDetails ? `<div class="meta-row"><div class="meta-label">Policy / Claim No</div><div class="meta-val">: ${policyClaimDetails}</div></div>` : ''}
         </div>
     `;
 
     // Financial Summary Category Breakdown
     const catMap = {
-        'ROOM_RENT':         { name: 'Room Rent & Bed Charges', amt: parseFloat(b.room_charges || 0) },
-        'DOCTOR_VISIT':      { name: 'Doctor Consultation & Round Visits', amt: parseFloat(b.doctor_charges || 0) },
-        'LAB':               { name: 'Laboratory Investigations', amt: parseFloat(b.lab_charges || 0) },
-        'RADIOLOGY':         { name: 'Radiology & Imaging Services', amt: parseFloat(b.radiology_charges || 0) },
-        'PHARMACY':          { name: 'Pharmacy Medicines & Drugs', amt: parseFloat(b.pharmacy_charges || 0) },
-        'OT':                { name: 'Operation Theatre (OT) Charges', amt: parseFloat(b.ot_charges || 0) },
-        'PROCEDURE':         { name: 'Hospital Procedures & Nursing Care', amt: parseFloat(b.procedure_charges || 0) },
+        'ROOM_RENT':         { name: 'Room Rent & Bed Charges', amt: 0 },
+        'NURSING':           { name: 'Nursing Charges', amt: 0 },
+        'DUTY_DR':           { name: 'Duty Doctor Charges', amt: 0 },
+        'SERVICE':           { name: 'Service Charges', amt: 0 },
+        'DOCTOR_VISIT':      { name: 'Doctor Consultation & Round Visits', amt: 0 },
+        'LAB':               { name: 'Laboratory Investigations', amt: 0 },
+        'RADIOLOGY':         { name: 'Radiology & Imaging Services', amt: 0 },
+        'PHARMACY':          { name: 'Pharmacy Medicines & Drugs', amt: 0 },
+        'OT':                { name: 'Operation Theatre (OT) Charges', amt: 0 },
+        'PROCEDURE':         { name: 'Hospital Procedures', amt: 0 },
         'DIALYSIS':          { name: 'Dialysis Services', amt: 0 },
         'OXYGEN':            { name: 'Oxygen Therapy', amt: 0 },
         'VENTILATION':       { name: 'Ventilator Support', amt: 0 },
         'BLOOD_TRANSFUSION': { name: 'Blood Transfusion Charges', amt: 0 },
         'WARD_TRANSFER':     { name: 'Ward Transfer Charges', amt: 0 },
-        'CONSUMABLE':        { name: 'Medical Consumables & Disposables', amt: parseFloat(b.consumable_charges || 0) },
-        'OTHER':             { name: 'Other & Miscellaneous Services', amt: parseFloat(b.other_charges || 0) }
+        'CONSUMABLE':        { name: 'Medical Consumables & Disposables', amt: 0 },
+        'OTHER':             { name: 'Other & Miscellaneous Services', amt: 0 }
     };
 
     // Aggregate from individual items to ensure complete coverage
@@ -267,16 +353,18 @@ function renderBill(b) {
         items.forEach(it => {
             if (it.status !== 'CANCELLED') {
                 let cType = it.charge_type || 'OTHER';
-                if (cType === 'MISC') cType = 'OTHER';
+                const desc = (it.description || '').toLowerCase();
+                if (desc.includes('nursing charge')) cType = 'NURSING';
+                else if (desc.includes('duty doctor')) cType = 'DUTY_DR';
+                else if (desc.includes('service charge')) cType = 'SERVICE';
+                else if (cType === 'MISC') cType = 'OTHER';
                 itemTotals[cType] = (itemTotals[cType] || 0) + parseFloat(it.total_amount || it.total_price || 0);
             }
         });
 
         for (const [type, sum] of Object.entries(itemTotals)) {
             if (catMap[type]) {
-                if (catMap[type].amt === 0 || isNaN(catMap[type].amt)) {
-                    catMap[type].amt = sum;
-                }
+                catMap[type].amt = sum;
             } else {
                 catMap[type] = { name: type.replace(/_/g, ' '), amt: sum };
             }
