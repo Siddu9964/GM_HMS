@@ -344,20 +344,21 @@ class IpdBillingMaster extends IpdBaseModel {
                     ia.admission_id AS adm_id, ia.bed_id, ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount,
                     COALESCE(ia.admission_date, bm.admission_date) AS admission_date,
                     COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date,
-                    ins.insurance_type,
-                    COALESCE(ins.company_name, '') AS insurance_company_name,
+                    COALESCE(ins.insurance_type, bm.bill_type) AS insurance_type,
+                    COALESCE(ins.company_name, bm.sponsor, '') AS insurance_company_name,
                     COALESCE(ins.tpa_name, '') AS tpa_name,
-                    ins.policy_number,
-                    ins.claim_number,
-                    ins.approval_number,
-                    ins.approved_amount AS insurance_approved_amount,
-                    ins.claim_status AS insurance_claim_status
+                    COALESCE(ins.policy_number, bm.policy_number, '') AS policy_number,
+                    COALESCE(ins.claim_number, '') AS claim_number,
+                    COALESCE(ins.approval_number, bm.approval_number, '') AS approval_number,
+                    COALESCE(ins.approved_amount, bm.insurance_approved_amount, 0) AS insurance_approved_amount,
+                    COALESCE(ins.patient_payable, bm.patient_payable, 0) AS patient_payable,
+                    COALESCE(ins.claim_status, 'PENDING') AS insurance_claim_status
              FROM ipd_billing_master bm
              LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
              LEFT JOIN patient p ON COALESCE(ia.patient_id, bm.patient_id) = p.patient_id
              LEFT JOIN doctors d ON COALESCE(ia.admitting_doctor_id, bm.doctor_id) = d.doctor_id
              LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
-             LEFT JOIN ipd_insurance ins ON bm.bill_id = ins.bill_id COLLATE utf8mb4_unicode_ci
+             LEFT JOIN ipd_insurance ins ON bm.bill_id = ins.bill_id
              WHERE bm.bill_id = ?",
             [$billId]
         );
@@ -379,20 +380,21 @@ class IpdBillingMaster extends IpdBaseModel {
                     ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount,
                     COALESCE(ia.admission_date, bm.admission_date) AS admission_date,
                     COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date,
-                    ins.insurance_type,
-                    COALESCE(ins.company_name, '') AS insurance_company_name,
+                    COALESCE(ins.insurance_type, bm.bill_type) AS insurance_type,
+                    COALESCE(ins.company_name, bm.sponsor, '') AS insurance_company_name,
                     COALESCE(ins.tpa_name, '') AS tpa_name,
-                    ins.policy_number,
-                    ins.claim_number,
-                    ins.approval_number,
-                    ins.approved_amount AS insurance_approved_amount,
-                    ins.claim_status AS insurance_claim_status
+                    COALESCE(ins.policy_number, bm.policy_number, '') AS policy_number,
+                    COALESCE(ins.claim_number, '') AS claim_number,
+                    COALESCE(ins.approval_number, bm.approval_number, '') AS approval_number,
+                    COALESCE(ins.approved_amount, bm.insurance_approved_amount, 0) AS insurance_approved_amount,
+                    COALESCE(ins.patient_payable, bm.patient_payable, 0) AS patient_payable,
+                    COALESCE(ins.claim_status, 'PENDING') AS insurance_claim_status
              FROM ipd_billing_master bm
              LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
              LEFT JOIN patient p ON COALESCE(ia.patient_id, bm.patient_id) = p.patient_id
              LEFT JOIN doctors d ON COALESCE(ia.admitting_doctor_id, bm.doctor_id) = d.doctor_id
              LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
-             LEFT JOIN ipd_insurance ins ON bm.bill_id = ins.bill_id COLLATE utf8mb4_unicode_ci
+             LEFT JOIN ipd_insurance ins ON bm.bill_id = ins.bill_id
              WHERE bm.admission_id = ?",
             [$admissionId]
         );

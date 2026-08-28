@@ -194,7 +194,8 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
                 <?php
                 $isBillingActive = isActive('billing_management.php', $current_file, $current_path, $request_uri) || 
                                    isActive('ipd_billing.php', $current_file, $current_path, $request_uri) || 
-                                   isActive('ot_billing.php', $current_file, $current_path, $request_uri);
+                                   isActive('ot_billing.php', $current_file, $current_path, $request_uri) ||
+                                   isActive('ip_insurance.php', $current_file, $current_path, $request_uri);
                 ?>
                 <button class="billing-flyout-btn <?php echo $isBillingActive ? 'active' : ''; ?>" id="billingBtn" onclick="toggleBillingFlyout(this)" aria-expanded="false">
                     <span class="billing-btn-left">
@@ -216,10 +217,14 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
                         <i class="fas fa-procedures"></i>
                         <span>OT Billing</span>
                     </a>
+                    <a href="ip_insurance.php" class="billing-item <?php echo isActive('ip_insurance.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>" style="--n:4">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>IP Insurance</span>
+                    </a>
                 </div>
             </div>
 
-            <a href="#insurance" class="sidebar-item">
+            <a href="ip_insurance.php" class="sidebar-item <?php echo isActive('ip_insurance.php', $current_file, $current_path, $request_uri) ? 'active' : ''; ?>">
 
                 <i class="fas fa-shield-alt"></i>
 
