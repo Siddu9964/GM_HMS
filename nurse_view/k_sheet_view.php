@@ -139,7 +139,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inpatient Clinical Kardex (K-Sheet) - GM HMS</title>
+    <title>Inpatient Clinical Kardex (Case-Sheet) - GM HMS</title>
     <link rel="stylesheet" href="/GM_HMS/assets/css/gm-theme.css?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -156,7 +156,7 @@ try {
         <div class="top-navbar no-print">
             <div style="display: flex; align-items: center; gap: 12px;">
                 <h2 style="margin: 0; font-size: 1.35rem; color: #1F6B4A; font-weight: 800; display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-file-medical-alt"></i> Inpatient Clinical Kardex (K-Sheet)
+                    <i class="fas fa-file-medical-alt"></i> Inpatient Clinical Kardex (CASE-SHEET)
                 </h2>
             </div>
             <div class="header-actions">
@@ -270,7 +270,7 @@ try {
                                             <span class="gm-sub-text">Nagarabhavi | Basaveshwaranagar</span>
                                             <span class="gm-sub-line"></span>
                                         </div>
-                                        <div class="hk-doc-title">DEPARTMENT OF NURSING SERVICES • INPATIENT CLINICAL KARDEX RECORD (K-SHEET)</div>
+                                        <div class="hk-doc-title">DEPARTMENT OF NURSING SERVICES • INPATIENT CLINICAL KARDEX RECORD (CASE-SHEET)</div>
                                     </div>
                                     <div class="hk-meta-box">
                                         <div class="hk-meta-item"><strong>FORM:</strong> IPD-KS-2026</div>
@@ -351,6 +351,7 @@ try {
                                     <th>Pulse (bpm)</th>
                                     <th>Temperature (°F)</th>
                                     <th>SpO2 (%)</th>
+                                    <th>Pain Score</th>
                                     <th>GCS / Status</th>
                                     <th>Recorded By</th>
                                 </tr>
@@ -369,6 +370,7 @@ try {
                                     if (empty($bpVal) && !empty($v['bp_systolic'])) {
                                         $bpVal = $v['bp_systolic'] . '/' . ($v['bp_diastolic'] ?? '');
                                     }
+                                    $painVal = $v['pain_score'] ?? $v['bp_pain'] ?? $v['bp_pain_score'] ?? '';
                                 ?>
                                 <tr>
                                     <td><strong><?php echo htmlspecialchars($v['bp_date'] ?? $v['vitals_date'] ?? $v['date'] ?? $v['created_date'] ?? '-'); ?></strong></td>
@@ -377,6 +379,7 @@ try {
                                     <td><?php echo htmlspecialchars(($v['bp_pulse'] ?? $v['pulse'] ?? $v['pulse_rate'] ?? '-') . ' bpm'); ?></td>
                                     <td><?php echo htmlspecialchars($v['bp_temp'] ?? $v['temp'] ?? $v['temperature'] ?? '-'); ?></td>
                                     <td><?php echo htmlspecialchars(($v['bp_spo2'] ?? $v['spo2'] ?? '-') . '%'); ?></td>
+                                    <td><span class="badge" style="font-weight:800;"><?php echo htmlspecialchars($painVal !== '' ? ($painVal . '/10') : '-'); ?></span></td>
                                     <td><?php echo htmlspecialchars($v['gcs'] ?? $v['consciousness_level'] ?? '-'); ?></td>
                                     <td><?php echo htmlspecialchars($v['bp_nurse'] ?? $v['nurse_sign'] ?? $v['created_by_name'] ?? $v['recorded_by_name'] ?? '-'); ?></td>
                                 </tr>

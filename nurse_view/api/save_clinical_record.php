@@ -17,7 +17,7 @@ $recordedAt = $_POST['recorded_at'] ?? date('Y-m-d H:i:s');
 $recordDate = date('Y-m-d', strtotime($recordedAt));
 
 $nurseId = $_SESSION['user_id'] ?? 0;
-$nurseName = $_SESSION['username'] ?? 'Unknown Nurse';
+$nurseName = $_SESSION['full_name'] ?? ($_SESSION['username'] ?? 'Nurse');
 
 if (!$patientId || !$chartType) {
     echo json_encode(['success' => false, 'message' => 'Missing required fields (patient_id, chart_type).']);

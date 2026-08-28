@@ -485,9 +485,12 @@ html, body {
 }
 
 .fmg input[readonly] {
-    background: var(--gm-bg);
-    color: var(--gm-text-muted);
-    cursor: not-allowed;
+    background: rgba(31, 107, 74, 0.06) !important;
+    color: var(--gm-primary) !important;
+    border-color: rgba(31, 107, 74, 0.25) !important;
+    cursor: not-allowed !important;
+    font-weight: 700 !important;
+    user-select: none;
 }
 
 .btn-sv-out {
@@ -1262,7 +1265,19 @@ html, body {
                 <div class="fmg"><label>Pulse (bpm)</label><input type="number" name="bp_pulse" placeholder="e.g. 72"></div>
                 <div class="fmg"><label>Temp (°F)</label><input type="number" name="bp_temp" step="0.1" placeholder="e.g. 98.6"></div>
                 <div class="fmg"><label>SpO2 (%)</label><input type="number" name="bp_spo2" placeholder="e.g. 98"></div>
-                <div class="fmg" style="grid-column: 1 / -1;"><label>Nurse Signature</label><input type="text" name="bp_nurse"></div>
+                <div class="fmg"><label>Pain Score (0-10)</label><input type="number" name="pain_score" min="0" max="10" placeholder="e.g. 0-10"></div>
+                <div class="fmg">
+                  <label>GCS / Status</label>
+                  <select name="consciousness_level">
+                    <option value="Alert">Alert (GCS 15)</option>
+                    <option value="Drowsy">Drowsy / Lethargic</option>
+                    <option value="Confused">Confused / Disoriented</option>
+                    <option value="Verbal">Responds to Voice (GCS 12-14)</option>
+                    <option value="Pain">Responds to Pain (GCS 8-11)</option>
+                    <option value="Unresponsive">Unresponsive (GCS < 8)</option>
+                  </select>
+                </div>
+                <div class="fmg"><label>Nurse Signature</label><input type="text" name="bp_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
               </div>
               <button class="btn-sv-out btn-sv" data-ct="bp_chart" data-f="f-bp"><i class="fas fa-plus"></i> Add Vitals</button>
             </div>
@@ -1270,8 +1285,8 @@ html, body {
               <div class="ht-title"><i class="fas fa-history"></i> Recent Vitals Logs</div>
               <div class="ht-wrap">
                 <table class="ht">
-                  <thead><tr><th>Date & Time</th><th>BP</th><th>Pulse</th><th>Temp</th><th>By</th><th>Action</th></tr></thead>
-                  <tbody id="h-bp"><tr class="et"><td colspan="6">No records yet.</td></tr></tbody>
+                  <thead><tr><th>Date & Time</th><th>BP</th><th>Pulse</th><th>Temp</th><th>SpO2</th><th>Pain</th><th>GCS / Status</th><th>By</th><th>Action</th></tr></thead>
+                  <tbody id="h-bp"><tr class="et"><td colspan="9">No records yet.</td></tr></tbody>
                 </table>
               </div>
             </div>
@@ -1289,7 +1304,7 @@ html, body {
                 <div class="fmg"><label>Date</label><input type="date" name="grbs_date"></div>
                 <div class="fmg"><label>Time</label><input type="time" name="grbs_time"></div>
                 <div class="fmg"><label>GRBS (mg/dL)</label><input type="number" name="grbs_value" placeholder="e.g. 120"></div>
-                <div class="fmg"><label>Nurse Signature</label><input type="text" name="grbs_nurse"></div>
+                <div class="fmg"><label>Nurse Signature</label><input type="text" name="grbs_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
               </div>
               <button class="btn-sv-out btn-sv" data-ct="grbs_chart" data-f="f-gr"><i class="fas fa-plus"></i> Add Blood Sugar</button>
             </div>
@@ -1451,7 +1466,7 @@ html, body {
                 </div>
                 <div class="fmg">
                   <label>Nurse Signature</label>
-                  <input type="text" name="nurse_sign" id="tr-nurse-sign" readonly>
+                  <input type="text" name="nurse_sign" id="tr-nurse-sign" value="<?php echo htmlspecialchars($nurseName); ?>" readonly>
                 </div>
                 <div class="fmg">
                   <label>Priority Setting</label>
@@ -1515,7 +1530,7 @@ html, body {
                 <div class="fmg"><label>Date</label><input type="date" name="nurse_date"></div>
                 <div class="fmg"><label>Time</label><input type="time" name="nurse_time"></div>
                 <div class="fmg"><label>Units / Care Items</label><input type="text" name="nurse_units" placeholder="e.g. IV Fluid 500ml"></div>
-                <div class="fmg"><label>Signature</label><input type="text" name="nurse_sign"></div>
+                <div class="fmg"><label>Nurse Signature</label><input type="text" name="nurse_sign" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
                 <div class="fmg" style="grid-column: 1 / -1;"><label>Shift Nursing Note</label><textarea name="nurse_part" rows="2" placeholder="Record patient status, symptoms, responses to medication..."></textarea></div>
               </div>
               <button class="btn-sv-out btn-sv" data-ct="nurse_record" data-f="f-nn"><i class="fas fa-plus"></i> Add Note</button>
@@ -1602,7 +1617,7 @@ html, body {
                 <div class="fmg"><label>Time</label><input type="time" name="nebu_time"></div>
                 <div class="fmg"><label>Drug / Medicine</label><input type="text" name="nebu_drug" placeholder="e.g. Duolin, Budecort"></div>
                 <div class="fmg"><label>Frequency</label><input type="text" name="nebu_freq" placeholder="e.g. TID / Q8H / SOS"></div>
-                <div class="fmg" style="grid-column: 1 / -1;"><label>Nurse Signature</label><input type="text" name="nebu_nurse"></div>
+                <div class="fmg" style="grid-column: 1 / -1;"><label>Nurse Signature</label><input type="text" name="nebu_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
               </div>
               <button class="btn-sv-out btn-sv" data-ct="nebulization_chart" data-f="f-nb"><i class="fas fa-plus"></i> Add Nebulization</button>
             </div>
@@ -1630,7 +1645,7 @@ html, body {
                 <div class="fmg"><label>Duration</label><input type="text" name="dia_dur" class="tcd" placeholder="Auto / e.g. 4h"></div>
                 <div class="fmg"><label>Start Time</label><input type="time" name="dia_start" class="tcs" onchange="calcDur(this)"></div>
                 <div class="fmg"><label>End Time</label><input type="time" name="dia_end" class="tce" onchange="calcDur(this)"></div>
-                <div class="fmg" style="grid-column: 1 / -1;"><label>Nurse Signature</label><input type="text" name="dia_nurse"></div>
+                <div class="fmg" style="grid-column: 1 / -1;"><label>Nurse Signature</label><input type="text" name="dia_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
               </div>
               <button class="btn-sv-out btn-sv" data-ct="dialysis_chart" data-f="f-di"><i class="fas fa-plus"></i> Add Dialysis</button>
             </div>
@@ -1659,7 +1674,7 @@ html, body {
                 <div class="fmg"><label>Start Time</label><input type="time" name="oxy_start" class="tcs" onchange="calcDur(this)"></div>
                 <div class="fmg"><label>End Time</label><input type="time" name="oxy_end" class="tce" onchange="calcDur(this)"></div>
                 <div class="fmg" style="grid-column: 1 / -1;"><label>Duration</label><input type="text" name="oxy_dur" class="tcd" placeholder="Auto / e.g. 2h"></div>
-                <div class="fmg" style="grid-column: 1 / -1;"><label>Nurse Signature</label><input type="text" name="oxy_nurse"></div>
+                <div class="fmg" style="grid-column: 1 / -1;"><label>Nurse Signature</label><input type="text" name="oxy_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
               </div>
               <button class="btn-sv-out btn-sv" data-ct="oxygen_chart" data-f="f-ox"><i class="fas fa-plus"></i> Add Oxygen</button>
             </div>
@@ -1688,7 +1703,7 @@ html, body {
                 <div class="fmg"><label>Start Time</label><input type="time" name="vent_start" class="tcs" onchange="calcDur(this)"></div>
                 <div class="fmg"><label>End Time</label><input type="time" name="vent_end" class="tce" onchange="calcDur(this)"></div>
                 <div class="fmg" style="grid-column: 1 / -1;"><label>Duration</label><input type="text" name="vent_dur" class="tcd" placeholder="Auto / e.g. 6h"></div>
-                <div class="fmg" style="grid-column: 1 / -1;"><label>Nurse Signature</label><input type="text" name="vent_nurse"></div>
+                <div class="fmg" style="grid-column: 1 / -1;"><label>Nurse Signature</label><input type="text" name="vent_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
               </div>
               <button class="btn-sv-out btn-sv" data-ct="ventilation_chart" data-f="f-ve"><i class="fas fa-plus"></i> Add Ventilator</button>
             </div>
@@ -1717,7 +1732,7 @@ html, body {
                 <div class="fmg"><label>Bag Number</label><input type="text" name="bag_number" placeholder="e.g. 2563"></div>
                 <div class="fmg"><label>Qty (ml)</label><input type="number" name="quantity" placeholder="350"></div>
                 <div class="fmg"><label>Vitals During Transfusion</label><input type="text" name="vitals_during" placeholder="BP, Pulse..."></div>
-                <div class="fmg"><label>Nurse Signature</label><input type="text" name="nurse_sign"></div>
+                <div class="fmg"><label>Nurse Signature</label><input type="text" name="nurse_sign" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
               </div>
               <button class="btn-sv-out btn-sv" data-ct="blood_transfusion" data-f="f-bl"><i class="fas fa-plus"></i> Add Transfusion</button>
             </div>
@@ -2036,12 +2051,18 @@ function autoFill(ctx=document){
   ctx.querySelectorAll('input[type=date]').forEach(i=>{if(!i.value)i.value=ym;});
   ctx.querySelectorAll('input[type=time]').forEach(i=>{if(!i.value)i.value=hm;});
   ctx.querySelectorAll('input[type=datetime-local]').forEach(i=>{if(!i.value)i.value=ym+'T'+hm;});
-  if(NN) ctx.querySelectorAll('input[name*="_nurse"],input[name*="_sign"],input[name="nurse_sign"]').forEach(i=>{if(!i.value)i.value=NN;});
+  if(NN) {
+    ctx.querySelectorAll('input[name*="_nurse"],input[name*="_sign"],input[name="nurse_sign"]').forEach(i=>{
+      i.value = NN;
+      i.readOnly = true;
+      i.setAttribute('readonly', 'readonly');
+    });
+  }
 }
 
 function clrF(id){
   const c=document.getElementById(id); if(!c)return;
-  c.querySelectorAll('input:not([type=hidden]),select,textarea').forEach(e=>e.value='');
+  c.querySelectorAll('input:not([type=hidden]):not([readonly]),select,textarea').forEach(e=>e.value='');
   autoFill(c);
 }
 
@@ -2245,9 +2266,12 @@ async function loadAllRecords(){
       <td><strong>${r.bp_value || ((r.bp_systolic || '') + '/' + (r.bp_diastolic || ''))}</strong></td>
       <td>${r.bp_pulse || r.pulse || ''} bpm</td>
       <td>${r.bp_temp || r.temp || ''}</td>
+      <td>${r.bp_spo2 || r.spo2 ? (r.bp_spo2 || r.spo2) + '%' : '-'}</td>
+      <td><span class="badge" style="font-weight:800;">${r.pain_score !== undefined && r.pain_score !== null && r.pain_score !== '' ? r.pain_score + '/10' : (r.bp_pain || r.bp_pain_score || '-')}</span></td>
+      <td><span class="badge" style="background:rgba(31,107,74,0.1);color:var(--gm-primary);font-weight:700;">${r.gcs || r.consciousness_level || 'Alert'}</span></td>
       <td>${r.bp_nurse || r.nurse_sign || r.created_by_name || ''}</td>
       <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-bp", ${JSON.stringify(r)})' title="Edit vitals"><i class="fas fa-edit"></i> Edit</button></td>
-    `, 6);
+    `, 9);
 
     // 6. Dialysis
     rH('h-di', d.dialysis_chart || [], r => `
@@ -2626,13 +2650,22 @@ function editLog(formId, data){
   });
   
   // Populate standard matching form inputs
-  f.querySelectorAll('input:not([type=hidden]),select,textarea').forEach(inp => {
+  f.querySelectorAll('input:not([type=hidden]):not([readonly]),select,textarea').forEach(inp => {
     const name = inp.name;
     if (!name) return;
     if (data[name] !== undefined && data[name] !== null && data[name] !== '') {
       inp.value = data[name];
     }
   });
+  
+  // Always lock signature to current logged-in nurse and maintain readonly
+  if (NN) {
+    f.querySelectorAll('input[name*="_nurse"],input[name*="_sign"],input[name="nurse_sign"]').forEach(i => {
+      i.value = NN;
+      i.readOnly = true;
+      i.setAttribute('readonly', 'readonly');
+    });
+  }
   
   // Specific mappings for legacy fields
   if (formId === 'f-bp') {
@@ -2642,6 +2675,13 @@ function editLog(formId, data){
     if (data.pulse && !data.bp_pulse) { const el = f.querySelector('input[name="bp_pulse"]'); if(el) el.value = data.pulse; }
     if (data.temp && !data.bp_temp) { const el = f.querySelector('input[name="bp_temp"]'); if(el) el.value = data.temp; }
     if (data.spo2 && !data.bp_spo2) { const el = f.querySelector('input[name="bp_spo2"]'); if(el) el.value = data.spo2; }
+    if ((data.pain_score !== undefined || data.bp_pain !== undefined || data.bp_pain_score !== undefined) && !f.querySelector('input[name="pain_score"]')?.value) {
+      const el = f.querySelector('input[name="pain_score"]'); if(el) el.value = data.pain_score ?? data.bp_pain ?? data.bp_pain_score ?? '';
+    }
+    if (data.consciousness_level || data.gcs) {
+      const el = f.querySelector('select[name="consciousness_level"], input[name="consciousness_level"]');
+      if (el) el.value = data.consciousness_level || data.gcs;
+    }
   }
   if (formId === 'f-gr') {
     if (data.date && !data.grbs_date) { const el = f.querySelector('input[name="grbs_date"]'); if(el) el.value = data.date; }
