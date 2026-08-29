@@ -1,5 +1,11 @@
 config/gemini_secrets.php
-config/gemini_secrets.php
 
 logs/*
 scratch_test_key.php
+
+# Asset folders with uploaded images (not tracked in Git)
+assets/Doctors/
+assets/images/
+assets/po_item/
+assets/precision_data/
+assets/profile_photos/

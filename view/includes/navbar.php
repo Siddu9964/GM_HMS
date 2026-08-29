@@ -284,7 +284,8 @@ async function fetchAdminDischargeClearances() {
     var pill = document.getElementById('admin-notif-count-pill');
     
     try {
-        var response = await fetch('/GM_HMS/api/discharge_clearance.php?action=pending_list&module=admin');
+        var response = await fetch(API_BASE + 'discharge_clearance.php?action=pending_list&module=admin');
+        if (!response.ok) return;
         var res = await response.json();
         
         if (res.success && Array.isArray(res.data) && res.data.length > 0) {

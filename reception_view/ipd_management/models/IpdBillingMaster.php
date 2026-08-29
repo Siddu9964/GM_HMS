@@ -301,19 +301,54 @@ class IpdBillingMaster extends BaseModel {
         }
         $grandTotal = max(0, $subtotal - $discountAmt);
 
-        // Step 4: Payment totals (Read directly from master, ignoring ipd_payment table per user request)
-        $amountPaid   = (float)($master['amount_paid'] ?? 0);
-        $insReceived  = (float)($master['insurance_received_amount'] ?? 0);
-        $advanceAmt   = (float)($master['advance_amount'] ?? 0);
+        // Step 3.5: Auto-heal any dummy payment rows created by the previous inline payment mode='INSURANCE' bug
+        try {
+            $this->db->execute(
+                "DELETE FROM ipd_payment 
+                 WHERE bill_id = ? AND payment_mode = 'INSURANCE' 
+                   AND (reference_no IS NULL OR reference_no = '') 
+                   AND (remarks LIKE 'Sponsor:%' OR remarks LIKE '%(INSURANCE)%' OR remarks LIKE '%(TPA)%')",
+                [$billId]
+            );
+        } catch (\Throwable $e) {}
+
+        // Step 4: Payment totals from ipd_payment if available, fallback to master
+        try {
+            $payRow = $this->fetchOne(
+                "SELECT 
+                    COALESCE(SUM(CASE WHEN payment_mode!='INSURANCE' AND payment_type!='REFUND' THEN amount ELSE 0 END),0) AS paid,
+                    COALESCE(SUM(CASE WHEN payment_type='REFUND' THEN amount ELSE 0 END),0)                   AS refunded,
+                    COALESCE(SUM(CASE WHEN payment_mode='INSURANCE' THEN amount ELSE 0 END),0)                          AS ins_rcvd,
+                    COALESCE(SUM(CASE WHEN payment_type='ADVANCE' AND payment_mode!='INSURANCE' THEN amount ELSE 0 END),0) AS advance
+                 FROM ipd_payment WHERE bill_id = ?",
+                [$billId]
+            );
+            if ($payRow) {
+                $amountPaid   = max(0, (float)$payRow['paid'] - (float)$payRow['refunded']);
+                $insReceived  = (float)$payRow['ins_rcvd'];
+                $advanceAmt   = (float)$payRow['advance'];
+            } else {
+                $amountPaid   = (float)($master['amount_paid'] ?? 0);
+                $insReceived  = (float)($master['insurance_received_amount'] ?? 0);
+                $advanceAmt   = (float)($master['advance_amount'] ?? 0);
+            }
+        } catch (\Exception $e) {
+            $amountPaid   = (float)($master['amount_paid'] ?? 0);
+            $insReceived  = (float)($master['insurance_received_amount'] ?? 0);
+            $advanceAmt   = (float)($master['advance_amount'] ?? 0);
+        }
 
         // Step 5: Insurance
         $insApproved = (float)($master['insurance_approved_amount'] ?? 0);
         
         // Re-fetch from ipd_insurance if table exists (handled gracefully by skipping if error)
         try {
-            $insRow = $this->fetchOne("SELECT approved_amount FROM ipd_insurance WHERE bill_id = ?", [$billId]);
+            $insRow = $this->fetchOne("SELECT approved_amount, received_amount FROM ipd_insurance WHERE bill_id = ?", [$billId]);
             if ($insRow) {
                 $insApproved = (float)$insRow['approved_amount'];
+                if ((float)$insRow['received_amount'] > $insReceived) {
+                    $insReceived = (float)$insRow['received_amount'];
+                }
             }
         } catch (\Exception $e) {}
         

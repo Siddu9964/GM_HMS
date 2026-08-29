@@ -465,6 +465,17 @@ class IpdBillingMaster extends IpdBaseModel {
         }
         $grandTotal = max(0, $subtotal - $discountAmt);
 
+        // Step 3.5: Auto-heal any dummy payment rows created by the previous inline payment mode='INSURANCE' bug
+        try {
+            $this->db->execute(
+                "DELETE FROM ipd_payment 
+                 WHERE bill_id = ? AND payment_mode = 'INSURANCE' 
+                   AND (reference_no IS NULL OR reference_no = '') 
+                   AND (remarks LIKE 'Sponsor:%' OR remarks LIKE '%(INSURANCE)%' OR remarks LIKE '%(TPA)%')",
+                [$billId]
+            );
+        } catch (\Throwable $e) {}
+
         // Step 4: Payment totals from ipd_payment
         $payRow = $this->fetchOne(
             "SELECT 

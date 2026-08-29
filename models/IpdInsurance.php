@@ -138,6 +138,57 @@ class IpdInsurance extends IpdBaseModel {
     }
 
     /* ───────────────────────────────────────────────────────────────
+     * 4.1 CANCEL INSURANCE (Revert bill & admission to Self-Pay / Cash)
+     * ─────────────────────────────────────────────────────────────── */
+    public function cancelInsurance(string $billId, string $updatedBy = 'system'): array {
+        $now = date('Y-m-d H:i:s');
+
+        // 1. Mark existing insurance record as CANCELLED with approved_amount = 0
+        try {
+            $this->db->execute(
+                "UPDATE ipd_insurance 
+                 SET claim_status = 'CANCELLED', approved_amount = 0, pending_amount = 0, 
+                     remarks = CONCAT(COALESCE(remarks, ''), ' [Cancelled / Reverted to Self-Pay]'), 
+                     updated_at = ? 
+                 WHERE bill_id = ?",
+                [$now, $billId]
+            );
+        } catch (\Throwable $e) {}
+
+        // 2. Revert billing master sponsor and insurance fields
+        $this->db->execute(
+            "UPDATE ipd_billing_master 
+             SET bill_type = 'SELF', sponsor = 'SELF', insurance_approved_amount = 0, 
+                 insurance_company_id = NULL, policy_number = NULL, approval_number = NULL, 
+                 updated_by = ?, updated_at = ? 
+             WHERE bill_id = ?",
+            [$updatedBy, $now, $billId]
+        );
+
+        // 3. Revert admission credit type and sponsor
+        $bm = $this->fetchOne("SELECT admission_id FROM ipd_billing_master WHERE bill_id = ?", [$billId]);
+        $admId = $bm['admission_id'] ?? null;
+        if ($admId) {
+            $this->db->execute(
+                "UPDATE ipd_admissions 
+                 SET sponsor = 'SELF', admission_type = 'Cash', credit_type = 'CASH', updated_at = ? 
+                 WHERE admission_id = ?",
+                [$now, $admId]
+            );
+        }
+
+        // 4. Recalculate billing master
+        require_once __DIR__ . '/IpdBillingMaster.php';
+        $summary = (new IpdBillingMaster())->recalculateMaster($billId, $updatedBy);
+
+        return [
+            'success' => true, 
+            'message' => 'Insurance cancelled successfully. Bill reverted to Self-Pay / Cash.', 
+            'financial' => $summary
+        ];
+    }
+
+    /* ───────────────────────────────────────────────────────────────
      * 5. UPDATE FULL RECORD (All 25 columns & sync with Master)
      * ─────────────────────────────────────────────────────────────── */
     public function updateFullRecord(int $insuranceId, array $data, string $updatedBy = 'system'): array {

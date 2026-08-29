@@ -628,6 +628,24 @@ try {
         .fmg input:focus, .fmg select:focus, .fmg textarea:focus {
             box-shadow: 0 0 0 2px rgba(31, 107, 74, 0.3);
         }
+        /* Accordion items */
+        tr.group-header {
+            cursor: pointer !important;
+            transition: background 0.15s ease !important;
+        }
+        tr.group-header:hover {
+            background: #e6f1eb !important;
+        }
+        .btn-group-toggle:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(31,107,74,0.2);
+        }
+        tr.child-row.is-hidden {
+            display: none !important;
+        }
+        tr.child-row.is-visible {
+            display: table-row !important;
+        }
     </style>
 </head>
 <body class="bg-slate-50">
@@ -835,22 +853,32 @@ try {
                                 </div>
 
                                 <!-- Category Filter Tabs -->
-                                <div class="category-filter-tabs" id="categoryFilterTabs">
-                                    <button class="cat-tab active" data-type="" onclick="billing.filterItems(this,'')">All</button>
-                                    <button class="cat-tab" data-type="ROOM_RENT"         onclick="billing.filterItems(this,'ROOM_RENT')">Room</button>
-                                    <button class="cat-tab" data-type="DOCTOR_VISIT"      onclick="billing.filterItems(this,'DOCTOR_VISIT')">Doctor</button>
-                                    <button class="cat-tab" data-type="LAB"               onclick="billing.filterItems(this,'LAB')">Lab</button>
-                                    <button class="cat-tab" data-type="RADIOLOGY"         onclick="billing.filterItems(this,'RADIOLOGY')">Radiology</button>
-                                    <button class="cat-tab" data-type="PHARMACY"          onclick="billing.filterItems(this,'PHARMACY')">Pharmacy</button>
-                                    <button class="cat-tab" data-type="OT"                onclick="billing.filterItems(this,'OT')">OT</button>
-                                    <button class="cat-tab" data-type="PROCEDURE"         onclick="billing.filterItems(this,'PROCEDURE')">Procedure</button>
-                                    <button class="cat-tab" data-type="DIALYSIS"          onclick="billing.filterItems(this,'DIALYSIS')">Dialysis</button>
-                                    <button class="cat-tab" data-type="OXYGEN"            onclick="billing.filterItems(this,'OXYGEN')">Oxygen</button>
-                                    <button class="cat-tab" data-type="VENTILATION"       onclick="billing.filterItems(this,'VENTILATION')">Ventilator</button>
-                                    <button class="cat-tab" data-type="BLOOD_TRANSFUSION" onclick="billing.filterItems(this,'BLOOD_TRANSFUSION')">Blood</button>
-                                    <button class="cat-tab" data-type="WARD_TRANSFER"     onclick="billing.filterItems(this,'WARD_TRANSFER')">Transfer</button>
-                                    <button class="cat-tab" data-type="CONSUMABLE"        onclick="billing.filterItems(this,'CONSUMABLE')">Consumables</button>
-                                    <button class="cat-tab" data-type="MISC"              onclick="billing.filterItems(this,'MISC')">Misc</button>
+                                <div class="category-filter-tabs" id="categoryFilterTabs" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px;">
+                                    <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
+                                        <button class="cat-tab active" data-type="" onclick="billing.filterItems(this,'')">All</button>
+                                        <button class="cat-tab" data-type="ROOM_RENT"         onclick="billing.filterItems(this,'ROOM_RENT')">Room</button>
+                                        <button class="cat-tab" data-type="DOCTOR_VISIT"      onclick="billing.filterItems(this,'DOCTOR_VISIT')">Doctor</button>
+                                        <button class="cat-tab" data-type="LAB"               onclick="billing.filterItems(this,'LAB')">Lab</button>
+                                        <button class="cat-tab" data-type="RADIOLOGY"         onclick="billing.filterItems(this,'RADIOLOGY')">Radiology</button>
+                                        <button class="cat-tab" data-type="PHARMACY"          onclick="billing.filterItems(this,'PHARMACY')">Pharmacy</button>
+                                        <button class="cat-tab" data-type="OT"                onclick="billing.filterItems(this,'OT')">OT</button>
+                                        <button class="cat-tab" data-type="PROCEDURE"         onclick="billing.filterItems(this,'PROCEDURE')">Procedure</button>
+                                        <button class="cat-tab" data-type="DIALYSIS"          onclick="billing.filterItems(this,'DIALYSIS')">Dialysis</button>
+                                        <button class="cat-tab" data-type="OXYGEN"            onclick="billing.filterItems(this,'OXYGEN')">Oxygen</button>
+                                        <button class="cat-tab" data-type="VENTILATION"       onclick="billing.filterItems(this,'VENTILATION')">Ventilator</button>
+                                        <button class="cat-tab" data-type="BLOOD_TRANSFUSION" onclick="billing.filterItems(this,'BLOOD_TRANSFUSION')">Blood</button>
+                                        <button class="cat-tab" data-type="WARD_TRANSFER"     onclick="billing.filterItems(this,'WARD_TRANSFER')">Transfer</button>
+                                        <button class="cat-tab" data-type="CONSUMABLE"        onclick="billing.filterItems(this,'CONSUMABLE')">Consumables</button>
+                                        <button class="cat-tab" data-type="MISC"              onclick="billing.filterItems(this,'MISC')">Misc</button>
+                                    </div>
+                                    <div style="display: flex; gap: 4px; align-items: center;">
+                                        <button type="button" class="cat-tab" onclick="billing.expandAllGroups()" title="Expand all sections" style="background: rgba(31,107,74,0.12); color: #1f6b4a; font-weight: 700; border: 1px solid #1f6b4a; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-size: 11px;">
+                                            <i class="fas fa-angle-double-down"></i> Expand All
+                                        </button>
+                                        <button type="button" class="cat-tab" onclick="billing.collapseAllGroups()" title="Collapse all sections" style="background: rgba(31,107,74,0.12); color: #1f6b4a; font-weight: 700; border: 1px solid #1f6b4a; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-size: 11px;">
+                                            <i class="fas fa-angle-double-up"></i> Collapse All
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <!-- Items Table -->
@@ -908,12 +936,12 @@ try {
                                         </div>
                                     </div>
 
-                                    <div class="bm-form-row two-col" style="margin-bottom: 12px;">
+                                    <div class="bm-form-row two-col" id="inlinePayDateTypeRow" style="margin-bottom: 12px;">
                                         <div class="bm-form-group" style="margin-bottom: 0;">
                                             <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Payment Date <span class="req">*</span></label>
                                             <input type="date" id="inlinePayDate" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a; font-weight: 600;">
                                         </div>
-                                        <div class="bm-form-group" style="margin-bottom: 0;">
+                                        <div class="bm-form-group" id="inlinePayTypeGroupWrap" style="margin-bottom: 0;">
                                             <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Payment Type <span class="req">*</span></label>
                                             <div class="pay-type-group" id="inlinePayTypeGroup">
                                                 <button type="button" class="pay-type-btn" data-type="ADVANCE">Advance</button>
@@ -945,6 +973,23 @@ try {
 
                                     <!-- Insurance / TPA Sub-section (Sponsor Type & Company Name) -->
                                     <div id="inlineInsuranceBlock" style="display:none; background: rgba(31,107,74,0.05); border: 1.5px dashed #1f6b4a; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+                                        
+                                        <!-- Active Sponsor Banner & Quick Actions -->
+                                        <div id="inlineActiveSponsorCard" style="display:none; background: #e6f0eb; border: 1px solid #1f6b4a; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; align-items: center; justify-content: space-between;">
+                                            <div>
+                                                <div style="font-size: 10px; font-weight: 700; color: #1f6b4a; text-transform: uppercase;">Current Attached Sponsor:</div>
+                                                <div id="inlineActiveSponsorText" style="font-size: 13px; font-weight: 800; color: #166534;">Star Health Insurance</div>
+                                            </div>
+                                            <div style="display: flex; gap: 6px;">
+                                                <button type="button" onclick="billing.focusChangeInsurance()" style="padding: 4px 10px; font-size: 11px; font-weight: 700; background: #1f6b4a; color: #fff; border-radius: 4px; border: none; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                                    <i class="fas fa-edit"></i> Change Sponsor
+                                                </button>
+                                                <button type="button" onclick="billing.cancelInsurance()" style="padding: 4px 10px; font-size: 11px; font-weight: 700; background: #dc2626; color: #fff; border-radius: 4px; border: none; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                                    <i class="fas fa-ban"></i> Cancel Insurance
+                                                </button>
+                                            </div>
+                                        </div>
+
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px dashed rgba(31,107,74,0.2);">
                                             <div style="display: flex; gap: 10px; align-items: center;">
                                                 <label style="font-size: 11px; font-weight: 800; color: #1f6b4a; text-transform: uppercase; margin: 0;">Sponsor Type <span class="req">*</span>:</label>
@@ -956,7 +1001,7 @@ try {
                                             <span style="font-size: 10px; font-weight: 800; background: #1f6b4a; color: #fff; padding: 2px 8px; border-radius: 12px;"><i class="fas fa-file-medical"></i> Advance Insurance View</span>
                                         </div>
 
-                                        <div style="position: relative; margin-bottom: 4px;">
+                                        <div style="position: relative; margin-bottom: 8px;">
                                             <label style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">
                                                 <span id="inlineSponsorLabel">Insurance Company Name</span> <span class="req">*</span>
                                                 <span style="background: #1f6b4a; color: #f3efe6; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 700;"><i class="fas fa-search"></i> Advance Search</span>
@@ -965,9 +1010,20 @@ try {
                                             <input type="hidden" id="inlineSelectedSponsorName">
                                             <div id="inlineSponsorResults" style="display:none; position:absolute; left:0; right:0; top:100%; z-index:1000; background:#ffffff; border:1.5px solid #1f6b4a; border-radius:6px; max-height:220px; overflow-y:auto; box-shadow:0 6px 18px rgba(0,0,0,0.18); margin-top:2px;"></div>
                                         </div>
+
+                                        <div class="bm-form-row two-col" style="margin-bottom: 4px;">
+                                            <div class="bm-form-group" style="margin-bottom: 0;">
+                                                <label style="font-size: 10px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 2px; display: block;">Policy No (Optional)</label>
+                                                <input type="text" id="inlinePolicyNumber" placeholder="e.g. POL-987654" style="width: 100%; height: 34px; padding: 0 8px; border: 1px solid #1f6b4a; border-radius: 4px; background: #f3efe6; color: #1f6b4a; font-weight: 600; font-size: 12px;">
+                                            </div>
+                                            <div class="bm-form-group" style="margin-bottom: 0;">
+                                                <label style="font-size: 10px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 2px; display: block;">Claim / Pre-Auth No (Optional)</label>
+                                                <input type="text" id="inlineClaimNumber" placeholder="e.g. CLM-12345" style="width: 100%; height: 34px; padding: 0 8px; border: 1px solid #1f6b4a; border-radius: 4px; background: #f3efe6; color: #1f6b4a; font-weight: 600; font-size: 12px;">
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div class="bm-form-row two-col" style="margin-bottom: 12px;">
+                                    <div class="bm-form-row two-col" id="inlinePayAmountRow" style="margin-bottom: 12px;">
                                         <div class="bm-form-group" style="margin-bottom: 0;">
                                             <label id="inlineAmountLabel" style="font-size: 11px; font-weight: 700; color: #1f6b4a; text-transform: uppercase; margin-bottom: 4px; display: block;">Amount (₹) <span class="req">*</span></label>
                                             <div style="position:relative;">
@@ -1024,8 +1080,8 @@ try {
                                         <input type="text" id="inlinePayRemarks" placeholder="Optional notes" style="width: 100%; height: 38px; padding: 0 10px; border: 1px solid #1f6b4a; border-radius: 6px; background: #f3efe6; color: #1f6b4a; font-weight: 600;">
                                     </div>
 
-                                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(31,107,74,0.15);">
-                                        <div style="font-size: 13px; color: #1f6b4a; font-weight: 600;">
+                                    <div id="inlinePayBottomRow" style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(31,107,74,0.15);">
+                                        <div id="inlinePayAfterWrap" style="font-size: 13px; color: #1f6b4a; font-weight: 600;">
                                             Balance after payment: <strong id="inlinePayAfterVal" style="color: #166534; font-size: 15px; font-weight: 800;">—</strong>
                                         </div>
                                         <button class="bm-btn bm-btn-primary" id="btnSaveInlinePayment" onclick="billing.saveInlinePayment()" style="background: #1f6b4a; color: #f3efe6; padding: 10px 24px; border-radius: 6px; font-weight: 800; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; box-shadow: 0 2px 8px rgba(31,107,74,0.25);">
@@ -2322,6 +2378,41 @@ try {
                 <button class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalCancelCharge')">Go Back</button>
                 <button class="bm-btn bm-btn-danger" id="btnConfirmCancelCharge" onclick="billing.confirmCancelCharge()">
                     <i class="fas fa-times-circle"></i> Yes, Cancel Charge
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: Cancel Insurance Confirmation -->
+<div class="billing-modal-overlay" id="modalCancelInsurance">
+    <div class="billing-modal" style="max-width: 460px; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);">
+        <div class="bm-head danger-head" style="background: #dc2626; color: #ffffff; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+            <div class="bm-title" style="color: #ffffff; font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-exclamation-triangle"></i> Cancel Insurance Sponsor?
+            </div>
+            <button class="bm-close" style="color: #ffffff; font-size: 20px; cursor: pointer; background: transparent; border: none;" onclick="billing.closeModal('modalCancelInsurance')">&times;</button>
+        </div>
+        <div class="bm-body" style="padding: 20px; background: #ffffff;">
+            <div style="background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;">
+                <div style="font-size: 11px; font-weight: 700; color: #991b1b; text-transform: uppercase; margin-bottom: 4px;">Sponsor to be Removed:</div>
+                <div id="cancelInsSponsorName" style="font-size: 15px; font-weight: 800; color: #b91c1c;">—</div>
+            </div>
+            
+            <p style="font-size: 13px; color: #334155; line-height: 1.6; margin-bottom: 16px;">
+                Are you sure you want to cancel the insurance sponsor (<strong id="cancelInsSponsorPromptName" style="color: #b91c1c;">Insurance</strong>) and convert this patient's bill to <strong>Self-Pay / Cash</strong>?
+            </p>
+            
+            <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 12px; margin-bottom: 20px; font-size: 11px; color: #92400e; border-radius: 0 6px 6px 0; line-height: 1.5;">
+                <i class="fas fa-info-circle"></i> The insurance claim will be marked cancelled and the full outstanding balance will become payable directly by the patient.
+            </div>
+
+            <div class="bm-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; padding: 0;">
+                <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalCancelInsurance')" style="padding: 8px 18px; font-weight: 700; border-radius: 6px; cursor: pointer;">
+                    Keep Insurance
+                </button>
+                <button type="button" class="bm-btn bm-btn-danger" id="btnConfirmCancelInsurance" onclick="billing.confirmCancelInsurance()" style="background: #dc2626; color: #ffffff; padding: 8px 18px; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-check-circle"></i> Yes, Cancel & Revert
                 </button>
             </div>
         </div>

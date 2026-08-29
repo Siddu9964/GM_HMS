@@ -1,5 +1,10 @@
 RewriteEngine On
 RewriteBase /GM_HMS/
 
-# Route all /api requests to api/index.php
+# If the request is for an existing file or directory, do not rewrite
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Route all other /api requests to api/index.php
 RewriteRule ^api/(.*)$ api/index.php [L,QSA]

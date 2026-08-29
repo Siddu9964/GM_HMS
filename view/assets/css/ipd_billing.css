@@ -537,6 +537,13 @@ kbd {
 .billing-items-table tr:hover:not(.empty-row) { background: var(--green-50); }
 .billing-items-table tr:last-child td { border-bottom: none; }
 
+/* Accordion group rows */
+tr.child-row.is-hidden { display: none !important; }
+tr.child-row.is-visible { display: table-row !important; }
+tr.group-header { cursor: pointer; transition: background 0.15s ease; }
+tr.group-header:hover { background: #e6f1eb; }
+
+
 .charge-type-badge {
     display: inline-flex;
     align-items: center;

@@ -322,7 +322,6 @@ function renderBill(b) {
             <div class="meta-row"><div class="meta-label">Age/Sex/Mobile No</div><div class="meta-val">: ${b.age||''} / ${b.sex||''} / ${b.phone||''}</div></div>
             <div class="meta-row"><div class="meta-label">Admission Date</div><div class="meta-val">: ${fmtDate(b.admission_date)}</div></div>
             <div class="meta-row"><div class="meta-label">Discharge Date</div><div class="meta-val">: ${b.discharge_date ? fmtDate(b.discharge_date) : 'Not Discharged'}</div></div>
-            <div class="meta-row"><div class="meta-label">Sponsor Type</div><div class="meta-val">: <strong>${sponsorType}</strong></div></div>
             <div class="meta-row"><div class="meta-label">Sponsor Name</div><div class="meta-val">: ${sponsorName}</div></div>
             ${policyClaimDetails ? `<div class="meta-row"><div class="meta-label">Policy / Claim No</div><div class="meta-val">: ${policyClaimDetails}</div></div>` : ''}
         </div>
@@ -418,15 +417,29 @@ function renderBill(b) {
     const discount = parseFloat(b.discount_amount || 0);
     const grandTotal = parseFloat(b.grand_total ?? Math.max(0, subtotal - discount));
     const amountPaid = parseFloat(b.amount_paid || 0);
-    const balanceDue = parseFloat(b.balance_due ?? Math.max(0, grandTotal - amountPaid));
+    const insReceived = parseFloat(b.insurance_received_amount || 0);
+    const insApproved = parseFloat(b.insurance_approved_amount || 0);
+    const balanceDue = parseFloat(b.balance_due ?? Math.max(0, grandTotal - amountPaid - insReceived));
 
-    document.getElementById('totalsBox').innerHTML = `
+    let totalsHtml = `
         <div class="total-row"><span>Total Gross Amount</span><span>${fmt(subtotal)}</span></div>
         <div class="total-row"><span>Discount</span><span>${fmt(discount)}</span></div>
         <div class="total-row"><span>Net Amount</span><span>${fmt(grandTotal)}</span></div>
-        <div class="total-row"><span>Advance/Paid</span><span>${fmt(amountPaid)}</span></div>
+    `;
+
+    if (insApproved > 0) {
+        totalsHtml += `<div class="total-row" style="color:#0369a1; font-weight:600;"><span>Insurance Approved Amount</span><span>${fmt(insApproved)}</span></div>`;
+    }
+    if (insReceived > 0) {
+        totalsHtml += `<div class="total-row" style="color:#15803d; font-weight:600;"><span>Insurance Received Amount</span><span>${fmt(insReceived)}</span></div>`;
+    }
+
+    totalsHtml += `
+        <div class="total-row"><span>Advance / Paid by Patient</span><span>${fmt(amountPaid)}</span></div>
         <div class="total-row grand"><span>Balance Due</span><span>${fmt(balanceDue)}</span></div>
     `;
+
+    document.getElementById('totalsBox').innerHTML = totalsHtml;
 }
 
 function downloadPDF() {

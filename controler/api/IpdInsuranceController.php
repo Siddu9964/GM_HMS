@@ -98,6 +98,13 @@ class IpdInsuranceController extends IpdBaseController {
                 else $this->error($result['message'], 400);
                 break;
 
+            case 'cancel':
+                if (empty($data['bill_id'])) { $this->error('bill_id required', 400); return; }
+                $result = $this->model->cancelInsurance($data['bill_id'], $user);
+                if ($result['success']) $this->success($result, $result['message']);
+                else $this->error($result['message'], 400);
+                break;
+
             case 'status':
                 if (empty($data['bill_id'])) { $this->error('bill_id required', 400); return; }
                 $ok = $this->model->updateClaimStatus(
