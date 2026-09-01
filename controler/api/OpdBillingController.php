@@ -413,11 +413,14 @@ class OpdBillingController extends BaseController {
         try {
             $patientId = trim($_GET['patient_id'] ?? '');
             $appointmentId = trim($_GET['appointment_id'] ?? '');
+            $visitDate = trim($_GET['visit_date'] ?? '');
+            $doctorId = trim($_GET['doctor_id'] ?? '');
+
             if (empty($patientId)) {
                 $this->respondBadRequest('Patient ID is required');
             }
 
-            $result = $this->model->getConsultationFeeByPatient($patientId, $appointmentId);
+            $result = $this->model->getConsultationFeeByPatient($patientId, $appointmentId, $visitDate, $doctorId);
             if (is_array($result)) {
                 $this->respondSuccess([
                     'consultation_fee'     => $result['fee'],

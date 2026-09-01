@@ -303,9 +303,9 @@ class InvoiceModel {
      */
     public function getTodayRevenue() {
         try {
-            $sql = "SELECT COALESCE(SUM(amount), 0) as revenue 
-                    FROM opd_invoice 
-                    WHERE DATE(date) = CURDATE()";
+            $sql = "SELECT COALESCE(SUM(amount_paid), 0) as revenue 
+                    FROM opd_billing_master 
+                    WHERE DATE(bill_date) = CURDATE() OR DATE(created_at) = CURDATE()";
             $result = $this->db->fetchOne($sql);
             return (float)($result['revenue'] ?? 0);
         } catch (\Exception $e) {

@@ -133,9 +133,9 @@ class NurseShiftModel
                     ia.admission_id, ia.admission_date, ia.diagnosis, ia.bed_id,
                     ia.room_no as room_number, 
                     ia.room_name,
-                    COALESCE(b.room_type, ia.room_type, ia.ward_name, ia.ward) as room_type,
+                    COALESCE(b.room_type, ia.room_type, ia.ward_name) as room_type,
                     COALESCE(b.floor_name, ia.floor_name) as floor_name,
-                    COALESCE(b.ward_name, ia.ward_name, ia.ward) as ward_name,
+                    COALESCE(b.ward_name, ia.ward_name) as ward_name,
                     COALESCE(b.bed_number, CAST(ia.bed_id AS CHAR)) as bed_number,
                     d.full_name as doctor_name
                 FROM ipd_admissions ia
@@ -147,10 +147,9 @@ class NurseShiftModel
         $params = [];
         if ($currentWard && !empty($currentWard['floor_name']) && !empty($currentWard['ward_name'])) {
             $sql .= " AND (b.floor_name = ? OR (b.floor_name IS NULL AND ia.floor_name = ?)) 
-                      AND (b.ward_name = ? OR (b.ward_name IS NULL AND (ia.ward_name = ? OR ia.ward = ?)))";
+                      AND (b.ward_name = ? OR (b.ward_name IS NULL AND ia.ward_name = ?))";
             $params[] = $currentWard['floor_name'];
             $params[] = $currentWard['floor_name'];
-            $params[] = $currentWard['ward_name'];
             $params[] = $currentWard['ward_name'];
             $params[] = $currentWard['ward_name'];
         }
@@ -198,10 +197,9 @@ class NurseShiftModel
         $params = [];
         if ($currentWard && !empty($currentWard['floor_name']) && !empty($currentWard['ward_name'])) {
             $sql .= " AND (b.floor_name = ? OR (b.floor_name IS NULL AND ia.floor_name = ?)) 
-                      AND (b.ward_name = ? OR (b.ward_name IS NULL AND (ia.ward_name = ? OR ia.ward = ?)))";
+                      AND (b.ward_name = ? OR (b.ward_name IS NULL AND ia.ward_name = ?))";
             $params[] = $currentWard['floor_name'];
             $params[] = $currentWard['floor_name'];
-            $params[] = $currentWard['ward_name'];
             $params[] = $currentWard['ward_name'];
             $params[] = $currentWard['ward_name'];
         }

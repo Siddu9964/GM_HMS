@@ -190,10 +190,10 @@ function fmtDateOnly(d) {
 async function loadBill() {
     try {
         const [masterRes, itemsRes, pmtsRes, insRes] = await Promise.all([
-            fetch(`/GM_HMS/api/ipd-billing-master?action=get&bill_id=${encodeURIComponent(BILL_ID)}`),
-            fetch(`/GM_HMS/api/ipd-billing-items?bill_id=${encodeURIComponent(BILL_ID)}`),
-            fetch(`/GM_HMS/api/ipd-payment?bill_id=${encodeURIComponent(BILL_ID)}`),
-            fetch(`/GM_HMS/api/ipd-insurance?bill_id=${encodeURIComponent(BILL_ID)}`).catch(() => null)
+            fetch(`/GM_HMS/api/ipd-billing-master?action=get&bill_id=${encodeURIComponent(BILL_ID)}&_t=${Date.now()}`),
+            fetch(`/GM_HMS/api/ipd-billing-items?bill_id=${encodeURIComponent(BILL_ID)}&exclude_cancelled=1&_t=${Date.now()}`),
+            fetch(`/GM_HMS/api/ipd-payment?bill_id=${encodeURIComponent(BILL_ID)}&_t=${Date.now()}`),
+            fetch(`/GM_HMS/api/ipd-insurance?bill_id=${encodeURIComponent(BILL_ID)}&_t=${Date.now()}`).catch(() => null)
         ]);
         
         const m = await masterRes.json();
@@ -235,84 +235,66 @@ function renderBill(b) {
     `;
 
     // Sponsor Details Resolution
+    const isSelfPay = (!b.bill_type || b.bill_type === 'SELF' || !b.sponsor || b.sponsor.toUpperCase() === 'SELF');
+
     let sponsorType = 'SELF';
     let sponsorName = 'SELF';
     let policyNo = '';
     let claimNo = '';
 
-    // 1. Check insurance record from ipd_insurance (via bill.insurance or joined master fields)
-    const ins = b.insurance || (b.insurance_company_name ? {
-        insurance_type: b.insurance_type,
-        company_name: b.insurance_company_name,
-        tpa_name: b.tpa_name,
-        policy_number: b.policy_number,
-        claim_number: b.claim_number,
-        approval_number: b.approval_number,
-        approved_amount: b.insurance_approved_amount
-    } : null);
+    // Only resolve insurance if this is an active non-self bill
+    if (!isSelfPay) {
+        // 1. Check insurance record from ipd_insurance (via bill.insurance or joined master fields)
+        const ins = (b.insurance && b.insurance.claim_status !== 'CANCELLED') ? b.insurance : (b.insurance_company_name ? {
+            insurance_type: b.insurance_type,
+            company_name: b.insurance_company_name,
+            tpa_name: b.tpa_name,
+            policy_number: b.policy_number,
+            claim_number: b.claim_number,
+            approval_number: b.approval_number,
+            approved_amount: b.insurance_approved_amount
+        } : null);
 
-    if (ins && (ins.company_name || ins.tpa_name || ins.insurance_type)) {
-        if (ins.tpa_name && ins.tpa_name.trim() !== '') {
-            sponsorType = 'TPA';
-            sponsorName = ins.company_name ? `${ins.company_name} (TPA: ${ins.tpa_name})` : ins.tpa_name;
-        } else if (ins.insurance_type) {
-            sponsorType = ins.insurance_type.toUpperCase();
-            sponsorName = ins.company_name || ins.tpa_name || sponsorType;
-        } else if (ins.company_name) {
-            sponsorType = 'INSURANCE';
-            sponsorName = ins.company_name;
-        }
-        policyNo = ins.policy_number || '';
-        claimNo = ins.claim_number || ins.approval_number || '';
-    }
-
-    // 2. If not found in insurance, check payment remarks (where inline/modal sponsor is recorded)
-    if (sponsorType === 'SELF' || sponsorName === 'SELF') {
-        const pmts = b.payments || [];
-        for (const p of pmts) {
-            if (p.payment_mode === 'INSURANCE' || (p.remarks && p.remarks.includes('Sponsor:'))) {
-                const match = (p.remarks || '').match(/Sponsor:\s*([^(|]+)(?:\(([^)]+)\))?/i);
-                if (match) {
-                    sponsorName = match[1].trim();
-                    if (match[2]) {
-                        sponsorType = match[2].trim().toUpperCase();
-                    } else {
-                        sponsorType = 'INSURANCE';
-                    }
-                    if (!claimNo && p.reference_no) {
-                        claimNo = p.reference_no;
-                    }
-                    break;
-                }
+        if (ins && (ins.company_name || ins.tpa_name || ins.insurance_type)) {
+            if (ins.tpa_name && ins.tpa_name.trim() !== '' && ins.company_name && ins.tpa_name !== ins.company_name) {
+                sponsorType = 'TPA';
+                sponsorName = `${ins.company_name} (TPA: ${ins.tpa_name})`;
+            } else if (ins.company_name) {
+                sponsorType = ins.insurance_type ? ins.insurance_type.toUpperCase() : 'INSURANCE';
+                sponsorName = ins.company_name;
+            } else if (ins.tpa_name) {
+                sponsorType = 'TPA';
+                sponsorName = ins.tpa_name;
+            } else if (ins.insurance_type) {
+                sponsorType = ins.insurance_type.toUpperCase();
+                sponsorName = sponsorType;
             }
-        }
-    }
-
-    // 3. Check admission sponsor and credit_type
-    if (sponsorType === 'SELF' && b.credit_type && b.credit_type.toUpperCase() !== 'CASH') {
-        sponsorType = b.credit_type.toUpperCase();
-    }
-    if (sponsorName === 'SELF' && b.sponsor && b.sponsor.trim() !== '' && b.sponsor.toUpperCase() !== 'SELF') {
-        sponsorName = b.sponsor.trim();
-        if (sponsorType === 'SELF') {
+            policyNo = ins.policy_number || '';
+            claimNo = ins.claim_number || ins.approval_number || '';
+        } else if (b.sponsor && b.sponsor.trim() !== '' && b.sponsor.toUpperCase() !== 'SELF') {
+            sponsorName = b.sponsor.trim();
             sponsorType = (b.credit_type && b.credit_type.toUpperCase() !== 'CASH') ? b.credit_type.toUpperCase() : 'INSURANCE';
         }
     }
 
-    // 4. Check bill_type
-    if (sponsorType === 'SELF' && (b.bill_type === 'INSURANCE' || b.bill_type === 'CORPORATE')) {
-        sponsorType = b.bill_type;
-    }
+    const policyClaimDetails = (!isSelfPay && (policyNo || claimNo)) ? [policyNo ? `Pol: ${policyNo}` : '', claimNo ? `Claim/Appr: ${claimNo}` : ''].filter(Boolean).join(' | ') : '';
 
-    const policyClaimDetails = [policyNo ? `Pol: ${policyNo}` : '', claimNo ? `Claim/Appr: ${claimNo}` : ''].filter(Boolean).join(' | ');
+    // Billing Category / Room Type Resolution (e.g. Deluxe Room, General Ward, 1104A)
+    const billingCategory = b.room_type || b.room_name || b.ward_name || 'General Ward';
+    const bedRoom = b.room_type || b.room_name || '';
+    const bedParts = [];
+    if (b.ward_name) bedParts.push(b.ward_name);
+    if (bedRoom && bedRoom !== b.ward_name) bedParts.push(bedRoom);
+    if (b.bed_number) bedParts.push(b.bed_number);
+    const currentBed = bedParts.length ? bedParts.join(' / ') : (b.room_no ? `Room ${b.room_no}` : '—');
 
     // Meta Details
     document.getElementById('metaDetails').innerHTML = `
         <div>
             <div class="meta-row"><div class="meta-label">Patient Name</div><div class="meta-val">: ${b.patient_name || ''}</div></div>
             <div class="meta-row"><div class="meta-label">Address</div><div class="meta-val">: ${b.address || ''}</div></div>
-            <div class="meta-row"><div class="meta-label">Billing Category</div><div class="meta-val">: ${b.bill_type || 'GENERAL'}</div></div>
-            <div class="meta-row"><div class="meta-label">Ward / Bed</div><div class="meta-val">: ${b.ward_name || ''}/${b.room_name || ''}/${b.bed_number || ''}</div></div>
+            <div class="meta-row"><div class="meta-label">Billing Category</div><div class="meta-val">: ${billingCategory}</div></div>
+            <div class="meta-row"><div class="meta-label">Ward / Bed</div><div class="meta-val">: ${currentBed}</div></div>
             <div class="meta-row"><div class="meta-label">Primary Dr.</div><div class="meta-val">: ${b.doctor_name || ''}</div></div>
         </div>
         <div>

@@ -206,7 +206,8 @@ const billing = (function () {
         document.getElementById('phcAdmId').textContent = m.admission_id;
         document.getElementById('phcDoctor').textContent = `Dr. ${m.doctor_name || 'N/A'}`;
 
-        document.getElementById('phcBed').textContent = `${m.ward_name} · ${m.bed_number}`;
+        const bedInfo = [m.ward_name, m.room_type || m.room_name, m.bed_number].filter(Boolean).join(' · ') || '—';
+        document.getElementById('phcBed').textContent = bedInfo;
 
         const admDateStr = new Date(m.admission_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         let datesStr = admDateStr + ' → ';
@@ -222,15 +223,19 @@ const billing = (function () {
         if (m.referral_type && m.referral_name) {
             extraParts.push(`<i data-lucide="user-plus" style="width:14px;height:14px;margin-right:4px;"></i> Referral: ${m.referral_type} - ${m.referral_name}`);
         }
-        if (m.insurance_company_name || m.tpa_name) {
+        const isSelf = (!m.bill_type || m.bill_type === 'SELF' || !m.sponsor || m.sponsor.toUpperCase() === 'SELF');
+
+        if (!isSelf && (m.insurance_company_name || m.tpa_name)) {
             let insStr = m.insurance_company_name || '';
-            if (m.tpa_name) insStr += (insStr ? ` (TPA: ${m.tpa_name})` : `TPA: ${m.tpa_name}`);
+            if (m.tpa_name && m.tpa_name !== m.insurance_company_name) {
+                insStr += (insStr ? ` (TPA: ${m.tpa_name})` : `TPA: ${m.tpa_name}`);
+            }
             extraParts.push(`<i data-lucide="shield" style="width:14px;height:14px;margin-right:4px;"></i> Insurance: ${insStr}`);
         }
         
-        if (m.sponsor) {
+        if (!isSelf && m.sponsor && m.sponsor.trim() !== '' && m.sponsor.toUpperCase() !== 'SELF') {
             let spText = m.sponsor;
-            if (m.credit_type) {
+            if (m.credit_type && m.credit_type.toUpperCase() !== 'CASH' && m.credit_type.toUpperCase() !== 'SELF') {
                 spText += ` - ${m.credit_type}`;
             }
             extraParts.push(`<span style="background:#fffbeb; color:#d97706; padding:4px 8px; border-radius:6px; font-weight:600; display:inline-flex; align-items:center; border:1px solid #fde68a;"><i data-lucide="building" style="width:14px;height:14px;margin-right:4px;"></i> Sponsor: ${spText}</span>`);
@@ -3271,7 +3276,7 @@ const billing = (function () {
             }
 
             // 5. Pre-fill existing patient insurance sponsor name & policy details if available
-            if (currentMaster) {
+            if (currentMaster && hasActiveSponsor) {
                 const spInp = document.getElementById('inlineSponsorSearchInput');
                 const spHid = document.getElementById('inlineSelectedSponsorName');
                 const polInp = document.getElementById('inlinePolicyNumber');
@@ -3380,6 +3385,11 @@ const billing = (function () {
                 if (spHid) spHid.value = '';
                 if (polInp) polInp.value = '';
                 if (clmInp) clmInp.value = '';
+
+                const activeCard = document.getElementById('inlineActiveSponsorCard');
+                const activeText = document.getElementById('inlineActiveSponsorText');
+                if (activeCard) activeCard.style.display = 'none';
+                if (activeText) activeText.textContent = '';
 
                 // Switch UI back to Cash mode
                 currentInlinePayMode = 'CASH';
@@ -4754,21 +4764,31 @@ const billing = (function () {
             const compName = document.getElementById('insCompanyName')?.value.trim() || '';
             const sponsorType = document.getElementById('modalInsSponsorType')?.value || currentBillType || 'INSURANCE';
 
-            // First save bill type on master
-            await fetch(`${API_URL}ipd-billing-master`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'bill_type',
-                    bill_id: currentBillId,
-                    bill_type: currentBillType,
-                    company_name: compName,
-                    sponsor: compName
-                })
-            });
+            if (currentBillType === 'SELF') {
+                // Cancel / revert insurance
+                await fetch(`${API_URL}ipd-insurance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'cancel',
+                        bill_id: currentBillId
+                    })
+                });
+            } else {
+                // First save bill type on master
+                await fetch(`${API_URL}ipd-billing-master`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'bill_type',
+                        bill_id: currentBillId,
+                        bill_type: currentBillType,
+                        company_name: compName,
+                        sponsor: compName
+                    })
+                });
 
-            // If insurance, save details
-            if (currentBillType !== 'SELF') {
+                // If insurance, save details
                 const res = await fetch(`${API_URL}ipd-insurance`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

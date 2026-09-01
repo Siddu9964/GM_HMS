@@ -349,12 +349,10 @@ class Admission extends BaseModel {
         }
 
         // Auto-fill bed assignment details into admission record
-        $filteredData['ward'] = $bedDetails['ward_name'];
         $filteredData['floor_number'] = $bedDetails['floor_number'];
         $filteredData['floor_name'] = $bedDetails['floor_name'];
         $filteredData['ward_name'] = $bedDetails['ward_name'];
         $filteredData['room_no'] = $bedDetails['room_number'];
-        $filteredData['room_name'] = $bedDetails['room_name'];
         $filteredData['room_name'] = $bedDetails['room_name'];
         
         // Dynamically map room/ward type depending on which column the branch's schema has

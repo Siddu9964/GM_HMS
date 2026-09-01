@@ -156,9 +156,6 @@ class IpdBillingModel {
                 $billData['sponsor'] ?? null
             ]);
             
-            // Log action
-            $this->logBillingAction($billId, 'Created', 'IPD bill created for admission');
-            
             $this->db->commit();
             return $billId;
             
@@ -401,9 +398,6 @@ class IpdBillingModel {
             // Calculate final totals
             $this->calculateTotals($billId);
             
-            // Log action
-            $this->logBillingAction($billId, 'Updated', 'Discharge bill generated');
-            
             $this->db->commit();
             
             return $this->getBillDetails($billId);
@@ -592,9 +586,6 @@ class IpdBillingModel {
             
             $this->db->execute($updateSql, [$newAmountPaid, $balanceDue, $paymentStatus, $billId]);
             
-            // Log action
-            $this->logBillingAction($billId, 'Payment Received', "Payment of ₹{$amount} received");
-            
             $this->db->commit();
             return $receiptId;
             
@@ -779,24 +770,6 @@ class IpdBillingModel {
         return sprintf("%s-%s-%04d", $prefix, $dateStr, $newNum);
     }
     
-    /**
-     * Log billing action
-     * 
-     * @param string $billId Bill ID
-     * @param string $action Action type
-     * @param string $remarks Remarks
-     */
-    private function logBillingAction($billId, $action, $remarks = null) {
-        $sql = "INSERT INTO billing_audit_log (bill_id, bill_type, action, action_by, remarks)
-                VALUES (?, 'IPD', ?, ?, ?)";
-        
-        $this->db->execute($sql, [
-            $billId,
-            $action,
-            $_SESSION['user_id'] ?? 'system',
-            $remarks
-        ]);
-    }
     
     /**
      * Get billing statistics

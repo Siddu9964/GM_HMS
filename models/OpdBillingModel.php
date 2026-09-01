@@ -148,8 +148,6 @@ class OpdBillingModel
 
             $this->calculateTotals($billId);
 
-            $this->logBillingAction($billId, 'Created', 'OPD bill created');
-
             if ($hasLabItems) {
                 // Insert Notification for Laboratory (staff)
                 $nid = 'NOT-' . strtoupper(substr(uniqid(), -6));
@@ -316,7 +314,6 @@ class OpdBillingModel
                             amount_paid = ?, balance_due = ?, payment_status = ?
                           WHERE bill_id = ?", [$newAmountPaid, $balanceDue, $paymentStatus, $billId]);
 
-            $this->logBillingAction($billId, 'Payment Received', "Payment of ₹{$amount} received");
             $this->db->commit();
             return $receiptId;
         }
@@ -460,16 +457,6 @@ class OpdBillingModel
         return sprintf("%s%06d", $prefix, $newNum);
     }
 
-    private function logBillingAction($billId, $action, $remarks = null)
-    {
-        $this->db->insert('billing_audit_log', [
-            'bill_id' => $billId,
-            'bill_type' => 'OPD',
-            'action' => $action,
-            'action_by' => 'system',
-            'remarks' => $remarks
-        ]);
-    }
 
     public function updateBill($billId, $billData, $items = [])
     {
@@ -517,7 +504,6 @@ class OpdBillingModel
             }
 
             $this->calculateTotals($billId);
-            $this->logBillingAction($billId, 'Updated', 'OPD bill updated from UI');
 
             $this->db->commit();
             return true;
@@ -532,9 +518,6 @@ class OpdBillingModel
     {
         try {
             $this->db->beginTransaction();
-
-            // Log deletion before data is removed
-            $this->logBillingAction($billId, 'Deleted', 'OPD bill deleted from UI');
 
             // Delete payments and items first due to foreign keys (if strict)
             $this->db->execute("DELETE FROM payment_receipts WHERE bill_id = ?", [$billId]);
@@ -607,13 +590,15 @@ class OpdBillingModel
         }
     }
 
-    public function getConsultationFeeByPatient($patientId, $currentAppointmentId = '')
+    public function getConsultationFeeByPatient($patientId, $currentAppointmentId = '', $visitDate = null, $doctorId = null)
     {
         $fee = 0.00;
         $isFollowup = false;
         $consultations = [];
+        $today = date('Y-m-d');
+        $targetDate = !empty($visitDate) ? $visitDate : $today;
 
-        // 1. Check if patient has already paid Registration Fee today or in prior bills
+        // 1. Check if patient has already paid Registration Fee in prior bills
         $regCheck = $this->db->fetchOne(
             "SELECT obi.item_id 
              FROM opd_billing_master obm
@@ -626,10 +611,11 @@ class OpdBillingModel
         $isRegistrationPaid = !empty($regCheck);
 
         // 2. Determine target appointment date and doctor context
-        $targetDate = null;
-        $currentDocId = null;
+        $currentDocId = !empty($doctorId) ? $doctorId : null;
         $currentDocName = null;
-        if (!empty($currentAppointmentId)) {
+        $docDefaultFee = 500.00;
+
+        if (!empty($currentAppointmentId) && !str_starts_with($currentAppointmentId, 'NOAPT-')) {
             $currentApt = $this->db->fetchOne(
                 "SELECT d.consultation_fee, a.appointment_date, a.doctor_id, d.full_name as doctor_name 
                  FROM appointments a
@@ -638,31 +624,23 @@ class OpdBillingModel
                 [$currentAppointmentId]
             );
             if ($currentApt) {
-                $fee = (float)$currentApt['consultation_fee'];
-                $targetDate = $currentApt['appointment_date'];
-                $currentDocId = $currentApt['doctor_id'];
-                $currentDocName = $currentApt['doctor_name'];
+                if (empty($targetDate) && !empty($currentApt['appointment_date'])) {
+                    $targetDate = $currentApt['appointment_date'];
+                }
+                // Only use appointment's doctor if caller did NOT explicitly pass a doctorId
+                if (empty($currentDocId)) {
+                    $currentDocId = $currentApt['doctor_id'];
+                    $currentDocName = $currentApt['doctor_name'];
+                    $docDefaultFee = (float)($currentApt['consultation_fee'] ?? 500);
+                }
             }
         }
 
-        if (empty($targetDate)) {
-            // Find most recent appointment date for this patient
-            $latest = $this->db->fetchOne(
-                "SELECT a.appointment_date, a.doctor_id, d.full_name as doctor_name, d.consultation_fee 
-                 FROM appointments a
-                 JOIN doctors d ON BINARY a.doctor_id = BINARY d.doctor_id
-                 WHERE BINARY a.patient_id = BINARY ? 
-                 ORDER BY a.appointment_date DESC, a.appointment_time DESC 
-                 LIMIT 1",
-                [$patientId]
-            );
-            if ($latest) {
-                $targetDate = $latest['appointment_date'];
-                $currentDocId = $latest['doctor_id'];
-                $currentDocName = $latest['doctor_name'];
-                $fee = (float)$latest['consultation_fee'];
-            } else {
-                $targetDate = date('Y-m-d');
+        if (!empty($currentDocId)) {
+            $doc = $this->db->fetchOne("SELECT full_name, consultation_fee FROM doctors WHERE doctor_id = ?", [$currentDocId]);
+            if ($doc) {
+                $currentDocName = $doc['full_name'];
+                $docDefaultFee = (float)($doc['consultation_fee'] ?? 500);
             }
         }
 
@@ -673,16 +651,22 @@ class OpdBillingModel
                         WHERE BINARY a.patient_id = BINARY ? 
                           AND a.appointment_date = ? 
                           AND a.appointment_status != 'Cancelled'
-                          AND (a.payment_status IS NULL OR a.payment_status = 'Pending' OR a.payment_status = '')
-                        ORDER BY a.appointment_time ASC, a.appointment_id ASC";
-        $dateApts = $this->db->fetchAll($sqlDateApts, [$patientId, $targetDate]);
+                          AND (a.payment_status IS NULL OR a.payment_status = 'Pending' OR a.payment_status = '')";
+        $params = [$patientId, $targetDate];
+        if (!empty($currentDocId)) {
+            $sqlDateApts .= " AND BINARY a.doctor_id = BINARY ?";
+            $params[] = $currentDocId;
+        }
+        $sqlDateApts .= " ORDER BY a.appointment_time ASC, a.appointment_id ASC";
+        $dateApts = $this->db->fetchAll($sqlDateApts, $params);
 
         if (!empty($dateApts)) {
             foreach ($dateApts as $apt) {
                 $docId = $apt['doctor_id'];
                 $docName = $apt['doctor_name'];
+                $docFee = (float)($apt['consultation_fee'] ?? 500);
 
-                // Check if this SAME DOCTOR was already billed for this patient in the last 0-3 days
+                // Check if this SAME DOCTOR was already billed for this patient in the last 0-3 days before/on targetDate
                 $sameDocBill = $this->db->fetchOne(
                     "SELECT obm.bill_date 
                      FROM opd_billing_master obm 
@@ -695,8 +679,6 @@ class OpdBillingModel
                 );
 
                 $docIsFollowup = false;
-                $docFee = (float)$apt['consultation_fee'];
-
                 if ($sameDocBill) {
                     $targetTime = strtotime($targetDate);
                     $billTime = strtotime($sameDocBill['bill_date']);
@@ -717,18 +699,37 @@ class OpdBillingModel
                     'is_followup'      => $docIsFollowup
                 ];
             }
-        } elseif (!empty($currentDocId)) {
-            // Walk-in with specific doctor
-            $sameDocBill = $this->db->fetchOne(
-                "SELECT obm.bill_date 
-                 FROM opd_billing_master obm 
-                 JOIN opd_billing_items obi ON BINARY obm.bill_id = BINARY obi.bill_id
-                 WHERE BINARY obm.patient_id = BINARY ? 
-                   AND (BINARY obm.doctor_id = BINARY ? OR BINARY obm.doctor_name = BINARY ? OR LOCATE(?, obi.item_name) > 0)
-                   AND obm.bill_date <= ?
-                 ORDER BY obm.bill_date DESC, obm.bill_time DESC LIMIT 1",
-                [$patientId, $currentDocId, $currentDocName, $currentDocName, $targetDate]
-            );
+            $fee = !empty($consultations) ? (float)$consultations[0]['consultation_fee'] : $docDefaultFee;
+            $isFollowup = !empty($consultations) ? (bool)$consultations[0]['is_followup'] : false;
+        } else {
+            // Walk-in / Direct billing (No appointment for target date)
+            $sameDocBill = null;
+            if (!empty($currentDocId) || !empty($currentDocName)) {
+                $sameDocBill = $this->db->fetchOne(
+                    "SELECT obm.bill_date 
+                     FROM opd_billing_master obm 
+                     JOIN opd_billing_items obi ON BINARY obm.bill_id = BINARY obi.bill_id
+                     WHERE BINARY obm.patient_id = BINARY ? 
+                       AND (BINARY obm.doctor_id = BINARY ? OR BINARY obm.doctor_name = BINARY ? OR LOCATE(?, obi.item_name) > 0)
+                       AND obm.bill_date <= ?
+                     ORDER BY obm.bill_date DESC, obm.bill_time DESC LIMIT 1",
+                    [$patientId, $currentDocId, $currentDocName, $currentDocName, $targetDate]
+                );
+            }
+
+            if (!$sameDocBill) {
+                // Check latest consultation bill overall
+                $sameDocBill = $this->db->fetchOne(
+                    "SELECT obm.bill_date, obm.doctor_id, obm.doctor_name
+                     FROM opd_billing_master obm
+                     JOIN opd_billing_items obi ON BINARY obm.bill_id = BINARY obi.bill_id
+                     WHERE BINARY obm.patient_id = BINARY ?
+                       AND (obi.item_type IN ('Consultation', 'Follow-up Fee') OR LOWER(obi.item_name) LIKE '%consultation%' OR LOWER(obi.item_name) LIKE '%follow%')
+                       AND obm.bill_date <= ?
+                     ORDER BY obm.bill_date DESC, obm.bill_time DESC LIMIT 1",
+                    [$patientId, $targetDate]
+                );
+            }
 
             if ($sameDocBill) {
                 $targetTime = strtotime($targetDate);
@@ -738,12 +739,28 @@ class OpdBillingModel
                 if ($daysDiff >= 0 && $daysDiff <= 3) {
                     $isFollowup = true;
                     $fee = 300.00;
+                } else {
+                    $isFollowup = false;
+                    $fee = $docDefaultFee;
                 }
+            } else {
+                $isFollowup = false;
+                $fee = $docDefaultFee;
+            }
+
+            if (!empty($currentDocName)) {
+                $consultations[] = [
+                    'appointment_id'   => '',
+                    'doctor_id'        => $currentDocId,
+                    'doctor_name'      => $currentDocName,
+                    'consultation_fee' => $fee,
+                    'is_followup'      => $isFollowup
+                ];
             }
         }
 
         return [
-            'fee'                  => $fee,
+            'fee'                  => $fee > 0 ? $fee : $docDefaultFee,
             'is_followup'          => $isFollowup,
             'is_registration_paid' => $isRegistrationPaid,
             'consultations'        => $consultations
@@ -763,26 +780,36 @@ class OpdBillingModel
                     p.age,
                     p.sex,
                     p.blood_group,
-                    COALESCE(a.appointment_id, CONCAT('NOAPT-', p.patient_id)) as appointment_id,
-                    COALESCE(a.appointment_date, obm.last_date) as appointment_date,
-                    COALESCE(a.appointment_time, obm.last_time) as appointment_time,
-                    COALESCE(a.doctor_id, obm.last_doctor_id) as doctor_id,
-                    COALESCE(a.doctor_name, obm.last_doctor_name) as doctor_name,
-                    d.consultation_fee as doctor_fee,
-                    a.reason,
-                    a.appointment_type,
-                    COALESCE(a.appointment_status, obm.last_status) as appointment_status
+                    COALESCE(today_apt.appointment_id, CONCAT('NOAPT-', p.patient_id)) as appointment_id,
+                    COALESCE(today_apt.appointment_date, CURDATE()) as appointment_date,
+                    COALESCE(today_apt.appointment_time, obm.last_time) as appointment_time,
+                    COALESCE(today_apt.doctor_id, obm.last_doctor_id) as doctor_id,
+                    COALESCE(today_apt.doctor_name, obm.last_doctor_name) as doctor_name,
+                    COALESCE(d.consultation_fee, 500.00) as doctor_fee,
+                    today_apt.reason,
+                    today_apt.appointment_type,
+                    COALESCE(today_apt.appointment_status, 'Walk-in') as appointment_status,
+                    last_apt.appointment_date as last_appointment_date,
+                    obm.last_date as last_bill_date
                 FROM patient p
                 LEFT JOIN (
-                    -- Get latest appointment per patient
+                    -- ONLY match appointment if scheduled for TODAY and not cancelled
                     SELECT a1.*
                     FROM appointments a1
                     JOIN (
-                        SELECT patient_id, MAX(appointment_date) as max_date, MAX(appointment_id) as max_id
+                        SELECT patient_id, MAX(appointment_id) as max_id
                         FROM appointments
+                        WHERE appointment_date = CURDATE() AND appointment_status != 'Cancelled'
                         GROUP BY patient_id
                     ) a2 ON BINARY a1.patient_id = BINARY a2.patient_id AND BINARY a1.appointment_id = BINARY a2.max_id
-                ) a ON BINARY p.patient_id = BINARY a.patient_id
+                ) today_apt ON BINARY p.patient_id = BINARY today_apt.patient_id
+                LEFT JOIN (
+                    -- Latest past appointment date for historical reference
+                    SELECT patient_id, MAX(appointment_date) as appointment_date
+                    FROM appointments
+                    WHERE appointment_status != 'Cancelled'
+                    GROUP BY patient_id
+                ) last_apt ON BINARY p.patient_id = BINARY last_apt.patient_id
                 LEFT JOIN (
                     -- Get latest bill per patient
                     SELECT obm1.patient_id, obm1.doctor_id as last_doctor_id, obm1.doctor_name as last_doctor_name, 
@@ -794,13 +821,13 @@ class OpdBillingModel
                         GROUP BY patient_id
                     ) obm2 ON BINARY obm1.bill_id = BINARY obm2.max_bill_id
                 ) obm ON BINARY p.patient_id = BINARY obm.patient_id
-                LEFT JOIN doctors d ON BINARY d.doctor_id = BINARY COALESCE(a.doctor_id, obm.last_doctor_id)
+                LEFT JOIN doctors d ON BINARY d.doctor_id = BINARY COALESCE(today_apt.doctor_id, obm.last_doctor_id)
                 WHERE (
                     p.patient_id LIKE ? OR
                     p.phone LIKE ? OR
                     TRIM(CONCAT(p.first_name, ' ', IFNULL(p.last_name, ''))) LIKE ?
                 )
-                ORDER BY COALESCE(a.appointment_date, obm.last_date) DESC, p.patient_id ASC
+                ORDER BY (today_apt.appointment_id IS NOT NULL) DESC, COALESCE(last_apt.appointment_date, obm.last_date) DESC, p.patient_id ASC
                 LIMIT 20";
         return $this->db->fetchAll($sql, [$like, $like, $like]);
     }
@@ -968,6 +995,7 @@ class OpdBillingModel
             
             $paymentMethodSql = "SELECT 
                 IFNULL(payment_mode, 'Unspecified') as method,
+                COUNT(*) as count,
                 SUM(amount_paid) as total
             FROM opd_billing_master 
             $paymentMethodWhere
@@ -1791,8 +1819,7 @@ class OpdBillingModel
                 [$status, $auditNote, $billId]
             );
 
-            // Log billing action
-            $this->logBillingAction($billId, $status, $auditNote);
+            // Commit transaction
 
             $this->db->commit();
             return true;

@@ -262,36 +262,6 @@ class ConsultationController extends BaseController {
             // Perform consultation insert
             $this->db->insert('consultations', $consultationInsertData);
 
-            // Create an 'Active' prescription for completed consultations
-            // We create a record if there are medicines OR if there are other clinical details suitable for a prescription/report
-            $hasMedicines = ($medicines && !empty(json_decode($medicines, true)));
-            $hasClinicalDetails = !empty($data['diagnosis']) || !empty($generalInstructions) || !empty($followUpInstructions) || !empty($data['soap_plan']);
-
-            if ($hasMedicines || $hasClinicalDetails) {
-                $prescriptionId = 'RX-' . $today . '-' . $newSequence;
-                $prescriptionData = [
-                    'prescription_id' => $prescriptionId,
-                    'patient_id' => $data['patient_id'],
-                    'doctor_id' => $data['doctor_id'],
-                    'appointment_id' => $data['appointment_id'] ?? null,
-                    'medicines' => $medicines,
-                    'diagnosis' => $data['diagnosis'] ?? $data['soap_assessment'] ?? 'General Consultation',
-                    'general_instructions' => $generalInstructions,
-                    'dietary_advice' => $dietaryAdvice,
-                    'follow_up_date' => $data['follow_up_date'] ?? null,
-                    'follow_up_instructions' => $followUpInstructions,
-                    'prescription_date' => date('Y-m-d'),
-                    'status' => '1' // '1' represents 'Active' status
-                ];
-                
-                try {
-                    $this->db->insert('prescriptions', $prescriptionData);
-                    error_log("Prescription $prescriptionId created for consultation " . $data['consultation_id']);
-                } catch (Exception $e) {
-                    error_log("Prescription insert failed: " . $e->getMessage());
-                }
-            }
-
             // --- UPDATE APPOINTMENT STATUS TO 0 (INACTIVE) ---
             $targetAptId = $data['appointment_id'] ?? null;
             

@@ -178,26 +178,30 @@ class IpdBillingMaster extends BaseModel {
                     TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.age, p.sex, p.phone, p.address,
                     COALESCE(d.full_name, '') AS doctor_name, d.specialization,
-                    hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
+                    COALESCE(hb.ward_name, ia.ward_name, '') AS ward_name,
+                    COALESCE(hb.room_name, ia.room_name, '') AS room_name,
+                    COALESCE(hb.bed_number, '') AS bed_number,
+                    COALESCE(hb.room_type, ia.room_type, '') AS room_type,
+                    COALESCE(hb.room_number, ia.room_no, '') AS room_no,
                     hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
                     ia.admission_id AS adm_id, ia.bed_id, ia.sponsor, ia.total_bed_amount AS adm_total_bed_amount,
                     COALESCE(ia.admission_date, bm.admission_date) AS admission_date,
                     COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date,
-                    COALESCE(ins.insurance_type, bm.bill_type) AS insurance_type,
-                    COALESCE(ins.company_name, bm.sponsor, '') AS insurance_company_name,
-                    COALESCE(ins.tpa_name, '') AS tpa_name,
-                    COALESCE(ins.policy_number, bm.policy_number, '') AS policy_number,
-                    COALESCE(ins.claim_number, '') AS claim_number,
-                    COALESCE(ins.approval_number, bm.approval_number, '') AS approval_number,
-                    COALESCE(ins.approved_amount, bm.insurance_approved_amount, 0) AS insurance_approved_amount,
-                    COALESCE(ins.patient_payable, bm.patient_payable, 0) AS patient_payable,
-                    COALESCE(ins.claim_status, 'PENDING') AS insurance_claim_status
+                    CASE WHEN bm.bill_type = 'SELF' THEN 'SELF' ELSE COALESCE(ins.insurance_type, bm.bill_type) END AS insurance_type,
+                    CASE WHEN bm.bill_type = 'SELF' THEN '' ELSE COALESCE(ins.company_name, bm.sponsor, '') END AS insurance_company_name,
+                    CASE WHEN bm.bill_type = 'SELF' THEN '' ELSE COALESCE(ins.tpa_name, '') END AS tpa_name,
+                    CASE WHEN bm.bill_type = 'SELF' THEN '' ELSE COALESCE(ins.policy_number, bm.policy_number, '') END AS policy_number,
+                    CASE WHEN bm.bill_type = 'SELF' THEN '' ELSE COALESCE(ins.claim_number, '') END AS claim_number,
+                    CASE WHEN bm.bill_type = 'SELF' THEN '' ELSE COALESCE(ins.approval_number, bm.approval_number, '') END AS approval_number,
+                    CASE WHEN bm.bill_type = 'SELF' THEN 0 ELSE COALESCE(ins.approved_amount, bm.insurance_approved_amount, 0) END AS insurance_approved_amount,
+                    CASE WHEN bm.bill_type = 'SELF' THEN 0 ELSE COALESCE(ins.patient_payable, bm.patient_payable, 0) END AS patient_payable,
+                    CASE WHEN bm.bill_type = 'SELF' THEN 'NONE' ELSE COALESCE(ins.claim_status, 'PENDING') END AS insurance_claim_status
              FROM ipd_billing_master bm
              LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
              LEFT JOIN patient p ON COALESCE(ia.patient_id, bm.patient_id) = p.patient_id
              LEFT JOIN doctors d ON COALESCE(ia.admitting_doctor_id, bm.doctor_id) = d.doctor_id
              LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
-             LEFT JOIN ipd_insurance ins ON bm.bill_id = ins.bill_id
+             LEFT JOIN ipd_insurance ins ON (bm.bill_id = ins.bill_id AND ins.claim_status != 'CANCELLED')
              WHERE bm.bill_id = ?",
             [$billId]
         );
@@ -214,26 +218,30 @@ class IpdBillingMaster extends BaseModel {
                     TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS patient_name,
                     p.age, p.sex, p.phone,
                     COALESCE(d.full_name, '') AS doctor_name,
-                    hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
+                    COALESCE(hb.ward_name, ia.ward_name, '') AS ward_name,
+                    COALESCE(hb.room_name, ia.room_name, '') AS room_name,
+                    COALESCE(hb.bed_number, '') AS bed_number,
+                    COALESCE(hb.room_type, ia.room_type, '') AS room_type,
+                    COALESCE(hb.room_number, ia.room_no, '') AS room_no,
                     hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
                     ia.referral_type, ia.referral_name, ia.sponsor, ia.total_bed_amount AS adm_total_bed_amount,
                     COALESCE(ia.admission_date, bm.admission_date) AS admission_date,
                     COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date,
-                    COALESCE(ins.insurance_type, bm.bill_type) AS insurance_type,
-                    COALESCE(ins.company_name, bm.sponsor, '') AS insurance_company_name,
-                    COALESCE(ins.tpa_name, '') AS tpa_name,
-                    COALESCE(ins.policy_number, bm.policy_number, '') AS policy_number,
-                    COALESCE(ins.claim_number, '') AS claim_number,
-                    COALESCE(ins.approval_number, bm.approval_number, '') AS approval_number,
-                    COALESCE(ins.approved_amount, bm.insurance_approved_amount, 0) AS insurance_approved_amount,
-                    COALESCE(ins.patient_payable, bm.patient_payable, 0) AS patient_payable,
-                    COALESCE(ins.claim_status, 'PENDING') AS insurance_claim_status
+                    CASE WHEN bm.bill_type = 'SELF' THEN 'SELF' ELSE COALESCE(ins.insurance_type, bm.bill_type) END AS insurance_type,
+                    CASE WHEN bm.bill_type = 'SELF' THEN '' ELSE COALESCE(ins.company_name, bm.sponsor, '') END AS insurance_company_name,
+                    CASE WHEN bm.bill_type = 'SELF' THEN '' ELSE COALESCE(ins.tpa_name, '') END AS tpa_name,
+                    CASE WHEN bm.bill_type = 'SELF' THEN '' ELSE COALESCE(ins.policy_number, bm.policy_number, '') END AS policy_number,
+                    CASE WHEN bm.bill_type = 'SELF' THEN '' ELSE COALESCE(ins.claim_number, '') END AS claim_number,
+                    CASE WHEN bm.bill_type = 'SELF' THEN '' ELSE COALESCE(ins.approval_number, bm.approval_number, '') END AS approval_number,
+                    CASE WHEN bm.bill_type = 'SELF' THEN 0 ELSE COALESCE(ins.approved_amount, bm.insurance_approved_amount, 0) END AS insurance_approved_amount,
+                    CASE WHEN bm.bill_type = 'SELF' THEN 0 ELSE COALESCE(ins.patient_payable, bm.patient_payable, 0) END AS patient_payable,
+                    CASE WHEN bm.bill_type = 'SELF' THEN 'NONE' ELSE COALESCE(ins.claim_status, 'PENDING') END AS insurance_claim_status
              FROM ipd_billing_master bm
              LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
              LEFT JOIN patient p ON COALESCE(ia.patient_id, bm.patient_id) = p.patient_id
              LEFT JOIN doctors d ON COALESCE(ia.admitting_doctor_id, bm.doctor_id) = d.doctor_id
              LEFT JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
-             LEFT JOIN ipd_insurance ins ON bm.bill_id = ins.bill_id
+             LEFT JOIN ipd_insurance ins ON (bm.bill_id = ins.bill_id AND ins.claim_status != 'CANCELLED')
              WHERE bm.admission_id = ?",
             [$admissionId]
         );
@@ -291,7 +299,7 @@ class IpdBillingMaster extends BaseModel {
 
         // Step 3: Get current discount and payments from master
         $master = $this->fetchOne(
-            "SELECT discount_amount, discount_percentage, insurance_approved_amount, amount_paid, advance_amount, insurance_received_amount FROM ipd_billing_master WHERE bill_id = ?",
+            "SELECT admission_id, bill_type, sponsor, discount_amount, discount_percentage, insurance_approved_amount, amount_paid, advance_amount, insurance_received_amount FROM ipd_billing_master WHERE bill_id = ?",
             [$billId]
         );
         $discountAmt = (float)($master['discount_amount'] ?? 0);
@@ -301,7 +309,7 @@ class IpdBillingMaster extends BaseModel {
         }
         $grandTotal = max(0, $subtotal - $discountAmt);
 
-        // Step 3.5: Auto-heal any dummy payment rows created by the previous inline payment mode='INSURANCE' bug
+        // Step 3.5: Auto-heal any dummy payment rows created by previous bugs & stale insurance rows for self bills
         try {
             $this->db->execute(
                 "DELETE FROM ipd_payment 
@@ -310,6 +318,16 @@ class IpdBillingMaster extends BaseModel {
                    AND (remarks LIKE 'Sponsor:%' OR remarks LIKE '%(INSURANCE)%' OR remarks LIKE '%(TPA)%')",
                 [$billId]
             );
+
+            if (($master['bill_type'] ?? 'SELF') === 'SELF') {
+                $this->db->execute("DELETE FROM ipd_insurance WHERE bill_id = ?", [$billId]);
+                if (!empty($master['sponsor'])) {
+                    $this->db->execute("UPDATE ipd_billing_master SET sponsor = NULL, insurance_company_id = NULL, policy_number = NULL, approval_number = NULL, insurance_approved_amount = 0, insurance_received_amount = 0, patient_payable = 0 WHERE bill_id = ?", [$billId]);
+                }
+                if (!empty($master['admission_id'])) {
+                    $this->db->execute("UPDATE ipd_admissions SET sponsor = NULL, admission_type = 'Cash', credit_type = 'CASH' WHERE admission_id = ? AND (sponsor = 'SELF' OR sponsor IS NULL)", [$master['admission_id']]);
+                }
+            }
         } catch (\Throwable $e) {}
 
         // Step 4: Payment totals from ipd_payment if available, fallback to master
@@ -339,20 +357,21 @@ class IpdBillingMaster extends BaseModel {
         }
 
         // Step 5: Insurance
-        $insApproved = (float)($master['insurance_approved_amount'] ?? 0);
-        
-        // Re-fetch from ipd_insurance if table exists (handled gracefully by skipping if error)
-        try {
-            $insRow = $this->fetchOne("SELECT approved_amount, received_amount FROM ipd_insurance WHERE bill_id = ?", [$billId]);
-            if ($insRow) {
-                $insApproved = (float)$insRow['approved_amount'];
-                if ((float)$insRow['received_amount'] > $insReceived) {
-                    $insReceived = (float)$insRow['received_amount'];
+        $insApproved = 0;
+        $patientPayable = 0;
+        if (($master['bill_type'] ?? 'SELF') !== 'SELF') {
+            $insApproved = (float)($master['insurance_approved_amount'] ?? 0);
+            try {
+                $insRow = $this->fetchOne("SELECT approved_amount, received_amount FROM ipd_insurance WHERE bill_id = ? AND claim_status != 'CANCELLED'", [$billId]);
+                if ($insRow) {
+                    $insApproved = (float)$insRow['approved_amount'];
+                    if ((float)$insRow['received_amount'] > $insReceived) {
+                        $insReceived = (float)$insRow['received_amount'];
+                    }
                 }
-            }
-        } catch (\Exception $e) {}
-        
-        $patientPayable = max(0, $grandTotal - $insApproved);
+            } catch (\Exception $e) {}
+            $patientPayable = max(0, $grandTotal - $insApproved);
+        }
 
         // Step 6: Balance
         $balanceDue = max(0, $grandTotal - $amountPaid - $insReceived);
@@ -451,7 +470,18 @@ class IpdBillingMaster extends BaseModel {
             $data['approval_number']      = $insuranceData['approval_number']      ?? null;
             $data['insurance_approved_amount'] = $insuranceData['approved_amount'] ?? 0;
         } else {
-            $data['sponsor'] = 'SELF';
+            $data['sponsor'] = null;
+            $data['insurance_company_id'] = null;
+            $data['policy_number'] = null;
+            $data['approval_number'] = null;
+            $data['insurance_approved_amount'] = 0;
+            $data['insurance_received_amount'] = 0;
+            $data['patient_payable'] = 0;
+
+            // Remove insurance table row for this bill
+            try {
+                $this->db->execute("DELETE FROM ipd_insurance WHERE bill_id = ?", [$billId]);
+            } catch (\Throwable $e) {}
         }
         $this->db->update('ipd_billing_master', $data, "`bill_id` = ?", [$billId]);
 
@@ -459,13 +489,11 @@ class IpdBillingMaster extends BaseModel {
         $bm = $this->fetchOne("SELECT admission_id FROM ipd_billing_master WHERE bill_id = ?", [$billId]);
         if (!empty($bm['admission_id'])) {
             $admUpdate = [
-                'admission_type' => ($billType === 'SELF' ? 'General' : 'Insurance'),
-                'credit_type'    => ($billType === 'SELF' ? 'SELF' : 'INSURANCE'),
+                'admission_type' => ($billType === 'SELF' ? 'Cash' : 'Insurance'),
+                'credit_type'    => ($billType === 'SELF' ? 'CASH' : 'INSURANCE'),
                 'updated_at'     => $now
             ];
-            if (!empty($data['sponsor'])) {
-                $admUpdate['sponsor'] = $data['sponsor'];
-            }
+            $admUpdate['sponsor'] = ($billType === 'SELF' ? null : ($data['sponsor'] ?? null));
             $this->db->update('ipd_admissions', $admUpdate, "`admission_id` = ?", [$bm['admission_id']]);
         }
 

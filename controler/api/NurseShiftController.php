@@ -14,7 +14,7 @@
  *      date_from  (date)   - Shift date from YYYY-MM-DD
  *      date_to    (date)   - Shift date to YYYY-MM-DD
  *      ward       (string) - Filter by ward name
- *    Response: [ { id, role_id, nurse_name, shift_date, shift_type, ward_name, status } ]
+ *    Response: [ { id, role_id, nurse_name, nurse_designation, shift_date, shift_type, ward_name, status } ]
  *
  * 2. POST /api/nurse-shifts        [Required: role_id, shift_date_from, shift_date_to, shift_type, ward_name]
  *    Creates shifts for a date range (one shift per day in range)
@@ -96,9 +96,9 @@ class NurseShiftController extends BaseController
             $dateTo = $_GET['date_to'] ?? null;
             $ward = $_GET['ward'] ?? null;
 
-            $sql = "SELECT na.*, r.role_name as nurse_name
+            $sql = "SELECT na.*, s.full_name as nurse_name, s.designation as nurse_designation
                     FROM nurse_allocation na
-                    LEFT JOIN roles r ON na.role_id = r.sl_no
+                    LEFT JOIN staff s ON na.role_id = s.sl_no
                     WHERE 1=1";
             $params = [];
 
@@ -214,7 +214,7 @@ class NurseShiftController extends BaseController
 
     /**
      * GET /api/nurse-shifts/nurses
-     * Get all roles for the allocation dropdown
+     * Get all active nurses from staff table for the allocation dropdown
      */
     public function getNurses()
     {

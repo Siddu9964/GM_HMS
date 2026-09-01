@@ -286,11 +286,10 @@ class PrescriptionModel
                 ORDER BY c.consultation_date DESC, c.consultation_time DESC LIMIT ?";
 
         $prescriptions = $this->db->fetchAll($sql, [$limit]);
-        $settings = $this->getSystemSettings();
         foreach ($prescriptions as &$p) {
             $p['prescription_image_url'] = $this->normalizeWebUrl($p['prescription_image'] ?? null);
             $p['has_prescription_image'] = !empty($p['prescription_image_url']);
-            
+
             // Extract medicines array and plan_text
             $parsedPlan = $this->parseSoapPlanData($p['soap_plan'] ?? null);
             $p['medicines'] = $parsedPlan['medicines'];
@@ -303,11 +302,11 @@ class PrescriptionModel
                 if (is_array($v)) $p['parsed_vitals'] = $v;
             }
 
-            $p['hospital_name'] = $settings['system_name'] ?? 'GM HMS Multispeciality';
-            $p['hospital_logo'] = $settings['institution_logo'] ?? null;
-            $p['hospital_address'] = $settings['address'] ?? 'Main Road, Health City';
-            $p['hospital_phone'] = $settings['phone'] ?? '+91 98765 43210';
-            $p['hospital_email'] = $settings['email'] ?? 'contact@gmhms.com';
+            $p['hospital_name'] = 'GM HMS Multispeciality';
+            $p['hospital_logo'] = null;
+            $p['hospital_address'] = 'Main Road, Health City';
+            $p['hospital_phone'] = '+91 98765 43210';
+            $p['hospital_email'] = 'contact@gmhms.com';
         }
 
         return $prescriptions;
@@ -338,48 +337,16 @@ class PrescriptionModel
             $p['medicines'] = $parsedPlan['medicines'];
             $p['plan_text'] = $parsedPlan['plan_text'];
             $p['prescription_image_url'] = $this->normalizeWebUrl($p['prescription_image']);
-            $settings = $this->getSystemSettings();
-            $p['hospital_name'] = $settings['system_name'] ?? 'GM HMS Multispeciality';
-            $p['hospital_logo'] = $settings['institution_logo'] ?? null;
-            $p['hospital_address'] = $settings['address'] ?? 'Main Road, Health City';
-            $p['hospital_phone'] = $settings['phone'] ?? '+91 98765 43210';
-            $p['hospital_email'] = $settings['email'] ?? 'contact@gmhms.com';
+            $p['hospital_name'] = 'GM HMS Multispeciality';
+            $p['hospital_logo'] = null;
+            $p['hospital_address'] = 'Main Road, Health City';
+            $p['hospital_phone'] = '+91 98765 43210';
+            $p['hospital_email'] = 'contact@gmhms.com';
         }
         return $p;
     }
 
-    public function getSystemSettings()
-    {
-        $sql = "SELECT type, description FROM settings";
-        $results = $this->db->fetchAll($sql);
-        $settings = [];
-        foreach ($results as $row) {
-            $settings[$row['type']] = $row['description'];
-        }
-        return $settings;
-    }
 
-    public function logPrintActivity($prescriptionId, $userId)
-    {
-        $sql = "INSERT INTO audit_logs (event_type, event_category, severity, resource, action, user_id, ip_address, request_data) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-
-        $requestData = json_encode([
-            'prescription_id' => $prescriptionId,
-            'timestamp' => date('Y-m-d H:i:s')
-        ]);
-
-        return $this->db->execute($sql, [
-            'PRINT',
-            'Clinical',
-            'Info',
-            'Prescriptions',
-            'PRINT_PRESCRIPTION',
-            $userId,
-            $_SERVER['REMOTE_ADDR'] ?? 'unknown',
-            $requestData
-        ]);
-    }
 
     public function calculateAge($birthDate)
     {

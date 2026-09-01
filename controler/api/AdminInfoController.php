@@ -691,15 +691,9 @@ class AdminInfoController extends BaseController {
             // OPD Revenue (opd_billing_master)
             $opdRevenueTodayRes = $this->db->fetchOne("SELECT COALESCE(SUM(amount_paid), 0) as total FROM opd_billing_master WHERE DATE(bill_date) = CURDATE() OR DATE(created_at) = CURDATE()");
             $opdRevenueToday = (float)($opdRevenueTodayRes['total'] ?? 0);
-            if ($opdRevenueToday <= 0) {
-                $opdRevenueToday = (float)($this->db->fetchOne("SELECT COALESCE(SUM(amount), 0) as total FROM opd_invoice WHERE DATE(date) = CURDATE()")['total'] ?? 0);
-            }
 
             $opdRevenueMonthRes = $this->db->fetchOne("SELECT COALESCE(SUM(amount_paid), 0) as total FROM opd_billing_master WHERE MONTH(COALESCE(bill_date, created_at)) = MONTH(CURDATE()) AND YEAR(COALESCE(bill_date, created_at)) = YEAR(CURDATE())");
             $opdRevenueMonth = (float)($opdRevenueMonthRes['total'] ?? 0);
-            if ($opdRevenueMonth <= 0) {
-                $opdRevenueMonth = (float)($this->db->fetchOne("SELECT COALESCE(SUM(amount), 0) as total FROM opd_invoice WHERE MONTH(date) = MONTH(CURDATE()) AND YEAR(date) = YEAR(CURDATE())")['total'] ?? 0);
-            }
 
             // IPD Revenue (ipd_billing_master collections)
             $ipdRevenueToday = 0;
@@ -998,11 +992,11 @@ class AdminInfoController extends BaseController {
                 ];
             }
 
-            // OPD monthly revenue
-            $opdRevSql = "SELECT DATE_FORMAT(date, '%Y-%m') as month_key, 
-                                 COALESCE(SUM(amount), 0) as amount 
-                          FROM opd_invoice 
-                          WHERE date >= DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 5 MONTH)
+            // OPD monthly revenue (from opd_billing_master)
+            $opdRevSql = "SELECT DATE_FORMAT(COALESCE(bill_date, created_at), '%Y-%m') as month_key, 
+                                 COALESCE(SUM(amount_paid), 0) as amount 
+                          FROM opd_billing_master 
+                          WHERE COALESCE(bill_date, created_at) >= DATE_SUB(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 5 MONTH)
                           GROUP BY month_key";
             $opdRevData = $this->db->fetchAll($opdRevSql);
             foreach ($opdRevData as $row) {

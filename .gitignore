@@ -4,8 +4,8 @@ logs/*
 scratch_test_key.php
 
 # Asset folders with uploaded images (not tracked in Git)
-assets/Doctors/
-assets/images/
-assets/po_item/
-assets/precision_data/
-assets/profile_photos/
+# assets/Doctors/
+# assets/images/
+# assets/po_item/
+# assets/precision_data/
+# assets/profile_photos/

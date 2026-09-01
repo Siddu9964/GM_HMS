@@ -15,7 +15,7 @@ try {
     
     $status = $_GET['status'] ?? 'PENDING';
     
-    $sql = "SELECT r.*, p.first_name, p.last_name, a.ward, a.room_no, a.bed_id 
+    $sql = "SELECT r.*, p.first_name, p.last_name, a.ward_name, a.room_no, a.bed_id 
             FROM ipd_pharmacy_return_requests r
             JOIN patient p ON r.patient_id COLLATE utf8mb4_unicode_ci = p.patient_id COLLATE utf8mb4_unicode_ci
             JOIN ipd_admissions a ON r.admission_id COLLATE utf8mb4_unicode_ci = a.admission_id COLLATE utf8mb4_unicode_ci

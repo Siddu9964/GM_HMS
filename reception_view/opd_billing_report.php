@@ -64,6 +64,198 @@ $pageTitle = 'OPD Billing Report';
         
         .dt-buttons .dt-button { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; color: #475569; font-weight: 600; padding: 6px 12px; }
         .dt-buttons .dt-button:hover { background: #e2e8f0; }
+
+        /* Premium Payment Modes Styling */
+        .paymodes-overview-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px 22px;
+            margin-bottom: 22px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        }
+        .paymodes-ratio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .paymodes-ratio-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .paymodes-ratio-labels {
+            display: flex;
+            gap: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .paymodes-ratio-bar {
+            height: 12px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            width: 100%;
+            border: 1px solid #e2e8f0;
+        }
+        .paymodes-ratio-seg-cash {
+            background: linear-gradient(90deg, #10b981, #059669);
+            height: 100%;
+            transition: width 0.6s ease;
+        }
+        .paymodes-ratio-seg-digital {
+            background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+            height: 100%;
+            transition: width 0.6s ease;
+        }
+        .paymodes-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+        .pm-card {
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            position: relative;
+        }
+        .pm-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            border-color: #cbd5e1;
+        }
+        .pm-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .pm-icon-wrap {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        .pm-share-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 12px;
+        }
+        .pm-mode-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .pm-mode-amount {
+            font-size: 1.55rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+        .pm-progress-track {
+            height: 6px;
+            background: #f1f5f9;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .pm-progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        .pm-meta-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            color: #64748b;
+            padding-top: 10px;
+            border-top: 1px dashed #e2e8f0;
+        }
+        .pm-meta-footer strong {
+            color: #334155;
+        }
+        .pm-table-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        }
+        .pm-table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .pm-table-header h3 {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .pm-contrib-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .pm-contrib-bar {
+            flex: 1;
+            height: 8px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .pm-contrib-fill {
+            height: 100%;
+            border-radius: 4px;
+        }
+        .pm-filter-chip {
+            padding: 4px 10px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .pm-filter-chip:hover {
+            background: #1f6b4a;
+            color: white;
+            border-color: #1f6b4a;
+        }
         
         /* Modal */
         .modal-overlay { z-index: 1000; backdrop-filter: blur(4px); background: rgba(15, 23, 42, 0.4); position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: none; justify-content: center; align-items: center; }
@@ -92,10 +284,13 @@ $pageTitle = 'OPD Billing Report';
                 <div class="filter-group">
                     <label>Date Range Preset</label>
                     <select id="datePreset" onchange="updateDatePreset()">
+                        <option value="last30" selected>Last 30 Days</option>
+                        <option value="thismonth">This Month</option>
+                        <option value="lastmonth">Last Month</option>
+                        <option value="last7">Last 7 Days</option>
                         <option value="today">Today</option>
                         <option value="yesterday">Yesterday</option>
-                        <option value="last7">Last 7 Days</option>
-                        <option value="thismonth" selected>This Month</option>
+                        <option value="all">All Time</option>
                         <option value="custom">Custom Range</option>
                     </select>
                 </div>
@@ -222,20 +417,51 @@ $pageTitle = 'OPD Billing Report';
                     </div>
                 </div>
 
-                <!-- Tab 4: Payment Modes -->
+                <!-- Tab 4: Payment Modes (No Graph - Modern Cards & Matrix Grid) -->
                 <div id="tab-payment-modes" class="tab-content">
-                    <div class="charts-grid">
-                        <div class="chart-card">
-                            <h3>Payment Mode Distribution (₹)</h3>
-                            <canvas id="paymentModeChart" height="150"></canvas>
+                    <!-- Cash vs Digital Ratio Banner -->
+                    <div class="paymodes-overview-card">
+                        <div class="paymodes-ratio-header">
+                            <div class="paymodes-ratio-title">
+                                <i class="fas fa-layer-group" style="color: #1f6b4a;"></i> Collections Mix & Settlement Ratio
+                            </div>
+                            <div class="paymodes-ratio-labels">
+                                <span style="color: #059669; display: flex; align-items: center; gap: 6px;">
+                                    <i class="fas fa-money-bill-wave"></i> Cash: <strong id="pmRatioCashVal">₹0.00 (0%)</strong>
+                                </span>
+                                <span style="color: #2563eb; display: flex; align-items: center; gap: 6px;">
+                                    <i class="fas fa-bolt"></i> Digital & Online: <strong id="pmRatioDigitalVal">₹0.00 (0%)</strong>
+                                </span>
+                            </div>
                         </div>
-                        <div class="dataTable-wrapper chart-card" style="margin-top: 0;">
-                            <h3>Breakdown</h3>
+                        <div class="paymodes-ratio-bar">
+                            <div class="paymodes-ratio-seg-cash" id="pmRatioCashBar" style="width: 0%;" title="Cash"></div>
+                            <div class="paymodes-ratio-seg-digital" id="pmRatioDigitalBar" style="width: 0%;" title="Digital"></div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Mode Dynamic Cards Grid -->
+                    <div class="paymodes-cards-grid" id="paymentModeCardsGrid">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+
+                    <!-- Payment Mode Detailed Settlement Matrix Table -->
+                    <div class="pm-table-card">
+                        <div class="pm-table-header">
+                            <h3><i class="fas fa-table-list" style="color: #1f6b4a;"></i> Channel Performance & Settlement Matrix</h3>
+                            <span style="font-size: 0.85rem; color: #64748b; font-weight: 600;" id="pmTotalSummaryLabel">Total Collection: ₹0.00</span>
+                        </div>
+                        <div class="dataTable-wrapper">
                             <table class="display" style="width:100%" id="paymentModeTable">
                                 <thead>
                                     <tr>
-                                        <th>Mode</th>
-                                        <th>Amount (₹)</th>
+                                        <th>Channel / Mode</th>
+                                        <th>Settlement Type</th>
+                                        <th style="text-align:center;">Transactions</th>
+                                        <th style="text-align:right;">Avg Ticket (₹)</th>
+                                        <th style="width: 25%;">Contribution Share</th>
+                                        <th style="text-align:right;">Total Collected (₹)</th>
+                                        <th style="text-align:center; width: 80px;">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="paymentModeTbody">
@@ -279,7 +505,6 @@ $pageTitle = 'OPD Billing Report';
 <script>
     let billsDataTable;
     let timelineChartInstance = null;
-    let paymentChartInstance = null;
 
     $(document).ready(function() {
         // Init dates
@@ -312,25 +537,33 @@ $pageTitle = 'OPD Billing Report';
         let start = new Date();
         let end = new Date();
 
-        if (preset === 'today') {
+        if (preset === 'all') {
+            startInput.value = '';
+            endInput.value = '';
+            return;
+        } else if (preset === 'last30') {
+            start.setDate(start.getDate() - 30);
+        } else if (preset === 'lastmonth') {
+            // First day of previous month to last day of previous month
+            start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            end = new Date(today.getFullYear(), today.getMonth(), 0);
+        } else if (preset === 'thismonth') {
+            start = new Date(today.getFullYear(), today.getMonth(), 1);
+        } else if (preset === 'last7') {
+            start.setDate(start.getDate() - 7);
+        } else if (preset === 'today') {
             // keep today
         } else if (preset === 'yesterday') {
             start.setDate(start.getDate() - 1);
             end.setDate(end.getDate() - 1);
-        } else if (preset === 'last7') {
-            start.setDate(start.getDate() - 7);
-        } else if (preset === 'thismonth') {
-            start = new Date(today.getFullYear(), today.getMonth(), 1);
         } else if (preset === 'custom') {
             return; // Don't auto-set
         }
 
-        // Add 330 mins for IST timezone hack to avoid date drifting when formatting to ISO string
-        start.setMinutes(start.getMinutes() - start.getTimezoneOffset());
-        end.setMinutes(end.getMinutes() - end.getTimezoneOffset());
-
-        startInput.value = start.toISOString().split('T')[0];
-        endInput.value = end.toISOString().split('T')[0];
+        // Format dates as YYYY-MM-DD using local time
+        const pad = n => String(n).padStart(2, '0');
+        startInput.value = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
+        endInput.value = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}`;
     }
 
     function fetchUsersList() {
@@ -351,11 +584,13 @@ $pageTitle = 'OPD Billing Report';
     }
 
     function getFilters() {
+        const sVal = document.getElementById('startDate').value;
+        const eVal = document.getElementById('endDate').value;
         return {
-            date_from: document.getElementById('startDate').value,
-            date_to: document.getElementById('endDate').value,
-            start_date: document.getElementById('startDate').value, // For analytics API
-            end_date: document.getElementById('endDate').value,     // For analytics API
+            date_from: sVal,
+            date_to: eVal,
+            start_date: sVal || '2000-01-01', // For analytics API fallback
+            end_date: eVal || '2099-12-31',     // For analytics API fallback
             created_by: document.getElementById('userFilter').value,
             receptionist: document.getElementById('userFilter').value, // For analytics API
             payment_mode: document.getElementById('paymentModeFilter').value
@@ -443,31 +678,213 @@ $pageTitle = 'OPD Billing Report';
         });
         document.getElementById('usersTbody').innerHTML = userHtml;
 
-        // Payment Modes
-        let payHtml = '';
-        const payLabels = [];
-        const payValues = [];
-        const payColors = ['#1f6b4a', '#2d8b63', '#3ba77b', '#53c596', '#12442e'];
-        
-        data.payment_methods.forEach((p, i) => {
-            payHtml += `<tr>
-                <td>${p.method}</td>
-                <td>₹${parseFloat(p.total).toFixed(2)}</td>
-            </tr>`;
-            payLabels.push(p.method);
-            payValues.push(p.total);
+        // Payment Modes (Modern Cards & Settlement Matrix without Graph)
+        let payCardsHtml = '';
+        let payTableHtml = '';
+        let totalCollectedAll = 0;
+        let cashTotal = 0;
+        let digitalTotal = 0;
+
+        // Calculate grand sum of collected payments
+        const paymentList = data.payment_methods || [];
+        paymentList.forEach(p => {
+            const val = parseFloat(p.total || 0);
+            totalCollectedAll += val;
+            const modeClean = (p.method || '').trim().toLowerCase();
+            if (modeClean === 'cash') {
+                cashTotal += val;
+            } else {
+                digitalTotal += val;
+            }
         });
-        document.getElementById('paymentModeTbody').innerHTML = payHtml;
+
+        // Config map for payment mode theming
+        const modeThemeMap = {
+            'cash': {
+                icon: 'fas fa-money-bill-wave',
+                name: 'Cash',
+                category: 'Physical Cash',
+                color: '#10b981',
+                bg: '#ecfdf5',
+                border: '#a7f3d0'
+            },
+            'upi': {
+                icon: 'fas fa-qrcode',
+                name: 'UPI / QR Code',
+                category: 'Instant Digital',
+                color: '#6366f1',
+                bg: '#eef2ff',
+                border: '#c7d2fe'
+            },
+            'card': {
+                icon: 'fas fa-credit-card',
+                name: 'Card (Debit/Credit)',
+                category: 'Card POS',
+                color: '#0284c7',
+                bg: '#f0f9ff',
+                border: '#bae6fd'
+            },
+            'bank transfer': {
+                icon: 'fas fa-university',
+                name: 'Bank Transfer / NEFT',
+                category: 'Direct Bank',
+                color: '#0d9488',
+                bg: '#f0fdfa',
+                border: '#99f6e4'
+            },
+            'cheque': {
+                icon: 'fas fa-money-check-alt',
+                name: 'Cheque / DD',
+                category: 'Clearing Instrument',
+                color: '#d97706',
+                bg: '#fffbeb',
+                border: '#fde68a'
+            }
+        };
+
+        const defaultTheme = {
+            icon: 'fas fa-wallet',
+            name: 'Other',
+            category: 'Settlement',
+            color: '#7c3aed',
+            bg: '#f5f3ff',
+            border: '#ddd6fe'
+        };
+
+        // Update Ratio bar
+        const cashPct = totalCollectedAll > 0 ? ((cashTotal / totalCollectedAll) * 100).toFixed(1) : '0.0';
+        const digitalPct = totalCollectedAll > 0 ? ((digitalTotal / totalCollectedAll) * 100).toFixed(1) : '0.0';
+        
+        const cashRatioValEl = document.getElementById('pmRatioCashVal');
+        const digitalRatioValEl = document.getElementById('pmRatioDigitalVal');
+        const cashBarEl = document.getElementById('pmRatioCashBar');
+        const digitalBarEl = document.getElementById('pmRatioDigitalBar');
+        const totalSummaryEl = document.getElementById('pmTotalSummaryLabel');
+
+        if (cashRatioValEl) cashRatioValEl.textContent = `₹${cashTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${cashPct}%)`;
+        if (digitalRatioValEl) digitalRatioValEl.textContent = `₹${digitalTotal.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${digitalPct}%)`;
+        if (cashBarEl) cashBarEl.style.width = `${cashPct}%`;
+        if (digitalBarEl) digitalBarEl.style.width = `${digitalPct}%`;
+        if (totalSummaryEl) totalSummaryEl.textContent = `Total Collection: ₹${totalCollectedAll.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+        if (paymentList.length === 0) {
+            payCardsHtml = '<div style="grid-column: 1/-1; padding: 30px; text-align: center; color: #94a3b8; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;"><i class="fas fa-info-circle" style="font-size: 1.5rem; margin-bottom: 8px; display:block;"></i> No payment transactions recorded for the selected period.</div>';
+            payTableHtml = '<tr><td colspan="7" style="text-align: center; padding: 25px; color: #94a3b8;"><i class="fas fa-inbox" style="font-size: 1.5rem; margin-bottom: 6px; display:block;"></i>No payment records found.</td></tr>';
+        } else {
+            paymentList.forEach(p => {
+                const rawMethod = (p.method || 'Unspecified').trim();
+                const key = rawMethod.toLowerCase();
+                const theme = modeThemeMap[key] || { ...defaultTheme, name: rawMethod };
+                const amount = parseFloat(p.total || 0);
+                const count = parseInt(p.count || 0) || 1;
+                const sharePct = totalCollectedAll > 0 ? ((amount / totalCollectedAll) * 100).toFixed(1) : '0.0';
+                const avgTicket = count > 0 ? (amount / count) : amount;
+
+                // Card HTML
+                payCardsHtml += `
+                    <div class="pm-card" style="border-left: 4px solid ${theme.color};" onclick="filterByPaymentMode('${rawMethod}')" title="Click to filter by ${rawMethod}">
+                        <div>
+                            <div class="pm-card-top">
+                                <div class="pm-icon-wrap" style="background: ${theme.bg}; color: ${theme.color}; border: 1px solid ${theme.border};">
+                                    <i class="${theme.icon}"></i>
+                                </div>
+                                <span class="pm-share-badge" style="background: ${theme.bg}; color: ${theme.color}; border: 1px solid ${theme.border};">
+                                    ${sharePct}%
+                                </span>
+                            </div>
+                            <div class="pm-mode-name">${theme.name}</div>
+                            <div class="pm-mode-amount">₹${amount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                            <div class="pm-progress-track">
+                                <div class="pm-progress-fill" style="width: ${sharePct}%; background: ${theme.color};"></div>
+                            </div>
+                        </div>
+                        <div class="pm-meta-footer">
+                            <span><i class="fas fa-receipt"></i> <strong>${count}</strong> ${count === 1 ? 'Receipt' : 'Receipts'}</span>
+                            <span>Avg: <strong>₹${parseFloat(avgTicket).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</strong></span>
+                        </div>
+                    </div>
+                `;
+
+                // Table Row HTML
+                payTableHtml += `
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 34px; height: 34px; border-radius: 8px; background: ${theme.bg}; color: ${theme.color}; display: flex; align-items: center; justify-content: center; font-size: 1rem; border: 1px solid ${theme.border};">
+                                    <i class="${theme.icon}"></i>
+                                </div>
+                                <div>
+                                    <strong style="color: #1e293b;">${rawMethod}</strong>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span style="font-size: 0.82rem; color: #475569; background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-weight: 500;">${theme.category}</span></td>
+                        <td style="text-align: center; font-weight: 700; color: #334155;">${count}</td>
+                        <td style="text-align: right; color: #475569; font-weight: 500;">₹${parseFloat(avgTicket).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td>
+                            <div class="pm-contrib-bar-wrap">
+                                <div class="pm-contrib-bar">
+                                    <div class="pm-contrib-fill" style="width: ${sharePct}%; background: ${theme.color};"></div>
+                                </div>
+                                <span style="font-size: 0.8rem; font-weight: 700; color: #334155; min-width: 42px;">${sharePct}%</span>
+                            </div>
+                        </td>
+                        <td style="text-align: right; font-weight: 700; font-size: 0.98rem; color: #1e293b;">
+                            ₹${amount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </td>
+                        <td style="text-align: center;">
+                            <button class="pm-filter-chip" onclick="filterByPaymentMode('${rawMethod}')" title="Filter report by ${rawMethod}">
+                                <i class="fas fa-filter"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        const cardsGridEl = document.getElementById('paymentModeCardsGrid');
+        if (cardsGridEl) cardsGridEl.innerHTML = payCardsHtml;
+        const tbodyEl = document.getElementById('paymentModeTbody');
+        if (tbodyEl) tbodyEl.innerHTML = payTableHtml;
 
         // Charts
         renderTimelineChart(data.trends);
-        renderPaymentChart(payLabels, payValues, payColors);
+    }
+
+    function filterByPaymentMode(mode) {
+        const sel = document.getElementById('paymentModeFilter');
+        if (sel) {
+            let found = false;
+            for (let i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].value.toLowerCase() === mode.toLowerCase()) {
+                    sel.selectedIndex = i;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found && mode && mode !== 'Unspecified') {
+                const opt = document.createElement('option');
+                opt.value = mode;
+                opt.textContent = mode;
+                sel.appendChild(opt);
+                sel.value = mode;
+            }
+        }
+        // Switch to All Bills tab
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        const allBillsBtn = document.querySelector('.tab-btn[onclick*="tab-all-bills"]');
+        if (allBillsBtn) allBillsBtn.classList.add('active');
+        const allBillsTab = document.getElementById('tab-all-bills');
+        if (allBillsTab) allBillsTab.classList.add('active');
+
+        fetchReportData();
     }
 
     function renderTimelineChart(trends) {
-        const labels = trends.map(t => t.trend_date);
-        const collections = trends.map(t => t.collections);
-        const revenue = trends.map(t => t.revenue);
+        const labels = (trends || []).map(t => t.trend_date);
+        const collections = (trends || []).map(t => t.collections);
+        const revenue = (trends || []).map(t => t.revenue);
 
         const ctx = document.getElementById('timelineChart').getContext('2d');
         if (timelineChartInstance) timelineChartInstance.destroy();
@@ -482,20 +899,6 @@ $pageTitle = 'OPD Billing Report';
                 ]
             },
             options: { responsive: true, scales: { y: { beginAtZero: true } } }
-        });
-    }
-
-    function renderPaymentChart(labels, data, colors) {
-        const ctx = document.getElementById('paymentModeChart').getContext('2d');
-        if (paymentChartInstance) paymentChartInstance.destroy();
-        
-        paymentChartInstance = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{ data: data, backgroundColor: colors }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
         });
     }
 

@@ -191,50 +191,40 @@ class OpdController extends BaseController
                 [$appointmentId]
             );
 
-            // 3. Get Prescriptions and decode JSON medicines
-            // Match by Appointment ID OR (Patient ID + Date)
-            $prescriptionRecords = $this->db->fetchAll(
-                "SELECT * FROM prescriptions 
-                 WHERE (appointment_id = ?) 
-                    OR (patient_id = ? AND prescription_date = ?)",
-                [$appointmentId, $appointment['patient_id'], $appointment['appointment_date']]
-            );
-
+            // 3. Extract Prescriptions/Medicines from Consultation (soap_plan)
             $allMedicines = [];
             $generalInstructions = [];
 
-            if ($prescriptionRecords) {
-                foreach ($prescriptionRecords as $record) {
-                    // Collect instructions
-                    if (!empty($record['general_instructions'])) {
-                        $generalInstructions[] = $record['general_instructions'];
-                    }
-
-                    $medicines = json_decode($record['medicines'], true);
-                    if (is_array($medicines)) {
-                        foreach ($medicines as $med) {
-                            // Ensure med is an array before setting key
-                            if (is_array($med)) {
-                                $med['parent_instruction'] = $record['general_instructions'];
-                                $allMedicines[] = $med;
-                            }
+            if ($consultation) {
+                if (!empty($consultation['clinical_notes'])) {
+                    $generalInstructions[] = $consultation['clinical_notes'];
+                }
+                if (!empty($consultation['soap_plan'])) {
+                    $planData = json_decode($consultation['soap_plan'], true);
+                    if (is_array($planData)) {
+                        if (isset($planData['medications']) && is_array($planData['medications'])) {
+                            $allMedicines = $planData['medications'];
+                        } elseif (isset($planData[0])) {
+                            $allMedicines = $planData;
                         }
                     }
                 }
             }
 
             // 4. Get Lab Orders
-            // Note: lab_orders table does NOT have consultation_id as per schema check.
-            // Linking by Patient + Date
             $labOrders = $this->db->fetchAll(
                 "SELECT * FROM lab_orders WHERE patient_id = ? AND order_date = ?",
                 [$appointment['patient_id'], $appointment['appointment_date']]
             );
 
-            // 5. Get Invoices
+            // 5. Get Invoices from opd_billing_master
             $invoices = $this->db->fetchAll(
-                "SELECT * FROM opd_invoice WHERE patient_id = ? AND date = ?",
-                [$appointment['patient_id'], $appointment['appointment_date']]
+                "SELECT bill_id as invoice_id, bill_id, patient_id, doctor_id, purpose as title, 
+                        grand_total as amount, bill_date as date, payment_status as status, 
+                        payment_mode as payment_method 
+                 FROM opd_billing_master 
+                 WHERE patient_id = ? AND (bill_date = ? OR DATE(created_at) = ?)",
+                [$appointment['patient_id'], $appointment['appointment_date'], $appointment['appointment_date']]
             );
 
             $data = [
@@ -242,7 +232,7 @@ class OpdController extends BaseController
                 'consultation' => $consultation,
                 'prescriptions' => $allMedicines,
                 'general_instructions' => implode("\n---\n", $generalInstructions),
-                'prescription_records' => $prescriptionRecords,
+                'prescription_records' => $allMedicines,
                 'lab_orders' => $labOrders,
                 'invoices' => $invoices
             ];
@@ -327,22 +317,29 @@ class OpdController extends BaseController
         $data = $this->getJsonInput();
 
         try {
-            $invoiceId = 'INV-' . date('Ymd') . '-' . rand(1000, 9999);
+            $billId = 'OPD-' . date('Ymd') . '-' . rand(1000, 9999);
+            $amount = (float)($data['amount'] ?? 0);
+            $status = ($data['status'] ?? 'Pending') === 'Paid' ? 'Paid' : 'Pending';
+            $paidAmt = $status === 'Paid' ? $amount : 0;
+            $dueAmt = $amount - $paidAmt;
 
             $insertData = [
-                'invoice_id' => $invoiceId,
+                'bill_id' => $billId,
                 'patient_id' => $data['patient_id'],
                 'doctor_id' => $data['doctor_id'] ?? null,
                 'appointment_id' => $data['appointment_id'] ?? null,
-                'title' => $data['title'] ?? 'OPD Consultation',
-                'amount' => $data['amount'],
-                'date' => date('Y-m-d'),
-                'status' => $data['status'] ?? 'Pending',
-                'payment_method' => $data['payment_method'] ?? 'Cash'
+                'purpose' => $data['title'] ?? 'OPD Consultation',
+                'subtotal' => $amount,
+                'grand_total' => $amount,
+                'amount_paid' => $paidAmt,
+                'balance_due' => $dueAmt,
+                'bill_date' => date('Y-m-d'),
+                'payment_status' => $status,
+                'payment_mode' => $data['payment_method'] ?? 'Cash'
             ];
 
-            $this->db->insert('opd_invoice', $insertData);
-            $this->respondSuccess(['invoice_id' => $invoiceId, 'message' => 'Invoice created']);
+            $this->db->insert('opd_billing_master', $insertData);
+            $this->respondSuccess(['invoice_id' => $billId, 'message' => 'Invoice created']);
 
         } catch (Exception $e) {
             $this->handleException($e);
@@ -393,16 +390,22 @@ class OpdController extends BaseController
         $data = $this->getJsonInput();
 
         try {
-            // Check if a prescription already exists for this patient/doctor TODAY
-            // The user wants to store follow-up data in the 'prescriptions' table.
-
             $today = date('Y-m-d');
 
-            $existingPrescription = $this->db->fetchOne(
-                "SELECT prescription_id FROM prescriptions 
-                 WHERE patient_id = ? AND doctor_id = ? AND prescription_date = ?",
-                [$data['patient_id'], $data['doctor_id'], $today]
-            );
+            // Find existing consultation for this appointment or patient/doctor today
+            $existingConsultation = null;
+            if (!empty($data['appointment_id'])) {
+                $existingConsultation = $this->db->fetchOne(
+                    "SELECT consultation_id FROM consultations WHERE appointment_id = ?",
+                    [$data['appointment_id']]
+                );
+            }
+            if (!$existingConsultation) {
+                $existingConsultation = $this->db->fetchOne(
+                    "SELECT consultation_id FROM consultations WHERE patient_id = ? AND doctor_id = ? AND consultation_date = ?",
+                    [$data['patient_id'], $data['doctor_id'], $today]
+                );
+            }
 
             // Combine notes: Clinical Notes + Follow-up Instructions
             $combinedNotes = "";
@@ -414,95 +417,72 @@ class OpdController extends BaseController
             }
             $combinedNotes = trim($combinedNotes);
 
-            // Handle Plan Data -> Medicines
-            // User requested Plan data be stored in 'medicines'. 
-            // Since 'medicines' expects JSON array of objects, we wrap the plan text to avoid breaking frontend.
             $medicinesJson = json_encode([]);
             if (!empty($data['plan'])) {
-                // Create a single "medicine" entry containing the plan text so it displays in the table
                 $medicinesJson = json_encode([
-                    [
-                        'name' => $data['plan'], // Display plan text in Name column
-                        'dosage' => '-',
-                        'frequency' => '-',
-                        'duration' => '-',
-                        'instructions' => 'See Plan'
+                    'plan' => $data['plan'],
+                    'medications' => [
+                        [
+                            'name' => $data['plan'],
+                            'dosage' => '-',
+                            'frequency' => '-',
+                            'duration' => '-',
+                            'instructions' => 'See Plan'
+                        ]
                     ]
                 ]);
             }
 
-            if ($existingPrescription) {
-                // Update existing prescription
+            if ($existingConsultation) {
                 $updateData = [
-                    'follow_up_date' => $data['follow_up_date'],
-                    'general_instructions' => $combinedNotes
+                    'follow_up_date' => $data['follow_up_date'] ?? null,
+                    'clinical_notes' => $combinedNotes
                 ];
-
-                // Only update medicines if plan is provided, otherwise leave existing medicines alone?
-                // The user said "Plan data will store in the medicines". 
-                // We'll update it.
                 if (!empty($data['plan'])) {
-                    $updateData['medicines'] = $medicinesJson;
+                    $updateData['soap_plan'] = $medicinesJson;
                 }
 
                 $this->db->update(
-                    'prescriptions',
+                    'consultations',
                     $updateData,
-                    'prescription_id = ?',
-                    [$existingPrescription['prescription_id']]
+                    'consultation_id = ?',
+                    [$existingConsultation['consultation_id']]
                 );
-
-                // Update Appointment Status to 'Completed'
-                if (!empty($data['appointment_id'])) {
-                    $this->db->update(
-                        'appointments',
-                        ['appointment_status' => 'Completed'],
-                        'appointment_id = ?',
-                        [$data['appointment_id']]
-                    );
-                }
-
-                $this->respondSuccess(['message' => 'Follow-up and Plan updated in today\'s prescription']);
             } else {
-                // Create NEW prescription
-                $prescId = 'PRE-' . date('Ymd') . '-' . rand(100, 999);
-
+                $consultId = 'CON-' . date('Ymd') . '-' . rand(100, 999);
                 $insertData = [
-                    'prescription_id' => $prescId,
+                    'consultation_id' => $consultId,
                     'patient_id' => $data['patient_id'],
                     'doctor_id' => $data['doctor_id'],
-                    // 'consultation_id' removed as it doesn't exist in table
                     'appointment_id' => $data['appointment_id'] ?? null,
-                    'prescription_date' => $today,
-                    'medicines' => $medicinesJson,
-                    'diagnosis' => null,
-                    'general_instructions' => $combinedNotes,
-                    'dietary_advice' => $data['dietary_advice'] ?? null,
-                    'follow_up_date' => $data['follow_up_date'],
-                    'status' => 'Active'
+                    'consultation_date' => $today,
+                    'consultation_time' => date('H:i:s'),
+                    'soap_plan' => $medicinesJson,
+                    'clinical_notes' => $combinedNotes,
+                    'follow_up_date' => $data['follow_up_date'] ?? null,
+                    'status' => 'Completed'
                 ];
-
-                $this->db->insert('prescriptions', $insertData);
-
-                // Update Appointment Status to 'Completed'
-                if (!empty($data['appointment_id'])) {
-                    $this->db->update(
-                        'appointments',
-                        ['appointment_status' => 'Completed'],
-                        'appointment_id = ?',
-                        [$data['appointment_id']]
-                    );
-                }
-
-                $this->respondSuccess(['message' => 'Follow-up saved (New prescription created)']);
+                $this->db->insert('consultations', $insertData);
             }
+
+            // Update Appointment Status to 'Completed'
+            if (!empty($data['appointment_id'])) {
+                $this->db->update(
+                    'appointments',
+                    ['appointment_status' => 'Completed'],
+                    'appointment_id = ?',
+                    [$data['appointment_id']]
+                );
+            }
+
+            $this->respondSuccess(['message' => 'Follow-up and Plan saved successfully']);
 
         } catch (Exception $e) {
             $this->handleException($e);
         }
     }
 
-    /**
+   /**
      * GET /api/opd/reports
      * Comprehensive Reports
      */
@@ -600,10 +580,10 @@ class OpdController extends BaseController
 
             // 3. Revenue Breakdown (Month to Date - OPD vs IPD vs Total)
             $opdRev = $this->db->fetchOne(
-                "SELECT COALESCE(SUM(amount), 0) as total, COUNT(invoice_id) as count 
-                 FROM opd_invoice 
-                 WHERE date >= ?",
-                [$startOfMonth]
+                "SELECT COALESCE(SUM(amount_paid), 0) as total, COUNT(bill_id) as count 
+                 FROM opd_billing_master 
+                 WHERE (bill_date >= ? OR created_at >= ?)",
+                [$startOfMonth, $startOfMonth]
             );
 
             $ipdRevTotal = 0;
@@ -669,8 +649,8 @@ class OpdController extends BaseController
             $res = $this->db->fetchOne("SELECT count(*) as cnt FROM doctors WHERE status = 'Active'");
             $stats['active_doctors'] = (int)($res['cnt'] ?? 0);
 
-            // Revenue Today (from invoice)
-            $res = $this->db->fetchOne("SELECT sum(amount) as total FROM opd_invoice WHERE date = ?", [$today]);
+            // Revenue Today (from opd_billing_master)
+            $res = $this->db->fetchOne("SELECT COALESCE(SUM(amount_paid), 0) as total FROM opd_billing_master WHERE bill_date = ? OR DATE(created_at) = ?", [$today, $today]);
             $stats['revenue_today'] = $res['total'] ?? 0;
 
             $this->respondSuccess($stats);

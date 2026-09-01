@@ -86,13 +86,6 @@ $basePath = str_repeat('../', $depth);
                             <span>OP Billing Report</span>
                         </a>
                         <?php endif; ?>
-
-                        <!-- IP Insurance -->
-                        <a href="/GM_HMS/view/ip_insurance.php" class="opd-item" data-pd="ip_insurance"
-                            style="--n:4">
-                            <i class="fas fa-shield-alt"></i>
-                            <span>IP Insurance</span>
-                        </a>
                     </div>
                 </div>
 

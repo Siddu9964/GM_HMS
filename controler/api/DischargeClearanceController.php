@@ -165,7 +165,7 @@ class DischargeClearanceController {
         } catch (Throwable $e) {}
 
         try {
-            $stmt = $this->conn->prepare("SELECT ia.room_type, ia.ward_name, ia.ward, ia.room_no, ia.room_number, ia.bed_id, ia.admitting_doctor_id, ia.doctor_name, d.full_name as doc_full_name, b.bed_number, b.ward_name as b_ward 
+            $stmt = $this->conn->prepare("SELECT ia.room_type, ia.ward_name, ia.room_no, ia.room_number, ia.bed_id, ia.admitting_doctor_id, ia.doctor_name, d.full_name as doc_full_name, b.bed_number, b.ward_name as b_ward 
                 FROM ipd_admissions ia 
                 LEFT JOIN doctors d ON ia.admitting_doctor_id = d.doctor_id 
                 LEFT JOIN hospital_beds b ON ia.bed_id = b.sl_no 
@@ -175,7 +175,7 @@ class DischargeClearanceController {
             $stmt->execute();
             $res = $stmt->get_result();
             if ($r = $res->fetch_assoc()) {
-                $ward = $r['b_ward'] ?: ($r['ward_name'] ?: ($r['ward'] ?: ($r['room_type'] ?: 'Ward')));
+                $ward = $r['b_ward'] ?: ($r['ward_name'] ?: ($r['room_type'] ?: 'Ward'));
                 $bed  = $r['bed_number'] ?: ($r['room_number'] ?: ($r['room_no'] ?: ($r['bed_id'] ?: 'Bed')));
                 $bedInfo = "{$ward} - Bed {$bed}";
                 $doctorName = $r['doc_full_name'] ?: ($r['doctor_name'] ?: 'Attending Consultant');

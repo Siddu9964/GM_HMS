@@ -20,66 +20,23 @@ if (empty($patientId)) {
 try {
     $db = SecureDatabase::getInstance();
     
-    // Fetch latest invoice for this patient on this date
-    $sql = "SELECT i.*, 
+    // Fetch latest bill for this patient on this date from opd_billing_master
+    $sql = "SELECT obm.bill_id as invoice_id, obm.patient_id, obm.doctor_id, 
+                   COALESCE(obm.purpose, 'OPD Consultation') as title, 
+                   COALESCE(obm.grand_total, 0) as amount, 
+                   COALESCE(obm.bill_date, CURDATE()) as date, 
+                   COALESCE(obm.payment_mode, 'Cash') as payment_method,
+                   obm.payment_status as status,
                    p.first_name, p.last_name, p.age, p.sex, p.phone, p.address,
                    d.full_name as doctor_name, d.specialization
-            FROM opd_invoice i
-            JOIN patient p ON i.patient_id COLLATE utf8mb4_general_ci = p.patient_id COLLATE utf8mb4_general_ci
-            LEFT JOIN doctors d ON i.doctor_id COLLATE utf8mb4_general_ci = d.doctor_id COLLATE utf8mb4_general_ci
-            WHERE i.patient_id = ? AND i.date = ?
-            ORDER BY i.created_at DESC 
+            FROM opd_billing_master obm
+            JOIN patient p ON obm.patient_id COLLATE utf8mb4_general_ci = p.patient_id COLLATE utf8mb4_general_ci
+            LEFT JOIN doctors d ON obm.doctor_id COLLATE utf8mb4_general_ci = d.doctor_id COLLATE utf8mb4_general_ci
+            WHERE obm.patient_id = ? AND (obm.bill_date = ? OR DATE(obm.created_at) = ?)
+            ORDER BY obm.created_at DESC 
             LIMIT 1";
             
-            
-    $invoice = $db->fetchOne($sql, [$patientId, $date]);
-    
-    // --- FALLBACK: If invoice not found, try to generate it from Appointment ---
-    if (!$invoice) {
-        $aptSql = "SELECT * FROM appointments 
-                   WHERE patient_id = ? AND appointment_date = ? 
-                   ORDER BY created_at DESC LIMIT 1";
-        $appointment = $db->fetchOne($aptSql, [$patientId, $date]);
-
-        if ($appointment) {
-            // Generate Invoice ID
-            $prefix = 'INV-OPD';
-            $dateStr = date('Ymd');
-            $idSql = "SELECT invoice_id FROM opd_invoice WHERE invoice_id LIKE ? ORDER BY invoice_id DESC LIMIT 1";
-            $lastRow = $db->fetchOne($idSql, ["$prefix-$dateStr%"]);
-            
-            if ($lastRow) {
-                $parts = explode('-', $lastRow['invoice_id']);
-                $newNum = intval(end($parts)) + 1;
-            } else {
-                $newNum = 1;
-            }
-            $newInvoiceId = sprintf("%s-%s-%04d", $prefix, $dateStr, $newNum);
-
-            // Determine Status
-            $status = ($appointment['payment_mode'] === 'Cash') ? '1' : '0';
-
-            // Insert into opd_invoice
-            $insertSql = "INSERT INTO opd_invoice (
-                            invoice_id, patient_id, doctor_id, title, 
-                            amount, date, payment_method, status
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            
-            $db->execute($insertSql, [
-                $newInvoiceId,
-                $appointment['patient_id'],
-                $appointment['doctor_id'],
-                'OPD Consultation',
-                $appointment['total_amount'] ?? 0,
-                $appointment['appointment_date'],
-                $appointment['payment_mode'] ?? 'Cash',
-                $status
-            ]);
-
-            // Retry Fetch
-            $invoice = $db->fetchOne($sql, [$patientId, $date]);
-        }
-    }
+    $invoice = $db->fetchOne($sql, [$patientId, $date, $date]);
 
     if (!$invoice) {
         die("Invoice not found for Patient ID: $patientId on Date: $date");

@@ -104,7 +104,6 @@ $router->add('GET', '#^/api/prescriptions/patient/([^/]+)/?$#', 'GM_HMS\Controll
 $router->add('GET', '#^/api/prescriptions/receptionist/view/([^/]+)/?$#', 'GM_HMS\Controllers\api\PrescriptionController', 'getReceptionistView');
 $router->add('GET', '#^/api/prescriptions/([^/]+)/?$#', 'GM_HMS\Controllers\api\PrescriptionController', 'show');
 $router->add('GET', '#^/api/prescriptions/?$#', 'GM_HMS\Controllers\api\PrescriptionController', 'listAll');
-$router->add('POST', '#^/api/prescriptions/log-print/?$#', 'GM_HMS\Controllers\api\PrescriptionController', 'logPrint');
 $router->add('POST', '#^/api/prescriptions/?$#', 'GM_HMS\Controllers\api\PrescriptionController', 'create');
 
 // IPD Billing Routes

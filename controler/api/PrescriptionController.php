@@ -56,9 +56,6 @@
  *      }
  *    Response: { "prescription_id": "CON-20260626-1234" }
  *
- * 8. POST /api/prescriptions/log-print
- *    Body: { "prescription_id": "CON-20260626-1234" }
- *    Logs print activity for audit trail
  * ------------------------------------------------------------
  */
 namespace GM_HMS\Controllers\api;
@@ -127,27 +124,6 @@ class PrescriptionController extends BaseController {
         }
     }
 
-    /**
-     * Log prescription print action
-     * Route: POST /api/prescriptions/log-print
-     */
-    public function logPrint() {
-        $this->requireAuth();
-        try {
-            $data = $this->getJsonInput();
-            if (empty($data['prescription_id'])) {
-                $this->respondBadRequest('Prescription ID is required');
-                return;
-            }
-
-            $userId = $this->currentUser['id'];
-            $this->model->logPrintActivity($data['prescription_id'], $userId);
-            
-            $this->respondSuccess(null, 'Print action logged successfully');
-        } catch (Exception $e) {
-            $this->handleException($e);
-        }
-    }
 
     /**
      * Get all prescriptions for the logged-in doctor
@@ -270,53 +246,33 @@ class PrescriptionController extends BaseController {
                            c.consultation_date as prescription_date,
                            c.consultation_time,
                            c.appointment_id,
-                           c.patient_id, c.doctor_id, 
-                           c.soap_plan, 
-                           c.final_diagnosis as diagnosis,
-                           c.clinical_notes,
-                           c.follow_up_instructions,
-                           c.status,
+                           c.patient_id, c.doctor_id, c.status,
+                           c.soap_subjective, c.vital_signs, c.soap_plan,
+                           c.final_diagnosis as diagnosis, c.clinical_notes, c.follow_up_date, c.prescription_image,
                            pat.first_name, pat.last_name, pat.sex as gender, pat.birth_date, pat.age, pat.phone,
                            doc.full_name as doctor_name, doc.specialization
                     FROM consultations c
                     LEFT JOIN patient pat ON c.patient_id = pat.patient_id
                     LEFT JOIN doctors doc ON c.doctor_id = doc.doctor_id
-                    WHERE c.consultation_id = ?";
+                    WHERE c.consultation_id = ? OR c.appointment_id = ?";
             
-            $prescription = $this->db->fetchOne($sql, [$id]);
+            $prescription = $this->db->fetchOne($sql, [$id, $id]);
 
             if (!$prescription) {
-                // FALLBACK: Try legacy prescriptions table if not found in consultations
-                // This handles old data if any
-                $sqlLegacy = "SELECT p.*, pat.first_name, pat.last_name, pat.phone, pat.age, pat.Sex as gender,
-                               doc.full_name as doctor_name
-                        FROM prescriptions p
-                        LEFT JOIN patient pat ON p.patient_id = pat.patient_id
-                        LEFT JOIN doctors doc ON p.doctor_id = doc.doctor_id
-                        WHERE p.prescription_id = ?";
-                $prescription = $this->db->fetchOne($sqlLegacy, [$id]);
-                
-                if (!$prescription) {
-                    $this->respondNotFound('Prescription not found');
-                }
-                
-                if (!empty($prescription['medicines'])) {
-                    $prescription['medicines'] = json_decode($prescription['medicines'], true);
-                }
-            } else {
-                // Process consultation data
-                $parsed = $this->model->parseSoapPlanData($prescription['soap_plan'] ?? null);
-                $prescription['medicines'] = $parsed['medicines'];
-                $prescription['plan_text'] = $parsed['plan_text'];
-                
-                // Construct general_instructions from valid columns
-                $notes = [];
-                if (!empty($prescription['clinical_notes'])) $notes[] = $prescription['clinical_notes'];
-                if (!empty($prescription['follow_up_instructions'])) $notes[] = "Follow-up: " . $prescription['follow_up_instructions'];
-                $prescription['general_instructions'] = implode("\n", $notes);
-                
-                $prescription['age'] = $this->model->calculateAge($prescription['birth_date'] ?? null) ?: ($prescription['age'] ?? 'N/A');
+                $this->respondNotFound('Prescription not found');
+                return;
             }
+
+            // Process consultation data
+            $parsed = $this->model->parseSoapPlanData($prescription['soap_plan'] ?? null);
+            $prescription['medicines'] = $parsed['medicines'];
+            $prescription['plan_text'] = $parsed['plan_text'];
+            $prescription['prescription_image_url'] = $this->model->normalizeWebUrl($prescription['prescription_image'] ?? null);
+            $prescription['has_prescription_image'] = !empty($prescription['prescription_image_url']);
+            $prescription['hospital_name'] = 'GM HMS Multispeciality';
+            $prescription['hospital_address'] = 'Main Road, Health City';
+            $prescription['hospital_phone'] = '+91 98765 43210';
+            $prescription['hospital_email'] = 'contact@gmhms.com';
 
             $this->respondSuccess($prescription);
 

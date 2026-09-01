@@ -143,35 +143,29 @@ class IpdInsurance extends IpdBaseModel {
     public function cancelInsurance(string $billId, string $updatedBy = 'system'): array {
         $now = date('Y-m-d H:i:s');
 
-        // 1. Mark existing insurance record as CANCELLED with approved_amount = 0
+        // 1. Completely delete insurance record for this bill so no stale company or TPA remains
         try {
-            $this->db->execute(
-                "UPDATE ipd_insurance 
-                 SET claim_status = 'CANCELLED', approved_amount = 0, pending_amount = 0, 
-                     remarks = CONCAT(COALESCE(remarks, ''), ' [Cancelled / Reverted to Self-Pay]'), 
-                     updated_at = ? 
-                 WHERE bill_id = ?",
-                [$now, $billId]
-            );
+            $this->db->execute("DELETE FROM ipd_insurance WHERE bill_id = ?", [$billId]);
         } catch (\Throwable $e) {}
 
-        // 2. Revert billing master sponsor and insurance fields
+        // 2. Revert billing master sponsor and insurance fields completely to Self-Pay
         $this->db->execute(
             "UPDATE ipd_billing_master 
-             SET bill_type = 'SELF', sponsor = 'SELF', insurance_approved_amount = 0, 
-                 insurance_company_id = NULL, policy_number = NULL, approval_number = NULL, 
+             SET bill_type = 'SELF', sponsor = NULL, insurance_approved_amount = 0, 
+                 insurance_received_amount = 0, insurance_company_id = NULL, 
+                 policy_number = NULL, approval_number = NULL, patient_payable = 0, 
                  updated_by = ?, updated_at = ? 
              WHERE bill_id = ?",
             [$updatedBy, $now, $billId]
         );
 
-        // 3. Revert admission credit type and sponsor
+        // 3. Revert admission credit type and sponsor to Cash / Non-insurance
         $bm = $this->fetchOne("SELECT admission_id FROM ipd_billing_master WHERE bill_id = ?", [$billId]);
         $admId = $bm['admission_id'] ?? null;
         if ($admId) {
             $this->db->execute(
                 "UPDATE ipd_admissions 
-                 SET sponsor = 'SELF', admission_type = 'Cash', credit_type = 'CASH', updated_at = ? 
+                 SET sponsor = NULL, admission_type = 'Cash', credit_type = 'CASH', updated_at = ? 
                  WHERE admission_id = ?",
                 [$now, $admId]
             );

@@ -649,6 +649,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
                         <select id="branch" name="branch" required style="cursor: pointer;">
                             <option value="nagarabhavi" selected>Nagarabhavi</option>
                             <option value="basaveshwaranagar">Basaveshwaranagar</option>
+                            <!-- <option value="davanagere">davanagere</option> -->
                         </select>
                     </div>
                 </div>
