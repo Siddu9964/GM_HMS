@@ -3,9 +3,16 @@ config/gemini_secrets.php
 logs/*
 scratch_test_key.php
 
-# Asset folders with uploaded images (not tracked in Git)
-# assets/Doctors/
-# assets/images/
-# assets/po_item/
-# assets/precision_data/
-# assets/profile_photos/
+# Local images and documents - do not track
+/assets/images/
+/assets/Doctors/
+/assets/po_item/
+/assets/precision_data/
+/assets/profile_photos/
+
+# Ignore RAR files
+*.rar
+
+# Ignore debug logs
+reception_view/ipd_management/public/debug.log
+reception_view/ipd_management/public/debug_log.txt
