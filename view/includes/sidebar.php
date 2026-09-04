@@ -126,9 +126,11 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
                 <span>Lab View</span>
             </a>
 
-            <a href="/GM_HMS/quality_view/dashboard.php" class="sidebar-item <?php echo (strpos($current_path, 'quality_view') !== false) ? 'active' : ''; ?>">
+            <a href="/GM_HMS/quality_view/dashboard.php" 
+               class="sidebar-item sidebar-item-multiline <?php echo (strpos($current_path, 'quality_view') !== false) ? 'active' : ''; ?>"
+               title="Hospital Infection Control">
                 <i class="fas fa-shield-halved"></i>
-                <span>Quality & Safety</span>
+                <span>Hospital Infection<br>Control</span>
             </a>
 
 
@@ -379,6 +381,20 @@ function toggleBillingFlyout(btn) {
         font-weight: 500;
         transition: all .22s cubic-bezier(.4, 0, .2, 1);
         margin-bottom: 2px;
+    }
+
+    .sidebar-item-multiline {
+        padding-top: .42rem !important;
+        padding-bottom: .42rem !important;
+        line-height: 1.25;
+    }
+
+    .sidebar-item-multiline span {
+        font-size: .72rem !important;
+        line-height: 1.25 !important;
+        font-weight: 500;
+        display: block;
+        letter-spacing: -0.15px;
     }
 
     .sidebar-item i {

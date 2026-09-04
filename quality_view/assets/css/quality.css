@@ -177,47 +177,133 @@ body {
   margin-top: 1px;
 }
 
+/* ─── Quality Navbar Controls ─── */
+.qsc-notif-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(243, 239, 230, 0.12);
+  border: 1px solid rgba(243, 239, 230, 0.25);
+  color: var(--qsc-cream);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.qsc-notif-btn:hover,
+.qsc-notif-btn:focus,
+.qsc-notif-btn[aria-expanded="true"] {
+  background: rgba(243, 239, 230, 0.25);
+  color: #ffffff;
+  border-color: var(--qsc-cream);
+  outline: none;
+}
+
+.qsc-branch-pill {
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: rgba(243, 239, 230, 0.12);
+  border: 1px solid rgba(243, 239, 230, 0.25);
+  color: var(--qsc-cream);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.qsc-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px 4px 6px;
+  border-radius: 24px;
+  background: rgba(243, 239, 230, 0.12);
+  border: 1px solid rgba(243, 239, 230, 0.25);
+  color: var(--qsc-cream);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+.qsc-user-chip:hover,
+.qsc-user-chip:focus,
+.qsc-user-chip[aria-expanded="true"] {
+  background: rgba(243, 239, 230, 0.22);
+  border-color: var(--qsc-cream);
+  color: #ffffff;
+  outline: none;
+}
+
+.qsc-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--qsc-green-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.qsc-user-name {
+  font-size: 0.82rem;
+  color: var(--qsc-cream);
+}
+
+.qsc-user-role {
+  font-size: 0.68rem;
+  color: rgba(243, 239, 230, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
 /* ═══════════════════════════════════════════════════════════
    KPI CARDS
 ═══════════════════════════════════════════════════════════ */
 .qsc-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .qsc-kpi-card {
   background: var(--qsc-surface);
-  border-radius: var(--qsc-radius);
+  border-radius: 10px;
   border: 1px solid var(--qsc-border-light);
   border-top: 3px solid var(--qsc-green);
-  padding: 20px;
-  display: flex; flex-direction: column; gap: 8px;
-  box-shadow: var(--qsc-shadow);
+  padding: 10px 12px;
+  min-height: 98px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.qsc-kpi-card:hover { transform: translateY(-2px); box-shadow: var(--qsc-shadow-lg); }
+.qsc-kpi-card:hover { transform: translateY(-2px); box-shadow: var(--qsc-shadow); }
 
 .qsc-kpi-label {
-  font-size: 0.72rem; font-weight: 700;
+  font-size: 0.68rem; font-weight: 700;
   color: var(--qsc-muted);
-  text-transform: uppercase; letter-spacing: 0.5px;
+  text-transform: uppercase; letter-spacing: 0.4px;
+  line-height: 1.25;
 }
 .qsc-kpi-value {
-  font-size: 1.85rem; font-weight: 800;
-  color: var(--qsc-green-deep); line-height: 1;
+  font-size: 1.35rem; font-weight: 800;
+  color: var(--qsc-green-deep); line-height: 1.1;
+  margin-bottom: 2px;
 }
-.qsc-kpi-unit { font-size: 0.82rem; color: var(--qsc-muted); }
+.qsc-kpi-unit { font-size: 0.72rem; color: var(--qsc-muted); font-weight: 500; line-height: 1.1; }
 
 .qsc-kpi-icon {
-  width: 40px; height: 40px;
-  border-radius: 10px;
+  width: 28px; height: 28px;
+  border-radius: 7px;
   background: var(--qsc-green-faint);
   color: var(--qsc-green);
   display: grid; place-items: center;
-  font-size: 1.1rem;
-  margin-bottom: 4px;
+  font-size: 0.82rem;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -456,6 +542,7 @@ body {
 }
 .qsc-user-name { font-size: 0.85rem; font-weight: 600; color: var(--qsc-cream); }
 .qsc-user-role { font-size: 0.73rem; color: rgba(243,239,230,0.55); }
+
 
 /* ═══════════════════════════════════════════════════════════
    REPORT SECTION HEADERS

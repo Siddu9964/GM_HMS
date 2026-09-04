@@ -9,53 +9,54 @@ require_once __DIR__ . '/includes/quality_head.php';
 <style>
 .qsc-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
 }
 .qsc-kpi-card {
-  min-height: 170px;
+  min-height: 98px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 18px 20px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.04);
-  border-radius: var(--qsc-radius);
+  padding: 10px 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border-radius: 10px;
   background: #ffffff;
   border: 1px solid var(--qsc-border-light);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .qsc-kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--qsc-shadow-lg);
+  box-shadow: var(--qsc-shadow);
 }
 .qsc-kpi-card .qsc-kpi-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   display: grid;
   place-items: center;
-  font-size: 1.15rem;
+  font-size: 0.82rem;
   margin-bottom: 0;
 }
 .qsc-kpi-card .qsc-kpi-label {
-  font-size: 0.74rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--qsc-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 3px;
+  letter-spacing: 0.4px;
+  line-height: 1.25;
 }
 .qsc-kpi-card .qsc-kpi-value {
-  font-size: 1.85rem;
+  font-size: 1.35rem;
   font-weight: 800;
   line-height: 1.1;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 .qsc-kpi-card .qsc-kpi-unit {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   color: var(--qsc-muted);
   font-weight: 500;
+  line-height: 1.1;
 }
 </style>
 
@@ -221,13 +222,13 @@ function renderKPIs(d) {
   const kpiGrid = document.getElementById('kpi-grid');
   kpiGrid.innerHTML = cards.map(c => `
     <div class="qsc-kpi-card" style="border-top: 3px solid ${c.border};">
-      <div class="d-flex align-items-center justify-content-between">
-        <div class="qsc-kpi-icon" style="background: ${c.iconBg}; color: ${c.iconColor};">
+      <div class="d-flex align-items-start justify-content-between gap-1 mb-1">
+        <div class="qsc-kpi-label" title="${c.label}">${c.label}</div>
+        <div class="qsc-kpi-icon flex-shrink-0" style="background: ${c.iconBg}; color: ${c.iconColor};">
           <i class="fas ${c.icon}"></i>
         </div>
       </div>
-      <div>
-        <div class="qsc-kpi-label">${c.label}</div>
+      <div class="mt-auto">
         <div class="qsc-kpi-value ${c.valClass || ''}" style="${c.valColor ? 'color:' + c.valColor + ';' : ''}">${c.value}</div>
         <div class="qsc-kpi-unit">${c.unit}</div>
       </div>
