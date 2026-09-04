@@ -591,9 +591,9 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     <div class="row mb-3">
                         <div class="col-md-3">
                             <select class="form-select" id="filterStatus">
-                                <option value="">All Status</option>
-                                <option value="Admitted">Admitted</option>
+                                <option value="Admitted" selected>Admitted</option>
                                 <option value="Discharged">Discharged</option>
+                                <option value="">All Status</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -1309,7 +1309,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             // Initialize DataTable
             admissionsTable = $('#admissionsTable').DataTable({
                 ajax: {
-                    url: IPD.API_BASE + '/admissions',
+                    url: IPD.API_BASE + '/admissions?status=Admitted',
                     dataSrc: 'data.admissions'
                 },
                 pageLength: 50,
@@ -1627,20 +1627,28 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             // Filter handlers
             $('#filterStatus').change(function () {
                 const status = $(this).val();
-                const search = $('#searchBox').val();
-                admissionsTable.ajax.url(IPD.API_BASE + '/admissions?status=' + status + '&search=' + search).load();
+                const search = $('#searchBox').val().trim();
+                admissionsTable.ajax.url(IPD.API_BASE + '/admissions?status=' + status + '&search=' + encodeURIComponent(search)).load();
             });
 
             // Search with debouncing for better performance
             let searchTimeout;
             $('#searchBox').on('keyup', function () {
-                const searchValue = $(this).val();
-                const status = $('#filterStatus').val();
+                const searchValue = $(this).val().trim();
 
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(function () {
-                    admissionsTable.ajax.url(IPD.API_BASE + '/admissions?status=' + status + '&search=' + searchValue).load();
-                }, 500); // Wait 500ms after user stops typing
+                    let status = $('#filterStatus').val();
+                    // When searching for a patient, search across both Admitted and Discharged patients (all statuses)
+                    if (searchValue.length > 0) {
+                        status = '';
+                    } else if (!status) {
+                        // When search is cleared, revert to Admitted by default
+                        status = 'Admitted';
+                        $('#filterStatus').val('Admitted');
+                    }
+                    admissionsTable.ajax.url(IPD.API_BASE + '/admissions?status=' + status + '&search=' + encodeURIComponent(searchValue)).load();
+                }, 400);
             });
 
 
