@@ -78,7 +78,7 @@ class Admission extends BaseModel {
             $params[] = $searchTerm;
         }
         
-        $query .= " ORDER BY a.admission_date DESC";
+        $query .= " ORDER BY a.admission_date DESC, a.admission_time DESC, a.sl_no DESC";
         
         if ($limit) {
             $query .= " LIMIT ? OFFSET ?";

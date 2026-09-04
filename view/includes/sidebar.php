@@ -126,6 +126,10 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
                 <span>Lab View</span>
             </a>
 
+            <a href="/GM_HMS/quality_view/dashboard.php" class="sidebar-item <?php echo (strpos($current_path, 'quality_view') !== false) ? 'active' : ''; ?>">
+                <i class="fas fa-shield-halved"></i>
+                <span>Quality & Safety</span>
+            </a>
 
 
             <div class="pt-4 pb-2">

@@ -692,15 +692,27 @@ try {
                     <div class="modern-table-wrapper">
                         <table class="modern-table">
                             <thead>
-                                <tr><th>Date</th><th>Duration</th><th>Start Time</th><th>End Time</th><th>Dialysis Nurse</th></tr>
+                                <tr><th>Date</th><th>Dialysis Type / Access</th><th>Duration</th><th>Start - End Time</th><th>Dialysis Nurse</th></tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($records['dialysis_chart'] as $v): ?>
+                                <?php foreach ($records['dialysis_chart'] as $v): 
+                                    $hasEnd = !empty($v['dia_end_dt']) || !empty($v['dia_end']);
+                                    $isOngoing = !$hasEnd && (!empty($v['is_ongoing']) && $v['is_ongoing'] != '0' || (isset($v['dia_dur']) && stripos($v['dia_dur'], 'ongoing') !== false));
+                                    $startTxt = !empty($v['dia_start_dt']) ? str_replace('T', ' ', $v['dia_start_dt']) : (($v['dia_date'] ?? $v['date'] ?? '') . (!empty($v['dia_start']) ? ' ' . $v['dia_start'] : ''));
+                                    $endTxt = !empty($v['dia_end_dt']) ? str_replace('T', ' ', $v['dia_end_dt']) : ($v['dia_end'] ?? ($isOngoing ? 'Active / In Progress' : ''));
+                                    $periodTxt = ($startTxt && $endTxt && $endTxt !== '-') ? "{$startTxt} → {$endTxt}" : ($startTxt ?: '-');
+                                ?>
                                 <tr>
-                                    <td><strong><?php echo htmlspecialchars($v['dia_date'] ?? $v['date'] ?? $v['created_date'] ?? '-'); ?></strong></td>
-                                    <td><strong style="color: #1F6B4A;"><?php echo htmlspecialchars($v['dia_dur'] ?? $v['duration'] ?? '-'); ?></strong></td>
-                                    <td><?php echo htmlspecialchars($v['dia_start'] ?? $v['start_time'] ?? '-'); ?></td>
-                                    <td><?php echo htmlspecialchars($v['dia_end'] ?? $v['end_time'] ?? '-'); ?></td>
+                                    <td><strong><?php echo htmlspecialchars($v['dia_date'] ?? (!empty($v['dia_start_dt']) ? explode('T', $v['dia_start_dt'])[0] : ($v['date'] ?? '-'))); ?></strong></td>
+                                    <td><strong style="color: #1F6B4A;"><?php echo htmlspecialchars($v['dia_type'] ?? $v['type'] ?? 'Hemodialysis'); ?></strong></td>
+                                    <td>
+                                        <?php if ($isOngoing): ?>
+                                            <span style="background:#dcfce7; color:#15803d; font-weight:800; padding:2px 8px; border-radius:6px; font-size:0.78rem;"><i class="fas fa-sync-alt fa-spin"></i> <?php echo htmlspecialchars($v['dia_dur'] ?? 'Ongoing'); ?></span>
+                                        <?php else: ?>
+                                            <strong><?php echo htmlspecialchars($v['dia_dur'] ?? $v['duration'] ?? '-'); ?></strong>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><small style="color: #64748b;"><?php echo htmlspecialchars($periodTxt); ?></small></td>
                                     <td><?php echo htmlspecialchars($v['dia_nurse'] ?? $v['nurse'] ?? $v['created_by_name'] ?? '-'); ?></td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -722,12 +734,24 @@ try {
                                 <tr><th>Date</th><th>Flow Rate (L/min)</th><th>Duration</th><th>Start - End Time</th><th>Nurse Signature</th></tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($records['oxygen_chart'] as $v): ?>
+                                <?php foreach ($records['oxygen_chart'] as $v): 
+                                    $hasEnd = !empty($v['oxy_end_dt']) || !empty($v['oxy_end']);
+                                    $isOngoing = !$hasEnd && (!empty($v['is_ongoing']) && $v['is_ongoing'] != '0' || (isset($v['oxy_dur']) && stripos($v['oxy_dur'], 'ongoing') !== false));
+                                    $startTxt = !empty($v['oxy_start_dt']) ? str_replace('T', ' ', $v['oxy_start_dt']) : (($v['oxy_date'] ?? $v['date'] ?? '') . (!empty($v['oxy_start']) ? ' ' . $v['oxy_start'] : ''));
+                                    $endTxt = !empty($v['oxy_end_dt']) ? str_replace('T', ' ', $v['oxy_end_dt']) : ($v['oxy_end'] ?? ($isOngoing ? 'Active / In Progress' : ''));
+                                    $periodTxt = ($startTxt && $endTxt && $endTxt !== '-') ? "{$startTxt} → {$endTxt}" : ($startTxt ?: '-');
+                                ?>
                                 <tr>
-                                    <td><strong><?php echo htmlspecialchars($v['oxy_date'] ?? $v['date'] ?? $v['created_date'] ?? '-'); ?></strong></td>
+                                    <td><strong><?php echo htmlspecialchars($v['oxy_date'] ?? (!empty($v['oxy_start_dt']) ? explode('T', $v['oxy_start_dt'])[0] : ($v['date'] ?? '-'))); ?></strong></td>
                                     <td><strong style="color: #1F6B4A;"><?php echo htmlspecialchars($v['oxy_flow'] ?? $v['flow'] ?? '-'); ?></strong></td>
-                                    <td><?php echo htmlspecialchars($v['oxy_dur'] ?? $v['duration'] ?? '-'); ?></td>
-                                    <td><?php echo htmlspecialchars(($v['oxy_start'] ?? '-') . ' - ' . ($v['oxy_end'] ?? '-')); ?></td>
+                                    <td>
+                                        <?php if ($isOngoing): ?>
+                                            <span style="background:#dcfce7; color:#15803d; font-weight:800; padding:2px 8px; border-radius:6px; font-size:0.78rem;"><i class="fas fa-sync-alt fa-spin"></i> <?php echo htmlspecialchars($v['oxy_dur'] ?? 'Ongoing'); ?></span>
+                                        <?php else: ?>
+                                            <strong><?php echo htmlspecialchars($v['oxy_dur'] ?? $v['duration'] ?? '-'); ?></strong>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><small style="color: #64748b;"><?php echo htmlspecialchars($periodTxt); ?></small></td>
                                     <td><?php echo htmlspecialchars($v['oxy_nurse'] ?? $v['nurse'] ?? $v['created_by_name'] ?? '-'); ?></td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -749,12 +773,24 @@ try {
                                 <tr><th>Date</th><th>Ventilator Mode</th><th>Duration</th><th>Start - End Time</th><th>Nurse Signature</th></tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($records['ventilation_chart'] as $v): ?>
+                                <?php foreach ($records['ventilation_chart'] as $v): 
+                                    $hasEnd = !empty($v['vent_end_dt']) || !empty($v['vent_end']);
+                                    $isOngoing = !$hasEnd && (!empty($v['is_ongoing']) && $v['is_ongoing'] != '0' || (isset($v['vent_dur']) && stripos($v['vent_dur'], 'ongoing') !== false));
+                                    $startTxt = !empty($v['vent_start_dt']) ? str_replace('T', ' ', $v['vent_start_dt']) : (($v['vent_date'] ?? $v['date'] ?? '') . (!empty($v['vent_start']) ? ' ' . $v['vent_start'] : ''));
+                                    $endTxt = !empty($v['vent_end_dt']) ? str_replace('T', ' ', $v['vent_end_dt']) : ($v['vent_end'] ?? ($isOngoing ? 'Active / In Progress' : ''));
+                                    $periodTxt = ($startTxt && $endTxt && $endTxt !== '-') ? "{$startTxt} → {$endTxt}" : ($startTxt ?: '-');
+                                ?>
                                 <tr>
-                                    <td><strong><?php echo htmlspecialchars($v['vent_date'] ?? $v['date'] ?? $v['created_date'] ?? '-'); ?></strong></td>
+                                    <td><strong><?php echo htmlspecialchars($v['vent_date'] ?? (!empty($v['vent_start_dt']) ? explode('T', $v['vent_start_dt'])[0] : ($v['date'] ?? '-'))); ?></strong></td>
                                     <td><span class="badge-chip"><?php echo htmlspecialchars($v['vent_mode'] ?? $v['vent_remarks'] ?? $v['mode'] ?? '-'); ?></span></td>
-                                    <td><strong><?php echo htmlspecialchars($v['vent_dur'] ?? $v['duration'] ?? '-'); ?></strong></td>
-                                    <td><?php echo htmlspecialchars(($v['vent_start'] ?? '-') . ' - ' . ($v['vent_end'] ?? '-')); ?></td>
+                                    <td>
+                                        <?php if ($isOngoing): ?>
+                                            <span style="background:#dcfce7; color:#15803d; font-weight:800; padding:2px 8px; border-radius:6px; font-size:0.78rem;"><i class="fas fa-procedures"></i> <?php echo htmlspecialchars($v['vent_dur'] ?? 'Active on Vent'); ?></span>
+                                        <?php else: ?>
+                                            <strong><?php echo htmlspecialchars($v['vent_dur'] ?? $v['duration'] ?? '-'); ?></strong>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><small style="color: #64748b;"><?php echo htmlspecialchars($periodTxt); ?></small></td>
                                     <td><?php echo htmlspecialchars($v['vent_nurse'] ?? $v['nurse'] ?? $v['created_by_name'] ?? '-'); ?></td>
                                 </tr>
                                 <?php endforeach; ?>

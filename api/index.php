@@ -9,6 +9,9 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Set Timezone to Indian Standard Time (IST)
+date_default_timezone_set('Asia/Kolkata');
+
 // Error handling configuration
 error_reporting(E_ALL);
 ini_set('display_errors', 0); // Don't display errors in production
@@ -409,6 +412,17 @@ $router->add('GET', '#^/api/hospital-beds/?$#', function() {
     ");
     echo json_encode(['success' => true, 'data' => $beds]);
 }, null);
+
+// ── Quality, Safety & Compliance — Biomedical Waste (BMW) ────────────────────
+$router->add('GET',    '#^/api/quality/dashboard/?$#',                  'GM_HMS\\Modules\\Quality\\Controllers\\DashboardController', 'getDashboardStats');
+$router->add('GET',    '#^/api/quality/bmw/records/?$#',                'GM_HMS\\Modules\\Quality\\Controllers\\BMWController', 'getRecords');
+$router->add('GET',    '#^/api/quality/bmw/records/(\\d+)/?$#',          'GM_HMS\\Modules\\Quality\\Controllers\\BMWController', 'getRecordById');
+$router->add('POST',   '#^/api/quality/bmw/records/?$#',                'GM_HMS\\Modules\\Quality\\Controllers\\BMWController', 'createCollection');
+$router->add('PUT',    '#^/api/quality/bmw/records/(\\d+)/?$#',          'GM_HMS\\Modules\\Quality\\Controllers\\BMWController', 'updateCollection');
+$router->add('POST',   '#^/api/quality/bmw/records/(\\d+)/dispatch/?$#', 'GM_HMS\\Modules\\Quality\\Controllers\\BMWController', 'dispatchRecord');
+$router->add('DELETE', '#^/api/quality/bmw/records/(\\d+)/?$#',          'GM_HMS\\Modules\\Quality\\Controllers\\BMWController', 'deleteRecord');
+$router->add('GET',    '#^/api/quality/bmw/room-types/?$#',             'GM_HMS\\Modules\\Quality\\Controllers\\BMWController', 'getRoomTypes');
+$router->add('GET',    '#^/api/quality/reports/?$#',                    'GM_HMS\\Modules\\Quality\\Controllers\\ReportController', 'getReports');
 
 // --- DISPATCH REQUEST ---
 

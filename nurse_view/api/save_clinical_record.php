@@ -86,6 +86,13 @@ try {
     
     unset($chartData['_db_row_id'], $chartData['_col_name'], $chartData['_arr_idx']);
 
+    // If an end datetime is provided, treatment has completed and is not ongoing
+    if (!empty($chartData['dia_end_dt']) || !empty($chartData['dia_end']) ||
+        !empty($chartData['oxy_end_dt']) || !empty($chartData['oxy_end']) ||
+        !empty($chartData['vent_end_dt']) || !empty($chartData['vent_end'])) {
+        $chartData['is_ongoing'] = '0';
+    }
+
     $isUpdate = !empty($entryId);
     
     if ($isUpdate) {

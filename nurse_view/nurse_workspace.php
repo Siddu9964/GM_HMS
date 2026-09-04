@@ -830,6 +830,33 @@ html, body {
     background-color: #ffffff;
 }
 
+/* Ongoing / Continuous Treatment Toggle */
+.ongoing-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--gm-primary);
+    cursor: pointer;
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+    padding: 7px 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+.ongoing-check:hover {
+    background: #dcfce7;
+    border-color: #4ade80;
+}
+.ongoing-check input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--gm-primary);
+    cursor: pointer;
+}
+
 /* ── Enhanced Ward & Bed Transfer Styles ── */
 .tr-compare-box {
     display: grid;
@@ -1365,164 +1392,10 @@ html, body {
           </div>
         </div>
 
-        <!-- 5. Ward Transfer -->
-        <div class="card-new full-width ws-sec cat-doctor" id="s-tr">
-          <div class="card-title-new">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <i class="fas fa-bed"></i> 5. Ward / Bed Transfer Module
-              <span class="chip-mini"><i class="fas fa-sync-alt"></i> Real-Time Availability</span>
-            </div>
-            <button type="button" class="btn-edit-log" onclick="refreshBeds()" style="padding:4px 10px; font-size:0.75rem;">
-              <i class="fas fa-redo"></i> Refresh Bed Status
-            </button>
-          </div>
-          <div class="split-card card-body" id="f-tr">
-            <div class="split-left">
-              
-              <!-- Side-by-Side Comparison Preview -->
-              <div class="tr-compare-box" id="tr-compare-box">
-                <div class="tr-loc-card current">
-                  <div class="tr-loc-title">
-                    <span><i class="fas fa-map-marker-alt"></i> Current Bed Location</span>
-                    <span class="badge" style="background:#f1f5f9; color:#475569;">Active</span>
-                  </div>
-                  <div class="tr-loc-val" id="tr-curr-val">Select a patient</div>
-                  <div class="tr-loc-meta" id="tr-curr-meta">Floor: – | Ward: – | Room: –</div>
-                </div>
-                <div class="tr-loc-card target">
-                  <div class="tr-loc-title">
-                    <span><i class="fas fa-arrow-right"></i> Target Bed Location</span>
-                    <span class="badge" id="tr-target-status-badge" style="background:#f0fdf4; color:#16a34a;">Not Selected</span>
-                  </div>
-                  <div class="tr-loc-val" id="tr-target-val">Select floor, ward & bed below</div>
-                  <div class="tr-loc-meta" id="tr-target-meta">Charge: – / day</div>
-                </div>
-              </div>
-
-              <!-- Location Selectors -->
-              <div class="fg">
-                <div class="fmg">
-                  <label><i class="fas fa-layer-group"></i> 1. Select Floor <span style="color:#dc2626;">*</span></label>
-                  <select name="floor_name" id="tr-floor" onchange="onTrFloorChange()">
-                    <option value="">-- Select Floor --</option>
-                    <?php foreach($allFloors as $fl): ?>
-                      <option value="<?php echo htmlspecialchars($fl['floor_name']); ?>"><?php echo htmlspecialchars($fl['floor_name'] . ' (Floor ' . $fl['floor_number'] . ')'); ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div class="fmg">
-                  <label><i class="fas fa-hospital-alt"></i> 2. Select Ward <span style="color:#dc2626;">*</span></label>
-                  <select name="ward_name" id="tr-ward" onchange="onTrWardChange()">
-                    <option value="">-- Select Ward --</option>
-                    <?php foreach($allWards as $ward): ?>
-                      <option value="<?php echo htmlspecialchars($ward); ?>"><?php echo htmlspecialchars($ward); ?></option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div class="fmg">
-                  <label><i class="fas fa-door-open"></i> 3. Room Type <span style="color:#dc2626;">*</span></label>
-                  <select name="room_type" id="tr-room-type" onchange="onTrRoomTypeChange()">
-                    <option value="">-- Select Room Type --</option>
-                  </select>
-                </div>
-                <div class="fmg">
-                  <label><i class="fas fa-calendar-alt"></i> Transfer Date & Time <span style="color:#dc2626;">*</span></label>
-                  <input type="datetime-local" name="transfer_date" id="tr-date">
-                </div>
-              </div>
-
-              <!-- Interactive Bed Availability Grid -->
-              <div class="tr-bed-grid-container" id="tr-bed-grid-wrap">
-                <div class="tr-bed-grid-header">
-                  <div style="font-weight: 800; font-size: 0.85rem; color: var(--gm-primary);">
-                    <i class="fas fa-procedures"></i> Available Beds in Selected Room Type <span style="color:#dc2626;">*</span>
-                  </div>
-                  <div class="tr-bed-legend">
-                    <span class="tr-legend-item"><span class="tr-legend-dot" style="background:#16a34a;"></span> Available</span>
-                    <span class="tr-legend-item"><span class="tr-legend-dot" style="background:#dc2626;"></span> Occupied</span>
-                    <span class="tr-legend-item"><span class="tr-legend-dot" style="background:#f59e0b;"></span> Reserved</span>
-                    <span class="tr-legend-item"><span class="tr-legend-dot" style="background:#94a3b8;"></span> Blocked</span>
-                  </div>
-                </div>
-
-                <div class="tr-bed-cards-wrap" id="tr-bed-cards">
-                  <div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--gm-text-muted); font-size:0.84rem;">
-                    <i class="fas fa-info-circle"></i> Please select Floor, Ward, and Room Type to view available beds.
-                  </div>
-                </div>
-              </div>
-
-              <!-- Hidden Target Bed Tracking Inputs -->
-              <input type="hidden" name="new_bed_id" id="tr-target-bed-id">
-              <input type="hidden" id="tr-target-bed-no">
-              <input type="hidden" id="tr-target-room-no">
-              <input type="hidden" id="tr-target-rate">
-
-              <!-- Clinical Reason & Emergency Toggle -->
-              <div class="fg" style="margin-top: 10px;">
-                <div class="fmg" style="grid-column: 1 / -1;">
-                  <label><i class="fas fa-comment-medical"></i> Reason for Transfer <span style="color:#dc2626;">*</span></label>
-                  <input type="text" name="transfer_remarks" id="tr-remarks" placeholder="e.g. Upgraded to ICU due to SpO2 drop, Step-down to General Room, Patient Request..." required>
-                </div>
-                <div class="fmg">
-                  <label>Nurse Signature</label>
-                  <input type="text" name="nurse_sign" id="tr-nurse-sign" value="<?php echo htmlspecialchars($nurseName); ?>" readonly>
-                </div>
-                <div class="fmg">
-                  <label>Priority Setting</label>
-                  <div class="emergency-toggle-wrap" id="tr-emergency-wrap" onclick="toggleEmergencyCheckbox()">
-                    <input type="checkbox" name="is_emergency" id="tr-emergency" onchange="toggleEmergencyStyle(this)" style="width:18px; height:18px; cursor:pointer;">
-                    <span style="font-weight: 700; font-size: 0.82rem; color: #e11d48; display:flex; align-items:center; gap:6px;">
-                      <i class="fas fa-ambulance"></i> Emergency / High-Priority Transfer
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Actions -->
-              <div style="display: flex; gap: 10px; align-items: center; margin-top: 14px;">
-                <button type="button" class="btn-sv-out" id="btn-init-transfer" onclick="openTransferConfirmModal()" style="background:var(--gm-primary); color:#f3efe6; border-color:var(--gm-primary);">
-                  <i class="fas fa-exchange-alt"></i> Execute Patient Transfer
-                </button>
-                <button type="button" class="btn-cancel-edit" id="btn-reset-tr" onclick="resetTransferForm()" style="margin:0; display:inline-flex;">
-                  <i class="fas fa-undo"></i> Reset Form
-                </button>
-              </div>
-
-            </div>
-
-            <!-- Transfer History Table -->
-            <div class="split-right">
-              <div class="ht-title" style="display:flex; justify-content:space-between; align-items:center;">
-                <span><i class="fas fa-history"></i> Complete Transfer History</span>
-              </div>
-              <div class="tr-hist-filter">
-                <i class="fas fa-search" style="color:var(--gm-text-muted); font-size:0.8rem;"></i>
-                <input type="text" id="tr-log-search" placeholder="Filter history by date, ward, bed, nurse, reason..." oninput="filterTransferHistory(this.value)">
-              </div>
-              <div class="ht-wrap" style="max-height: 380px;">
-                <table class="ht">
-                  <thead>
-                    <tr>
-                      <th>Transfer Date</th>
-                      <th>From Bed</th>
-                      <th>To Bed</th>
-                      <th>Reason</th>
-                      <th>Nurse</th>
-                    </tr>
-                  </thead>
-                  <tbody id="h-tr"><tr class="et"><td colspan="5">No transfer records yet.</td></tr></tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- 6. Nursing Notes -->
+        <!-- 5. Nursing Notes -->
         <div class="card-new ws-sec cat-doctor" id="s-nn">
           <div class="card-title-new">
-            <span><i class="fas fa-clipboard-check"></i> 6. Nursing Shift Notes</span>
+            <span><i class="fas fa-clipboard-check"></i> 5. Nursing Shift Notes</span>
           </div>
           <div class="split-card card-body" id="f-nn">
             <div class="split-left">
@@ -1547,10 +1420,10 @@ html, body {
           </div>
         </div>
 
-        <!-- 7. Tests Order -->
+        <!-- 6. Tests Order -->
         <div class="card-new ws-sec cat-orders" id="s-ts">
           <div class="card-title-new">
-            <span><i class="fas fa-microscope"></i> 7. Diagnostic Tests Order</span>
+            <span><i class="fas fa-microscope"></i> 6. Diagnostic Tests Order</span>
           </div>
           <div class="split-card card-body" id="f-ts">
             <div class="split-left">
@@ -1576,10 +1449,10 @@ html, body {
           </div>
         </div>
 
-        <!-- 8. Pharmacy Order -->
+        <!-- 7. Pharmacy Order -->
         <div class="card-new ws-sec cat-orders" id="s-ph">
           <div class="card-title-new">
-            <span><i class="fas fa-pills"></i> 8. Pharmacy Medicine Order</span>
+            <span><i class="fas fa-pills"></i> 7. Pharmacy Medicine Order</span>
           </div>
           <div class="split-card card-body" id="f-ph">
             <div class="split-left">
@@ -1605,10 +1478,10 @@ html, body {
           </div>
         </div>
 
-        <!-- 9A. Nebulization Record -->
+        <!-- 8A. Nebulization Record -->
         <div class="card-new ws-sec cat-treatments" id="s-nb">
           <div class="card-title-new">
-            <span><i class="fas fa-wind"></i> 9A. Nebulization Record</span>
+            <span><i class="fas fa-wind"></i> 8A. Nebulization Record</span>
           </div>
           <div class="split-card card-body" id="f-nb">
             <div class="split-left">
@@ -1633,19 +1506,41 @@ html, body {
           </div>
         </div>
 
-        <!-- 9B. Dialysis Record -->
+        <!-- 8B. Dialysis Record -->
         <div class="card-new ws-sec cat-treatments" id="s-di">
           <div class="card-title-new">
-            <span><i class="fas fa-filter"></i> 9B. Dialysis Record</span>
+            <span><i class="fas fa-filter"></i> 8B. Dialysis Record</span>
           </div>
           <div class="split-card card-body" id="f-di">
             <div class="split-left">
+              <input type="hidden" name="dia_date" id="dia-date-hidden">
               <div class="fg">
-                <div class="fmg"><label>Date</label><input type="date" name="dia_date"></div>
-                <div class="fmg"><label>Duration</label><input type="text" name="dia_dur" class="tcd" placeholder="Auto / e.g. 4h"></div>
-                <div class="fmg"><label>Start Time</label><input type="time" name="dia_start" class="tcs" onchange="calcDur(this)"></div>
-                <div class="fmg"><label>End Time</label><input type="time" name="dia_end" class="tce" onchange="calcDur(this)"></div>
-                <div class="fmg" style="grid-column: 1 / -1;"><label>Nurse Signature</label><input type="text" name="dia_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
+                <div class="fmg">
+                  <label><i class="fas fa-procedures"></i> Dialysis Type / Access</label>
+                  <input type="text" name="dia_type" placeholder="e.g. Hemodialysis, AV Fistula / CRRT">
+                </div>
+                <div class="fmg">
+                  <label><i class="fas fa-calendar-plus"></i> Start Date & Time</label>
+                  <input type="datetime-local" name="dia_start_dt" class="tcs-dt" onchange="calcDur(this)">
+                </div>
+                <div class="fmg">
+                  <label><i class="fas fa-calendar-check"></i> End Date & Time</label>
+                  <input type="datetime-local" name="dia_end_dt" class="tce-dt" onchange="calcDur(this)">
+                </div>
+                <div class="fmg" style="justify-content: flex-end; padding-bottom: 2px;">
+                  <label class="ongoing-check">
+                    <input type="checkbox" name="is_ongoing" value="1" class="chk-ongoing" onchange="toggleOngoingTreatment(this)">
+                    <span><i class="fas fa-sync-alt"></i> Continuous / Ongoing Dialysis</span>
+                  </label>
+                </div>
+                <div class="fmg" style="grid-column: 1 / -1;">
+                  <label><i class="fas fa-hourglass-half"></i> Total Duration (Auto Calculated)</label>
+                  <input type="text" name="dia_dur" class="tcd" placeholder="Auto calculated duration (e.g. 4h 0m or 2 Days)">
+                </div>
+                <div class="fmg" style="grid-column: 1 / -1;">
+                  <label>Nurse Signature</label>
+                  <input type="text" name="dia_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly>
+                </div>
               </div>
               <button class="btn-sv-out btn-sv" data-ct="dialysis_chart" data-f="f-di"><i class="fas fa-plus"></i> Add Dialysis</button>
             </div>
@@ -1653,7 +1548,7 @@ html, body {
               <div class="ht-title"><i class="fas fa-history"></i> Recent Dialysis</div>
               <div class="ht-wrap">
                 <table class="ht">
-                  <thead><tr><th>Date</th><th>Duration</th><th>Start - End</th><th>Nurse</th><th>Action</th></tr></thead>
+                  <thead><tr><th>Date</th><th>Type / Access</th><th>Duration & Period</th><th>Nurse</th><th>Action</th></tr></thead>
                   <tbody id="h-di"><tr class="et"><td colspan="5">No records yet.</td></tr></tbody>
                 </table>
               </div>
@@ -1661,20 +1556,41 @@ html, body {
           </div>
         </div>
 
-        <!-- 9C. Oxygen Therapy -->
+        <!-- 8C. Oxygen Therapy -->
         <div class="card-new ws-sec cat-treatments" id="s-ox">
           <div class="card-title-new">
-            <span><i class="fas fa-lungs"></i> 9C. Oxygen Therapy</span>
+            <span><i class="fas fa-lungs"></i> 8C. Oxygen Therapy</span>
           </div>
           <div class="split-card card-body" id="f-ox">
             <div class="split-left">
+              <input type="hidden" name="oxy_date" id="oxy-date-hidden">
               <div class="fg">
-                <div class="fmg"><label>Date</label><input type="date" name="oxy_date"></div>
-                <div class="fmg"><label>Flow Rate (L/min)</label><input type="text" name="oxy_flow" placeholder="e.g. 2 L/min"></div>
-                <div class="fmg"><label>Start Time</label><input type="time" name="oxy_start" class="tcs" onchange="calcDur(this)"></div>
-                <div class="fmg"><label>End Time</label><input type="time" name="oxy_end" class="tce" onchange="calcDur(this)"></div>
-                <div class="fmg" style="grid-column: 1 / -1;"><label>Duration</label><input type="text" name="oxy_dur" class="tcd" placeholder="Auto / e.g. 2h"></div>
-                <div class="fmg" style="grid-column: 1 / -1;"><label>Nurse Signature</label><input type="text" name="oxy_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
+                <div class="fmg">
+                  <label><i class="fas fa-tachometer-alt"></i> Flow Rate / Device</label>
+                  <input type="text" name="oxy_flow" placeholder="e.g. 2 L/min, Nasal Cannula, Face Mask">
+                </div>
+                <div class="fmg">
+                  <label><i class="fas fa-calendar-plus"></i> Start Date & Time</label>
+                  <input type="datetime-local" name="oxy_start_dt" class="tcs-dt" onchange="calcDur(this)">
+                </div>
+                <div class="fmg">
+                  <label><i class="fas fa-calendar-check"></i> End Date & Time</label>
+                  <input type="datetime-local" name="oxy_end_dt" class="tce-dt" onchange="calcDur(this)">
+                </div>
+                <div class="fmg" style="justify-content: flex-end; padding-bottom: 2px;">
+                  <label class="ongoing-check">
+                    <input type="checkbox" name="is_ongoing" value="1" class="chk-ongoing" onchange="toggleOngoingTreatment(this)">
+                    <span><i class="fas fa-sync-alt"></i> Continuous / Ongoing</span>
+                  </label>
+                </div>
+                <div class="fmg" style="grid-column: 1 / -1;">
+                  <label><i class="fas fa-hourglass-half"></i> Total Duration (Auto Calculated)</label>
+                  <input type="text" name="oxy_dur" class="tcd" placeholder="Auto calculated duration (e.g. 2 Days 4 Hours)">
+                </div>
+                <div class="fmg" style="grid-column: 1 / -1;">
+                  <label>Nurse Signature</label>
+                  <input type="text" name="oxy_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly>
+                </div>
               </div>
               <button class="btn-sv-out btn-sv" data-ct="oxygen_chart" data-f="f-ox"><i class="fas fa-plus"></i> Add Oxygen</button>
             </div>
@@ -1682,7 +1598,7 @@ html, body {
               <div class="ht-title"><i class="fas fa-history"></i> Recent Oxygen Therapy</div>
               <div class="ht-wrap">
                 <table class="ht">
-                  <thead><tr><th>Date</th><th>Flow Rate</th><th>Duration / Time</th><th>Nurse</th><th>Action</th></tr></thead>
+                  <thead><tr><th>Date</th><th>Flow Rate</th><th>Duration & Period</th><th>Nurse</th><th>Action</th></tr></thead>
                   <tbody id="h-ox"><tr class="et"><td colspan="5">No records yet.</td></tr></tbody>
                 </table>
               </div>
@@ -1690,20 +1606,48 @@ html, body {
           </div>
         </div>
 
-        <!-- 9D. Ventilator Support -->
+        <!-- 8D. Ventilator Support -->
         <div class="card-new ws-sec cat-treatments" id="s-ve">
           <div class="card-title-new">
-            <span><i class="fas fa-procedures"></i> 9D. Ventilator Support</span>
+            <span><i class="fas fa-procedures"></i> 8D. Ventilator Support</span>
           </div>
           <div class="split-card card-body" id="f-ve">
             <div class="split-left">
+              <input type="hidden" name="vent_date" id="vent-date-hidden">
               <div class="fg">
-                <div class="fmg"><label>Date</label><input type="date" name="vent_date"></div>
-                <div class="fmg"><label>Vent Mode</label><select name="vent_mode"><option>CMV</option><option>SIMV</option><option>CPAP</option><option>BiPAP</option></select></div>
-                <div class="fmg"><label>Start Time</label><input type="time" name="vent_start" class="tcs" onchange="calcDur(this)"></div>
-                <div class="fmg"><label>End Time</label><input type="time" name="vent_end" class="tce" onchange="calcDur(this)"></div>
-                <div class="fmg" style="grid-column: 1 / -1;"><label>Duration</label><input type="text" name="vent_dur" class="tcd" placeholder="Auto / e.g. 6h"></div>
-                <div class="fmg" style="grid-column: 1 / -1;"><label>Nurse Signature</label><input type="text" name="vent_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
+                <div class="fmg">
+                  <label><i class="fas fa-sliders-h"></i> Vent Mode</label>
+                  <select name="vent_mode">
+                    <option value="CMV">CMV (Continuous Mandatory)</option>
+                    <option value="SIMV">SIMV (Synchronized Intermittent)</option>
+                    <option value="CPAP">CPAP (Continuous Positive Airway)</option>
+                    <option value="BiPAP">BiPAP (Bilevel Positive Airway)</option>
+                    <option value="PRVC">PRVC (Pressure Regulated Volume)</option>
+                    <option value="PSV">PSV (Pressure Support Ventilation)</option>
+                  </select>
+                </div>
+                <div class="fmg">
+                  <label><i class="fas fa-calendar-plus"></i> Start Date & Time</label>
+                  <input type="datetime-local" name="vent_start_dt" class="tcs-dt" onchange="calcDur(this)">
+                </div>
+                <div class="fmg">
+                  <label><i class="fas fa-calendar-check"></i> End Date & Time</label>
+                  <input type="datetime-local" name="vent_end_dt" class="tce-dt" onchange="calcDur(this)">
+                </div>
+                <div class="fmg" style="justify-content: flex-end; padding-bottom: 2px;">
+                  <label class="ongoing-check">
+                    <input type="checkbox" name="is_ongoing" value="1" class="chk-ongoing" onchange="toggleOngoingTreatment(this)">
+                    <span><i class="fas fa-procedures"></i> Active on Ventilator</span>
+                  </label>
+                </div>
+                <div class="fmg" style="grid-column: 1 / -1;">
+                  <label><i class="fas fa-hourglass-half"></i> Total Duration (Auto Calculated)</label>
+                  <input type="text" name="vent_dur" class="tcd" placeholder="Auto calculated duration (e.g. 3 Days 8 Hours)">
+                </div>
+                <div class="fmg" style="grid-column: 1 / -1;">
+                  <label>Nurse Signature</label>
+                  <input type="text" name="vent_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly>
+                </div>
               </div>
               <button class="btn-sv-out btn-sv" data-ct="ventilation_chart" data-f="f-ve"><i class="fas fa-plus"></i> Add Ventilator</button>
             </div>
@@ -1711,7 +1655,7 @@ html, body {
               <div class="ht-title"><i class="fas fa-history"></i> Recent Ventilator</div>
               <div class="ht-wrap">
                 <table class="ht">
-                  <thead><tr><th>Date</th><th>Mode</th><th>Duration / Time</th><th>Nurse</th><th>Action</th></tr></thead>
+                  <thead><tr><th>Date</th><th>Mode</th><th>Duration & Period</th><th>Nurse</th><th>Action</th></tr></thead>
                   <tbody id="h-ve"><tr class="et"><td colspan="5">No records yet.</td></tr></tbody>
                 </table>
               </div>
@@ -1719,10 +1663,10 @@ html, body {
           </div>
         </div>
 
-        <!-- 9E. Blood Transfusion Record -->
+        <!-- 8E. Blood Transfusion Record -->
         <div class="card-new full-width ws-sec cat-treatments" id="s-bl">
           <div class="card-title-new">
-            <span><i class="fas fa-syringe"></i> 9E. Blood Transfusion Record</span>
+            <span><i class="fas fa-syringe"></i> 8E. Blood Transfusion Record</span>
           </div>
           <div class="split-card card-body" id="f-bl">
             <div class="split-left">
@@ -2039,7 +1983,6 @@ function selectPatient(p){
   if(wi&&(p.room_type||p.room_number))wi.value=`${p.room_type||''}/${p.room_number||''}`;
   
   autoFill();
-  initTransferForm();
   loadAllRecords();
 }
 
@@ -2050,7 +1993,7 @@ function autoFill(ctx=document){
   const hm=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   ctx.querySelectorAll('input[type=date]').forEach(i=>{if(!i.value)i.value=ym;});
   ctx.querySelectorAll('input[type=time]').forEach(i=>{if(!i.value)i.value=hm;});
-  ctx.querySelectorAll('input[type=datetime-local]').forEach(i=>{if(!i.value)i.value=ym+'T'+hm;});
+  ctx.querySelectorAll('input[type=datetime-local]:not(.tce-dt)').forEach(i=>{if(!i.value)i.value=ym+'T'+hm;});
   if(NN) {
     ctx.querySelectorAll('input[name*="_nurse"],input[name*="_sign"],input[name="nurse_sign"]').forEach(i=>{
       i.value = NN;
@@ -2063,17 +2006,101 @@ function autoFill(ctx=document){
 function clrF(id){
   const c=document.getElementById(id); if(!c)return;
   c.querySelectorAll('input:not([type=hidden]):not([readonly]),select,textarea').forEach(e=>e.value='');
+  c.querySelectorAll('.chk-ongoing').forEach(cb=>{ cb.checked = false; toggleOngoingTreatment(cb); });
   autoFill(c);
 }
 
-/* ── Duration auto calc ── */
+/* ── Smart Multi-Day & Single-Day Duration Calculation ── */
 function calcDur(el){
-  const c=el.closest('.card-body');
-  const s=c?.querySelector('.tcs'), e=c?.querySelector('.tce'), d=c?.querySelector('.tcd');
-  if(!s?.value||!e?.value)return;
-  let st=new Date('1970-01-01T'+s.value+':00'), en=new Date('1970-01-01T'+e.value+':00');
-  if(en<st)en.setDate(en.getDate()+1);
-  const ms=en-st; d.value=Math.floor(ms/3600000)+'h '+Math.round((ms%3600000)/60000)+'m';
+  const c = el.closest('.card-body');
+  if (!c) return;
+  const sDt = c.querySelector('.tcs-dt')?.value;
+  const eDt = c.querySelector('.tce-dt')?.value;
+  const s = c.querySelector('.tcs')?.value;
+  const e = c.querySelector('.tce')?.value;
+  const d = c.querySelector('.tcd');
+  const chkOngoing = c.querySelector('.chk-ongoing');
+  if (!d) return;
+
+  // Sync hidden legacy date field with start date if present
+  if (sDt) {
+    const hDate = c.querySelector('input[type=hidden][name*="_date"]');
+    if (hDate) hDate.value = sDt.split('T')[0];
+  }
+
+  // 1. If marked Continuous / Ongoing
+  if (chkOngoing && chkOngoing.checked) {
+    if (sDt) {
+      const st = new Date(sDt);
+      const now = new Date();
+      if (!isNaN(st.getTime()) && now >= st) {
+        const totalMinutes = Math.floor((now - st) / 60000);
+        const days = Math.floor(totalMinutes / (24 * 60));
+        const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+        const mins = totalMinutes % 60;
+        let durStr = 'Ongoing (';
+        if (days > 0) durStr += `${days}d `;
+        durStr += `${hours}h ${mins}m active)`;
+        d.value = durStr;
+        return;
+      }
+    }
+    d.value = 'Ongoing (Active)';
+    return;
+  }
+
+  // 2. Multi-Day DateTime Calculation (e.g. Oxygen Therapy & Ventilator Support)
+  if (sDt && eDt) {
+    const st = new Date(sDt);
+    const en = new Date(eDt);
+    if (isNaN(st.getTime()) || isNaN(en.getTime())) return;
+    if (en < st) {
+      d.value = 'Invalid (End before Start)';
+      return;
+    }
+    const totalMinutes = Math.floor((en - st) / 60000);
+    const totalHours = Math.floor(totalMinutes / 60);
+    const days = Math.floor(totalMinutes / (24 * 60));
+    const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+    const mins = totalMinutes % 60;
+
+    if (days >= 1) {
+      d.value = `${days} Day${days > 1 ? 's' : ''} ${hours}h ${mins}m (${totalHours} hrs total)`;
+    } else {
+      d.value = `${hours}h ${mins}m (${totalHours} hrs total)`;
+    }
+    return;
+  }
+
+  // 3. Fallback for Single-Day Time Inputs (e.g. Dialysis)
+  if (s && e) {
+    let st = new Date('1970-01-01T' + s + ':00');
+    let en = new Date('1970-01-01T' + e + ':00');
+    if (en < st) en.setDate(en.getDate() + 1);
+    const ms = en - st;
+    d.value = Math.floor(ms / 3600000) + 'h ' + Math.round((ms % 3600000) / 60000) + 'm';
+  }
+}
+
+function toggleOngoingTreatment(cb){
+  const c = cb.closest('.card-body');
+  if (!c) return;
+  const endInput = c.querySelector('.tce-dt, .tce');
+  if (cb.checked) {
+    if (endInput) {
+      endInput.value = '';
+      endInput.disabled = true;
+      endInput.style.opacity = '0.5';
+      endInput.style.cursor = 'not-allowed';
+    }
+  } else {
+    if (endInput) {
+      endInput.disabled = false;
+      endInput.style.opacity = '1';
+      endInput.style.cursor = 'default';
+    }
+  }
+  calcDur(cb);
 }
 
 /* ── Universal Save & Individual Section Saves ── */
@@ -2110,6 +2137,9 @@ document.addEventListener('click', async function(e) {
     const k = inp.name || ('f' + i);
     if (inp.type === 'file') {
       if (inp.files.length > 0) fd.append(k, inp.files[0]);
+    } else if (inp.type === 'checkbox') {
+      if (inp.checked) fd.append(k, inp.value || '1');
+      else fd.append(k, '0');
     } else {
       fd.append(k, inp.value);
     }
@@ -2160,7 +2190,10 @@ async function saveAllRecords(){
       f.querySelectorAll('input:not([type=hidden]),select,textarea').forEach(inp=>{
         const k=inp.name||('f'+i);
         if(inp.type==='file'){ if(inp.files.length>0)fd.append(k,inp.files[0]); }
-        else fd.append(k,inp.value);
+        else if (inp.type === 'checkbox') {
+          if (inp.checked) fd.append(k, inp.value || '1');
+          else fd.append(k, '0');
+        } else fd.append(k,inp.value);
         i++;
       });
       saveTasks.push(async () => {
@@ -2273,32 +2306,77 @@ async function loadAllRecords(){
       <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-bp", ${JSON.stringify(r)})' title="Edit vitals"><i class="fas fa-edit"></i> Edit</button></td>
     `, 9);
 
-    // 6. Dialysis
-    rH('h-di', d.dialysis_chart || [], r => `
-      <td>${r.dia_date || r.date || ''}</td>
-      <td><strong style="color:var(--gm-primary)">${r.dia_dur || r.duration || '-'}</strong></td>
-      <td><small>${r.dia_start || r.start_time || ''}${r.dia_end ? ' - ' + r.dia_end : ''}</small></td>
-      <td>${r.dia_nurse || r.created_by_name || '-'}</td>
-      <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-di", ${JSON.stringify(r)})' title="Edit dialysis"><i class="fas fa-edit"></i> Edit</button></td>
-    `, 5);
+    // 6. Dialysis Record
+    rH('h-di', d.dialysis_chart || [], r => {
+      const hasEnd = !!(r.dia_end_dt || r.dia_end);
+      const isOngoing = !hasEnd && (r.is_ongoing == '1' || r.is_ongoing === true || (r.dia_dur && r.dia_dur.toLowerCase().includes('ongoing')));
+      const durBadge = isOngoing 
+        ? `<span class="badge" style="background:#dcfce7; color:#15803d; font-weight:800;"><i class="fas fa-sync-alt fa-spin"></i> ${r.dia_dur || 'Ongoing Dialysis'}</span>`
+        : `<strong style="color:var(--gm-primary);">${r.dia_dur || r.duration || '-'}</strong>`;
+      
+      const startTxt = r.dia_start_dt ? r.dia_start_dt.replace('T', ' ') : ((r.dia_date || r.date || '') + (r.dia_start ? ' ' + r.dia_start : ''));
+      const endTxt = r.dia_end_dt ? r.dia_end_dt.replace('T', ' ') : (r.dia_end ? r.dia_end : (isOngoing ? 'Still Active' : ''));
+      const timeRange = (startTxt && endTxt) ? `${startTxt} → ${endTxt}` : (startTxt || '-');
+
+      return `
+        <td><strong>${r.dia_date || (r.dia_start_dt ? r.dia_start_dt.split('T')[0] : '') || r.date || ''}</strong></td>
+        <td><strong style="color:var(--gm-primary)">${r.dia_type || r.type || '-'}</strong></td>
+        <td>
+          ${durBadge}
+          <br><small style="color:var(--gm-text-muted); font-size:0.75rem;"><i class="far fa-clock"></i> ${timeRange}</small>
+        </td>
+        <td>${r.dia_nurse || r.created_by_name || '-'}</td>
+        <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-di", ${JSON.stringify(r)})' title="Edit dialysis"><i class="fas fa-edit"></i> Edit</button></td>
+      `;
+    }, 5);
 
     // 7. Oxygen Therapy
-    rH('h-ox', d.oxygen_chart || [], r => `
-      <td>${r.oxy_date || r.date || ''}</td>
-      <td><strong style="color:var(--gm-primary)">${r.oxy_flow || r.flow || '-'}</strong></td>
-      <td><small>${r.oxy_dur || r.duration || (r.oxy_start ? (r.oxy_start + ' - ' + r.oxy_end) : '-')}</small></td>
-      <td>${r.oxy_nurse || r.created_by_name || '-'}</td>
-      <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-ox", ${JSON.stringify(r)})' title="Edit oxygen"><i class="fas fa-edit"></i> Edit</button></td>
-    `, 5);
+    rH('h-ox', d.oxygen_chart || [], r => {
+      const hasEnd = !!(r.oxy_end_dt || r.oxy_end);
+      const isOngoing = !hasEnd && (r.is_ongoing == '1' || r.is_ongoing === true || (r.oxy_dur && r.oxy_dur.toLowerCase().includes('ongoing')));
+      const durBadge = isOngoing 
+        ? `<span class="badge" style="background:#dcfce7; color:#15803d; font-weight:800;"><i class="fas fa-sync-alt fa-spin"></i> ${r.oxy_dur || 'Ongoing'}</span>`
+        : `<strong style="color:var(--gm-primary);">${r.oxy_dur || r.duration || '-'}</strong>`;
+      
+      const startTxt = r.oxy_start_dt ? r.oxy_start_dt.replace('T', ' ') : ((r.oxy_date || r.date || '') + (r.oxy_start ? ' ' + r.oxy_start : ''));
+      const endTxt = r.oxy_end_dt ? r.oxy_end_dt.replace('T', ' ') : (r.oxy_end ? r.oxy_end : (isOngoing ? 'Still Active' : ''));
+      const timeRange = (startTxt && endTxt) ? `${startTxt} → ${endTxt}` : (startTxt || '-');
+
+      return `
+        <td><strong>${r.oxy_date || (r.oxy_start_dt ? r.oxy_start_dt.split('T')[0] : '') || r.date || ''}</strong></td>
+        <td><strong style="color:var(--gm-primary)">${r.oxy_flow || r.flow || '-'}</strong></td>
+        <td>
+          ${durBadge}
+          <br><small style="color:var(--gm-text-muted); font-size:0.75rem;"><i class="far fa-clock"></i> ${timeRange}</small>
+        </td>
+        <td>${r.oxy_nurse || r.created_by_name || '-'}</td>
+        <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-ox", ${JSON.stringify(r)})' title="Edit oxygen"><i class="fas fa-edit"></i> Edit</button></td>
+      `;
+    }, 5);
 
     // 8. Ventilator Support
-    rH('h-ve', d.ventilation_chart || [], r => `
-      <td>${r.vent_date || r.date || ''}</td>
-      <td><span class="badge">${r.vent_mode || r.mode || '-'}</span></td>
-      <td><small>${r.vent_dur || r.duration || (r.vent_start ? (r.vent_start + ' - ' + r.vent_end) : '-')}</small></td>
-      <td>${r.vent_nurse || r.created_by_name || '-'}</td>
-      <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-ve", ${JSON.stringify(r)})' title="Edit ventilator"><i class="fas fa-edit"></i> Edit</button></td>
-    `, 5);
+    rH('h-ve', d.ventilation_chart || [], r => {
+      const hasEnd = !!(r.vent_end_dt || r.vent_end);
+      const isOngoing = !hasEnd && (r.is_ongoing == '1' || r.is_ongoing === true || (r.vent_dur && r.vent_dur.toLowerCase().includes('ongoing')));
+      const durBadge = isOngoing 
+        ? `<span class="badge" style="background:#dcfce7; color:#15803d; font-weight:800;"><i class="fas fa-procedures"></i> ${r.vent_dur || 'Active on Vent'}</span>`
+        : `<strong style="color:var(--gm-primary);">${r.vent_dur || r.duration || '-'}</strong>`;
+      
+      const startTxt = r.vent_start_dt ? r.vent_start_dt.replace('T', ' ') : ((r.vent_date || r.date || '') + (r.vent_start ? ' ' + r.vent_start : ''));
+      const endTxt = r.vent_end_dt ? r.vent_end_dt.replace('T', ' ') : (r.vent_end ? r.vent_end : (isOngoing ? 'Still Active' : ''));
+      const timeRange = (startTxt && endTxt) ? `${startTxt} → ${endTxt}` : (startTxt || '-');
+
+      return `
+        <td><strong>${r.vent_date || (r.vent_start_dt ? r.vent_start_dt.split('T')[0] : '') || r.date || ''}</strong></td>
+        <td><span class="badge">${r.vent_mode || r.mode || '-'}</span></td>
+        <td>
+          ${durBadge}
+          <br><small style="color:var(--gm-text-muted); font-size:0.75rem;"><i class="far fa-clock"></i> ${timeRange}</small>
+        </td>
+        <td>${r.vent_nurse || r.created_by_name || '-'}</td>
+        <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-ve", ${JSON.stringify(r)})' title="Edit ventilator"><i class="fas fa-edit"></i> Edit</button></td>
+      `;
+    }, 5);
 
     // 9. Blood Transfusion
     rH('h-bl', d.blood_transfusion_chart || [], r => `
@@ -2694,13 +2772,36 @@ function editLog(formId, data){
     if (data.particulars && !data.nurse_part) { const el = f.querySelector('textarea[name="nurse_part"]'); if(el) el.value = data.particulars; }
   }
   if (formId === 'f-di') {
-    if (data.date && !data.dia_date) { const el = f.querySelector('input[name="dia_date"]'); if(el) el.value = data.date; }
+    if (data.dia_start_dt) { const el = f.querySelector('input[name="dia_start_dt"]'); if(el) el.value = data.dia_start_dt; }
+    else if (data.date && data.dia_start) { const el = f.querySelector('input[name="dia_start_dt"]'); if(el) el.value = data.date + 'T' + data.dia_start; }
+    else if (data.dia_date) { const el = f.querySelector('input[name="dia_start_dt"]'); if(el && !el.value) el.value = data.dia_date + 'T00:00'; }
+
+    if (data.dia_end_dt) { const el = f.querySelector('input[name="dia_end_dt"]'); if(el) el.value = data.dia_end_dt; }
+    else if (data.date && data.dia_end) { const el = f.querySelector('input[name="dia_end_dt"]'); if(el) el.value = data.date + 'T' + data.dia_end; }
+
+    const isOngoing = data.is_ongoing == '1' || data.is_ongoing === true || (data.dia_dur && data.dia_dur.toLowerCase().includes('ongoing'));
+    const chk = f.querySelector('.chk-ongoing');
+    if (chk) {
+      chk.checked = isOngoing;
+      toggleOngoingTreatment(chk);
+    }
+    if (data.type && !data.dia_type) { const el = f.querySelector('input[name="dia_type"]'); if(el) el.value = data.type; }
     if (data.duration && !data.dia_dur) { const el = f.querySelector('input[name="dia_dur"]'); if(el) el.value = data.duration; }
-    if (data.start_time && !data.dia_start) { const el = f.querySelector('input[name="dia_start"]'); if(el) el.value = data.start_time; }
-    if (data.end_time && !data.dia_end) { const el = f.querySelector('input[name="dia_end"]'); if(el) el.value = data.end_time; }
   }
   if (formId === 'f-ox') {
-    if (data.date && !data.oxy_date) { const el = f.querySelector('input[name="oxy_date"]'); if(el) el.value = data.date; }
+    if (data.oxy_start_dt) { const el = f.querySelector('input[name="oxy_start_dt"]'); if(el) el.value = data.oxy_start_dt; }
+    else if (data.date && data.oxy_start) { const el = f.querySelector('input[name="oxy_start_dt"]'); if(el) el.value = data.date + 'T' + data.oxy_start; }
+    else if (data.oxy_date) { const el = f.querySelector('input[name="oxy_start_dt"]'); if(el && !el.value) el.value = data.oxy_date + 'T00:00'; }
+
+    if (data.oxy_end_dt) { const el = f.querySelector('input[name="oxy_end_dt"]'); if(el) el.value = data.oxy_end_dt; }
+    else if (data.date && data.oxy_end) { const el = f.querySelector('input[name="oxy_end_dt"]'); if(el) el.value = data.date + 'T' + data.oxy_end; }
+
+    const isOngoing = data.is_ongoing == '1' || data.is_ongoing === true || (data.oxy_dur && data.oxy_dur.toLowerCase().includes('ongoing'));
+    const chk = f.querySelector('.chk-ongoing');
+    if (chk) {
+      chk.checked = isOngoing;
+      toggleOngoingTreatment(chk);
+    }
     if (data.flow && !data.oxy_flow) { const el = f.querySelector('input[name="oxy_flow"]'); if(el) el.value = data.flow; }
     if (data.duration && !data.oxy_dur) { const el = f.querySelector('input[name="oxy_dur"]'); if(el) el.value = data.duration; }
   }
@@ -2710,7 +2811,19 @@ function editLog(formId, data){
     if (data.medicine && !data.nebu_drug) { const el = f.querySelector('input[name="nebu_drug"]'); if(el) el.value = data.medicine; }
   }
   if (formId === 'f-ve') {
-    if (data.date && !data.vent_date) { const el = f.querySelector('input[name="vent_date"]'); if(el) el.value = data.date; }
+    if (data.vent_start_dt) { const el = f.querySelector('input[name="vent_start_dt"]'); if(el) el.value = data.vent_start_dt; }
+    else if (data.date && data.vent_start) { const el = f.querySelector('input[name="vent_start_dt"]'); if(el) el.value = data.date + 'T' + data.vent_start; }
+    else if (data.vent_date) { const el = f.querySelector('input[name="vent_start_dt"]'); if(el && !el.value) el.value = data.vent_date + 'T00:00'; }
+
+    if (data.vent_end_dt) { const el = f.querySelector('input[name="vent_end_dt"]'); if(el) el.value = data.vent_end_dt; }
+    else if (data.date && data.vent_end) { const el = f.querySelector('input[name="vent_end_dt"]'); if(el) el.value = data.date + 'T' + data.vent_end; }
+
+    const isOngoing = data.is_ongoing == '1' || data.is_ongoing === true || (data.vent_dur && data.vent_dur.toLowerCase().includes('ongoing'));
+    const chk = f.querySelector('.chk-ongoing');
+    if (chk) {
+      chk.checked = isOngoing;
+      toggleOngoingTreatment(chk);
+    }
     if (data.mode && !data.vent_mode) { const el = f.querySelector('select[name="vent_mode"]'); if(el) el.value = data.mode; }
     if (data.duration && !data.vent_dur) { const el = f.querySelector('input[name="vent_dur"]'); if(el) el.value = data.duration; }
   }
@@ -2770,481 +2883,6 @@ function cancelEdit(formId){
   
   const cancelBtn = f.querySelector('.btn-cancel-edit');
   if (cancelBtn) cancelBtn.style.display = 'none';
-}
-
-/* ── Enhanced Ward & Bed Transfer Functions ── */
-let currentTransferLogs = [];
-let currentLoadedBeds = [];
-
-function initTransferForm() {
-  if (!cp) return;
-
-  // 1. Populate Current Location
-  const currBedNo = cp.bed_number || cp.room_number || 'N/A';
-  const currWard = cp.ward_name || cp.ward || cp.room_type || 'General Ward';
-  const currRoomType = cp.room_type || 'Ward';
-  const currFloor = cp.floor_name || 'Main Floor';
-
-  const currValEl = document.getElementById('tr-curr-val');
-  if (currValEl) currValEl.textContent = `${currWard} • ${currRoomType} (Bed ${currBedNo})`;
-
-  const currMetaEl = document.getElementById('tr-curr-meta');
-  if (currMetaEl) currMetaEl.textContent = `Floor: ${currFloor} | Bed ID: ${cp.bed_id || 'N/A'}`;
-
-  // 2. Reset Target Location
-  resetTransferForm();
-
-  // 3. Populate Floor if match exists
-  const floorSelect = document.getElementById('tr-floor');
-  if (floorSelect && cp.floor_name) {
-    Array.from(floorSelect.options).forEach(opt => {
-      if (opt.value === cp.floor_name) opt.selected = true;
-    });
-    onTrFloorChange();
-  }
-}
-
-async function onTrFloorChange() {
-  const floor = document.getElementById('tr-floor').value;
-  const wardSelect = document.getElementById('tr-ward');
-  const roomTypeSelect = document.getElementById('tr-room-type');
-  const bedCardsWrap = document.getElementById('tr-bed-cards');
-
-  wardSelect.innerHTML = '<option value="">-- Select Ward --</option>';
-  roomTypeSelect.innerHTML = '<option value="">-- Select Room Type --</option>';
-  if (bedCardsWrap) {
-    bedCardsWrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--gm-text-muted); font-size:0.84rem;"><i class="fas fa-info-circle"></i> Please select Ward and Room Type to view beds.</div>';
-  }
-  clearSelectedTargetBed();
-
-  if (!floor) return;
-
-  try {
-    const res = await fetch(`api/get_ward_hierarchy.php?action=wards&floor=${encodeURIComponent(floor)}`);
-    const json = await res.json();
-    if (json.success && Array.isArray(json.data)) {
-      json.data.forEach(w => {
-        const opt = document.createElement('option');
-        opt.value = w;
-        opt.textContent = w;
-        wardSelect.appendChild(opt);
-      });
-      // If patient is in this floor, pre-select ward
-      if (cp && cp.ward_name && json.data.includes(cp.ward_name)) {
-        wardSelect.value = cp.ward_name;
-        onTrWardChange();
-      }
-    }
-  } catch (err) {
-    console.error('Error fetching wards:', err);
-  }
-}
-
-async function onTrWardChange() {
-  const floor = document.getElementById('tr-floor').value;
-  const ward = document.getElementById('tr-ward').value;
-  const roomTypeSelect = document.getElementById('tr-room-type');
-  const bedCardsWrap = document.getElementById('tr-bed-cards');
-
-  roomTypeSelect.innerHTML = '<option value="">-- Select Room Type --</option>';
-  if (bedCardsWrap) {
-    bedCardsWrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--gm-text-muted); font-size:0.84rem;"><i class="fas fa-info-circle"></i> Please select Room Type to view available beds.</div>';
-  }
-  clearSelectedTargetBed();
-
-  if (!ward) return;
-
-  try {
-    const res = await fetch(`api/get_ward_hierarchy.php?action=room_types&floor=${encodeURIComponent(floor)}&ward=${encodeURIComponent(ward)}`);
-    const json = await res.json();
-    if (json.success && Array.isArray(json.data)) {
-      json.data.forEach(rt => {
-        const opt = document.createElement('option');
-        opt.value = rt;
-        opt.textContent = rt;
-        roomTypeSelect.appendChild(opt);
-      });
-      // If room types available, auto-load beds if single option
-      if (json.data.length === 1) {
-        roomTypeSelect.value = json.data[0];
-        onTrRoomTypeChange();
-      }
-    }
-  } catch (err) {
-    console.error('Error fetching room types:', err);
-  }
-}
-
-async function onTrRoomTypeChange() {
-  loadBeds();
-}
-
-async function loadBeds() {
-  const floor = document.getElementById('tr-floor').value;
-  const ward = document.getElementById('tr-ward').value;
-  const roomType = document.getElementById('tr-room-type').value;
-  const bedCardsWrap = document.getElementById('tr-bed-cards');
-
-  if (!floor || !ward || !roomType) {
-    if (bedCardsWrap) {
-      bedCardsWrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--gm-text-muted); font-size:0.84rem;"><i class="fas fa-info-circle"></i> Please select Floor, Ward, and Room Type to view available beds.</div>';
-    }
-    clearSelectedTargetBed();
-    return;
-  }
-
-  if (bedCardsWrap) {
-    bedCardsWrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:24px; color:var(--gm-primary);"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top:8px; font-weight:700;">Loading real-time bed availability...</p></div>';
-  }
-
-  try {
-    const res = await fetch(`api/get_ward_hierarchy.php?action=beds&floor=${encodeURIComponent(floor)}&ward=${encodeURIComponent(ward)}&room_type=${encodeURIComponent(roomType)}`);
-    const json = await res.json();
-    if (json.success && Array.isArray(json.data)) {
-      currentLoadedBeds = json.data;
-      renderBedCards(json.data);
-    } else {
-      bedCardsWrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--gm-text-muted);">No beds found for this room type.</div>';
-    }
-  } catch (err) {
-    console.error('Error loading beds:', err);
-    bedCardsWrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:#dc2626;"><i class="fas fa-exclamation-triangle"></i> Failed to load beds. Click Refresh to retry.</div>';
-  }
-}
-
-function refreshBeds() {
-  const floor = document.getElementById('tr-floor').value;
-  const ward = document.getElementById('tr-ward').value;
-  const roomType = document.getElementById('tr-room-type').value;
-  if (!floor || !ward || !roomType) {
-    showToast('Please select Floor, Ward, and Room Type first.', true);
-    return;
-  }
-  loadBeds();
-  showToast('🔄 Bed availability refreshed!');
-}
-
-function renderBedCards(beds) {
-  const wrap = document.getElementById('tr-bed-cards');
-  if (!wrap) return;
-
-  if (!beds.length) {
-    wrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--gm-text-muted);">No beds configured in this section.</div>';
-    return;
-  }
-
-  const selectedBedId = document.getElementById('tr-target-bed-id').value;
-
-  wrap.innerHTML = beds.map(b => {
-    const rawStatus = (b.bed_status || 'Available').trim();
-    const statusLower = rawStatus.toLowerCase();
-    const isCurrent = cp && parseInt(b.bed_id) === parseInt(cp.bed_id);
-    const isAvailable = (statusLower === 'available' || statusLower === 'vacant') && !isCurrent;
-    const isSelected = selectedBedId && parseInt(selectedBedId) === parseInt(b.bed_id);
-
-    let cardClass = 'tr-bed-card ';
-    let statusBadge = '';
-    let clickAttr = '';
-
-    if (isCurrent) {
-      cardClass += 'occupied';
-      statusBadge = '<span class="badge" style="background:#f1f5f9; color:#475569; font-size:0.68rem;">Current Bed</span>';
-    } else if (isAvailable) {
-      cardClass += 'available' + (isSelected ? ' selected' : '');
-      statusBadge = '<span class="badge" style="background:#dcfce7; color:#15803d; font-size:0.68rem;"><i class="fas fa-check"></i> Available</span>';
-      clickAttr = `onclick='selectTargetBed(${JSON.stringify(b)})'`;
-    } else if (statusLower === 'occupied') {
-      cardClass += 'occupied';
-      const ptInfo = b.occupied_by_patient ? `<br><small style="color:#b91c1c;">${b.occupied_by_patient}</small>` : '';
-      statusBadge = `<span class="badge" style="background:#fee2e2; color:#b91c1c; font-size:0.68rem;">Occupied</span>${ptInfo}`;
-    } else if (statusLower === 'reserved') {
-      cardClass += 'reserved';
-      statusBadge = '<span class="badge" style="background:#fef3c7; color:#b45309; font-size:0.68rem;">Reserved</span>';
-    } else {
-      cardClass += 'blocked';
-      statusBadge = `<span class="badge" style="background:#e2e8f0; color:#475569; font-size:0.68rem;">${rawStatus}</span>`;
-    }
-
-    const rate = b.total_bed_amount || b.amount_per_day || 0;
-
-    return `
-      <div class="${cardClass}" id="bed-card-${b.bed_id}" ${clickAttr} title="${isAvailable ? 'Click to select bed ' + b.bed_number : rawStatus}">
-        <div class="tr-bed-no">
-          <span><i class="fas fa-bed"></i> Bed ${b.bed_number}</span>
-          ${isSelected ? '<i class="fas fa-check-circle" style="color:#ffffff;"></i>' : ''}
-        </div>
-        <div class="tr-bed-sub">Room: ${b.room_number || b.room_name || '-'}</div>
-        <div class="tr-bed-price">₹${rate}/day</div>
-        <div style="margin-top:2px;">${statusBadge}</div>
-      </div>
-    `;
-  }).join('');
-}
-
-function selectTargetBed(bed) {
-  // Update hidden inputs
-  document.getElementById('tr-target-bed-id').value = bed.bed_id;
-  document.getElementById('tr-target-bed-no').value = bed.bed_number;
-  document.getElementById('tr-target-room-no').value = bed.room_number || '';
-  document.getElementById('tr-target-rate').value = bed.total_bed_amount || bed.amount_per_day || 0;
-
-  // Update visual selection
-  document.querySelectorAll('.tr-bed-card').forEach(c => c.classList.remove('selected'));
-  const activeCard = document.getElementById(`bed-card-${bed.bed_id}`);
-  if (activeCard) activeCard.classList.add('selected');
-
-  // Update target preview card
-  const targetValEl = document.getElementById('tr-target-val');
-  if (targetValEl) targetValEl.textContent = `${bed.ward_name} • ${bed.room_type} (Bed ${bed.bed_number})`;
-
-  const targetMetaEl = document.getElementById('tr-target-meta');
-  if (targetMetaEl) {
-    const rate = bed.total_bed_amount || bed.amount_per_day || 0;
-    targetMetaEl.textContent = `Floor: ${bed.floor_name || 'N/A'} | Room: ${bed.room_number || '-'} | ₹${rate}/day`;
-  }
-
-  const badgeEl = document.getElementById('tr-target-status-badge');
-  if (badgeEl) {
-    badgeEl.textContent = `✓ Selected: Bed ${bed.bed_number}`;
-    badgeEl.style.background = '#dcfce7';
-    badgeEl.style.color = '#15803d';
-  }
-
-  const f = document.getElementById('f-tr');
-  if (f) f.classList.add('is-dirty');
-
-  showToast(`✅ Bed ${bed.bed_number} selected for transfer.`);
-}
-
-function clearSelectedTargetBed() {
-  document.getElementById('tr-target-bed-id').value = '';
-  document.getElementById('tr-target-bed-no').value = '';
-  document.getElementById('tr-target-room-no').value = '';
-  document.getElementById('tr-target-rate').value = '';
-
-  const targetValEl = document.getElementById('tr-target-val');
-  if (targetValEl) targetValEl.textContent = 'Select floor, ward & bed below';
-
-  const targetMetaEl = document.getElementById('tr-target-meta');
-  if (targetMetaEl) targetMetaEl.textContent = 'Charge: – / day';
-
-  const badgeEl = document.getElementById('tr-target-status-badge');
-  if (badgeEl) {
-    badgeEl.textContent = 'Not Selected';
-    badgeEl.style.background = '#f1f5f9';
-    badgeEl.style.color = '#64748b';
-  }
-}
-
-function resetTransferForm() {
-  clearSelectedTargetBed();
-  document.getElementById('tr-remarks').value = '';
-  document.getElementById('tr-emergency').checked = false;
-  toggleEmergencyStyle(document.getElementById('tr-emergency'));
-
-  const floorSelect = document.getElementById('tr-floor');
-  if (floorSelect) floorSelect.value = '';
-  const wardSelect = document.getElementById('tr-ward');
-  if (wardSelect) wardSelect.innerHTML = '<option value="">-- Select Ward --</option>';
-  const roomTypeSelect = document.getElementById('tr-room-type');
-  if (roomTypeSelect) roomTypeSelect.innerHTML = '<option value="">-- Select Room Type --</option>';
-
-  const bedCardsWrap = document.getElementById('tr-bed-cards');
-  if (bedCardsWrap) {
-    bedCardsWrap.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--gm-text-muted); font-size:0.84rem;"><i class="fas fa-info-circle"></i> Please select Floor, Ward, and Room Type to view available beds.</div>';
-  }
-
-  autoFill(document.getElementById('f-tr'));
-}
-
-function toggleEmergencyStyle(cb) {
-  const wrap = document.getElementById('tr-emergency-wrap');
-  if (wrap) {
-    if (cb.checked) {
-      wrap.classList.add('active');
-    } else {
-      wrap.classList.remove('active');
-    }
-  }
-}
-
-function toggleEmergencyCheckbox() {
-  const cb = document.getElementById('tr-emergency');
-  if (cb && event.target !== cb) {
-    cb.checked = !cb.checked;
-    toggleEmergencyStyle(cb);
-  }
-}
-
-function openTransferConfirmModal() {
-  if (!cp) {
-    showToast('Please select an admitted patient first!', true);
-    return;
-  }
-
-  const newBedId = document.getElementById('tr-target-bed-id').value;
-  if (!newBedId) {
-    showToast('Please select an available target bed from the grid!', true);
-    return;
-  }
-
-  const remarks = document.getElementById('tr-remarks').value.trim();
-  if (!remarks) {
-    showToast('Please enter the reason for transfer!', true);
-    document.getElementById('tr-remarks').focus();
-    return;
-  }
-
-  const trDate = document.getElementById('tr-date').value;
-  if (!trDate) {
-    showToast('Please specify the transfer date and time!', true);
-    return;
-  }
-
-  const isEmergency = document.getElementById('tr-emergency').checked;
-
-  // Populate Modal Summary
-  document.getElementById('tr-modal-pt-name').textContent = `${cp.first_name} ${cp.last_name || ''}`;
-  document.getElementById('tr-modal-pt-details').textContent = `PID: ${cp.patient_id} | IP#: ${cp.admission_id || 'N/A'} | Age/Sex: ${cp.age || '-'}Y / ${cp.sex || '-'}`;
-
-  const currBedNo = cp.bed_number || cp.room_number || 'N/A';
-  const currWard = cp.ward_name || cp.ward || cp.room_type || 'General Ward';
-  document.getElementById('tr-modal-from-val').textContent = `${currWard} (Bed ${currBedNo})`;
-
-  document.getElementById('tr-modal-to-val').textContent = document.getElementById('tr-target-val').textContent;
-  document.getElementById('tr-modal-reason-val').textContent = remarks;
-
-  const emergBadge = document.getElementById('tr-modal-emergency-badge');
-  if (emergBadge) emergBadge.style.display = isEmergency ? 'inline-flex' : 'none';
-
-  document.getElementById('tr-confirm-modal').style.display = 'flex';
-}
-
-function closeTransferConfirmModal() {
-  document.getElementById('tr-confirm-modal').style.display = 'none';
-}
-
-async function executeBedTransfer() {
-  if (!cp) return;
-
-  const newBedId = document.getElementById('tr-target-bed-id').value;
-  const remarks = document.getElementById('tr-remarks').value.trim();
-  const trDate = document.getElementById('tr-date').value;
-  const isEmergency = document.getElementById('tr-emergency').checked ? 1 : 0;
-
-  const btn = document.getElementById('tr-confirm-btn');
-  const origHtml = btn.innerHTML;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Executing Transfer...';
-  btn.disabled = true;
-
-  try {
-    const payload = {
-      patient_id: cp.patient_id,
-      admission_id: cp.admission_id || '',
-      new_bed_id: parseInt(newBedId),
-      transfer_date: trDate,
-      transfer_remarks: remarks,
-      is_emergency: isEmergency
-    };
-
-    const res = await fetch('api/transfer_bed.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      showToast(`✅ ${data.message || 'Patient transferred successfully!'}`);
-
-      // 1. Update active patient object
-      cp.bed_id = data.data.bed_id;
-      cp.floor_name = data.data.floor_name;
-      cp.ward_name = data.data.ward_name;
-      cp.room_type = data.data.room_type;
-      cp.room_number = data.data.room_number;
-      cp.bed_number = data.data.bed_number;
-
-      // 2. Update Sticky Banner Chips
-      const chipsEl = document.getElementById('pt-chips');
-      if (chipsEl) {
-        chipsEl.innerHTML = [
-          { ic: 'fa-id-card', l: 'PID', v: cp.patient_id },
-          { ic: 'fa-file-invoice', l: 'IP#', v: cp.admission_id || 'N/A' },
-          { ic: 'fa-bed', l: 'Bed', v: `${cp.ward_name || cp.room_type} - Bed ${cp.bed_number || cp.room_number}` },
-          { ic: 'fa-user', l: 'Age/Sex', v: `${cp.age || '?'}Y / ${cp.sex || '?'}` },
-          { ic: 'fa-tint', l: 'Blood', v: cp.blood_group || 'N/A' }
-        ].map(c => `<span class="ptchip"><i class="fas ${c.ic}"></i><strong>${c.l}:</strong> ${c.v}</span>`).join('');
-      }
-
-      // 3. Close Modal & Reset Form
-      closeTransferConfirmModal();
-      initTransferForm();
-
-      // 4. Reload Transfer Logs & Global Records
-      loadAllRecords();
-
-      // 5. Reload bed grid if still looking at the same section
-      loadBeds();
-
-      // 6. Immediately trigger notification fetch
-      if (typeof fetchNurseNotifications === 'function') {
-        fetchNurseNotifications();
-      }
-
-    } else {
-      showToast(`❌ Transfer Failed: ${data.message || 'Unknown error'}`, true);
-    }
-  } catch (err) {
-    console.error('Transfer execution error:', err);
-    showToast('Network error during transfer.', true);
-  } finally {
-    btn.innerHTML = origHtml;
-    btn.disabled = false;
-  }
-}
-
-function renderTransferHistory(logs) {
-  const tb = document.getElementById('h-tr');
-  if (!tb) return;
-  if (!logs || !logs.length) {
-    tb.innerHTML = '<tr class="et"><td colspan="5">No transfer records yet.</td></tr>';
-    return;
-  }
-
-  tb.innerHTML = [...logs].reverse().map(r => {
-    const fromTxt = (r.from_ward || r.from_bed || '-') + (r.from_bed_no ? ` (Bed ${r.from_bed_no})` : '');
-    const toTxt = (r.to_ward || r.to_bed || '-') + (r.to_bed_no ? ` (Bed ${r.to_bed_no})` : '');
-    const isEmerg = r.is_emergency == 1;
-    const dt = (r.transfer_date || r.date || r.created_date || '').replace('T', ' ');
-
-    return `
-      <tr>
-        <td><strong>${dt}</strong></td>
-        <td><small style="color:var(--gm-text-muted);">${r.from_floor ? r.from_floor + ' • ' : ''}</small>${fromTxt}</td>
-        <td><strong style="color:var(--gm-primary);">${toTxt}</strong><br><small style="color:var(--gm-text-muted);">${r.to_floor ? r.to_floor + ' • ' : ''}${r.to_room_type || ''}</small></td>
-        <td>
-          ${r.transfer_remarks || r.remarks || '-'}
-          ${isEmerg ? '<br><span class="badge" style="background:#fee2e2; color:#dc2626; font-size:0.7rem; font-weight:800; border-color:#fca5a5;"><i class="fas fa-ambulance"></i> EMERGENCY</span>' : ''}
-        </td>
-        <td><small style="color:var(--gm-text-muted);">${r.created_by_name || r.nurse_name || r.nurse_sign || '-'}</small></td>
-      </tr>
-    `;
-  }).join('');
-}
-
-function filterTransferHistory(q) {
-  q = (q || '').toLowerCase().trim();
-  if (!q) {
-    renderTransferHistory(currentTransferLogs);
-    return;
-  }
-  const filtered = currentTransferLogs.filter(r => {
-    const str = `${r.transfer_date || ''} ${r.from_ward || ''} ${r.to_ward || ''} ${r.from_bed_no || ''} ${r.to_bed_no || ''} ${r.transfer_remarks || ''} ${r.created_by_name || ''} ${r.to_floor || ''} ${r.to_room_type || ''}`.toLowerCase();
-    return str.includes(q);
-  });
-  renderTransferHistory(filtered);
 }
 
 /* ── Multi-Department Discharge Clearance ── */

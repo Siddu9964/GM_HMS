@@ -62,6 +62,11 @@
                     </div>
                 </div>
 
+                <a href="bed_transfer.php" class="sidebar-link" data-page="bed_transfer">
+                    <i class="fas fa-bed"></i>
+                    <span>Bed transfer</span>
+                </a>
+
                 <a href="k_sheet_view.php" class="sidebar-link" data-page="k_sheet_view">
                     <i class="fas fa-file-medical-alt"></i>
                     <span>Case-Sheet</span>
@@ -105,7 +110,7 @@
                 </div>
 
                 <a href="ward_management.php" class="sidebar-link" data-page="ward_management">
-                    <i class="fas fa-bed"></i>
+                    <i class="fas fa-hospital"></i>
                     <span>Ward Overview</span>
                 </a>
 

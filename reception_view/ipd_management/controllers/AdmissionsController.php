@@ -51,12 +51,24 @@ class AdmissionsController extends BaseController {
                 'search' => $this->getParam('search')
             ];
             
-            $pagination = $this->getPagination();
+            // Check if pagination was explicitly requested
+            $limitParam = $this->getParam('limit');
+            if ($limitParam !== null && is_numeric($limitParam)) {
+                $limit = max(1, (int)$limitParam);
+                $page = max(1, (int)$this->getParam('page', 1));
+                $offset = ($page - 1) * $limit;
+            } else {
+                // When limit is not specified, return all matching records
+                // This allows client-side DataTables to paginate and search across the full dataset
+                $limit = null;
+                $offset = 0;
+                $page = 1;
+            }
             
             $admissions = $this->model->getAllWithDetails(
                 $filters,
-                $pagination['limit'],
-                $pagination['offset']
+                $limit,
+                $offset
             );
             
             $total = $this->model->count(array_filter($filters, function($v) { return $v !== null && $v !== ''; }));
@@ -64,10 +76,10 @@ class AdmissionsController extends BaseController {
             $this->success([
                 'admissions' => $admissions,
                 'pagination' => [
-                    'page' => $pagination['page'],
-                    'limit' => $pagination['limit'],
+                    'page' => $page,
+                    'limit' => $limit ?? $total,
                     'total' => $total,
-                    'pages' => ceil($total / $pagination['limit'])
+                    'pages' => $limit ? ceil($total / $limit) : 1
                 ]
             ], 'Admissions retrieved successfully');
         }

@@ -47,6 +47,11 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
     <link rel="stylesheet" href="../../public/assets/css/ipd_main.css">
 
     <style>
+        /* Hide duplicate DataTables filter since custom #searchBox is used for full-database search */
+        #admissionsTable_filter {
+            display: none !important;
+        }
+
         /* Professional Action Column Styles */
         .btn-action {
             width: 40px;
@@ -1307,6 +1312,8 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     url: IPD.API_BASE + '/admissions',
                     dataSrc: 'data.admissions'
                 },
+                pageLength: 50,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
                 columns: [
                     { 
                         data: 'admission_id',
@@ -1319,8 +1326,14 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                     { data: 'patient_contact' },
                     { data: 'doctor_name' },
                     { data: 'bed_number' },
-                    { data: 'admission_date', render: (data) => IPD.formatDateTime(data) },
-                    { data: 'admission_time', render: (data) => data ? IPD.formatTime(data) : '-' },
+                    { 
+                        data: 'admission_date', 
+                        render: (data, type) => (type === 'sort' || type === 'type') ? data : IPD.formatDate(data) 
+                    },
+                    { 
+                        data: 'admission_time', 
+                        render: (data, type) => (type === 'sort' || type === 'type') ? (data || '') : (data ? IPD.formatTime(data) : '-') 
+                    },
                     { data: 'days_admitted' },
                     {
                         data: 'status',
@@ -1356,7 +1369,7 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                         `
                     }
                 ],
-                order: [[0, 'desc']]
+                order: [[6, 'desc'], [7, 'desc']]
             });
 
             // ── Admission Custom Modal Logic ──────────────────────────────────
