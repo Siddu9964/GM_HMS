@@ -96,6 +96,20 @@ class NurseClinicalModel {
             } catch (\Throwable $ne) {}
         }
 
+        if ($columnName === 'radiology_tests') {
+            // Insert Notification for Radiology (staff)
+            $nid = 'NOT-' . strtoupper(substr(uniqid(), -6));
+            $title = "IPD Radiology Order Added";
+            $message = "A new imaging/radiology scan order has been added for IPD Patient ({$patientId}).";
+            try {
+                $this->db->execute(
+                    "INSERT INTO notifications (notification_id, recipient_id, recipient_type, title, message, category, priority, action_url) 
+                     VALUES (?, 'staff', 'staff', ?, ?, 'radiology_result', 'normal', 'radiology_view/ipd_test_orders.php')",
+                    [$nid, $title, $message]
+                );
+            } catch (\Throwable $ne) {}
+        }
+
         if ($columnName === 'pharmacy_orders') {
             // Insert Notification for Pharmacy
             $nid = 'NOT-' . strtoupper(substr(uniqid(), -6));

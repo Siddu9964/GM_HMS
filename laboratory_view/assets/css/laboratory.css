@@ -47,7 +47,7 @@
   --lis-text-light:     #94a3b8;
 
   /* Layout */
-  --lis-sidebar-w:      200px;
+  --lis-sidebar-w:      180px;
   --lis-navbar-h:       64px;
   --lis-radius:         16px;
   --lis-radius-sm:      10px;
@@ -1930,4 +1930,47 @@ body {
   color: var(--lis-primary);
   border-bottom-color: var(--lis-primary);
   font-weight: 800;
+}
+
+/* ============================================================================
+   Centered Modal & Popups (Success, Error, Warnings, Logout)
+   ============================================================================ */
+.swal2-container.swal2-center {
+  z-index: 100050 !important;
+}
+
+.gm-center-swal-popup {
+  border-radius: 20px !important;
+  padding: 24px 28px !important;
+  box-shadow: 0 25px 70px rgba(15, 23, 42, 0.35) !important;
+  border: 1.5px solid rgba(226, 232, 240, 0.8) !important;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+}
+
+.gm-center-swal-popup .swal2-title {
+  font-size: 1.35rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  margin-bottom: 8px !important;
+}
+
+.gm-center-swal-popup .swal2-html-container {
+  font-size: 0.95rem !important;
+  color: #334155 !important;
+  line-height: 1.5 !important;
+  font-weight: 500 !important;
+}
+
+.gm-center-swal-popup .swal2-actions {
+  margin-top: 20px !important;
+  gap: 10px !important;
+}
+
+.gm-center-swal-popup .swal2-confirm,
+.gm-center-swal-popup .swal2-cancel {
+  border-radius: 10px !important;
+  font-weight: 700 !important;
+  font-size: 0.88rem !important;
+  padding: 10px 24px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
 }

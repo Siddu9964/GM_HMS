@@ -39,6 +39,7 @@ try {
         case 'status':
             $admissionId = $params['admission_id'] ?? '';
             $patientId   = $params['patient_id'] ?? '';
+            session_write_close();
             $result = $controller->getClearanceStatus($admissionId, $patientId);
             echo json_encode($result);
             break;
@@ -48,6 +49,7 @@ try {
         case 'list':
             $module = $params['module'] ?? ($_SESSION['role'] ?? 'admin');
             $limit  = (int)($params['limit'] ?? 20);
+            session_write_close();
             $result = $controller->getPendingList($module, $limit);
             echo json_encode($result);
             break;

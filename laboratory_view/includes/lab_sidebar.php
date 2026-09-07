@@ -131,7 +131,7 @@ function lisSidebarActive($file, $current) {
 
   <!-- Sidebar Footer -->
   <div class="lis-sidebar-footer">
-    <a href="/GM_HMS/login.php" onclick="return confirm('Logout from LIS?')">
+    <a href="/GM_HMS/logout.php" onclick="return labConfirmLogout(event)">
       <i class="fas fa-sign-out-alt"></i>
       <span>Logout</span>
     </a>

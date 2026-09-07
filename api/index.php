@@ -370,7 +370,24 @@ $router->add('POST', '#^/api/laboratory/notifications/([^/]+)/read/?$#', 'GM_HMS
 $router->add('POST', '#^/api/laboratory/ipd-orders/([^/]+)/result/?$#',         'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'saveResult');
 
 $router->add('GET',  '#^/api/laboratory/prescribed-tests/?$#',                  'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'getPrescribedTests');
-$router->add('GET',  '#^/api/laboratory/patients/([^/]+)/previous-results/?$#', 'GM_HMS\Modules\Laboratory\Controllers\LaboratoryController', 'getPreviousResults');
+// Radiology Routes
+$router->add('GET',  '#^/api/radiology/dashboard/?$#',                         'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getDashboard');
+$router->add('GET',  '#^/api/radiology/services/?$#',                          'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getServices');
+$router->add('POST', '#^/api/radiology/services/?$#',                          'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'createService');
+$router->add('PUT',  '#^/api/radiology/services/([^/]+)/?$#',                  'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'updateService');
+$router->add('DELETE','#^/api/radiology/services/([^/]+)/?$#',                 'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'deleteService');
+$router->add('GET',  '#^/api/radiology/orders/?$#',                            'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getOrders');
+$router->add('POST', '#^/api/radiology/orders/?$#',                            'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'createOrder');
+$router->add('GET',  '#^/api/radiology/orders/([^/]+)/?$#',                    'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getOrder');
+$router->add('PUT',  '#^/api/radiology/orders/([^/]+)/status/?$#',             'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'updateOrderStatus');
+$router->add('GET',  '#^/api/radiology/orders/([^/]+)/result/?$#',             'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getResult');
+$router->add('POST', '#^/api/radiology/orders/([^/]+)/result/?$#',             'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'saveResult');
+$router->add('GET',  '#^/api/radiology/ipd-orders/?$#',                        'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getIpdOrders');
+$router->add('PUT',  '#^/api/radiology/ipd-orders/([^/]+)/status/?$#',         'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'updateIpdOrderStatus');
+$router->add('GET',  '#^/api/radiology/ipd-orders/([^/]+)/result/?$#',         'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getResult');
+$router->add('POST', '#^/api/radiology/ipd-orders/([^/]+)/result/?$#',         'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'saveResult');
+$router->add('GET',  '#^/api/radiology/patients/([^/]+)/previous-results/?$#', 'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getPreviousResults');
+$router->add('POST', '#^/api/radiology/templates/auto-generate/?$#',           'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'autoGenerateTemplate');
 
 // Payment Module Routes
 $router->add('POST', '#^/api/payment/clinical-billing-sync/?$#',                'GM_HMS\Modules\Payment\Controllers\PaymentController', 'syncClinicalBilling');

@@ -39,16 +39,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function processNotifications(notifications) {
         unreadCount = notifications.length;
         
-        // Update badges
-        const badges = document.querySelectorAll('.lab-notif-badge');
-        badges.forEach(badge => {
+        // Update sidebar notification count
+        const sidebarBadge = document.getElementById('sidebar-notif-count');
+        if (sidebarBadge) {
             if (unreadCount > 0) {
-                badge.textContent = unreadCount;
-                badge.style.display = 'inline-flex';
+                sidebarBadge.textContent = unreadCount;
+                sidebarBadge.style.display = 'inline-flex';
             } else {
-                badge.style.display = 'none';
+                sidebarBadge.style.display = 'none';
             }
-        });
+        }
         
         // Check for new notifications to show toast
         notifications.forEach(notif => {
@@ -66,37 +66,32 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        // Render dropdown list
-        renderDropdown(notifications);
-    }
-    
-    function renderDropdown(notifications) {
-        const container = document.getElementById('lab-notif-dropdown-list');
-        if (!container) return;
-        
-        if (notifications.length === 0) {
-            container.innerHTML = '<div class="p-3 text-center text-muted" style="font-size:0.8rem;">No unread notifications</div>';
-            return;
+        // Render dropdown list only if a dedicated container exists and not the clearance list
+        const container = document.getElementById('lab-order-notif-dropdown-list');
+        if (container && container.id !== 'lab-notif-dropdown-list') {
+            if (notifications.length === 0) {
+                container.innerHTML = '<div class="p-3 text-center text-muted" style="font-size:0.8rem;">No unread notifications</div>';
+                return;
+            }
+            container.innerHTML = notifications.map(notif => {
+                const type = notif.action_url.includes('ipd') ? 'IPD' : 'OPD';
+                const badgeColor = type === 'IPD' ? 'bg-danger' : 'bg-primary';
+                return `
+                    <div class="dropdown-item" style="cursor:pointer; border-bottom:1px solid #f0f0f0; padding:10px; white-space:normal;" 
+                         onclick="markReadAndRedirect('${notif.notification_id}', '${notif.action_url}')">
+                        <div style="font-weight:600; font-size:0.85rem; margin-bottom:4px;">
+                            <span class="badge ${badgeColor}" style="margin-right:5px;">${type}</span>
+                            ${notif.title}
+                        </div>
+                        <div style="font-size:0.75rem; color:#666;">
+                            ${notif.message}
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
-        
-        container.innerHTML = notifications.map(notif => {
-            const type = notif.action_url.includes('ipd') ? 'IPD' : 'OPD';
-            const badgeColor = type === 'IPD' ? 'bg-danger' : 'bg-primary';
-            return `
-                <div class="dropdown-item" style="cursor:pointer; border-bottom:1px solid #f0f0f0; padding:10px; white-space:normal;" 
-                     onclick="markReadAndRedirect('${notif.notification_id}', '${notif.action_url}')">
-                    <div style="font-weight:600; font-size:0.85rem; margin-bottom:4px;">
-                        <span class="badge ${badgeColor}" style="margin-right:5px;">${type}</span>
-                        ${notif.title}
-                    </div>
-                    <div style="font-size:0.75rem; color:#666;">
-                        ${notif.message}
-                    </div>
-                </div>
-            `;
-        }).join('');
     }
-    
+
     window.markReadAndRedirect = function(id, url) {
         fetch(`/GM_HMS/api/laboratory/notifications/${id}/read`, { method: 'POST' })
             .then(() => {

@@ -1,0 +1,495 @@
+/* ============================================================================
+   GM_HMS — Radiology Information System (RIS) Responsive Design System
+   All-device support: Mobile (<768px), Tablet (768-1023px), Laptop (1024-1279px), Desktop (1280px+)
+   ============================================================================ */
+
+/* Import Base Laboratory Responsive Variables & Palette */
+@import url('/GM_HMS/laboratory_view/assets/css/laboratory-responsive.css');
+
+/* ── Global Touch Target & Mobile Form Defaults ────────────────────────────── */
+@media (max-width: 767px) {
+  .lis-btn,
+  .lb,
+  button[class*="lis-"],
+  button[class*="lb-"] {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+
+  /* Prevent iOS auto-zoom on input focus */
+  input,
+  select,
+  textarea,
+  .lis-input,
+  .ro-finput {
+    font-size: 16px !important;
+  }
+}
+
+/* ============================================================================
+   1. SIDEBAR — MOBILE & TABLET DRAWER (Breakpoint: < 1024px)
+   ============================================================================ */
+#lis-sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 998;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+#lis-sidebar-overlay.visible {
+  display: block !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+@media (max-width: 1023px) {
+  .lis-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    height: 100vh !important;
+    width: 260px !important;
+    max-width: 82vw !important;
+    transform: translateX(-100%) !important;
+    z-index: 999 !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: none;
+  }
+
+  .lis-sidebar.sidebar-open {
+    transform: translateX(0) !important;
+    box-shadow: 10px 0 40px rgba(15, 23, 42, 0.35) !important;
+  }
+
+  .lis-main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #lis-hamburger {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #1f6b4a;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    font-size: 1.1rem;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  #lis-hamburger {
+    display: none !important;
+  }
+  #lis-sidebar-overlay {
+    display: none !important;
+  }
+}
+
+/* ============================================================================
+   2. NAVBAR RESPONSIVENESS
+   ============================================================================ */
+@media (max-width: 991px) {
+  .lis-nav-search {
+    max-width: 180px;
+  }
+  .lis-search-kbd {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .lis-navbar {
+    padding: 0 12px !important;
+    height: 58px !important;
+    gap: 8px !important;
+  }
+
+  .lis-navbar-subtitle,
+  .lis-navbar-divider,
+  .lis-live-clock,
+  #lis-date-pill {
+    display: none !important;
+  }
+
+  .lis-navbar-title {
+    font-size: 0.92rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 130px;
+  }
+
+  .lis-nav-search {
+    display: none !important; /* Save space for mobile brand & actions */
+  }
+
+  #radNotificationsDropdown {
+    position: fixed !important;
+    top: 62px !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: auto !important;
+    max-width: none !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25) !important;
+  }
+}
+
+/* ============================================================================
+   3. PAGE HEADERS & ACTION BARS
+   ============================================================================ */
+@media (max-width: 767px) {
+  .lis-page-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 14px 16px !important;
+  }
+
+  .lis-page-title {
+    font-size: 1.25rem !important;
+    gap: 10px !important;
+  }
+
+  .lis-page-title-icon {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 1rem !important;
+    flex-shrink: 0;
+  }
+
+  .lis-page-header > div:last-child {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .lis-page-header > div:last-child .lis-btn,
+  .lis-page-header > div:last-child button,
+  .lis-page-header > div:last-child a {
+    flex: 1 1 auto !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  .ro-page {
+    padding: 8px !important;
+  }
+
+  .ro-header > div:first-child {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 16px !important;
+    gap: 14px !important;
+  }
+
+  .ro-header h1 {
+    font-size: 1.25rem !important;
+  }
+
+  .ro-header > div:first-child > div:last-child {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .ro-header > div:first-child > div:last-child .lb,
+  .ro-header > div:first-child > div:last-child button,
+  .ro-header > div:first-child > div:last-child a {
+    flex: 1 1 auto !important;
+    justify-content: center !important;
+  }
+}
+
+/* ============================================================================
+   4. STATS & KPI GRIDS (All Devices)
+   ============================================================================ */
+/* Header Stats Row (test_orders.php) */
+@media (max-width: 767px) {
+  .ro-header > div[style*="grid-template-columns"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .ro-header > div[style*="grid-template-columns"] > div {
+    padding: 12px 14px !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+  }
+
+  .ro-header > div[style*="grid-template-columns"] > div:nth-child(odd) {
+    border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+  }
+
+  .ro-header > div[style*="grid-template-columns"] > div:nth-last-child(-n+2) {
+    border-bottom: none !important;
+  }
+}
+
+/* Dashboard & Reports KPI Grids */
+@media (max-width: 1199px) {
+  div[style*="repeat(5,1fr)"],
+  div[style*="repeat(5, 1fr)"] {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  div[style*="repeat(4,1fr)"],
+  div[style*="repeat(4, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .lis-kpi-grid,
+  div[style*="repeat(5,1fr)"],
+  div[style*="repeat(5, 1fr)"],
+  div[style*="repeat(4,1fr)"],
+  div[style*="repeat(4, 1fr)"],
+  div[style*="repeat(3,1fr)"],
+  div[style*="repeat(3, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .lis-kpi-card {
+    padding: 14px 12px !important;
+  }
+
+  .lis-kpi-value {
+    font-size: 1.35rem !important;
+  }
+
+  .lis-kpi-label {
+    font-size: 0.72rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .lis-kpi-grid,
+  div[style*="repeat(5,1fr)"],
+  div[style*="repeat(5, 1fr)"],
+  div[style*="repeat(4,1fr)"],
+  div[style*="repeat(4, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ============================================================================
+   5. FILTER BARS & SEARCH CONTROLS
+   ============================================================================ */
+@media (max-width: 1023px) {
+  .ro-filter-top {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+    padding: 14px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .ro-filter-top {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    padding: 12px 14px !important;
+  }
+
+  .ro-finput,
+  .lis-search-wrap,
+  #services-search,
+  #resultSearchInput {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .lis-filter-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 12px 14px !important;
+  }
+
+  .lis-filter-bar .lis-search-wrap {
+    max-width: 100% !important;
+  }
+
+  .lis-filter-chip {
+    padding: 8px 14px !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+/* ============================================================================
+   6. TABLES & HORIZONTAL SCROLL CONTAINERS
+   ============================================================================ */
+.ro-table-card,
+#orders-table-wrap,
+.lis-card-body,
+.lis-table-wrap {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  width: 100% !important;
+}
+
+@media (max-width: 1023px) {
+  .ro-table,
+  .lis-table {
+    min-width: 680px !important;
+  }
+
+  .ro-table th,
+  .ro-table td,
+  .lis-table th,
+  .lis-table td {
+    padding: 10px 12px !important;
+  }
+}
+
+/* ============================================================================
+   7. MODALS & REPORTING WORKSPACES (Crucial for Mobile & Tablets)
+   ============================================================================ */
+@media (max-width: 991px) {
+  /* Stack the Reporting 2-column workspace into 1 column */
+  #resultModal .lis-modal-body > div[style*="grid-template-columns"],
+  #ipdResultModal .lis-modal-body > div[style*="grid-template-columns"],
+  .ro-modal-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .lis-modal-overlay {
+    padding: 8px !important;
+    align-items: flex-end !important; /* Bottom sheet style on phone */
+  }
+
+  .lis-modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 94vh !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 8px 8px !important;
+  }
+
+  .lis-modal-header {
+    padding: 14px 16px !important;
+  }
+
+  .lis-modal-title {
+    font-size: 1rem !important;
+  }
+
+  .lis-modal-body {
+    padding: 14px !important;
+    max-height: 75vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* Walk-in Grid inside Create Modal */
+  #section-wlk > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .lis-modal-footer {
+    padding: 12px 16px !important;
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+  }
+
+  .lis-modal-footer .lb,
+  .lis-modal-footer button {
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  #file-preview-img {
+    max-height: 220px !important;
+    width: 100% !important;
+    object-fit: contain !important;
+  }
+}
+
+/* ============================================================================
+   8. CHARTS, PATIENT ARCHIVE & CRITICAL ALERTS
+   ============================================================================ */
+@media (max-width: 1023px) {
+  .lis-grid-3-1,
+  .lis-grid-2-1,
+  .lis-grid-1-2,
+  .lis-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .pat-search-hero {
+    padding: 24px 14px !important;
+  }
+  .pat-search-hero h2 {
+    font-size: 1.35rem !important;
+  }
+  .pat-search-hero p {
+    font-size: 0.85rem !important;
+    margin-bottom: 16px !important;
+  }
+  .pat-search-hero input {
+    font-size: 0.95rem !important;
+    padding: 12px 20px 12px 42px !important;
+  }
+  .pat-search-icon {
+    left: 14px !important;
+    font-size: 1rem !important;
+  }
+}
+
+/* ============================================================================
+   9. PRINT STYLES
+   ============================================================================ */
+@media print {
+  .lis-sidebar,
+  .lis-navbar,
+  .lis-modal-close,
+  .lis-btn,
+  .lb,
+  .ro-filters,
+  #lis-hamburger,
+  #lis-sidebar-overlay {
+    display: none !important;
+  }
+
+  .lis-main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .lis-card,
+  .ro-table-card {
+    border: none !important;
+    box-shadow: none !important;
+  }
+}

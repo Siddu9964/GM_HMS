@@ -24,6 +24,11 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         case 'laboratory':
             header("Location: laboratory_view/dashboard.php");
             break;
+        case 'Radiologist':
+        case 'radiology':
+        case 'radiologist':
+            header("Location: radiology_view/dashboard.php");
+            break;
     }
     exit();
 }
@@ -844,15 +849,62 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             updateSlider();
         });
 
+        // On page load, check for logout or error messages in URL query params
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const msg = urlParams.get('msg');
+            const error = urlParams.get('error');
+
+            if (msg === 'logged_out' || msg === 'logout') {
+                Swal.fire({
+                    position: 'center',
+                    icon: 'success',
+                    title: 'Logged Out Successfully',
+                    text: 'You have been securely signed out of GM Hospital Management System.',
+                    timer: 2600,
+                    timerProgressBar: true,
+                    showConfirmButton: true,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#1f6b4a',
+                    backdrop: 'rgba(15, 23, 42, 0.45)'
+                });
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (error === 'session_expired') {
+                Swal.fire({
+                    position: 'center',
+                    icon: 'warning',
+                    title: 'Session Expired',
+                    text: 'Your session has timed out. Please sign in again to continue.',
+                    confirmButtonColor: '#1f6b4a',
+                    confirmButtonText: 'OK',
+                    backdrop: 'rgba(15, 23, 42, 0.45)'
+                });
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (error) {
+                Swal.fire({
+                    position: 'center',
+                    icon: 'error',
+                    title: 'Authentication Notice',
+                    text: decodeURIComponent(error),
+                    confirmButtonColor: '#1f6b4a',
+                    confirmButtonText: 'OK',
+                    backdrop: 'rgba(15, 23, 42, 0.45)'
+                });
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
+
         // Form Submission Logic
         function showComingSoon() {
             Swal.fire({
+                position: 'center',
                 icon: 'info',
                 title: 'Coming Soon!',
                 text: 'Password reset feature will be available soon.',
                 confirmButtonColor: '#1f6b4a',
                 background: '#fff',
-                iconColor: '#1f6b4a'
+                iconColor: '#1f6b4a',
+                backdrop: 'rgba(15, 23, 42, 0.45)'
             });
         }
 
@@ -871,7 +923,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             const data = {};
             formData.forEach((value, key) => data[key] = value);
             
-         fetch('api/auth/login', {
+            fetch('api/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -883,13 +935,16 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             .then(result => {
                 if (result.status === 'success') {
                     Swal.fire({
+                        position: 'center',
                         icon: 'success',
-                        title: 'Welcome!',
+                        title: 'Welcome Back!',
                         text: `Logged in as ${result.role}`,
                         timer: 1500,
+                        timerProgressBar: true,
                         showConfirmButton: false,
                         background: '#fff',
-                        iconColor: '#1f6b4a'
+                        iconColor: '#1f6b4a',
+                        backdrop: 'rgba(15, 23, 42, 0.45)'
                     }).then(() => {
                         // Store user ID in localStorage for frontend persistence
                         if (result.role === 'Doctor') {
@@ -902,10 +957,13 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
                     });
                 } else {
                     Swal.fire({
+                        position: 'center',
                         icon: 'error',
                         title: 'Access Denied',
-                        text: result.message || 'Invalid credentials',
-                        confirmButtonColor: '#1f6b4a'
+                        text: result.message || 'Invalid username or password. Please try again.',
+                        confirmButtonColor: '#1f6b4a',
+                        confirmButtonText: 'OK',
+                        backdrop: 'rgba(15, 23, 42, 0.45)'
                     });
                     resetBtn();
                 }
@@ -913,10 +971,13 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
             .catch(error => {
                 console.error('Error:', error);
                 Swal.fire({
+                    position: 'center',
                     icon: 'error',
                     title: 'System Error',
-                    text: 'Unable to connect to login service.',
-                    confirmButtonColor: '#1f6b4a'
+                    text: 'Unable to connect to login service. Please check network connection.',
+                    confirmButtonColor: '#1f6b4a',
+                    confirmButtonText: 'OK',
+                    backdrop: 'rgba(15, 23, 42, 0.45)'
                 });
                 resetBtn();
             });

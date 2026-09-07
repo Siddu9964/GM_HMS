@@ -48,6 +48,11 @@ class DischargeClearanceController {
                 lab_at DATETIME NULL,
                 lab_query TEXT NULL,
                 lab_notes TEXT NULL,
+                radiology_status ENUM('Pending', 'Approved', 'Query') DEFAULT 'Pending',
+                radiology_by VARCHAR(100) NULL,
+                radiology_at DATETIME NULL,
+                radiology_query TEXT NULL,
+                radiology_notes TEXT NULL,
                 overall_status ENUM('Pending Clearance', 'Queries Raised', 'All Cleared', 'Completed') DEFAULT 'Pending Clearance',
                 admin_status ENUM('Pending', 'Confirmed', 'Completed') DEFAULT 'Pending',
                 admin_by VARCHAR(100) NULL,
@@ -62,14 +67,15 @@ class DischargeClearanceController {
                 INDEX (overall_status),
                 INDEX (reception_status),
                 INDEX (pharmacy_status),
-                INDEX (lab_status)
+                INDEX (lab_status),
+                INDEX (radiology_status)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
             $this->conn->query("CREATE TABLE IF NOT EXISTS discharge_clearance_queries (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 clearance_id VARCHAR(50) NOT NULL,
                 admission_id VARCHAR(50) NOT NULL,
-                department ENUM('reception', 'pharmacy', 'lab', 'nurse', 'admin') NOT NULL,
+                department ENUM('reception', 'pharmacy', 'lab', 'radiology', 'nurse', 'admin') NOT NULL,
                 user_id VARCHAR(50),
                 user_name VARCHAR(100),
                 query_text TEXT NOT NULL,
@@ -195,7 +201,7 @@ class DischargeClearanceController {
         }
         $stmt->close();
 
-        $message = "Discharge clearance initiated for {$patientName} (PID: {$patientId}, Admission: {$admissionId}, Location: {$bedInfo}). Requires clearance from Reception/Billing, Pharmacy, and Laboratory.";
+        $message = "Discharge clearance initiated for {$patientName} (PID: {$patientId}, Admission: {$admissionId}, Location: {$bedInfo}). Requires clearance from Reception/Billing, Pharmacy, Laboratory, and Radiology.";
 
         if ($existing) {
             $clearanceId = $existing['clearance_id'];
@@ -205,7 +211,8 @@ class DischargeClearanceController {
                 reception_status = IF(reception_status='Approved','Approved','Pending'),
                 pharmacy_status = IF(pharmacy_status='Approved','Approved','Pending'),
                 lab_status = IF(lab_status='Approved','Approved','Pending'),
-                overall_status = IF(reception_status='Approved' AND pharmacy_status='Approved' AND lab_status='Approved', 'All Cleared', 'Pending Clearance'),
+                radiology_status = IF(radiology_status='Approved','Approved','Pending'),
+                overall_status = IF(reception_status='Approved' AND pharmacy_status='Approved' AND lab_status='Approved' AND radiology_status='Approved', 'All Cleared', 'Pending Clearance'),
                 admin_status = 'Pending',
                 message = ?,
                 updated_at = NOW()
@@ -216,8 +223,8 @@ class DischargeClearanceController {
         } else {
             $clearanceId = 'DC-' . time() . '-' . rand(100, 999);
             $stmtInsert = $this->conn->prepare("INSERT INTO discharge_clearances 
-                (clearance_id, patient_id, admission_id, patient_name, bed_info, doctor_name, nurse_id, nurse_name, nurse_notes, reception_status, pharmacy_status, lab_status, overall_status, admin_status, status, message)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', 'Pending', 'Pending', 'Pending Clearance', 'Pending', 'Pending', ?)");
+                (clearance_id, patient_id, admission_id, patient_name, bed_info, doctor_name, nurse_id, nurse_name, nurse_notes, reception_status, pharmacy_status, lab_status, radiology_status, overall_status, admin_status, status, message)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', 'Pending', 'Pending', 'Pending', 'Pending Clearance', 'Pending', 'Pending', ?)");
             $stmtInsert->bind_param("ssssssssss", $clearanceId, $patientId, $admissionId, $patientName, $bedInfo, $doctorName, $nurseId, $nurseName, $nurseNotes, $message);
             $stmtInsert->execute();
             $stmtInsert->close();
@@ -262,6 +269,13 @@ class DischargeClearanceController {
                 'title'          => '💊 Discharge Pharmacy Clearance: ' . $patientName,
                 'message'        => "Patient {$patientName} ({$bedInfo}, IP: {$admissionId}) is being discharged. Please verify medicine returns & clearance.",
                 'action_url'     => '/pharmacy_view/sales.php'
+            ],
+            [
+                'recipient_type' => 'staff',
+                'recipient_id'   => 'RADIOLOGY',
+                'title'          => 'Discharge Radiology Clearance: ' . $patientName,
+                'message'        => "Patient {$patientName} ({$bedInfo}, IP: {$admissionId}) is being discharged. Please verify pending imaging & diagnostic scans.",
+                'action_url'     => '/radiology_view/notifications.php'
             ],
             [
                 'recipient_type' => 'staff',
@@ -370,6 +384,8 @@ class DischargeClearanceController {
             $where = "(pharmacy_status = 'Pending' OR pharmacy_status = 'Query' OR overall_status = 'All Cleared') AND overall_status != 'Completed'";
         } elseif ($module === 'lab' || $module === 'laboratory') {
             $where = "(lab_status = 'Pending' OR lab_status = 'Query' OR overall_status = 'All Cleared') AND overall_status != 'Completed'";
+        } elseif ($module === 'radiology') {
+            $where = "(radiology_status = 'Pending' OR radiology_status = 'Query' OR overall_status = 'All Cleared') AND overall_status != 'Completed'";
         }
 
         $list = [];
@@ -399,7 +415,7 @@ class DischargeClearanceController {
             'my_pending' => 0
         ];
 
-        $deptCol = in_array($module, ['reception', 'pharmacy', 'lab', 'admin']) ? "{$module}_status" : "reception_status";
+        $deptCol = in_array($module, ['reception', 'pharmacy', 'lab', 'radiology', 'admin']) ? "{$module}_status" : "reception_status";
         $resCounts = $this->conn->query("SELECT 
             COUNT(CASE WHEN overall_status = 'Pending Clearance' THEN 1 END) as pending_cnt,
             COUNT(CASE WHEN overall_status = 'All Cleared' THEN 1 END) as cleared_cnt,
@@ -443,7 +459,7 @@ class DischargeClearanceController {
             return ['success' => false, 'message' => 'Clearance ID, Admission ID or Patient ID is required.'];
         }
 
-        if (!in_array($department, ['reception', 'pharmacy', 'lab', 'laboratory'])) {
+        if (!in_array($department, ['reception', 'pharmacy', 'lab', 'laboratory', 'radiology'])) {
             return ['success' => false, 'message' => 'Invalid department specified.'];
         }
         if ($department === 'laboratory') {
@@ -560,7 +576,7 @@ class DischargeClearanceController {
             } catch (Throwable $e) {}
 
             // Re-fetch to evaluate overall status
-            $stmtCheck = $this->conn->prepare("SELECT reception_status, pharmacy_status, lab_status FROM discharge_clearances WHERE clearance_id = ?");
+            $stmtCheck = $this->conn->prepare("SELECT reception_status, pharmacy_status, lab_status, radiology_status FROM discharge_clearances WHERE clearance_id = ?");
             $stmtCheck->bind_param("s", $cId);
             $stmtCheck->execute();
             $statusRow = $stmtCheck->get_result()->fetch_assoc();
@@ -569,9 +585,10 @@ class DischargeClearanceController {
             $rStatus = $statusRow['reception_status'] ?? 'Pending';
             $pStatus = $statusRow['pharmacy_status'] ?? 'Pending';
             $lStatus = $statusRow['lab_status'] ?? 'Pending';
+            $radStatus = $statusRow['radiology_status'] ?? 'Pending';
 
-            $allCleared = ($rStatus === 'Approved' && $pStatus === 'Approved' && $lStatus === 'Approved');
-            $hasQuery   = ($rStatus === 'Query' || $pStatus === 'Query' || $lStatus === 'Query');
+            $allCleared = ($rStatus === 'Approved' && $pStatus === 'Approved' && $lStatus === 'Approved' && $radStatus === 'Approved');
+            $hasQuery   = ($rStatus === 'Query' || $pStatus === 'Query' || $lStatus === 'Query' || $radStatus === 'Query');
 
             if ($allCleared) {
                 $newOverall = 'All Cleared';

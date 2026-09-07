@@ -59,43 +59,73 @@ function lisCountUp(element, target, duration = 900) {
 }
 
 /**
- * Display a toast notification using SweetAlert2
+ * Display a centered modal notification using SweetAlert2
  */
-function lisToast(message, type = 'success') {
+function lisToast(message, type = 'success', title = null) {
     if (typeof Swal !== 'undefined') {
-        const Toast = Swal.mixin({
-            toast: true,
+        let defaultTitle = 'Success';
+        let confirmBtnColor = '#1f6b4a';
+        let showConfirm = false;
+        let timerDuration = 2200;
+
+        if (type === 'error') {
+            defaultTitle = 'Action Failed';
+            confirmBtnColor = '#dc2626';
+            showConfirm = true;
+            timerDuration = null; // Do not auto-dismiss errors so user can read message
+        } else if (type === 'warning') {
+            defaultTitle = 'Attention Required';
+            confirmBtnColor = '#d97706';
+            showConfirm = true;
+            timerDuration = 3200;
+        } else if (type === 'info') {
+            defaultTitle = 'Notice';
+            confirmBtnColor = '#1f6b4a';
+            timerDuration = 2400;
+        }
+
+        Swal.fire({
             position: 'center',
-            showConfirmButton: false,
-            timer: 3200,
-            timerProgressBar: true,
-            didOpen: (toast) => {
-                toast.addEventListener('mouseenter', Swal.stopTimer);
-                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            icon: type,
+            title: title || defaultTitle,
+            text: message,
+            showCloseButton: true,
+            showConfirmButton: showConfirm,
+            confirmButtonText: 'OK',
+            confirmButtonColor: confirmBtnColor,
+            timer: timerDuration,
+            timerProgressBar: Boolean(timerDuration),
+            backdrop: 'rgba(15, 23, 42, 0.45)',
+            allowOutsideClick: true,
+            allowEscapeKey: true,
+            customClass: {
+                popup: 'gm-center-swal-popup'
             }
         });
-        Toast.fire({ icon: type, title: message });
     } else {
         alert(message);
     }
 }
 
 /**
- * Confirm dialog using SweetAlert2
+ * Confirm dialog using SweetAlert2 centered
  */
 function lisConfirm(message, onConfirm, options = {}) {
     if (typeof Swal !== 'undefined') {
         Swal.fire({
+            position: 'center',
             title: options.title || 'Are you sure?',
             text: message,
             icon: options.icon || 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#1f6b4a',
+            confirmButtonColor: options.confirmColor || '#1f6b4a',
             cancelButtonColor: '#64748b',
             confirmButtonText: options.confirmText || 'Yes, proceed',
             cancelButtonText: options.cancelText || 'Cancel',
-            borderRadius: '16px',
-            customClass: { popup: 'lis-swal' }
+            backdrop: 'rgba(15, 23, 42, 0.45)',
+            customClass: {
+                popup: 'gm-center-swal-popup'
+            }
         }).then(result => {
             if (result.isConfirmed && typeof onConfirm === 'function') {
                 onConfirm();
@@ -104,6 +134,47 @@ function lisConfirm(message, onConfirm, options = {}) {
     } else {
         if (confirm(message)) onConfirm();
     }
+}
+
+function labConfirmLogout(e) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            position: 'center',
+            icon: 'question',
+            title: 'Sign Out Confirmation',
+            text: 'Are you sure you want to log out of the Laboratory Information System?',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: '<i class="fas fa-sign-out-alt"></i> Yes, Log Out',
+            cancelButtonText: 'Cancel',
+            backdrop: 'rgba(15, 23, 42, 0.5)',
+            reverseButtons: true,
+            customClass: {
+                popup: 'gm-center-swal-popup'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    position: 'center',
+                    icon: 'info',
+                    title: 'Signing Out...',
+                    text: 'Please wait while your session is terminated.',
+                    showConfirmButton: false,
+                    timer: 800,
+                    backdrop: 'rgba(15, 23, 42, 0.5)'
+                }).then(() => {
+                    window.location.href = '/GM_HMS/logout.php';
+                });
+            }
+        });
+    } else {
+        if (confirm('Are you sure you want to log out?')) {
+            window.location.href = '/GM_HMS/logout.php';
+        }
+    }
+    return false;
 }
 
 /**

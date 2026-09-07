@@ -102,6 +102,8 @@ class AuthController extends BaseController {
                     $redirectUrl = 'pharmacy_view/dashboard.php';
                 } elseif ($checkRole === 'labtechnician' || strpos($checkRole, 'lab') !== false) {
                     $redirectUrl = 'laboratory_view/dashboard.php';
+                } elseif (strpos($checkRole, 'radio') !== false) {
+                    $redirectUrl = 'radiology_view/dashboard.php';
                 } elseif ($checkRole === 'admin') {
                     $redirectUrl = 'view/admin_dashboard.php';
                 } else {
@@ -112,6 +114,8 @@ class AuthController extends BaseController {
                         $redirectUrl = 'nurse_view/dashboard.php';
                     } elseif (strpos($checkRole, 'pharmacy') !== false || strpos($checkRole, 'pharmacist') !== false) {
                         $redirectUrl = 'pharmacy_view/dashboard.php';
+                    } elseif (strpos($checkRole, 'radio') !== false) {
+                        $redirectUrl = 'radiology_view/dashboard.php';
                     } elseif (strpos($checkRole, 'lab') !== false || strpos($checkRole, 'technician') !== false) {
                         $redirectUrl = 'laboratory_view/dashboard.php';
                     } else {

@@ -731,6 +731,95 @@ html, body {
     padding: 4px;
 }
 
+/* ── 3 Dedicated Diagnostic Views Styling ── */
+.diag-view-nav {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.diag-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 16px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1.5px solid var(--gm-border);
+    background: #ffffff;
+    color: var(--gm-primary);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.diag-tab-btn:hover {
+    background: var(--gm-primary-light);
+    border-color: var(--gm-primary);
+}
+.diag-tab-btn.active {
+    background: var(--gm-primary);
+    color: #ffffff !important;
+    border-color: var(--gm-primary);
+    box-shadow: 0 4px 14px rgba(31, 107, 74, 0.25);
+}
+.diag-tab-btn.tab-lab.active {
+    background: #0369a1;
+    border-color: #0369a1;
+    box-shadow: 0 4px 14px rgba(3, 105, 161, 0.25);
+}
+.diag-tab-btn.tab-rad.active {
+    background: #1F6B4A;
+    border-color: #1F6B4A;
+    box-shadow: 0 4px 14px rgba(31, 107, 74, 0.25);
+}
+.diag-tab-btn.tab-oth.active {
+    background: #b45309;
+    border-color: #b45309;
+    box-shadow: 0 4px 14px rgba(180, 83, 9, 0.25);
+}
+.diag-tab-btn .tab-badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    background: rgba(0, 0, 0, 0.08);
+    color: inherit;
+}
+.diag-tab-btn.active .tab-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+.diag-panel {
+    display: none;
+    animation: fadeIn 0.22s ease-out;
+}
+.diag-panel.active {
+    display: block;
+}
+.diag-results {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border-radius: 10px;
+    border: 1.5px solid var(--gm-border);
+    box-shadow: 0 10px 30px rgba(31, 107, 74, 0.15);
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 200;
+    display: none;
+}
+.diag-header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    margin-bottom: 14px;
+}
+
 /* Centered Floating Toast */
 #toast {
     position: fixed;
@@ -1165,7 +1254,7 @@ html, body {
             $initials = strtoupper(substr($p['first_name'] ?? 'P', 0, 1) . (isset($p['last_name'][0]) ? substr($p['last_name'], 0, 1) : ''));
             $searchKey = strtolower($fullName . ' ' . ($p['patient_id'] ?? '') . ' ' . ($p['admission_id'] ?? '') . ' ' . ($p['room_type'] ?? '') . ' ' . ($p['room_number'] ?? ''));
           ?>
-            <div class="dash-patient-card dash-card" data-search="<?php echo htmlspecialchars($searchKey); ?>" onclick='selectPatient(<?php echo json_encode($p); ?>)'>
+            <div class="dash-patient-card dash-card" data-search="<?php echo htmlspecialchars($searchKey); ?>" data-patient="<?php echo htmlspecialchars(json_encode($p), ENT_QUOTES, 'UTF-8'); ?>" onclick="selectPatientCard(this)">
               <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="width: 42px; height: 42px; border-radius: 10px; background: var(--gm-primary); color: #f3efe6; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
                   <?php echo $initials; ?>
@@ -1420,39 +1509,160 @@ html, body {
           </div>
         </div>
 
-        <!-- 6. Tests Order -->
-        <div class="card-new ws-sec cat-orders" id="s-ts">
-          <div class="card-title-new">
-            <span><i class="fas fa-microscope"></i> 6. Diagnostic Tests Order</span>
+        <!-- 6. Diagnostic Test Orders Requisition -->
+        <div class="card-new ws-sec cat-orders full-width" id="s-diag-orders">
+          <div class="card-title-new" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <span><i class="fas fa-stethoscope"></i> 6. Diagnostic Orders Requisition</span>
+            <div class="diag-view-nav">
+              <button type="button" class="diag-tab-btn tab-lab active" id="btn-tab-order-lab" onclick="switchDiagOrderView('lab')">
+                <i class="fas fa-flask"></i> Diagnostic LAB Order <span class="tab-badge" id="badge-cart-lab">0</span>
+              </button>
+              <button type="button" class="diag-tab-btn tab-rad" id="btn-tab-order-rad" onclick="switchDiagOrderView('radiology')">
+                <i class="fas fa-x-ray"></i> Diagnostic RADIOLOGY Order <span class="tab-badge" id="badge-cart-rad">0</span>
+              </button>
+              <button type="button" class="diag-tab-btn tab-oth" id="btn-tab-order-oth" onclick="switchDiagOrderView('other')">
+                <i class="fas fa-heartbeat"></i> Diagnostic OTHER Order <span class="tab-badge" id="badge-cart-oth">0</span>
+              </button>
+            </div>
           </div>
-          <div class="split-card card-body" id="f-ts">
-            <div class="split-left">
+
+          <div class="card-body" id="f-ts" style="padding: 20px 24px;">
+            
+            <!-- VIEW 1: Diagnostic LAB Order -->
+            <div class="diag-panel active" id="diag-panel-order-lab">
+              <div class="diag-header-badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">
+                <i class="fas fa-flask"></i> Clinical Pathology, Hematology & Biochemistry Requisitions &bull; Target: <code>lab_tests</code> (Column 7)
+              </div>
               <div class="fg">
                 <div class="fmg" style="position: relative; grid-column: 1 / -1;">
-                  <label>Search Diagnostic Test (Lab, Radiology, ECG)</label>
-                  <input type="text" id="ts-input" placeholder="Type test name e.g. CBC, X-Ray, Lipid Profile..." autocomplete="off">
-                  <div id="ts-results"></div>
+                  <label style="color:#0369a1; font-weight:700;"><i class="fas fa-search"></i> Search Laboratory Tests (from lab_services)</label>
+                  <input type="text" id="diag-lab-input" placeholder="Type test name e.g. CBC, Lipid Profile, LFT, Urine Sugar, Serum Electrolytes..." autocomplete="off">
+                  <div id="diag-lab-results" class="diag-results"></div>
                 </div>
               </div>
-              <div id="ts-cart" style="margin-top: 10px;"></div>
-              <button class="btn-sv-out btn-sv" id="ts-save-btn" onclick="saveTests()"><i class="fas fa-shopping-cart"></i> Submit Tests Order</button>
+              <div style="margin-top: 14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <strong style="font-size:0.84rem; color:#0369a1;"><i class="fas fa-clipboard-list"></i> Selected Lab Order Cart:</strong>
+                  <span id="lab-cart-count" style="font-size:0.75rem; color:var(--gm-text-muted); font-weight:700;">0 tests selected</span>
+                </div>
+                <div id="diag-lab-cart"></div>
+              </div>
+              <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+                <button class="btn-sv-out btn-sv" id="btn-save-lab" onclick="submitDiagOrder('lab')" style="background:#0369a1; border-color:#0284c7; color:white;">
+                  <i class="fas fa-check-circle"></i> Save & Dispatch Diagnostic LAB Order
+                </button>
+              </div>
             </div>
-            <div class="split-right">
-              <div class="ht-title"><i class="fas fa-history"></i> Ordered Tests History</div>
+
+            <!-- VIEW 2: Diagnostic RADIOLOGY Order -->
+            <div class="diag-panel" id="diag-panel-order-rad">
+              <div class="diag-header-badge" style="background:#ecfdf5; color:#1F6B4A; border:1px solid #a7f3d0;">
+                <i class="fas fa-x-ray"></i> Inpatient Imaging, Scans & Bedside Radiographs &bull; Target: <code>radiology_tests</code> (Column 8)
+              </div>
+              <div class="fg">
+                <div class="fmg" style="position: relative; grid-column: 1 / -1;">
+                  <label style="color:#1F6B4A; font-weight:700;"><i class="fas fa-search"></i> Search Radiology Scans & Imaging (from radiology_services)</label>
+                  <input type="text" id="diag-rad-input" placeholder="Type scan name e.g. Chest X-Ray, Cervical Spine, CT Brain, USG Abdomen, Doppler..." autocomplete="off">
+                  <div id="diag-rad-results" class="diag-results"></div>
+                </div>
+              </div>
+              <div style="margin-top: 14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <strong style="font-size:0.84rem; color:#1F6B4A;"><i class="fas fa-clipboard-list"></i> Selected Radiology Order Cart:</strong>
+                  <span id="rad-cart-count" style="font-size:0.75rem; color:var(--gm-text-muted); font-weight:700;">0 scans selected</span>
+                </div>
+                <div id="diag-rad-cart"></div>
+              </div>
+              <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+                <button class="btn-sv-out btn-sv" id="btn-save-rad" onclick="submitDiagOrder('radiology')" style="background:#1F6B4A; border-color:#154c34; color:white;">
+                  <i class="fas fa-check-circle"></i> Save & Dispatch Diagnostic RADIOLOGY Order
+                </button>
+              </div>
+            </div>
+
+            <!-- VIEW 3: Diagnostic OTHER Order -->
+            <div class="diag-panel" id="diag-panel-order-oth">
+              <div class="diag-header-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a;">
+                <i class="fas fa-heartbeat"></i> Bedside ECG, Echo & Special Investigations &bull; Target: <code>other_tests</code> (Column 9)
+              </div>
+              <div class="fg">
+                <div class="fmg" style="position: relative; grid-column: 1 / -1;">
+                  <label style="color:#b45309; font-weight:700;"><i class="fas fa-search"></i> Search Other Investigations (from other_services)</label>
+                  <input type="text" id="diag-oth-input" placeholder="Type investigation name e.g. 12-Lead ECG, 2D Echo, Dialysis..." autocomplete="off">
+                  <div id="diag-oth-results" class="diag-results"></div>
+                </div>
+              </div>
+              <div style="margin-top: 14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <strong style="font-size:0.84rem; color:#b45309;"><i class="fas fa-clipboard-list"></i> Selected Other Investigations Cart:</strong>
+                  <span id="oth-cart-count" style="font-size:0.75rem; color:var(--gm-text-muted); font-weight:700;">0 investigations selected</span>
+                </div>
+                <div id="diag-oth-cart"></div>
+              </div>
+              <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+                <button class="btn-sv-out btn-sv" id="btn-save-oth" onclick="submitDiagOrder('other')" style="background:#b45309; border-color:#92400e; color:white;">
+                  <i class="fas fa-check-circle"></i> Save & Dispatch Diagnostic OTHER Order
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 7. Inpatient Diagnostic Investigation History -->
+        <div class="card-new ws-sec cat-orders full-width" id="s-diag-history">
+          <div class="card-title-new" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <span><i class="fas fa-history"></i> 7. Inpatient Diagnostic Investigation History</span>
+            <div class="diag-view-nav">
+              <button type="button" class="diag-tab-btn tab-lab active" id="btn-tab-hist-lab" onclick="switchDiagHistView('lab')">
+                <i class="fas fa-flask"></i> Diagnostic LAB History <span class="tab-badge" id="badge-hist-lab">0</span>
+              </button>
+              <button type="button" class="diag-tab-btn tab-rad" id="btn-tab-hist-rad" onclick="switchDiagHistView('radiology')">
+                <i class="fas fa-x-ray"></i> Diagnostic RADIOLOGY History <span class="tab-badge" id="badge-hist-rad">0</span>
+              </button>
+              <button type="button" class="diag-tab-btn tab-oth" id="btn-tab-hist-oth" onclick="switchDiagHistView('other')">
+                <i class="fas fa-heartbeat"></i> Diagnostic OTHER History <span class="tab-badge" id="badge-hist-oth">0</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body" style="padding: 20px 24px;">
+            <!-- LAB History Panel -->
+            <div class="diag-panel active" id="diag-panel-hist-lab">
               <div class="ht-wrap">
                 <table class="ht">
-                  <thead><tr><th>Date</th><th>Test Name</th><th>Category</th><th>Qty</th></tr></thead>
-                  <tbody id="h-ts"><tr class="et"><td colspan="4">No records yet.</td></tr></tbody>
+                  <thead><tr><th>Order Date & Time</th><th>Laboratory Test Name</th><th>Code / ID</th><th>Category</th><th>Qty</th><th>Ordered By</th></tr></thead>
+                  <tbody id="h-ts-lab"><tr class="et"><td colspan="6">No Laboratory tests ordered for this patient yet.</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- RADIOLOGY History Panel -->
+            <div class="diag-panel" id="diag-panel-hist-rad">
+              <div class="ht-wrap">
+                <table class="ht">
+                  <thead><tr><th>Order Date & Time</th><th>Radiology Scan Name</th><th>Scan Code</th><th>Modality</th><th>Qty</th><th>Ordered By</th></tr></thead>
+                  <tbody id="h-ts-rad"><tr class="et"><td colspan="6">No Radiology scans ordered for this patient yet.</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- OTHER History Panel -->
+            <div class="diag-panel" id="diag-panel-hist-oth">
+              <div class="ht-wrap">
+                <table class="ht">
+                  <thead><tr><th>Order Date & Time</th><th>Investigation Name</th><th>Code / ID</th><th>Category</th><th>Qty</th><th>Ordered By</th></tr></thead>
+                  <tbody id="h-ts-oth"><tr class="et"><td colspan="6">No Other diagnostic investigations ordered for this patient yet.</td></tr></tbody>
                 </table>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 7. Pharmacy Order -->
+        <!-- 8. Pharmacy Order -->
         <div class="card-new ws-sec cat-orders" id="s-ph">
           <div class="card-title-new">
-            <span><i class="fas fa-pills"></i> 7. Pharmacy Medicine Order</span>
+            <span><i class="fas fa-pills"></i> 8. Pharmacy Medicine Order</span>
           </div>
           <div class="split-card card-body" id="f-ph">
             <div class="split-left">
@@ -1731,21 +1941,26 @@ html, body {
           <span class="badge" id="dis-overall-status-badge" style="background:#fef3c7;color:#b45309;">Pending Clearance</span>
         </div>
         
-        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;margin-bottom:10px;">
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;margin-bottom:10px;">
           <!-- Reception -->
           <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:8px;text-align:center;">
-            <div style="font-size:0.68rem;font-weight:700;color:#64748b;text-transform:uppercase;">Reception / Billing</div>
-            <div id="dis-status-reception" style="font-weight:800;font-size:0.8rem;margin-top:2px;color:#f59e0b;">⏳ Pending</div>
+            <div style="font-size:0.65rem;font-weight:700;color:#64748b;text-transform:uppercase;">Reception</div>
+            <div id="dis-status-reception" style="font-weight:800;font-size:0.78rem;margin-top:2px;color:#f59e0b;">Pending</div>
           </div>
           <!-- Pharmacy -->
           <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:8px;text-align:center;">
-            <div style="font-size:0.68rem;font-weight:700;color:#64748b;text-transform:uppercase;">Pharmacy</div>
-            <div id="dis-status-pharmacy" style="font-weight:800;font-size:0.8rem;margin-top:2px;color:#f59e0b;">⏳ Pending</div>
+            <div style="font-size:0.65rem;font-weight:700;color:#64748b;text-transform:uppercase;">Pharmacy</div>
+            <div id="dis-status-pharmacy" style="font-weight:800;font-size:0.78rem;margin-top:2px;color:#f59e0b;">Pending</div>
           </div>
           <!-- Lab -->
           <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:8px;text-align:center;">
-            <div style="font-size:0.68rem;font-weight:700;color:#64748b;text-transform:uppercase;">Laboratory</div>
-            <div id="dis-status-lab" style="font-weight:800;font-size:0.8rem;margin-top:2px;color:#f59e0b;">⏳ Pending</div>
+            <div style="font-size:0.65rem;font-weight:700;color:#64748b;text-transform:uppercase;">Laboratory</div>
+            <div id="dis-status-lab" style="font-weight:800;font-size:0.78rem;margin-top:2px;color:#f59e0b;">Pending</div>
+          </div>
+          <!-- Radiology -->
+          <div style="background:#f0fdf4;border:1.5px solid #1F6B4A;border-radius:8px;padding:8px;text-align:center;">
+            <div style="font-size:0.65rem;font-weight:800;color:#1F6B4A;text-transform:uppercase;">Radiology</div>
+            <div id="dis-status-radiology" style="font-weight:800;font-size:0.78rem;margin-top:2px;color:#f59e0b;">Pending</div>
           </div>
         </div>
 
@@ -1763,6 +1978,7 @@ html, body {
           <li><strong>Reception / Billing:</strong> Verifies IPD bill settlements, deposits & bed release.</li>
           <li><strong>Pharmacy:</strong> Verifies unbilled medications & unused medicine returns.</li>
           <li><strong>Laboratory:</strong> Verifies all pending diagnostic test reports are completed.</li>
+          <li><strong>Radiology:</strong> Verifies all inpatient scans, X-rays & diagnostic imaging reports.</li>
           <li><strong>Admin Dashboard:</strong> Live tracking until all 3 departments approve.</li>
         </ul>
       </div>
@@ -1960,27 +2176,62 @@ if(ds) {
     });
 }
 
+function selectPatientCard(cardEl) {
+  if (!cardEl) return;
+  try {
+    const raw = cardEl.getAttribute('data-patient');
+    if (raw) {
+      const p = JSON.parse(raw);
+      selectPatient(p);
+      return;
+    }
+  } catch (e) {
+    console.error("Error parsing data-patient on card click:", e);
+  }
+}
+
 function selectPatient(p){
-  cp=p;
-  document.getElementById('nopt-state').style.display='none';
-  const ini=((p.first_name||'')[0]||'')+((p.last_name||'')[0]||'')||'PT';
-  document.getElementById('pt-av').textContent=ini.toUpperCase();
-  document.getElementById('pt-nm').textContent=`${p.first_name} ${p.last_name||''}`;
-  document.getElementById('pt-chips').innerHTML=[
-    {ic:'fa-id-card',l:'PID',v:p.patient_id},
-    {ic:'fa-file-invoice',l:'IP#',v:p.admission_id || 'N/A'},
-    {ic:'fa-bed',l:'Bed',v:`${p.room_type||'Ward'}/${p.room_number||'Bed'}`},
-    {ic:'fa-user',l:'Age/Sex',v:`${p.age||'?'}Y / ${p.sex||'?'}`},
-    {ic:'fa-tint',l:'Blood',v:p.blood_group||'N/A'}
-  ].map(c=>`<span class="ptchip"><i class="fas ${c.ic}"></i><strong>${c.l}:</strong> ${c.v}</span>`).join('');
+  if (!p) return;
+  cp = p;
   
-  document.getElementById('pt-banner').style.display='flex';
-  document.getElementById('ws-layout').style.display='block';
+  const nopt = document.getElementById('nopt-state');
+  if (nopt) nopt.style.display = 'none';
   
-  const ci=document.querySelector('#f-act select[name="consultant"]');
-  if(ci&&p.doctor_name){ Array.from(ci.options).forEach(o=>{if(o.value===p.doctor_name)o.selected=true;}); }
-  const wi=document.getElementById('act-wr');
-  if(wi&&(p.room_type||p.room_number))wi.value=`${p.room_type||''}/${p.room_number||''}`;
+  const ini = (((p.first_name || '')[0] || '') + ((p.last_name || '')[0] || '') || 'PT').toUpperCase();
+  const av = document.getElementById('pt-av');
+  if (av) av.textContent = ini;
+  
+  const nm = document.getElementById('pt-nm');
+  if (nm) nm.textContent = `${p.first_name || ''} ${p.last_name || ''}`.trim();
+  
+  const chips = document.getElementById('pt-chips');
+  if (chips) {
+    chips.innerHTML = [
+      {ic:'fa-id-card', l:'PID', v:p.patient_id || '-'},
+      {ic:'fa-file-invoice', l:'IP#', v:p.admission_id || 'N/A'},
+      {ic:'fa-bed', l:'Bed', v:`${p.room_type || 'Ward'}/${p.room_number || 'Bed'}`},
+      {ic:'fa-user', l:'Age/Sex', v:`${p.age || '?'}Y / ${p.sex || '?'}`},
+      {ic:'fa-tint', l:'Blood', v:p.blood_group || 'N/A'}
+    ].map(c => `<span class="ptchip"><i class="fas ${c.ic}"></i><strong>${c.l}:</strong> ${c.v}</span>`).join('');
+  }
+  
+  const ptBanner = document.getElementById('pt-banner');
+  if (ptBanner) ptBanner.style.display = 'flex';
+  
+  const wsLayout = document.getElementById('ws-layout');
+  if (wsLayout) wsLayout.style.display = 'block';
+  
+  const ci = document.querySelector('#f-act select[name="consultant"]');
+  if (ci && p.doctor_name) {
+    Array.from(ci.options).forEach(o => {
+      if (o.value === p.doctor_name) o.selected = true;
+    });
+  }
+  
+  const wi = document.getElementById('act-wr');
+  if (wi && (p.room_type || p.room_number)) {
+    wi.value = `${p.room_type || ''}/${p.room_number || ''}`;
+  }
   
   autoFill();
   loadAllRecords();
@@ -2210,17 +2461,34 @@ async function saveAllRecords(){
     }
   });
 
-  if(tsCart.length > 0) {
-    saveTasks.push(async () => {
-      try {
-        const r = await fetch('api/save_tests.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({patient_id:cp.patient_id,admission_id:cp.admission_id || '',cart:tsCart})});
-        const res = await r.json();
-        if(res.success){tsCart=[];renderTestCart();}
-        results.push({ section: 'Tests Order', success: res.success, err: res.message });
-      } catch(e) { results.push({ section: 'Tests Order', success: false, err: e.message }); }
-    });
-  }
-  if(phCart.length > 0) {
+  ['lab', 'radiology', 'other'].forEach(type => {
+    if (diagCarts[type] && diagCarts[type].length > 0) {
+      saveTasks.push(async () => {
+        try {
+          const r = await fetch('api/save_tests.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              patient_id: cp.patient_id,
+              admission_id: cp.admission_id || '',
+              order_type: type,
+              cart: diagCarts[type]
+            })
+          });
+          const res = await r.json();
+          if (res.success) {
+            diagCarts[type] = [];
+            renderDiagCart(type);
+          }
+          const secName = type === 'lab' ? 'Diagnostic LAB Order (lab_tests)' : (type === 'radiology' ? 'Diagnostic RADIOLOGY Order (radiology_tests)' : 'Diagnostic OTHER Order (other_tests)');
+          results.push({ section: secName, success: res.success, err: res.message });
+        } catch(e) {
+          results.push({ section: type, success: false, err: e.message });
+        }
+      });
+    }
+  });
+  if (phCart.length > 0) {
     saveTasks.push(async () => {
       try {
         const r = await fetch('api/save_pharmacy_order.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({patient_id:cp.patient_id,admission_id:cp.admission_id || '',cart:phCart})});
@@ -2265,8 +2533,9 @@ async function loadAllRecords(){
     const d=(await r.json())?.data||{};
     
     // 1. Ward Transfers
-    currentTransferLogs = d.ward_transfer || [];
-    renderTransferHistory(currentTransferLogs);
+    if (typeof renderTransferHistory === 'function') {
+      renderTransferHistory(d.ward_transfer || []);
+    }
 
     // 2. Consultant Visits
     rH('h-vi', d.consultant_visits || [], r => `
@@ -2396,23 +2665,99 @@ async function loadAllRecords(){
       <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-nn", ${JSON.stringify(r)})' title="Edit note"><i class="fas fa-edit"></i> Edit</button></td>
     `, 4);
     
-    // Tests history
-    let at=[];
-    (d.lab_tests||[]).forEach(t=>{const i=t.data||t;at.push({dt:t.created_date||t.date||'',nm:i.name||i.test_name||'',cat:'LAB',qty:i.qty||1});});
-    (d.radiology_tests||[]).forEach(t=>{const i=t.data||t;at.push({dt:t.created_date||t.date||'',nm:i.name||i.test_name||'',cat:'RADIOLOGY',qty:i.qty||1});});
-    (d.other_tests||[]).forEach(t=>{const i=t.data||t;at.push({dt:t.created_date||t.date||'',nm:i.name||i.test_name||'',cat:'OTHER',qty:i.qty||1});});
-    at.sort((a,b)=>new Date(b.dt)-new Date(a.dt));
-    document.getElementById('h-ts').innerHTML=at.length?at.map(t=>`<tr><td>${t.dt}</td><td><strong>${t.nm}</strong></td><td><span class="badge">${t.cat}</span></td><td>${t.qty}</td></tr>`).join(''):'<tr class="et"><td colspan="4">No tests ordered yet.</td></tr>';
+    // ── Diagnostic Orders History (3 Separate Views) ──
+    const labList = Array.isArray(d.lab_tests) ? d.lab_tests : [];
+    const radList = Array.isArray(d.radiology_tests) ? d.radiology_tests : [];
+    const othList = Array.isArray(d.other_tests) ? d.other_tests : [];
+
+    const bLab = document.getElementById('badge-hist-lab'); if (bLab) bLab.textContent = labList.length;
+    const bRad = document.getElementById('badge-hist-rad'); if (bRad) bRad.textContent = radList.length;
+    const bOth = document.getElementById('badge-hist-oth'); if (bOth) bOth.textContent = othList.length;
+
+    // View 1: LAB History (Column 7: lab_tests)
+    const tbLab = document.getElementById('h-ts-lab');
+    if (tbLab) {
+      tbLab.innerHTML = labList.length ? [...labList].reverse().map(t => {
+        const i = t.data || t;
+        const dt = (t.created_date || i.created_date || t.date || i.date) 
+          ? `${t.created_date || i.created_date || t.date || i.date || ''} ${t.created_time || i.created_time || ''}`.trim() 
+          : (t.created_at || i.created_at || 'N/A');
+        const by = t.created_by_name || i.created_by_name || (t.created_by ? (isNaN(t.created_by) ? t.created_by : 'Nurse #' + t.created_by) : 'Staff Nurse');
+        const name = i.name || i.test_name || t.name || t.test_name || 'Lab Test';
+        const code = i.id || i.test_id || t.id || t.test_id || 'LAB';
+        const cat = i.category || t.category || 'Lab';
+        const qty = i.qty || i.quantity || t.qty || t.quantity || 1;
+        return `<tr>
+          <td><strong>${dt}</strong></td>
+          <td><strong style="color:#0369a1;">${name}</strong></td>
+          <td><span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">${code}</span></td>
+          <td><span class="badge" style="background:#f0f9ff; color:#0284c7;">${cat}</span></td>
+          <td><strong>${qty}</strong></td>
+          <td><span style="color:var(--gm-text-muted); font-weight:700;">${by}</span></td>
+        </tr>`;
+      }).join('') : '<tr class="et"><td colspan="6">No Laboratory tests ordered for this patient yet.</td></tr>';
+    }
+
+    // View 2: RADIOLOGY History (Column 8: radiology_tests)
+    const tbRad = document.getElementById('h-ts-rad');
+    if (tbRad) {
+      tbRad.innerHTML = radList.length ? [...radList].reverse().map(t => {
+        const i = t.data || t;
+        const dt = (t.created_date || i.created_date || t.date || i.date) 
+          ? `${t.created_date || i.created_date || t.date || i.date || ''} ${t.created_time || i.created_time || ''}`.trim() 
+          : (t.created_at || i.created_at || 'N/A');
+        const by = t.created_by_name || i.created_by_name || (t.created_by ? (isNaN(t.created_by) ? t.created_by : 'Nurse #' + t.created_by) : 'Staff Nurse');
+        const name = i.name || i.test_name || t.name || t.test_name || 'Radiology Scan';
+        const code = i.id || i.test_id || t.id || t.test_id || 'RDS';
+        const cat = i.category || i.modality || t.category || 'Radiology';
+        const qty = i.qty || i.quantity || t.qty || t.quantity || 1;
+        return `<tr>
+          <td><strong>${dt}</strong></td>
+          <td><strong style="color:#1F6B4A;">${name}</strong></td>
+          <td><span class="badge" style="background:#ecfdf5; color:#1F6B4A; border:1px solid #a7f3d0;">${code}</span></td>
+          <td><span class="badge" style="background:#f0fdf4; color:#15803d;">${cat}</span></td>
+          <td><strong>${qty}</strong></td>
+          <td><span style="color:var(--gm-text-muted); font-weight:700;">${by}</span></td>
+        </tr>`;
+      }).join('') : '<tr class="et"><td colspan="6">No Radiology scans ordered for this patient yet.</td></tr>';
+    }
+
+    // View 3: OTHER History (Column 9: other_tests)
+    const tbOth = document.getElementById('h-ts-oth');
+    if (tbOth) {
+      tbOth.innerHTML = othList.length ? [...othList].reverse().map(t => {
+        const i = t.data || t;
+        const dt = (t.created_date || i.created_date || t.date || i.date) 
+          ? `${t.created_date || i.created_date || t.date || i.date || ''} ${t.created_time || i.created_time || ''}`.trim() 
+          : (t.created_at || i.created_at || 'N/A');
+        const by = t.created_by_name || i.created_by_name || (t.created_by ? (isNaN(t.created_by) ? t.created_by : 'Nurse #' + t.created_by) : 'Staff Nurse');
+        const name = i.name || i.test_name || t.name || t.test_name || 'Investigation';
+        const code = i.id || i.test_id || t.id || t.test_id || 'OTH';
+        const cat = i.category || t.category || 'Other';
+        const qty = i.qty || i.quantity || t.qty || t.quantity || 1;
+        return `<tr>
+          <td><strong>${dt}</strong></td>
+          <td><strong style="color:#b45309;">${name}</strong></td>
+          <td><span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a;">${code}</span></td>
+          <td><span class="badge" style="background:#fffbeb; color:#d97706;">${cat}</span></td>
+          <td><strong>${qty}</strong></td>
+          <td><span style="color:var(--gm-text-muted); font-weight:700;">${by}</span></td>
+        </tr>`;
+      }).join('') : '<tr class="et"><td colspan="6">No Other diagnostic investigations ordered for this patient yet.</td></tr>';
+    }
     
     // Pharmacy history
-    const phHistory=d.pharmacy_orders||[];
-    document.getElementById('h-ph').innerHTML=phHistory.length?phHistory.map(o=>{
-      const i=o.data||o;
-      const isOos = i.is_out_of_stock || (i.stock !== undefined && parseInt(i.stock) <= 0);
-      const oosBadge = isOos ? ' <span class="badge" style="background:#fee2e2;color:#dc2626;font-size:0.68rem;border-color:#fca5a5;"><i class="fas fa-exclamation-triangle"></i> Out of Stock</span>' : '';
-      return `<tr><td>${o.created_date||i.date||''}</td><td><strong>${i.medicine||i.name||i.product_name||''}</strong>${oosBadge}</td><td>${i.batch||i.batch_no||'N/A'}</td><td>${i.qty||i.quantity||1}</td></tr>`;
-    }).join(''):'<tr class="et"><td colspan="4">No pharmacy orders yet.</td></tr>';
-  }catch(er){console.error('loadAllRecords:',er);}
+    const phHistory = d.pharmacy_orders || [];
+    const phEl = document.getElementById('h-ph');
+    if (phEl) {
+      phEl.innerHTML = phHistory.length ? phHistory.map(o => {
+        const i = o.data || o;
+        const isOos = i.is_out_of_stock || (i.stock !== undefined && parseInt(i.stock) <= 0);
+        const oosBadge = isOos ? ' <span class="badge" style="background:#fee2e2;color:#dc2626;font-size:0.68rem;border-color:#fca5a5;"><i class="fas fa-exclamation-triangle"></i> Out of Stock</span>' : '';
+        return `<tr><td>${o.created_date || i.date || ''}</td><td><strong>${i.medicine || i.name || i.product_name || ''}</strong>${oosBadge}</td><td>${i.batch || i.batch_no || 'N/A'}</td><td>${i.qty || i.quantity || 1}</td></tr>`;
+      }).join('') : '<tr class="et"><td colspan="4">No pharmacy orders yet.</td></tr>';
+    }
+  }catch(er){console.error('loadAllRecords:', er);}
 }
 
 function rH(tid,rows,fn,cols){
@@ -2420,50 +2765,195 @@ function rH(tid,rows,fn,cols){
   tb.innerHTML=rows&&rows.length?[...rows].reverse().map(r=>`<tr>${fn(r)}</tr>`).join(''):`<tr class="et"><td colspan="${cols}">No records yet.</td></tr>`;
 }
 
-/* ── Tests Cart ── */
-let tsT=null;
-document.getElementById('ts-input').addEventListener('input',function(){
-  clearTimeout(tsT); const q=this.value.trim(), res=document.getElementById('ts-results');
-  if(q.length<2){res.style.display='none';return;}
-  tsT=setTimeout(()=>{
-    fetch('api/search_tests.php?type=all&q='+encodeURIComponent(q)).then(r=>r.json()).then(d=>{
-      res.innerHTML='';
-      if(d.success&&d.data.length>0){
-        d.data.forEach(item=>{
-          const cl=item.category?.toLowerCase().includes('lab')?'bl':item.category==='Other'?'bo':'br';
-          const el=document.createElement('div'); el.className='ts-item';
-          el.innerHTML=`<div><strong style="color:var(--gm-primary)">${item.name}</strong><br><small style="color:var(--gm-text-muted)">Category: ${item.category}</small></div><span class="badge"><i class="fas fa-plus"></i> Add</span>`;
-          el.onclick=()=>addToTestCart(item); res.appendChild(el);
-        });
-      } else { res.innerHTML='<div style="padding:12px;text-align:center;color:var(--gm-text-muted);font-size:.82rem">No tests found.</div>'; }
-      res.style.display='block';
-    });
-  },280);
-});
-document.addEventListener('click',e=>{if(!document.getElementById('ts-input').contains(e.target)&&!document.getElementById('ts-results').contains(e.target))document.getElementById('ts-results').style.display='none';});
+/* ══════════════════════════════════════════════════════════════
+   DIAGNOSTIC ORDERS: 3 DEDICATED VIEWS CONTROLLERS
+   View 1: LAB (lab_tests)
+   View 2: RADIOLOGY (radiology_tests)
+   View 3: OTHER (other_tests)
+   ══════════════════════════════════════════════════════════════ */
+let diagCarts = {
+  lab: [],
+  radiology: [],
+  other: []
+};
 
-function addToTestCart(item){
-  document.getElementById('ts-results').style.display='none'; document.getElementById('ts-input').value='';
-  const ex=tsCart.find(x=>x.id===item.id);
-  if(ex)ex.qty++; else tsCart.push({id:item.id,name:item.name,category:item.category,qty:1});
-  renderTestCart();
+function switchDiagOrderView(type) {
+  const norm = (type === 'rad' || type === 'radiology') ? 'rad' : ((type === 'oth' || type === 'other') ? 'oth' : 'lab');
+  ['lab', 'rad', 'oth'].forEach(key => {
+    const btn = document.getElementById('btn-tab-order-' + key);
+    const pnl = document.getElementById('diag-panel-order-' + key);
+    if (btn) btn.classList.toggle('active', key === norm);
+    if (pnl) pnl.classList.toggle('active', key === norm);
+  });
 }
-function renderTestCart(){
-  const ca=document.getElementById('ts-cart');
-  if(!tsCart.length){ca.innerHTML='';return;}
-  ca.innerHTML=tsCart.map(t=>`<div class="cart-row"><div class="cart-row-n">${t.name} <span class="badge">${t.category}</span></div><input type="number" value="${t.qty}" min="1" onchange="tsCart.find(x=>x.id==='${t.id}').qty=parseInt(this.value)||1;renderTestCart()"><button class="rm-btn" onclick="tsCart=tsCart.filter(x=>x.id!=='${t.id}');renderTestCart()"><i class="fas fa-trash-alt"></i></button></div>`).join('');
+
+function switchDiagHistView(type) {
+  const norm = (type === 'rad' || type === 'radiology') ? 'rad' : ((type === 'oth' || type === 'other') ? 'oth' : 'lab');
+  ['lab', 'rad', 'oth'].forEach(key => {
+    const btn = document.getElementById('btn-tab-hist-' + key);
+    const pnl = document.getElementById('diag-panel-hist-' + key);
+    if (btn) btn.classList.toggle('active', key === norm);
+    if (pnl) pnl.classList.toggle('active', key === norm);
+  });
 }
-async function saveTests(){
-  if(!cp){showToast('No patient selected!',true);return;}
-  if(!tsCart.length){showToast('Add at least one test.',true);return;}
-  const b=document.getElementById('ts-save-btn'); b.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saving...'; b.disabled=true;
-  try{
-    const r=await fetch('api/save_tests.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({patient_id:cp.patient_id,admission_id:cp.admission_id || '',cart:tsCart})});
-    const res=await r.json();
-    if(res.success){showToast('Tests order saved!');tsCart=[];renderTestCart();loadAllRecords();}
-    else showToast('Error: '+(res.message||'Unknown'),true);
-  }catch{showToast('Network error!',true);}
-  finally{b.innerHTML='<i class="fas fa-shopping-cart"></i> Submit Tests Order';b.disabled=false;}
+
+// Bind search input listeners for each of the 3 separate views
+['lab', 'radiology', 'other'].forEach(type => {
+  const key = type === 'radiology' ? 'rad' : (type === 'other' ? 'oth' : 'lab');
+  const input = document.getElementById(`diag-${key}-input`);
+  const resultsBox = document.getElementById(`diag-${key}-results`);
+  let searchTimer = null;
+
+  if (input && resultsBox) {
+    input.addEventListener('input', function() {
+      clearTimeout(searchTimer);
+      const q = this.value.trim();
+      if (q.length < 2) {
+        resultsBox.style.display = 'none';
+        return;
+      }
+      searchTimer = setTimeout(() => {
+        fetch(`api/search_tests.php?type=${type}&q=` + encodeURIComponent(q))
+          .then(r => r.json())
+          .then(d => {
+            resultsBox.innerHTML = '';
+            if (d.success && d.data && d.data.length > 0) {
+              d.data.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'ts-item';
+                const color = type === 'lab' ? '#0369a1' : (type === 'radiology' ? '#1F6B4A' : '#b45309');
+                el.innerHTML = `<div><strong style="color:${color}; font-size:0.86rem;">${item.name}</strong><br><small style="color:var(--gm-text-muted)">ID: ${item.id} &bull; Category: ${item.category || type}</small></div><span class="badge" style="background:${color}; color:white;"><i class="fas fa-plus"></i> Add</span>`;
+                el.onclick = () => addDiagToCart(type, item);
+                resultsBox.appendChild(el);
+              });
+            } else {
+              resultsBox.innerHTML = '<div style="padding:12px;text-align:center;color:var(--gm-text-muted);font-size:.82rem">No tests found in this category.</div>';
+            }
+            resultsBox.style.display = 'block';
+          })
+          .catch(() => {
+            resultsBox.innerHTML = '<div style="padding:12px;text-align:center;color:#dc2626;font-size:.82rem">Error searching tests.</div>';
+            resultsBox.style.display = 'block';
+          });
+      }, 250);
+    });
+
+    document.addEventListener('click', e => {
+      if (!input.contains(e.target) && !resultsBox.contains(e.target)) {
+        resultsBox.style.display = 'none';
+      }
+    });
+  }
+});
+
+function addDiagToCart(type, item) {
+  const key = type === 'radiology' ? 'rad' : (type === 'other' ? 'oth' : 'lab');
+  const input = document.getElementById(`diag-${key}-input`);
+  const resultsBox = document.getElementById(`diag-${key}-results`);
+  if (resultsBox) resultsBox.style.display = 'none';
+  if (input) input.value = '';
+
+  const cart = diagCarts[type];
+  const existing = cart.find(x => x.id === item.id);
+  if (existing) {
+    existing.qty++;
+  } else {
+    cart.push({
+      id: item.id,
+      name: item.name,
+      category: item.category || (type === 'lab' ? 'Lab' : (type === 'radiology' ? 'Radiology' : 'Other')),
+      qty: 1
+    });
+  }
+  renderDiagCart(type);
+}
+
+function renderDiagCart(type) {
+  const key = type === 'radiology' ? 'rad' : (type === 'other' ? 'oth' : 'lab');
+  const container = document.getElementById(`diag-${key}-cart`);
+  const badge = document.getElementById(`badge-cart-${key}`);
+  const countSpan = document.getElementById(`${key}-cart-count`);
+  const cart = diagCarts[type];
+
+  if (badge) badge.textContent = cart.length;
+  if (countSpan) countSpan.textContent = `${cart.length} test${cart.length === 1 ? '' : 's'} selected`;
+
+  if (!container) return;
+  if (!cart.length) {
+    container.innerHTML = '<div style="padding:12px 14px; background:#f8fafc; border:1px dashed var(--gm-border); border-radius:8px; font-size:0.8rem; color:var(--gm-text-muted); text-align:center;"><i class="fas fa-shopping-basket"></i> Cart is empty. Search above to add tests.</div>';
+    return;
+  }
+
+  container.innerHTML = cart.map(t => `
+    <div class="cart-row">
+      <div class="cart-row-n">
+        ${t.name} <span class="badge" style="font-size:0.68rem;">${t.id}</span>
+      </div>
+      <input type="number" value="${t.qty}" min="1" onchange="updateDiagQty('${type}', '${t.id}', this.value)">
+      <button class="rm-btn" onclick="removeDiagFromCart('${type}', '${t.id}')" title="Remove test"><i class="fas fa-trash-alt"></i></button>
+    </div>
+  `).join('');
+}
+
+function updateDiagQty(type, id, val) {
+  const item = diagCarts[type].find(x => x.id === id);
+  if (item) item.qty = Math.max(1, parseInt(val) || 1);
+  renderDiagCart(type);
+}
+
+function removeDiagFromCart(type, id) {
+  diagCarts[type] = diagCarts[type].filter(x => x.id !== id);
+  renderDiagCart(type);
+}
+
+async function submitDiagOrder(type) {
+  if (!cp) { showToast('Please select a patient first!', true); return; }
+  const cart = diagCarts[type];
+  if (!cart || !cart.length) { showToast('Please add at least one test to the cart.', true); return; }
+
+  const key = type === 'radiology' ? 'rad' : (type === 'other' ? 'oth' : 'lab');
+  const btn = document.getElementById(`btn-save-${key}`);
+  const origHtml = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...'; btn.disabled = true; }
+
+  const label = type === 'lab' ? 'Diagnostic LAB Order (lab_tests)' : (type === 'radiology' ? 'Diagnostic RADIOLOGY Order (radiology_tests)' : 'Diagnostic OTHER Order (other_tests)');
+
+  try {
+    const r = await fetch('api/save_tests.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        patient_id: cp.patient_id,
+        admission_id: cp.admission_id || '',
+        order_type: type,
+        cart: cart
+      })
+    });
+    const res = await r.json();
+    if (res.success) {
+      showToast(`✅ ${label} saved successfully against patient ${cp.patient_id}!`);
+      diagCarts[type] = [];
+      renderDiagCart(type);
+      loadAllRecords();
+      switchDiagHistView(type);
+    } else {
+      showToast('❌ Error: ' + (res.message || 'Failed to save test order'), true);
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('Network error while saving test order!', true);
+  } finally {
+    if (btn) { btn.innerHTML = origHtml; btn.disabled = false; }
+  }
+}
+
+// Backward compatibility alias for legacy scripts
+tsCart = [];
+function renderTestCart() {}
+async function saveTests() {
+  if (diagCarts.lab.length) await submitDiagOrder('lab');
+  if (diagCarts.radiology.length) await submitDiagOrder('radiology');
+  if (diagCarts.other.length) await submitDiagOrder('other');
 }
 
 /* ── Pharmacy Cart ── */
@@ -2961,6 +3451,7 @@ async function fetchDischargeStatusForModal() {
       setDeptStatus('dis-status-reception', d.reception_status, d.reception_by);
       setDeptStatus('dis-status-pharmacy', d.pharmacy_status, d.pharmacy_by);
       setDeptStatus('dis-status-lab', d.lab_status, d.lab_by);
+      setDeptStatus('dis-status-radiology', d.radiology_status, d.radiology_by);
 
       // Queries
       if (json.queries && json.queries.length > 0) {

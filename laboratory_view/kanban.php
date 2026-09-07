@@ -34,10 +34,18 @@ $sql = "
         LEFT JOIN patient p ON ilr.patient_id COLLATE utf8mb4_unicode_ci = p.patient_id COLLATE utf8mb4_unicode_ci
     ) AS combined_results
 ";
+$whereClauses = [];
 $params = [];
 if (!$isAll) {
-    $sql .= " WHERE result_date = ?";
+    $whereClauses[] = "result_date = ?";
     $params[] = $dateFilter;
+}
+if ($sourceFilter === 'OPD' || $sourceFilter === 'IPD') {
+    $whereClauses[] = "order_source = ?";
+    $params[] = $sourceFilter;
+}
+if (!empty($whereClauses)) {
+    $sql .= " WHERE " . implode(" AND ", $whereClauses);
 }
 $sql .= " ORDER BY result_date DESC, result_time DESC";
 
@@ -66,8 +74,8 @@ $results = $db->fetchAll($sql, $params);
           <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--lis-text-muted); font-size: 0.85rem;"></i>
           <input type="text" id="resultSearchInput" placeholder="Search patient or test..." class="lis-input" style="padding-left: 32px; border-radius: 20px; width: 250px;" autocomplete="off" onkeyup="filterResults()">
       </div>
-      <select id="result-source" class="lis-input lis-select" style="width:auto; border-radius: 20px;" onchange="filterResults()">
-        <option value="all" <?= $sourceFilter === 'ALL' ? 'selected' : '' ?>>All Types</option>
+      <select id="result-source" class="lis-input lis-select" style="width:auto; border-radius: 20px;" onchange="changeSource()">
+        <option value="ALL" <?= $sourceFilter === 'ALL' ? 'selected' : '' ?>>All Types</option>
         <option value="OPD" <?= $sourceFilter === 'OPD' ? 'selected' : '' ?>>OPD</option>
         <option value="IPD" <?= $sourceFilter === 'IPD' ? 'selected' : '' ?>>IPD</option>
       </select>
@@ -75,7 +83,7 @@ $results = $db->fetchAll($sql, $params);
         <option value="<?= date('Y-m-d') ?>" <?= $dateFilter === date('Y-m-d') ? 'selected' : '' ?>>Today</option>
         <option value="all" <?= $isAll ? 'selected' : '' ?>>All Dates</option>
       </select>
-      <a href="kanban.php" class="lis-btn lis-btn-outline" style="border-radius: 20px;">
+      <a href="kanban.php<?= $sourceFilter !== 'ALL' ? '?source=' . strtolower($sourceFilter) : '' ?>" class="lis-btn lis-btn-outline" style="border-radius: 20px;">
         <i class="fas fa-sync-alt"></i> Refresh
       </a>
       <a href="test_orders.php" class="lis-btn lis-btn-primary" style="border-radius: 20px; background: linear-gradient(135deg, var(--lis-primary), #0d9488); border: none; box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);">
@@ -184,19 +192,32 @@ $results = $db->fetchAll($sql, $params);
 </style>
 
 <script>
+function changeSource() {
+    const src = document.getElementById('result-source').value;
+    const date = document.getElementById('result-date').value;
+    const params = [];
+    if (src && src.toUpperCase() !== 'ALL') params.push('source=' + encodeURIComponent(src.toLowerCase()));
+    if (date && date !== 'all') params.push('date=' + encodeURIComponent(date));
+    window.location.href = 'kanban.php' + (params.length ? '?' + params.join('&') : '');
+}
+
 function changeDate() {
-    const val = document.getElementById('result-date').value;
-    window.location.href = 'kanban.php?date=' + val;
+    const date = document.getElementById('result-date').value;
+    const src = document.getElementById('result-source').value;
+    const params = [];
+    if (src && src.toUpperCase() !== 'ALL') params.push('source=' + encodeURIComponent(src.toLowerCase()));
+    if (date && date !== 'all') params.push('date=' + encodeURIComponent(date));
+    window.location.href = 'kanban.php' + (params.length ? '?' + params.join('&') : '');
 }
 
 function filterResults() {
     const query = document.getElementById('resultSearchInput').value.toLowerCase().trim();
-    const sourceFilter = document.getElementById('result-source').value;
+    const sourceFilter = document.getElementById('result-source').value.toUpperCase();
     const rows = document.querySelectorAll('.result-row');
     
     rows.forEach(row => {
         const matchesQuery = !query || row.dataset.search.includes(query);
-        const matchesSource = sourceFilter === 'all' || row.dataset.source === sourceFilter;
+        const matchesSource = sourceFilter === 'ALL' || (row.dataset.source || '').toUpperCase() === sourceFilter;
         
         if (matchesQuery && matchesSource) {
             row.style.display = 'table-row';

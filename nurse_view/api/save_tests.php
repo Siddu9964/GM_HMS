@@ -1,5 +1,5 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../../core/Autoloader.php';
@@ -25,14 +25,28 @@ try {
     $model = new NurseClinicalModel();
     $nurseId = $_SESSION['user_id'];
     
+    $explicitType = strtolower(trim($data['order_type'] ?? ''));
+
     foreach ($cart as $item) {
         $category = strtolower($item['category'] ?? '');
-        $column = 'other_tests';
-        
-        if (strpos($category, 'lab') !== false) {
+        $itemId = strtoupper(trim($item['id'] ?? ''));
+
+        // Determine destination column strictly
+        if ($explicitType === 'lab') {
             $column = 'lab_tests';
-        } elseif (strpos($category, 'radiology') !== false || strpos($category, 'x-ray') !== false || strpos($category, 'ct') !== false) {
+        } elseif ($explicitType === 'radiology' || $explicitType === 'rad') {
             $column = 'radiology_tests';
+        } elseif ($explicitType === 'other' || $explicitType === 'oth') {
+            $column = 'other_tests';
+        } else {
+            // Fallback detection based on service ID prefix and modality name
+            if (strpos($itemId, 'RDS') === 0 || strpos($category, 'radiology') !== false || strpos($category, 'x-ray') !== false || strpos($category, 'x ray') !== false || strpos($category, 'ct') !== false || strpos($category, 'ultra sound') !== false || strpos($category, 'usg') !== false || strpos($category, 'mri') !== false || strpos($category, 'doppler') !== false) {
+                $column = 'radiology_tests';
+            } elseif (strpos($itemId, 'LAB') === 0 || strpos($category, 'lab') !== false) {
+                $column = 'lab_tests';
+            } else {
+                $column = 'other_tests';
+            }
         }
         
         // Save both ID and Name in the same JSON object in the main column

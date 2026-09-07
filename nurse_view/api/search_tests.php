@@ -2,7 +2,7 @@
 /**
  * API to search tests (Lab, Radiology, Other)
  */
-session_start();
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/../../core/Autoloader.php';
@@ -25,11 +25,12 @@ try {
     $model = new NurseTestsModel();
     $results = [];
     
-    if ($type === 'lab') {
+    $t = strtolower(trim($type));
+    if ($t === 'lab') {
         $results = $model->searchLabTests($query);
-    } elseif ($type === 'radiology') {
+    } elseif ($t === 'radiology' || $t === 'rad') {
         $results = $model->searchRadiology($query);
-    } elseif ($type === 'other') {
+    } elseif ($t === 'other' || $t === 'oth') {
         $results = $model->searchOther($query);
     } else {
         $results = $model->searchAllTests($query);

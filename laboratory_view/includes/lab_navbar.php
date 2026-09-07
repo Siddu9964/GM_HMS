@@ -105,7 +105,7 @@ $pageIcon  = $pageIcon  ?? 'fa-microscope';
       </li>
       <li><hr class="dropdown-divider my-1" style="border-color:var(--r-green-tint);"></li>
       <li>
-        <a class="dropdown-item py-2" href="../logout.php" onclick="return confirm('Logout from LIS?')" style="font-size:0.82rem;border-radius:8px;color:#c0392b;">
+        <a class="dropdown-item py-2" href="/GM_HMS/logout.php" onclick="return labConfirmLogout(event)" style="font-size:0.82rem;border-radius:8px;color:#c0392b;">
           <i class="fas fa-sign-out-alt me-2" style="width:16px;"></i>Logout
         </a>
       </li>
@@ -288,26 +288,58 @@ function closeCenterFeedbackModal() {
   if (centerFeedbackTimer) clearTimeout(centerFeedbackTimer);
 }
 
-function toggleLabNotifications(e) {
-  if (e) e.stopPropagation();
-  const dropdown = document.getElementById('labNotificationsDropdown');
-  if (dropdown) {
-    const isShown = dropdown.style.display === 'block';
-    dropdown.style.display = isShown ? 'none' : 'block';
-    if (!isShown) fetchLabNotifications();
+window.labClearanceData = [];
+
+function renderLabNotificationsList() {
+  const list = document.getElementById('lab-notif-dropdown-list');
+  if (!list) return;
+
+  const items = window.labClearanceData || [];
+  if (!Array.isArray(items) || items.length === 0) {
+    list.innerHTML = '<div class="p-4 text-center text-muted" style="font-size:0.82rem;"><i class="fas fa-check-circle text-success me-1"></i> No pending discharge clearances</div>';
+    return;
   }
+
+  list.innerHTML = items.map((item, idx) => {
+    const isApproved = item.lab_status === 'Approved';
+    const isQuery = item.lab_status === 'Query';
+    const statusColor = isApproved ? '#15803d' : (isQuery ? '#dc2626' : '#b45309');
+    const statusBg = isApproved ? '#dcfce7' : (isQuery ? '#fee2e2' : '#fef3c7');
+    return `
+      <div style="padding: 12px 14px; border-bottom: 1px solid var(--r-green-tint, #86efac); text-align: left; background: ${item.lab_status==='Pending'?'#fdfbf7':'#ffffff'}; transition: background 0.15s;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+          <strong style="font-size: 0.88rem; color: var(--r-txt, #1e293b);">
+            <i class="fas fa-user-injured" style="color:var(--r-green, #1f6b4a);margin-right:4px;"></i> ${item.patient_name || 'Patient'}
+          </strong>
+          <span style="font-size: 0.68rem; font-weight: 800; color: ${statusColor}; background: ${statusBg}; padding: 2px 8px; border-radius: 6px;">
+            ${item.lab_status}
+          </span>
+        </div>
+        <div style="font-size: 0.74rem; color: var(--r-txt-muted, #64748b); margin: 2px 0 6px 0;">
+          ${item.bed_info || 'Ward'} • IP: <strong>${item.admission_id}</strong>
+        </div>
+        <button type="button" onclick="openLabClearanceModalByIndex(${idx})" style="padding: 5px 12px; font-size: 0.74rem; font-weight: 700; background: var(--r-green, #1f6b4a); color: #fff; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+          <i class="fas fa-clipboard-check"></i> Review & Clear
+        </button>
+      </div>
+    `;
+  }).join('');
 }
 
-document.addEventListener('click', function(e) {
-  const wrapper = document.getElementById('lab-notif-dropdown-wrapper');
-  const dropdown = document.getElementById('labNotificationsDropdown');
-  if (wrapper && dropdown && !wrapper.contains(e.target)) {
-    dropdown.style.display = 'none';
-  }
-});
+function openLabClearanceModalByIndex(idx) {
+  const item = (window.labClearanceData || [])[idx];
+  if (item) openLabClearanceModal(item);
+}
+
+function openLabClearanceFromReminderIndex(idx) {
+  const centerModal = document.getElementById('labDischargeCenterModal');
+  if (centerModal) centerModal.style.display = 'none';
+  openLabClearanceModalByIndex(idx);
+}
 
 function closeLabClearanceModal() {
-  document.getElementById('labClearanceModal').style.display = 'none';
+  const m = document.getElementById('labClearanceModal');
+  if (m) m.style.display = 'none';
 }
 
 function openLabClearanceModal(item) {
@@ -351,12 +383,6 @@ function openLabClearanceModal(item) {
   document.getElementById('labClearanceModal').style.display = 'flex';
 }
 
-function openLabClearanceFromReminder(item) {
-  const centerModal = document.getElementById('labDischargeCenterModal');
-  if (centerModal) centerModal.style.display = 'none';
-  openLabClearanceModal(item);
-}
-
 function snoozeLabReminder() {
   const centerModal = document.getElementById('labDischargeCenterModal');
   if (centerModal) centerModal.style.display = 'none';
@@ -373,19 +399,22 @@ function checkAndShowLabDischargeReminder(items) {
     if (now >= labReminderSnoozedUntil) {
       const listEl = document.getElementById('lab-reminder-patient-list');
       if (listEl) {
-        listEl.innerHTML = pendingForLab.map(item => `
-          <div style="background:#ffffff; border:1.5px solid #fed7aa; border-radius:10px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
-            <div>
-              <div style="font-weight:800; font-size:0.92rem; color:#1e293b;"><i class="fas fa-user-injured text-warning"></i> ${item.patient_name || 'Patient'}</div>
-              <div style="font-size:0.74rem; color:#64748b; margin-top:2px;">
-                ${item.bed_info || 'Ward'} • IP: <strong>${item.admission_id}</strong>
+        listEl.innerHTML = pendingForLab.map((item) => {
+          const idx = (window.labClearanceData || []).indexOf(item);
+          return `
+            <div style="background:#ffffff; border:1.5px solid #fed7aa; border-radius:10px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+              <div>
+                <div style="font-weight:800; font-size:0.92rem; color:#1e293b;"><i class="fas fa-user-injured text-warning"></i> ${item.patient_name || 'Patient'}</div>
+                <div style="font-size:0.74rem; color:#64748b; margin-top:2px;">
+                  ${item.bed_info || 'Ward'} • IP: <strong>${item.admission_id}</strong>
+                </div>
               </div>
+              <button type="button" onclick="openLabClearanceFromReminderIndex(${idx >= 0 ? idx : 0})" style="padding:6px 12px; font-size:0.76rem; font-weight:800; background:#1f6b4a; color:#ffffff; border:none; border-radius:8px; cursor:pointer; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">
+                <i class="fas fa-clipboard-check"></i> Review & Clear
+              </button>
             </div>
-            <button type="button" onclick='openLabClearanceFromReminder(${JSON.stringify(item)})' style="padding:6px 12px; font-size:0.76rem; font-weight:800; background:#1f6b4a; color:#ffffff; border:none; border-radius:8px; cursor:pointer; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">
-              <i class="fas fa-clipboard-check"></i> Review & Clear
-            </button>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       }
       centerModal.style.display = 'flex';
     }
@@ -436,6 +465,29 @@ async function submitLabClearance(action) {
   }
 }
 
+document.addEventListener('click', function(e) {
+  const wrapper = document.getElementById('lab-notif-dropdown-wrapper');
+  const dropdown = document.getElementById('labNotificationsDropdown');
+  if (wrapper && dropdown && !wrapper.contains(e.target)) {
+    dropdown.style.display = 'none';
+  }
+});
+
+function toggleLabNotifications(e) {
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById('labNotificationsDropdown');
+  if (dropdown) {
+    const isShown = dropdown.style.display === 'block';
+    if (!isShown) {
+      renderLabNotificationsList();
+      dropdown.style.display = 'block';
+      fetchLabNotifications();
+    } else {
+      dropdown.style.display = 'none';
+    }
+  }
+}
+
 async function fetchLabNotifications() {
   const badgeElements = document.querySelectorAll('.lab-notif-badge');
   const list = document.getElementById('lab-notif-dropdown-list');
@@ -443,33 +495,29 @@ async function fetchLabNotifications() {
     const r = await fetch('/GM_HMS/api/discharge_clearance.php?action=pending_list&module=lab');
     const d = await r.json();
 
-    if (d.success && Array.isArray(d.data) && d.data.length > 0) {
-      badgeElements.forEach(el => {
-        el.textContent = d.data.length;
-        el.style.display = 'inline-block';
-      });
-      if (list) {
-        list.innerHTML = d.data.map(item => `
-          <div style="padding: 10px 14px; border-bottom: 1px solid var(--r-green-tint, #86efac); text-align: left; background: ${item.lab_status==='Pending'?'#fdfbf7':'#ffffff'};">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <strong style="font-size: 0.85rem; color: var(--r-txt, #1e293b);"><i class="fas fa-microscope" style="color:var(--r-green, #1f6b4a);"></i> ${item.patient_name || 'Patient'}</strong>
-              <span style="font-size: 0.68rem; font-weight: 700; color: ${item.lab_status==='Approved'?'#15803d':'#b45309'};">${item.lab_status}</span>
-            </div>
-            <div style="font-size: 0.74rem; color: var(--r-txt-muted, #64748b); margin: 2px 0;">${item.bed_info || 'Ward'} • IP: ${item.admission_id}</div>
-            <button type="button" onclick='openLabClearanceModal(${JSON.stringify(item)})' style="margin-top: 4px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; background: var(--r-green, #1f6b4a); color: #fff; border: none; border-radius: 6px; cursor: pointer;">
-              <i class="fas fa-clipboard-check"></i> Review & Clear
-            </button>
-          </div>
-        `).join('');
+    if (d.success && Array.isArray(d.data)) {
+      window.labClearanceData = d.data;
+      if (d.data.length > 0) {
+        badgeElements.forEach(el => {
+          el.textContent = d.data.length;
+          el.style.display = 'inline-block';
+        });
+      } else {
+        badgeElements.forEach(el => el.style.display = 'none');
       }
+      renderLabNotificationsList();
       checkAndShowLabDischargeReminder(d.data);
     } else {
+      window.labClearanceData = [];
       badgeElements.forEach(el => el.style.display = 'none');
-      if (list) list.innerHTML = '<div class="p-4 text-center" style="font-size:0.8rem;color:var(--r-txt-muted, #64748b);">No pending discharge clearances</div>';
+      renderLabNotificationsList();
       checkAndShowLabDischargeReminder([]);
     }
   } catch(e) {
-    if (list) list.innerHTML = '<div class="p-4 text-center" style="font-size:0.8rem;color:var(--r-txt-muted, #64748b);">Error loading alerts</div>';
+    console.error('Error fetching lab discharge alerts:', e);
+    if (list && (!window.labClearanceData || window.labClearanceData.length === 0)) {
+      list.innerHTML = '<div class="p-4 text-center text-muted" style="font-size:0.8rem;"><i class="fas fa-exclamation-circle text-warning me-1"></i> Unable to load alerts</div>';
+    }
   }
 }
 
@@ -502,9 +550,14 @@ async function fetchLabNotifications() {
     }
   });
 
-  document.addEventListener('DOMContentLoaded', () => {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchLabNotifications();
+      setInterval(fetchLabNotifications, 10000);
+    });
+  } else {
     fetchLabNotifications();
     setInterval(fetchLabNotifications, 10000);
-  });
+  }
 })();
 </script>

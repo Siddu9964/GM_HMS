@@ -1,0 +1,180 @@
+/* ============================================================================
+   GM_HMS — Radiology Information System (RIS) Design System
+   Imports Core Laboratory Theme & Adds Radiology Specific Overrides
+   ============================================================================ */
+@import url('/GM_HMS/laboratory_view/assets/css/laboratory.css');
+
+:root {
+  --ris-primary:        #1f6b4a;
+  --ris-primary-dark:   #144d34;
+  --ris-accent:         #2a8c62;
+  --ris-modality-ct:    #6366f1;
+  --ris-modality-xray:  #0ea5e9;
+  --ris-modality-usg:   #10b981;
+  --ris-modality-mri:   #ec4899;
+}
+
+/* Modality Badges */
+.ris-badge-ct    { background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe; }
+.ris-badge-xray  { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+.ris-badge-usg   { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
+.ris-badge-mri   { background: #fce7f3; color: #be185d; border: 1px solid #fbcfe8; }
+.ris-badge-dop   { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+
+/* Image Attachment Viewer */
+.ris-viewer-box {
+  background: #0f172a;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #334155;
+}
+
+/* ============================================================================
+   Centered Modal & Popups (Success, Error, Warnings, Logout)
+   ============================================================================ */
+@keyframes lisModalPop {
+  0% { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── RIS Modal Overlays ─────────────────────────────────────── */
+.lis-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.lis-modal-overlay.open {
+  display: flex !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Modal header close button styling across RIS */
+.lis-modal-header .lis-modal-close {
+  position: relative !important;
+  z-index: 30 !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.45) !important;
+  color: #ffffff !important;
+  border-radius: 10px !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.15rem !important;
+  transition: all 0.18s ease !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.lis-modal-header .lis-modal-close:hover {
+  background: #dc2626 !important;
+  border-color: #fca5a5 !important;
+  color: #ffffff !important;
+  transform: scale(1.1) !important;
+}
+
+/* Ensure ALL SweetAlert containers are above modals (z-index 100050) */
+.swal2-container,
+.swal2-container.swal2-center,
+.swal2-container.swal2-backdrop-show {
+  z-index: 100050 !important;
+  pointer-events: auto !important;
+}
+
+.gm-center-swal-popup {
+  position: relative !important;
+  z-index: 100051 !important;
+  pointer-events: auto !important;
+  border-radius: 20px !important;
+  padding: 24px 28px !important;
+  box-shadow: 0 25px 70px rgba(15, 23, 42, 0.45) !important;
+  border: 1.5px solid rgba(226, 232, 240, 0.8) !important;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  animation: lisModalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.gm-center-swal-popup .swal2-close {
+  position: absolute !important;
+  font-size: 1.5rem !important;
+  color: #64748b !important;
+  top: 14px !important;
+  right: 14px !important;
+  outline: none !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  z-index: 100052 !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 8px !important;
+  transition: all 0.15s ease !important;
+}
+
+.gm-center-swal-popup .swal2-close:hover {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+  transform: scale(1.08) !important;
+}
+
+.gm-center-swal-popup .swal2-title {
+  font-size: 1.35rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  margin-bottom: 8px !important;
+}
+
+.gm-center-swal-popup .swal2-html-container {
+  font-size: 0.95rem !important;
+  color: #334155 !important;
+  line-height: 1.5 !important;
+  font-weight: 500 !important;
+}
+
+.gm-center-swal-popup .swal2-actions {
+  margin-top: 20px !important;
+  gap: 10px !important;
+}
+
+.gm-center-swal-popup .swal2-confirm {
+  border-radius: 10px !important;
+  font-weight: 700 !important;
+  font-size: 0.9rem !important;
+  padding: 10px 28px !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15) !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+.gm-center-swal-popup .swal2-cancel {
+  border-radius: 10px !important;
+  font-weight: 700 !important;
+  font-size: 0.9rem !important;
+  padding: 10px 24px !important;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  color: #475569 !important;
+  background-color: #e2e8f0 !important;
+  border: none !important;
+}
+
+

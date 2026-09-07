@@ -126,6 +126,11 @@ function isActive($page_file, $current_file, $current_path, $request_uri) {
                 <span>Lab View</span>
             </a>
 
+            <a href="/GM_HMS/radiology_view/dashboard.php" class="sidebar-item <?php echo (strpos($current_path, 'radiology_view') !== false) ? 'active' : ''; ?>">
+                <i class="fas fa-x-ray"></i>
+                <span>Radiology View</span>
+            </a>
+
             <a href="/GM_HMS/quality_view/dashboard.php" 
                class="sidebar-item sidebar-item-multiline <?php echo (strpos($current_path, 'quality_view') !== false) ? 'active' : ''; ?>"
                title="Hospital Infection Control">
