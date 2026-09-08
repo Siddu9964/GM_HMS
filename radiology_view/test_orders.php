@@ -423,7 +423,7 @@ function renderOrders(orders) {
           <button class="lb lb-primary" style="padding:4px 10px;font-size:0.75rem;" onclick="openResultModal('${escHtml(o.order_id)}', '${escHtml(o.patient_id)}', '${escHtml(o.resolved_test_names||o.test_name)}')">
             <i class="fas fa-file-medical"></i> Report
           </button>
-          <a href="print_result.php?order_id=${encodeURIComponent(o.order_id)}" target="_blank" class="lb lb-outline" style="padding:4px 10px;font-size:0.75rem;">
+          <a href="print_result.php?order_id=${encodeURIComponent(o.order_id)}&source=OPD&from=orders" target="_blank" onclick="window.open(this.href, '_blank'); return false;" class="lb lb-outline" style="padding:4px 10px;font-size:0.75rem;" title="Print Report">
             <i class="fas fa-print"></i>
           </a>
         </td>
@@ -957,6 +957,7 @@ async function submitRadiologyResult() {
       radToast('Radiology report saved and finalized!', 'success');
       closeResultModal();
       loadOrders();
+      if (typeof fetchRadNotifications === 'function') fetchRadNotifications();
     } else {
       radToast(res.message || 'Error saving report', 'error');
     }

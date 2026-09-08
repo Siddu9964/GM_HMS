@@ -114,12 +114,19 @@ class OpdBillingModel
             ]);
 
             $hasLabItems = false;
+            $hasRadItems = false;
             if (!empty($items)) {
                 foreach ($items as $item) {
                     $this->addBillingItem($billId, $item, $receiptNo);
                     $code = strtoupper(trim($item['item_code'] ?? ''));
+                    $providedType = $item['item_type'] ?? $item['bill_purpose'] ?? '';
+                    $itemType = $this->resolveItemType($providedType ?: ($item['item_name'] ?? ''));
+
                     if (strpos($code, 'LAB') === 0 || strpos($code, 'OTH') === 0) {
                         $hasLabItems = true;
+                    }
+                    if (strpos($code, 'RDS') === 0 || strpos($code, 'RAD') === 0 || in_array($itemType, ['Radiology', 'Scan', 'X-Ray'])) {
+                        $hasRadItems = true;
                     }
 
                     // Mark corresponding appointment as Paid
@@ -159,6 +166,21 @@ class OpdBillingModel
                      VALUES (?, 'staff', 'staff', ?, ?, 'lab_result', 'normal', 'test_orders.php')",
                     [$nid, $title, $message]
                 );
+            }
+
+            if ($hasRadItems) {
+                // Insert Notification for Radiology (staff)
+                $nid = 'NOT-' . strtoupper(substr(uniqid(), -6));
+                $patientName = $billData['name'] ?? 'Walking Patient';
+                $title = "New OPD Scan Added";
+                $message = "A new radiology scan ({$billId}) has been added for {$patientName} ({$patientId}).";
+                try {
+                    $this->db->execute(
+                        "INSERT INTO notifications (notification_id, recipient_id, recipient_type, title, message, category, priority, action_url) 
+                         VALUES (?, 'staff', 'staff', ?, ?, 'radiology_result', 'normal', ?)",
+                        [$nid, $title, $message, "radiology_view/test_orders.php?order_id={$billId}"]
+                    );
+                } catch (\Throwable $ne) {}
             }
 
             $this->db->commit();

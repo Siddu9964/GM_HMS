@@ -100,12 +100,12 @@ class NurseClinicalModel {
             // Insert Notification for Radiology (staff)
             $nid = 'NOT-' . strtoupper(substr(uniqid(), -6));
             $title = "IPD Radiology Order Added";
-            $message = "A new imaging/radiology scan order has been added for IPD Patient ({$patientId}).";
+            $message = "A new imaging/radiology scan order has been added for IPD Patient ({$patientId}) Admission #{$admissionId}.";
             try {
                 $this->db->execute(
                     "INSERT INTO notifications (notification_id, recipient_id, recipient_type, title, message, category, priority, action_url) 
-                     VALUES (?, 'staff', 'staff', ?, ?, 'radiology_result', 'normal', 'radiology_view/ipd_test_orders.php')",
-                    [$nid, $title, $message]
+                     VALUES (?, 'staff', 'staff', ?, ?, 'radiology_result', 'normal', ?)",
+                    [$nid, $title, $message, "radiology_view/ipd_test_orders.php?admission_id={$admissionId}"]
                 );
             } catch (\Throwable $ne) {}
         }
@@ -118,7 +118,7 @@ class NurseClinicalModel {
             try {
                 $this->db->execute(
                     "INSERT INTO notifications (notification_id, recipient_id, recipient_type, title, message, category, priority, action_url) 
-                     VALUES (?, 'pharmacy', 'role', ?, ?, 'pharmacy_order', 'normal', 'ip_orders.php')",
+                     VALUES (?, 'pharmacy', 'staff', ?, ?, 'pharmacy_order', 'normal', 'ip_orders.php')",
                     [$nid, $title, $message]
                 );
             } catch (\Throwable $ne) {}

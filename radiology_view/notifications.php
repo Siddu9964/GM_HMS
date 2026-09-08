@@ -114,19 +114,44 @@ require_once 'includes/rad_head.php';
 
 <script>
 let currentNotifTab = 'all';
+let allNotifList = [];
 
 const dummyNotifs = [
-  { id: 1, type: 'critical', title: 'STAT Trauma Scan: CT Brain Plain', desc: 'Emergency Casualty bed 3 • Suspected intracranial bleed', time: '10 min ago', unread: true },
-  { id: 2, type: 'critical', title: 'Urgent Inpatient Scan: Bedside Chest X-Ray', desc: 'ICU Bed 4 • Acute respiratory distress post-op', time: '25 min ago', unread: true },
-  { id: 3, type: 'pending', title: '3 Scans Waiting for Radiologist Signature', desc: 'Chest X-Ray PA, Knee Joint AP/LAT ready for review', time: '1 hr ago', unread: true },
-  { id: 4, type: 'completed', title: 'Report Delivered: CT Abdomen & Pelvis', desc: 'Order #OPB-20260905-0012 reported & archived to PACS', time: '2 hrs ago', unread: false },
-  { id: 5, type: 'completed', title: 'Report Delivered: USG Whole Abdomen', desc: 'Order #IPD-20260905-0004 reported by Dr. Radiologist', time: '3 hrs ago', unread: false },
-  { id: 6, type: 'pending', title: 'Inventory Alert: Omnipaque 300mg Stock Low', desc: 'Remaining: 18 vials (Reorder threshold: 20 vials)', time: '4 hrs ago', unread: false }
+  { id: 'SMP-1', type: 'critical', title: 'STAT Trauma Scan: CT Brain Plain', desc: 'Emergency Casualty bed 3 • Suspected intracranial bleed', time: '10 min ago', unread: true, action_url: 'ipd_test_orders.php' },
+  { id: 'SMP-2', type: 'critical', title: 'Urgent Inpatient Scan: Bedside Chest X-Ray', desc: 'ICU Bed 4 • Acute respiratory distress post-op', time: '25 min ago', unread: true, action_url: 'ipd_test_orders.php' },
+  { id: 'SMP-3', type: 'pending', title: '3 Scans Waiting for Radiologist Signature', desc: 'Chest X-Ray PA, Knee Joint AP/LAT ready for review', time: '1 hr ago', unread: true, action_url: 'test_orders.php' },
+  { id: 'SMP-4', type: 'completed', title: 'Report Delivered: CT Abdomen & Pelvis', desc: 'Order reported & archived to PACS', time: '2 hrs ago', unread: false, action_url: 'kanban.php' },
+  { id: 'SMP-5', type: 'completed', title: 'Report Delivered: USG Whole Abdomen', desc: 'Order reported by Dr. Radiologist', time: '3 hrs ago', unread: false, action_url: 'kanban.php' }
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
-  renderNotifs();
+  loadNotifications();
 });
+
+async function loadNotifications() {
+  try {
+    const res = await fetch('/GM_HMS/api/radiology/notifications').then(r => r.json());
+    if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+      allNotifList = res.data.map(n => {
+        const isIpd = (n.action_url && n.action_url.toLowerCase().includes('ipd')) || (n.title && n.title.toLowerCase().includes('ipd'));
+        return {
+          id: n.notification_id || n.id,
+          type: isIpd ? 'critical' : 'pending',
+          title: n.title,
+          desc: n.message,
+          time: n.created_at || 'Recently',
+          unread: Number(n.is_read) === 0,
+          action_url: n.action_url || (isIpd ? 'ipd_test_orders.php' : 'test_orders.php')
+        };
+      });
+    } else {
+      allNotifList = dummyNotifs;
+    }
+  } catch(e) {
+    allNotifList = dummyNotifs;
+  }
+  renderNotifs();
+}
 
 function switchNotifTab(tab, btn) {
   currentNotifTab = tab;
@@ -139,10 +164,18 @@ function renderNotifs() {
   const container = document.getElementById('notif-feed');
   container.innerHTML = '';
 
-  let list = dummyNotifs;
+  let list = allNotifList;
   if (currentNotifTab !== 'all') {
-    list = dummyNotifs.filter(n => n.type === currentNotifTab);
+    list = allNotifList.filter(n => n.type === currentNotifTab);
   }
+
+  // Update counts
+  const critCnt = allNotifList.filter(n => n.type === 'critical' && n.unread).length;
+  const pendCnt = allNotifList.filter(n => n.type === 'pending' && n.unread).length;
+  const critEl = document.getElementById('notif-cnt-stat');
+  const pendEl = document.getElementById('notif-cnt-pending');
+  if (critEl) critEl.textContent = critCnt;
+  if (pendEl) pendEl.textContent = pendCnt;
 
   if (list.length === 0) {
     container.innerHTML = '<div style="background:#fff;padding:40px;text-align:center;color:#94a3b8;"><i class="fas fa-check" style="font-size:2rem;margin-bottom:8px;"></i><div>No notifications in this category.</div></div>';
@@ -157,7 +190,17 @@ function renderNotifs() {
     else if (n.type === 'pending') { iconClass = 'fa-clock'; iconColor = '#d97706'; }
 
     const div = document.createElement('div');
-    div.style = `padding:16px 20px;background:${n.unread ? '#f8fafc' : '#fff'};display:flex;gap:14px;align-items:flex-start;`;
+    div.style = `padding:16px 20px;background:${n.unread ? '#f8fafc' : '#fff'};display:flex;gap:14px;align-items:flex-start;cursor:pointer;transition:background 0.15s;border-bottom:1px solid #f1f5f9;`;
+    div.onmouseover = () => { div.style.background = '#f1f5f9'; };
+    div.onmouseout = () => { div.style.background = n.unread ? '#f8fafc' : '#fff'; };
+    div.onclick = () => {
+      if (typeof window.markRadNotifReadAndGo === 'function') {
+        window.markRadNotifReadAndGo(n.id, n.action_url);
+      } else {
+        window.location.href = n.action_url || 'test_orders.php';
+      }
+    };
+
     div.innerHTML = `
       <div style="width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:${iconColor};font-size:1rem;flex-shrink:0;">
         <i class="fas ${iconClass}"></i>
@@ -175,14 +218,15 @@ function renderNotifs() {
 }
 
 function markAllRead() {
-  dummyNotifs.forEach(n => n.unread = false);
+  allNotifList.forEach(n => {
+    n.unread = false;
+    if (n.id && !String(n.id).startsWith('SMP-')) {
+      fetch('/GM_HMS/api/radiology/notifications/' + encodeURIComponent(n.id) + '/read', { method: 'POST' }).catch(() => {});
+    }
+  });
   renderNotifs();
-  radToast('All notifications marked as read', 'success');
-}
-
-function loadNotifications() {
-  renderNotifs();
-  radToast('Notifications refreshed', 'info');
+  if (typeof fetchRadNotifications === 'function') fetchRadNotifications();
+  if (typeof radToast === 'function') radToast('All notifications marked as read', 'success');
 }
 </script>
 

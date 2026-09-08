@@ -10,9 +10,21 @@ if (!isset($_SESSION['user_id'])) {
 
 $orderId = $_POST['order_id'] ?? $_GET['order_id'] ?? '';
 $source = strtoupper($_GET['source'] ?? 'OPD');
+$from = strtolower($_GET['from'] ?? '');
 if (!$orderId) die('No Order ID provided.');
 
 $printedBy = $_SESSION['username'] ?? 'Radiographer';
+
+// Determine safe return URL if history is unavailable or tab cannot close
+if ($from === 'kanban' || $from === 'results' || $from === 'all_results') {
+    $fallbackBackUrl = 'kanban.php?source=' . ($source === 'IPD' ? 'ipd' : 'opd');
+} elseif ($from === 'ipd_orders' || $source === 'IPD') {
+    $fallbackBackUrl = 'ipd_test_orders.php';
+} elseif ($from === 'patients') {
+    $fallbackBackUrl = 'patients.php';
+} else {
+    $fallbackBackUrl = 'test_orders.php';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -21,6 +33,7 @@ $printedBy = $_SESSION['username'] ?? 'Radiographer';
     <title>Radiology Report - <?= htmlspecialchars($orderId) ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; color: #111; font-size: 11px; line-height: 1.35; }
@@ -113,9 +126,9 @@ $printedBy = $_SESSION['username'] ?? 'Radiographer';
 <body>
 
 <div class="action-bar">
-    <button class="btn btn-close" onclick="window.history.back()">Back</button>
-    <a id="btn-view-scan" href="#" target="_blank" class="btn btn-close" style="display:none;">View Scan File</a>
-    <button class="btn btn-print" onclick="window.print()">Print Report</button>
+    <button type="button" class="btn btn-close" onclick="handlePrintBack()"><i class="fas fa-arrow-left" style="margin-right:6px;"></i> Back</button>
+    <a id="btn-view-scan" href="#" target="_blank" class="btn btn-close" style="display:none;"><i class="fas fa-file-image" style="margin-right:6px;"></i> View Scan File</a>
+    <button type="button" class="btn btn-print" onclick="window.print()"><i class="fas fa-print" style="margin-right:6px;"></i> Print Report</button>
 </div>
 
 <div id="loading">Loading Radiology Report Data...</div>
@@ -365,6 +378,49 @@ async function loadRadReport() {
 }
 
 document.addEventListener('DOMContentLoaded', loadRadReport);
+
+function handlePrintBack() {
+    const fallbackUrl = <?= json_encode($fallbackBackUrl) ?>;
+    let targetUrl = fallbackUrl;
+
+    try {
+        if (document.referrer && (document.referrer.includes('/radiology_view/') || document.referrer.includes('/GM_HMS/'))) {
+            targetUrl = document.referrer;
+        }
+    } catch(e) {}
+
+    const hasHistory = window.history.length > 1;
+
+    // 1. If tab has an active opener, close the tab
+    if (window.opener && !window.opener.closed) {
+        window.close();
+    }
+
+    // 2. Also try standard window.close()
+    window.close();
+
+    // 3. Fallback: If tab was not closed (browser policy or opened in same tab), navigate back cleanly
+    setTimeout(function() {
+        if (!window.closed) {
+            if (hasHistory && document.referrer && document.referrer.includes('/radiology_view/')) {
+                window.history.back();
+                setTimeout(function() {
+                    if (window.location.href.includes('print_result.php')) {
+                        window.location.href = targetUrl;
+                    }
+                }, 150);
+            } else {
+                window.location.href = targetUrl;
+            }
+        }
+    }, 100);
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        handlePrintBack();
+    }
+});
 </script>
 
 </body>

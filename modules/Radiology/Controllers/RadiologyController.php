@@ -353,4 +353,37 @@ class RadiologyController extends BaseController
             $this->handleException($e);
         }
     }
+
+    /**
+     * GET /api/radiology/notifications
+     */
+    public function getNotifications()
+    {
+        $this->restrictMethod('GET');
+        $this->requireAuth();
+        
+        try {
+            $onlyToday = !isset($_GET['all_days']) || $_GET['all_days'] !== '1';
+            $notifications = $this->service->getUnreadNotifications('staff', 'radiology_result', $onlyToday);
+            $this->respondSuccess($notifications);
+        } catch (Throwable $e) {
+            $this->handleException($e);
+        }
+    }
+
+    /**
+     * POST /api/radiology/notifications/{id}/read
+     */
+    public function markNotificationRead($id)
+    {
+        $this->restrictMethod('POST');
+        $this->requireAuth();
+        
+        try {
+            $this->service->markNotificationRead($id);
+            $this->respondSuccess([], 'Notification marked as read');
+        } catch (Throwable $e) {
+            $this->handleException($e);
+        }
+    }
 }

@@ -66,8 +66,8 @@ function radToast(message, type = 'success', title = null) {
     if (typeof Swal !== 'undefined') {
         let defaultTitle = 'Success';
         let confirmBtnColor = '#0284c7';
-        let showConfirm = false;
-        let timerDuration = 2200;
+        let showConfirm = true;
+        let timerDuration = 3500;
 
         if (type === 'error') {
             defaultTitle = 'Action Failed';
@@ -78,11 +78,12 @@ function radToast(message, type = 'success', title = null) {
             defaultTitle = 'Attention Required';
             confirmBtnColor = '#d97706';
             showConfirm = true;
-            timerDuration = 3200;
+            timerDuration = 4000;
         } else if (type === 'info') {
             defaultTitle = 'Notice';
             confirmBtnColor = '#0284c7';
-            timerDuration = 2400;
+            showConfirm = true;
+            timerDuration = 3500;
         }
 
         Swal.fire({
@@ -102,8 +103,19 @@ function radToast(message, type = 'success', title = null) {
             customClass: {
                 popup: 'gm-center-swal-popup'
             },
+            didOpen: (popup) => {
+                const closeBtn = popup.querySelector('.swal2-close');
+                if (closeBtn) {
+                    closeBtn.style.cursor = 'pointer';
+                    closeBtn.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        Swal.close();
+                    };
+                }
+            },
             didClose: () => {
-                const openModal = document.querySelector('.lis-modal-overlay.open, .modal.show');
+                const openModal = document.querySelector('.lis-modal-overlay.open, .lis-modal-overlay[style*="display: flex"], .lis-modal-overlay[style*="display: block"], .modal.show');
                 if (openModal) {
                     document.body.classList.add('modal-open');
                 } else {
@@ -136,6 +148,17 @@ function radConfirm(message, onConfirm, options = {}) {
             allowEscapeKey: true,
             customClass: {
                 popup: 'gm-center-swal-popup'
+            },
+            didOpen: (popup) => {
+                const closeBtn = popup.querySelector('.swal2-close');
+                if (closeBtn) {
+                    closeBtn.style.cursor = 'pointer';
+                    closeBtn.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        Swal.close();
+                    };
+                }
             }
         }).then(result => {
             if (result.isConfirmed && typeof onConfirm === 'function') {
@@ -168,6 +191,17 @@ function radConfirmLogout(e) {
             reverseButtons: true,
             customClass: {
                 popup: 'gm-center-swal-popup'
+            },
+            didOpen: (popup) => {
+                const closeBtn = popup.querySelector('.swal2-close');
+                if (closeBtn) {
+                    closeBtn.style.cursor = 'pointer';
+                    closeBtn.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        Swal.close();
+                    };
+                }
             }
         }).then((result) => {
             if (result.isConfirmed) {

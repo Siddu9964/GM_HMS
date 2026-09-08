@@ -390,7 +390,7 @@ try {
                             <button type="button" onclick="editRadResult('<?= htmlspecialchars($row['order_id']) ?>', '<?= htmlspecialchars($row['order_source'] ?? 'OPD') ?>', <?= htmlspecialchars(json_encode($tests), ENT_QUOTES) ?>)" class="lis-btn" style="padding: 5px 12px; font-size: 0.75rem; border: 1.5px solid #1f6b4a; color: #1f6b4a; margin-right: 4px; background:#f3efe6; font-weight:700; border-radius:6px; cursor:pointer;">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
-                            <a href="print_result.php?order_id=<?= urlencode($row['order_id']) ?>&source=<?= urlencode($row['order_source'] ?? 'OPD') ?>" target="_blank" class="lis-btn" style="padding: 5px 12px; font-size: 0.75rem; border: 1.5px solid #1f6b4a; color: #f3efe6; background:#1f6b4a; font-weight:700; border-radius:6px; text-decoration:none; display:inline-block;">
+                            <a href="print_result.php?order_id=<?= urlencode($row['order_id']) ?>&source=<?= urlencode($row['order_source'] ?? 'OPD') ?>&from=kanban" target="_blank" onclick="window.open(this.href, '_blank'); return false;" class="lis-btn" style="padding: 5px 12px; font-size: 0.75rem; border: 1.5px solid #1f6b4a; color: #f3efe6; background:#1f6b4a; font-weight:700; border-radius:6px; text-decoration:none; display:inline-block;">
                                 <i class="fas fa-print"></i> Report
                             </a>
                             <?php if (!empty($row['report_file'])): ?>

@@ -78,6 +78,9 @@ class RadiologyService
         if (!$res) {
             throw new Exception("Failed to update radiology order status");
         }
+        if (in_array(strtolower(trim($status)), ['completed', 'reported'])) {
+            $this->repo->markNotificationCompletedForOrder($orderId);
+        }
         return ['success' => true];
     }
 
@@ -88,7 +91,11 @@ class RadiologyService
 
     public function updateIpdOrderStatus($orderId, $status)
     {
-        return $this->repo->updateIpdOrderStatus($orderId, $status);
+        $res = $this->repo->updateIpdOrderStatus($orderId, $status);
+        if (in_array(strtolower(trim($status)), ['completed', 'reported'])) {
+            $this->repo->markNotificationCompletedForOrder($orderId);
+        }
+        return $res;
     }
 
     public function getResult($orderId)
@@ -210,6 +217,7 @@ class RadiologyService
         } else {
             $this->repo->updateIpdOrderStatus($orderId, 'Reported');
         }
+        $this->repo->markNotificationCompletedForOrder($orderId, $patientId);
 
         return ['success' => true, 'report_file' => $reportFilePath];
     }
@@ -222,5 +230,15 @@ class RadiologyService
     public function getDashboardStats()
     {
         return $this->repo->getDashboardStats();
+    }
+
+    public function getUnreadNotifications($recipientType = 'staff', $category = 'radiology_result', $onlyToday = true)
+    {
+        return $this->repo->getUnreadNotifications($recipientType, $category, $onlyToday);
+    }
+
+    public function markNotificationRead($id)
+    {
+        return $this->repo->markNotificationRead($id);
     }
 }

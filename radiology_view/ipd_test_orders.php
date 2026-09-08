@@ -271,7 +271,7 @@ function renderIpdOrders(orders) {
           <button class="lb lb-primary" style="padding:4px 10px;font-size:0.75rem;" onclick="openIpdResultModal('${escHtml(o.order_id)}', '${escHtml(o.patient_id)}', '${escHtml(o.resolved_test_names||o.test_name)}', '${escHtml(bedInfo)}')">
             <i class="fas fa-file-medical"></i> Report
           </button>
-          <a href="print_result.php?order_id=${encodeURIComponent(o.order_id)}&source=IPD" target="_blank" class="lb lb-outline" style="padding:4px 10px;font-size:0.75rem;">
+          <a href="print_result.php?order_id=${encodeURIComponent(o.order_id)}&source=IPD&from=ipd_orders" target="_blank" onclick="window.open(this.href, '_blank'); return false;" class="lb lb-outline" style="padding:4px 10px;font-size:0.75rem;" title="Print Inpatient Report">
             <i class="fas fa-print"></i>
           </a>
         </td>
@@ -441,6 +441,7 @@ async function submitIpdResult() {
       radToast('Inpatient radiology report saved successfully!', 'success');
       closeIpdResultModal();
       loadIpdOrders();
+      if (typeof fetchRadNotifications === 'function') fetchRadNotifications();
     } else {
       radToast(res.message || 'Error saving report', 'error');
     }

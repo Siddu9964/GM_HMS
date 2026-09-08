@@ -59,7 +59,7 @@ $pageIcon  = $pageIcon  ?? 'fa-x-ray';
     </a>
     <div id="radNotificationsDropdown" class="dropdown-menu dropdown-menu-end shadow-sm" style="display: none; position: absolute; top: 115%; right: 0; min-width: 340px; max-width: 380px; border-radius: 12px; border: 1.5px solid #1f6b4a; padding: 0; max-height: 420px; overflow-y: auto; background: #ffffff; z-index: 10000; box-shadow: 0 15px 40px rgba(0,0,0,0.18);">
       <div style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-weight: 800; color: #1e293b; display: flex; justify-content: space-between; align-items: center; background: #fdfbf7;">
-          <span style="display:flex;align-items:center;gap:6px;"><i class="fas fa-x-ray" style="color:#1f6b4a;"></i> Discharge Clearance Alerts</span>
+          <span style="display:flex;align-items:center;gap:6px;"><i class="fas fa-bell" style="color:#1f6b4a;"></i> Radiology Alerts</span>
           <span class="badge rounded-pill rad-notif-badge" style="display:none;background:#1f6b4a;color:#ffffff;font-size:0.7rem;padding:3px 8px;">0</span>
       </div>
       <div id="rad-notif-dropdown-list">
@@ -264,38 +264,91 @@ function renderRadNotificationsList() {
   const list = document.getElementById('rad-notif-dropdown-list');
   if (!list) return;
 
-  const items = window.radClearanceData || [];
-  if (!Array.isArray(items) || items.length === 0) {
-    list.innerHTML = '<div class="p-4 text-center text-muted" style="font-size:0.82rem;"><i class="fas fa-check-circle text-success me-1"></i> No pending discharge clearances</div>';
+  const testItems = window.radTestNotificationsData || [];
+  const clearanceItems = window.radClearanceData || [];
+
+  if (testItems.length === 0 && clearanceItems.length === 0) {
+    list.innerHTML = '<div class="p-4 text-center text-muted" style="font-size:0.82rem;"><i class="fas fa-check-circle text-success me-1"></i> No pending notifications</div>';
     return;
   }
 
-  list.innerHTML = items.map((item, idx) => {
-    const isApproved = item.radiology_status === 'Approved' || item.overall_status === 'All Cleared';
-    const isQuery = item.radiology_status === 'Query';
-    const statusColor = isApproved ? '#15803d' : (isQuery ? '#dc2626' : '#b45309');
-    const statusBg = isApproved ? '#dcfce7' : (isQuery ? '#fee2e2' : '#fef3c7');
-    const displayStatus = isApproved ? 'Cleared' : (isQuery ? 'Query Raised' : 'Pending');
+  let html = '';
 
-    return `
-      <div style="padding: 12px 14px; border-bottom: 1px solid #e2e8f0; text-align: left; background: #ffffff; transition: background 0.15s;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
-          <strong style="font-size: 0.88rem; color: #1e293b;">
-            <i class="fas fa-user-injured" style="color:#1f6b4a;margin-right:4px;"></i> ${item.patient_name || 'Patient'}
-          </strong>
-          <span style="font-size: 0.68rem; font-weight: 800; color: ${statusColor}; background: ${statusBg}; padding: 2px 8px; border-radius: 6px;">
-            ${displayStatus}
-          </span>
-        </div>
-        <div style="font-size: 0.74rem; color: #64748b; margin: 2px 0 6px 0;">
-          ${item.bed_info || 'Ward'} • IP: <strong>${item.admission_id}</strong>
-        </div>
-        <button type="button" onclick="openRadClearanceModalByIndex(${idx})" style="padding: 5px 12px; font-size: 0.74rem; font-weight: 700; background: #1f6b4a; color: #f3efe6; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-          <i class="fas fa-clipboard-check"></i> Review & Clear
-        </button>
+  // 1. New Scan Orders (OPD & IPD)
+  if (testItems.length > 0) {
+    html += `
+      <div style="padding: 8px 14px; background: #f0fdf4; border-bottom: 1px solid #bbf7d0; font-size: 0.72rem; font-weight: 800; color: #166534; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center;">
+        <span><i class="fas fa-radiation me-1"></i> New Scan Orders</span>
+        <span class="badge" style="background:#166534;color:#fff;font-size:0.65rem;">${testItems.length}</span>
       </div>
     `;
-  }).join('');
+    html += testItems.map(notif => {
+      const notifId = String(notif.notification_id || notif.id);
+      const url = (notif.action_url || '').toLowerCase();
+      const isIpd = url.includes('ipd') || (notif.title || '').toLowerCase().includes('ipd');
+      const badgeType = isIpd ? 'IPD' : 'OPD';
+      const badgeBg = isIpd ? '#e11d48' : '#0284c7';
+      const targetUrl = notif.action_url || (isIpd ? 'ipd_test_orders.php' : 'test_orders.php');
+
+      return `
+        <div style="padding: 11px 14px; border-bottom: 1px solid #f1f5f9; text-align: left; background: #ffffff; cursor: pointer; transition: background 0.15s;"
+             onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='#ffffff'"
+             onclick="window.markRadNotifReadAndGo('${notifId}', '${targetUrl}')">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 3px;">
+            <strong style="font-size: 0.84rem; color: #0f172a; line-height: 1.3;">
+              <span class="badge" style="background:${badgeBg}; color:#fff; font-size:0.65rem; margin-right:4px;">${badgeType}</span>
+              ${notif.title || 'New Test'}
+            </strong>
+          </div>
+          <div style="font-size: 0.74rem; color: #64748b; line-height: 1.35; margin-bottom: 4px;">
+            ${notif.message || ''}
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 0.68rem; color: #94a3b8;">${notif.created_at || 'Just now'}</span>
+            <span style="font-size: 0.72rem; color: #1f6b4a; font-weight: 700;">Open &rarr;</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 2. Discharge Clearance Alerts
+  if (clearanceItems.length > 0) {
+    html += `
+      <div style="padding: 8px 14px; background: #fffbeb; border-bottom: 1px solid #fde68a; font-size: 0.72rem; font-weight: 800; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center;">
+        <span><i class="fas fa-procedures me-1"></i> Discharge Clearance Alerts</span>
+        <span class="badge" style="background:#b45309;color:#fff;font-size:0.65rem;">${clearanceItems.length}</span>
+      </div>
+    `;
+    html += clearanceItems.map((item, idx) => {
+      const isApproved = item.radiology_status === 'Approved' || item.overall_status === 'All Cleared';
+      const isQuery = item.radiology_status === 'Query';
+      const statusColor = isApproved ? '#15803d' : (isQuery ? '#dc2626' : '#b45309');
+      const statusBg = isApproved ? '#dcfce7' : (isQuery ? '#fee2e2' : '#fef3c7');
+      const displayStatus = isApproved ? 'Cleared' : (isQuery ? 'Query Raised' : 'Pending');
+
+      return `
+        <div style="padding: 12px 14px; border-bottom: 1px solid #e2e8f0; text-align: left; background: #ffffff;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+            <strong style="font-size: 0.88rem; color: #1e293b;">
+              <i class="fas fa-user-injured" style="color:#1f6b4a;margin-right:4px;"></i> ${item.patient_name || 'Patient'}
+            </strong>
+            <span style="font-size: 0.68rem; font-weight: 800; color: ${statusColor}; background: ${statusBg}; padding: 2px 8px; border-radius: 6px;">
+              ${displayStatus}
+            </span>
+          </div>
+          <div style="font-size: 0.74rem; color: #64748b; margin: 2px 0 6px 0;">
+            ${item.bed_info || 'Ward'} • IP: <strong>${item.admission_id}</strong>
+          </div>
+          <button type="button" onclick="openRadClearanceModalByIndex(${idx})" style="padding: 5px 12px; font-size: 0.74rem; font-weight: 700; background: #1f6b4a; color: #f3efe6; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+            <i class="fas fa-clipboard-check"></i> Review & Clear
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  list.innerHTML = html;
 }
 
 function closeRadClearanceModal() {

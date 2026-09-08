@@ -388,6 +388,8 @@ $router->add('GET',  '#^/api/radiology/ipd-orders/([^/]+)/result/?$#',         '
 $router->add('POST', '#^/api/radiology/ipd-orders/([^/]+)/result/?$#',         'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'saveResult');
 $router->add('GET',  '#^/api/radiology/patients/([^/]+)/previous-results/?$#', 'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getPreviousResults');
 $router->add('POST', '#^/api/radiology/templates/auto-generate/?$#',           'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'autoGenerateTemplate');
+$router->add('GET',  '#^/api/radiology/notifications/?$#',                      'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getNotifications');
+$router->add('POST', '#^/api/radiology/notifications/([^/]+)/read/?$#',        'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'markNotificationRead');
 
 // Payment Module Routes
 $router->add('POST', '#^/api/payment/clinical-billing-sync/?$#',                'GM_HMS\Modules\Payment\Controllers\PaymentController', 'syncClinicalBilling');

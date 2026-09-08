@@ -350,6 +350,20 @@ class RadiologyRepository
             );
         }
 
+        // Insert Notification for Radiology
+        $nid = 'NOT-' . strtoupper(substr(uniqid(), -6));
+        $patientName = $data['patient_name'] ?? 'Walking Patient';
+        $patientId = $data['patient_id'] ?? '';
+        $title = "New OPD Scan Order Added";
+        $message = "A new scan order ({$billId}) has been added for {$patientName} ({$patientId}).";
+        try {
+            $this->db->execute(
+                "INSERT INTO notifications (notification_id, recipient_id, recipient_type, title, message, category, priority, action_url) 
+                 VALUES (?, 'staff', 'staff', ?, ?, 'radiology_result', 'normal', ?)",
+                [$nid, $title, $message, "radiology_view/test_orders.php?order_id={$billId}"]
+            );
+        } catch (\Throwable $ne) {}
+
         return ['order_id' => $billId];
     }
 
@@ -684,5 +698,49 @@ class RadiologyRepository
             'top_tests' => $topTests,
             'recent'    => array_slice($opdToday, 0, 8),
         ];
+    }
+
+    public function getUnreadNotifications($recipientType = 'staff', $category = 'radiology_result', $onlyToday = true)
+    {
+        $sql = "SELECT * FROM notifications 
+                WHERE is_read = 0 
+                  AND (category = ? OR recipient_id IN ('radiology', 'Radiologist'))";
+        $params = [$category];
+
+        if ($onlyToday) {
+            $sql .= " AND DATE(created_at) = CURDATE()";
+        }
+
+        $sql .= " ORDER BY created_at DESC LIMIT 50";
+        return $this->db->fetchAll($sql, $params);
+    }
+
+    public function markNotificationRead($id)
+    {
+        return $this->db->execute(
+            "UPDATE notifications SET is_read = 1, read_at = ? WHERE notification_id = ?",
+            [date('Y-m-d H:i:s'), $id]
+        );
+    }
+
+    public function markNotificationCompletedForOrder($orderId, $patientId = null)
+    {
+        $sql = "UPDATE notifications 
+                SET is_read = 1, read_at = ? 
+                WHERE is_read = 0 
+                  AND category = 'radiology_result' 
+                  AND (
+                      message LIKE CONCAT('%', ?, '%') 
+                      OR action_url LIKE CONCAT('%', ?, '%')
+                      OR (? IS NOT NULL AND ? != '' AND message LIKE CONCAT('%', ?, '%'))
+                  )";
+        return $this->db->execute($sql, [
+            date('Y-m-d H:i:s'),
+            $orderId,
+            $orderId,
+            $patientId,
+            $patientId,
+            $patientId
+        ]);
     }
 }

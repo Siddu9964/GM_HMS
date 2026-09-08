@@ -299,7 +299,7 @@ async function loadPatientHistory(patientId) {
               ${item.impression ? `<div style="font-size:0.82rem;color:#334155;margin-bottom:8px;background:#fff;padding:8px 10px;border-radius:6px;border-left:3px solid var(--lis-primary);"><strong>Impression:</strong> ${escHtml(item.impression)}</div>` : ''}
               <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
                 ${item.report_file ? `<a href="/GM_HMS/${escHtml(item.report_file)}" target="_blank" class="lis-btn lis-btn-outline lis-btn-sm"><i class="fas fa-file-image"></i> Scan</a>` : ''}
-                <a href="print_result.php?order_id=${encodeURIComponent(item.order_id)}&source=${encodeURIComponent(item.patient_type || 'OPD')}" target="_blank" class="lis-btn lis-btn-outline lis-btn-sm" style="border-color:#0284c7;color:#0284c7;">
+                <a href="print_result.php?order_id=${encodeURIComponent(item.order_id)}&source=${encodeURIComponent(item.patient_type || 'OPD')}&from=patients" target="_blank" onclick="window.open(this.href, '_blank'); return false;" class="lis-btn lis-btn-outline lis-btn-sm" style="border-color:#0284c7;color:#0284c7;">
                   <i class="fas fa-print"></i> Report
                 </a>
               </div>

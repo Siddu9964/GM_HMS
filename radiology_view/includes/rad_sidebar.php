@@ -38,15 +38,18 @@ function risSidebarActive($file, $current) {
   <a class="lis-nav-item <?= in_array($currentPage, ['test_orders.php', 'ipd_test_orders.php']) ? 'active' : '' ?>" data-bs-toggle="collapse" href="#radOrdersSubmenu" role="button" aria-expanded="<?= in_array($currentPage, ['test_orders.php', 'ipd_test_orders.php']) ? 'true' : 'false' ?>" aria-controls="radOrdersSubmenu">
     <i class="fas fa-radiation"></i>
     <span>Scan Orders</span>
+    <span class="lis-nav-badge" id="sidebar-orders-total-badge" style="display:none; margin-right: 6px;">0</span>
     <i class="fas fa-chevron-down ms-auto" style="font-size: 0.8rem;"></i>
   </a>
   <div class="collapse <?= in_array($currentPage, ['test_orders.php', 'ipd_test_orders.php']) ? 'show' : '' ?>" id="radOrdersSubmenu">
       <div class="ps-4 pe-2 py-1">
           <a href="test_orders.php" class="lis-nav-item <?= risSidebarActive('test_orders.php', $currentPage) ?>" style="font-size: 0.85rem; padding: 0.4rem 1rem;">
             <i class="fas fa-user-injured" style="font-size: 0.85rem;"></i> OPD
+            <span class="lis-nav-badge" id="sidebar-opd-count" style="display:none; font-size:0.65rem; padding:1px 6px;">0</span>
           </a>
           <a href="ipd_test_orders.php" class="lis-nav-item <?= risSidebarActive('ipd_test_orders.php', $currentPage) ?>" style="font-size: 0.85rem; padding: 0.4rem 1rem;">
             <i class="fas fa-procedures" style="font-size: 0.85rem;"></i> IPD
+            <span class="lis-nav-badge" id="sidebar-ipd-count" style="display:none; font-size:0.65rem; padding:1px 6px;">0</span>
           </a>
       </div>
   </div>
