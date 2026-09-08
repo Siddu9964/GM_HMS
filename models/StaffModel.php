@@ -12,14 +12,22 @@ class StaffModel {
     }
     
     /**
-     * Get all active staff members
+     * Get all staff members (supports optional status filter)
      * 
+     * @param string|null $status Optional status filter ('Active', 'Inactive')
      * @return array List of staff
      */
-    public function getAllStaff() {
+    public function getAllStaff($status = null) {
+        if ($status) {
+            $sql = "SELECT s.*
+                    FROM staff s
+                    WHERE s.status = ?
+                    ORDER BY s.full_name ASC";
+            return $this->db->fetchAll($sql, [$status]);
+        }
+
         $sql = "SELECT s.*
                 FROM staff s
-                WHERE s.status = 'Active'
                 ORDER BY s.full_name ASC";
         
         return $this->db->fetchAll($sql);
@@ -36,7 +44,7 @@ class StaffModel {
     }
     
     /**
-     * Get single staff member by sl_no
+     * Get single staff member by sl_no (Active or Inactive)
      * 
      * @param int $slNo Staff Serial Number
      * @return array|null Staff data or null if not found
@@ -44,7 +52,7 @@ class StaffModel {
     public function getStaffById($slNo) {
         $sql = "SELECT s.*
                 FROM staff s
-                WHERE s.sl_no = ? AND s.status = 'Active'";
+                WHERE s.sl_no = ?";
         
         return $this->db->fetchOne($sql, [$slNo]);
     }

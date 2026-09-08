@@ -48,10 +48,9 @@ class AuthenticationManager {
                 [$identifier, $identifier]
             );
 
-            if ($userAuth && $this->encryption->verifyPassword($password, $userAuth['password'])) {
+            if ($userAuth) {
                 $detectedRole = $userAuth['role'];
                 $mapId = $userAuth['id'];
-                
                 $userProfile = null;
                 
                 // 2. Fetch full profile based on detected role
@@ -61,29 +60,70 @@ class AuthenticationManager {
                         [$mapId]
                     );
                 } else {
-                    // Admin or Receptionist
+                    // Admin, Receptionist, Nurse, Pharmacist, LabTechnician, etc.
                     $userProfile = $this->db->fetchOne(
                         "SELECT sl_no, username, designation, full_name, email, mobile_number, status FROM staff WHERE sl_no = ?",
                         [$mapId]
                     );
-                    if ($userProfile) {
+                    if ($userProfile && !empty($userProfile['designation'])) {
                         $detectedRole = $userProfile['designation'];
                     }
                 }
 
+                // 3. Verify user active status (staff/doctor status must be Active)
                 if ($userProfile) {
-                    // Log successful login
-                    $this->auditLogger->logSecurityEvent(
-                        'login_success', 
-                        AuditLogger::SEVERITY_INFO, 
-                        "User {$identifier} logged in as {$detectedRole}"
-                    );
-                    
-                    return [
-                        'success' => true, 
-                        'user' => $userProfile, 
-                        'role' => $detectedRole
-                    ];
+                    $status = trim($userProfile['status'] ?? '');
+                    if (strcasecmp($status, 'Inactive') === 0 || (!empty($status) && strcasecmp($status, 'Active') !== 0)) {
+                        $this->auditLogger->logSecurityEvent(
+                            'login_blocked_inactive', 
+                            AuditLogger::SEVERITY_WARNING, 
+                            "Blocked login attempt for inactive user {$identifier} ({$detectedRole})"
+                        );
+                        return [
+                            'success' => false,
+                            'error' => 'Your account is inactive. Please contact the administrator.',
+                            'error_type' => 'account_inactive'
+                        ];
+                    }
+                }
+
+                // 4. Verify password
+                if ($this->encryption->verifyPassword($password, $userAuth['password'])) {
+                    if ($userProfile) {
+                        // Log successful login
+                        $this->auditLogger->logSecurityEvent(
+                            'login_success', 
+                            AuditLogger::SEVERITY_INFO, 
+                            "User {$identifier} logged in as {$detectedRole}"
+                        );
+                        
+                        return [
+                            'success' => true, 
+                            'user' => $userProfile, 
+                            'role' => $detectedRole
+                        ];
+                    }
+                }
+            } else {
+                // If not found in user table, check if identifier exists in staff table as inactive
+                $staffCheck = $this->db->fetchOne(
+                    "SELECT sl_no, username, designation, status FROM staff WHERE username = ? OR sl_no = ?",
+                    [$identifier, $identifier]
+                );
+                if ($staffCheck) {
+                    $status = trim($staffCheck['status'] ?? '');
+                    if (strcasecmp($status, 'Inactive') === 0 || (!empty($status) && strcasecmp($status, 'Active') !== 0)) {
+                        $this->auditLogger->logSecurityEvent(
+                            'login_blocked_inactive', 
+                            AuditLogger::SEVERITY_WARNING, 
+                            "Blocked login attempt for inactive staff {$identifier}"
+                        );
+                        return [
+                            'success' => false,
+                            'error' => 'Your account is inactive. Please contact the administrator.',
+                            'error_type' => 'account_inactive'
+                        ];
+                    }
                 }
             }
 

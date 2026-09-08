@@ -131,10 +131,14 @@ class AuthController extends BaseController {
                     'redirect_url' => $redirectUrl
                 ]);
             } else {
-                $this->respond([
+                $errorResponse = [
                     'status' => 'error',
                     'message' => $result['error']
-                ], 401);
+                ];
+                if (!empty($result['error_type'])) {
+                    $errorResponse['error_type'] = $result['error_type'];
+                }
+                $this->respond($errorResponse, 401);
             }
             
         } catch (Exception $e) {

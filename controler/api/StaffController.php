@@ -303,7 +303,8 @@ class StaffController extends BaseController {
         $this->restrictMethod('GET');
         
         try {
-            $staff = $this->staffModel->getAllStaff();
+            $status = isset($_GET['status']) && $_GET['status'] !== '' ? $_GET['status'] : null;
+            $staff = $this->staffModel->getAllStaff($status);
             
             // Remove sensitive data
             foreach ($staff as &$s) {

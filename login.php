@@ -1,7 +1,20 @@
 <?php
 session_start();
-// If already logged in, redirect to dashboard
+// If already logged in, redirect to dashboard (only if not inactive)
 if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
+    if (isset($_SESSION['status']) && strcasecmp(trim($_SESSION['status']), 'Inactive') === 0) {
+        $_SESSION = array();
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
+        session_destroy();
+        header("Location: login.php?error=" . urlencode("Your account is inactive. Please contact the administrator."));
+        exit();
+    }
     switch ($_SESSION['role']) {
         case 'admin':
             header("Location: view/admin_dashboard.php");
@@ -956,15 +969,43 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
                         window.location.href = result.redirect_url;
                     });
                 } else {
-                    Swal.fire({
-                        position: 'center',
-                        icon: 'error',
-                        title: 'Access Denied',
-                        text: result.message || 'Invalid username or password. Please try again.',
-                        confirmButtonColor: '#1f6b4a',
-                        confirmButtonText: 'OK',
-                        backdrop: 'rgba(15, 23, 42, 0.45)'
-                    });
+                    const isInactive = result.error_type === 'account_inactive' || 
+                        (result.message && (
+                            result.message.toLowerCase().includes('inactive') ||
+                            result.message.toLowerCase().includes('contact the administrator') ||
+                            result.message.toLowerCase().includes('contact admin')
+                        ));
+
+                    if (isInactive) {
+                        Swal.fire({
+                            position: 'center',
+                            icon: 'warning',
+                            title: 'Account Inactive',
+                            html: `
+                                <div style="text-align: center; padding: 6px 0;">
+                                    <p style="font-size: 15px; color: #1e293b; font-weight: 600; margin-bottom: 8px;">
+                                        ${result.message || 'Your account is currently inactive.'}
+                                    </p>
+                                    <p style="font-size: 13px; color: #64748b; margin: 0; line-height: 1.5;">
+                                        Please contact the hospital administrator to activate your account.
+                                    </p>
+                                </div>
+                            `,
+                            confirmButtonColor: '#1f6b4a',
+                            confirmButtonText: 'OK',
+                            backdrop: 'rgba(15, 23, 42, 0.45)'
+                        });
+                    } else {
+                        Swal.fire({
+                            position: 'center',
+                            icon: 'error',
+                            title: 'Access Denied',
+                            text: result.message || 'Invalid username or password. Please try again.',
+                            confirmButtonColor: '#1f6b4a',
+                            confirmButtonText: 'OK',
+                            backdrop: 'rgba(15, 23, 42, 0.45)'
+                        });
+                    }
                     resetBtn();
                 }
             })
