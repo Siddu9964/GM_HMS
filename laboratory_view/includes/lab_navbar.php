@@ -496,17 +496,17 @@ async function fetchLabNotifications() {
     const d = await r.json();
 
     if (d.success && Array.isArray(d.data)) {
-      window.labClearanceData = d.data;
-      if (d.data.length > 0) {
+      window.labClearanceData = d.data.filter(item => item.lab_status === 'Pending' || item.lab_status === 'Query');
+      if (window.labClearanceData.length > 0) {
         badgeElements.forEach(el => {
-          el.textContent = d.data.length;
+          el.textContent = window.labClearanceData.length;
           el.style.display = 'inline-block';
         });
       } else {
         badgeElements.forEach(el => el.style.display = 'none');
       }
       renderLabNotificationsList();
-      checkAndShowLabDischargeReminder(d.data);
+      checkAndShowLabDischargeReminder(window.labClearanceData);
     } else {
       window.labClearanceData = [];
       badgeElements.forEach(el => el.style.display = 'none');

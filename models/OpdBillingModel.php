@@ -368,8 +368,9 @@ class OpdBillingModel
         // Construct full patient name if not already set or if we have first/last name
         if (!empty($bill['first_name'])) {
             $bill['patient_name'] = trim($bill['first_name'] . ' ' . ($bill['last_name'] ?? ''));
-        }
-        else {
+        } elseif (!empty($bill['name'])) {
+            $bill['patient_name'] = $bill['name'];
+        } else {
             $bill['patient_name'] = 'Walking Patient';
         }
 

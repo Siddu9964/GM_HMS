@@ -247,7 +247,18 @@ function closePhClearanceModal() {
   document.getElementById('phClearanceModal').style.display = 'none';
 }
 
+function closePhClearanceDropdown() {
+  const notifBtn = document.getElementById('ph-notif-btn');
+  if (notifBtn && typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+    const dd = bootstrap.Dropdown.getInstance(notifBtn);
+    if (dd) dd.hide();
+  }
+  const notifPanel = document.getElementById('ph-notif-panel');
+  if (notifPanel) notifPanel.classList.remove('show');
+}
+
 function openPhClearanceModal(item) {
+  closePhClearanceDropdown();
   currentPhClearance = item;
   document.getElementById('ph-modal-pt-name').textContent = item.patient_name || 'Patient';
   document.getElementById('ph-modal-pt-details').textContent = `PID: ${item.patient_id} | IP#: ${item.admission_id} | Location: ${item.bed_info || 'Ward'} | Doctor: Dr. ${item.doctor_name || 'Consultant'}`;
@@ -301,34 +312,9 @@ function snoozePhReminder() {
 }
 
 function checkAndShowPhDischargeReminder(items) {
-  const pendingForPh = (items || []).filter(item => item.pharmacy_status === 'Pending');
+  // Center popup reminder disabled to avoid interrupting workflow
   const centerModal = document.getElementById('phDischargeCenterModal');
-  if (!centerModal) return;
-
-  if (pendingForPh.length > 0) {
-    const now = Date.now();
-    if (now >= phReminderSnoozedUntil) {
-      const listEl = document.getElementById('ph-reminder-patient-list');
-      if (listEl) {
-        listEl.innerHTML = pendingForPh.map(item => `
-          <div style="background:#ffffff; border:1.5px solid #fed7aa; border-radius:10px; padding:10px 12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
-            <div>
-              <div style="font-weight:800; font-size:0.92rem; color:#1e293b;"><i class="fas fa-user-injured text-warning"></i> ${item.patient_name || 'Patient'}</div>
-              <div style="font-size:0.74rem; color:#64748b; margin-top:2px;">
-                ${item.bed_info || 'Ward'} • IP: <strong>${item.admission_id}</strong>
-              </div>
-            </div>
-            <button type="button" onclick='openPhClearanceFromReminder(${JSON.stringify(item)})' style="padding:6px 12px; font-size:0.76rem; font-weight:800; background:#1f6b4a; color:#ffffff; border:none; border-radius:8px; cursor:pointer; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">
-              <i class="fas fa-clipboard-check"></i> Review & Clear
-            </button>
-          </div>
-        `).join('');
-      }
-      centerModal.style.display = 'flex';
-    }
-  } else {
-    centerModal.style.display = 'none';
-  }
+  if (centerModal) centerModal.style.display = 'none';
 }
 
 async function submitPhClearance(action) {
@@ -361,6 +347,7 @@ async function submitPhClearance(action) {
     const data = await res.json();
     if (data.success) {
       closePhClearanceModal();
+      closePhClearanceDropdown();
       snoozePhReminder();
       showCenterFeedback(data.message || 'Pharmacy clearance approved successfully!', 'success', action === 'query' ? 'Query Submitted' : 'Clearance Approved');
       fetchPharmacyNotifications();
@@ -377,41 +364,82 @@ async function fetchPharmacyNotifications() {
   const countBadge = document.getElementById('ph-notif-count');
   const list = document.getElementById('ph-notif-list');
   try {
-    const r = await fetch('/GM_HMS/api/discharge_clearance.php?action=pending_list&module=pharmacy');
-    const d = await r.json();
+    // 1. Fetch default product notifications (Low Stock & Expiry alerts)
+    const prodPromise = fetch(API_BASE + 'pharmacy/notifications/list')
+      .then(r => r.json())
+      .catch(() => ({ success: false, data: [] }));
 
-    if (d.success && Array.isArray(d.data) && d.data.length > 0) {
-      if (countBadge) {
-        countBadge.textContent = d.data.length;
-        countBadge.style.display = 'inline-block';
-      }
-      if (list) {
-        list.innerHTML = d.data.map(item => `
-          <div style="padding: .6rem; border-radius: 8px; margin-bottom: .35rem; border: 1px solid ${item.pharmacy_status==='Pending'?'#fde68a':'#dcfce7'}; background: ${item.pharmacy_status==='Pending'?'#fffbeb':'#f0fdf4'};">
+    // 2. Fetch pending discharge clearances for Pharmacy
+    const dcPromise = fetch('/GM_HMS/api/discharge_clearance.php?action=pending_list&module=pharmacy')
+      .then(r => r.json())
+      .catch(() => ({ success: false, data: [] }));
+
+    const [prodRes, dcRes] = await Promise.all([prodPromise, dcPromise]);
+
+    let html = '';
+    let totalCount = 0;
+
+    // A. Pending Discharge Clearance items (if any pending)
+    if (dcRes.success && Array.isArray(dcRes.data)) {
+      const pendingDc = dcRes.data.filter(item => item.pharmacy_status === 'Pending' || item.pharmacy_status === 'Query');
+      totalCount += pendingDc.length;
+      pendingDc.forEach(item => {
+        html += `
+          <div style="padding: .6rem; border-radius: 8px; margin-bottom: .35rem; border: 1.5px solid #fed7aa; background: #fffbeb;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <strong style="font-size: .8rem; color: #1e293b;"><i class="fas fa-pills text-warning"></i> ${item.patient_name || 'Patient'}</strong>
-              <span style="font-size: .65rem; font-weight: 700; color: ${item.pharmacy_status==='Approved'?'#15803d':'#b45309'};">${item.pharmacy_status}</span>
+              <strong style="font-size: .8rem; color: #92400e;"><i class="fas fa-user-injured text-warning"></i> ${item.patient_name || 'Patient'}</strong>
+              <span style="font-size: .65rem; font-weight: 700; color: #b45309; background:#fef3c7; padding:1px 6px; border-radius:4px;">Discharge Clearance</span>
             </div>
             <div style="font-size: .72rem; color: #64748b; margin: 2px 0;">${item.bed_info || 'Ward'} • IP: ${item.admission_id}</div>
             <button type="button" onclick='openPhClearanceModal(${JSON.stringify(item)})' style="margin-top: 4px; padding: 3px 8px; font-size: .7rem; font-weight: 700; background: #1f6b4a; color: #fff; border: none; border-radius: 6px; cursor: pointer;">
               <i class="fas fa-clipboard-check"></i> Review & Clear
             </button>
           </div>
-        `).join('');
+        `;
+      });
+    }
+
+    // B. Default Product Notifications (Low Stock & Expiry alerts)
+    if (prodRes.success && Array.isArray(prodRes.data) && prodRes.data.length > 0) {
+      totalCount += prodRes.data.length;
+      prodRes.data.forEach(n => {
+        const isDanger = n.type === 'danger';
+        const isWarning = n.type === 'warning';
+        const borderCol = isDanger ? '#fecaca' : (isWarning ? '#fde68a' : '#bfdbfe');
+        const bgCol = isDanger ? '#fff5f5' : (isWarning ? '#fffbeb' : '#eff6ff');
+        const iconCol = isDanger ? '#ef4444' : (isWarning ? '#f59e0b' : '#3b82f6');
+
+        html += `
+          <a href="${n.link || 'inventory_alerts.php'}" class="ph-alert-item text-decoration-none" style="display:flex;align-items:flex-start;gap:.6rem;padding:.6rem;border-radius:8px;margin-bottom:.35rem;border:1px solid ${borderCol};background:${bgCol};transition:0.15s;">
+            <i class="${n.icon}" style="color:${iconCol};margin-top:2px;font-size:0.85rem;"></i>
+            <div>
+              <div style="font-size:.78rem;font-weight:700;color:#1e293b;">${n.title}</div>
+              <div style="font-size:.7rem;color:#64748b;">${n.body}</div>
+            </div>
+          </a>
+        `;
+      });
+    }
+
+    if (totalCount > 0) {
+      if (countBadge) {
+        countBadge.textContent = totalCount;
+        countBadge.style.display = 'inline-block';
       }
-      checkAndShowPhDischargeReminder(d.data);
+      if (list) list.innerHTML = html;
     } else {
       if (countBadge) countBadge.style.display = 'none';
-      if (list) list.innerHTML = '<div class="text-center text-muted py-3" style="font-size:.82rem;">No pending discharge clearances</div>';
-      checkAndShowPhDischargeReminder([]);
+      if (list) list.innerHTML = '<div class="text-center text-muted py-3" style="font-size:.82rem;">No active alerts</div>';
     }
+
   } catch(e) {
-    if (list) list.innerHTML = '<div class="text-center text-muted py-3">Error loading</div>';
+    if (list) list.innerHTML = '<div class="text-center text-muted py-3">Error loading alerts</div>';
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   fetchPharmacyNotifications();
   setInterval(fetchPharmacyNotifications, 10000);
+  document.getElementById('ph-notif-btn')?.addEventListener('click', fetchPharmacyNotifications);
 });
 </script>

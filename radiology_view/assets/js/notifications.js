@@ -232,7 +232,7 @@
             }
 
             if (clearanceRes && clearanceRes.success && Array.isArray(clearanceRes.data)) {
-                window.radClearanceData = clearanceRes.data;
+                window.radClearanceData = clearanceRes.data.filter(item => item.radiology_status === 'Pending' || item.radiology_status === 'Query');
             } else {
                 window.radClearanceData = [];
             }

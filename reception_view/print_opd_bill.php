@@ -217,15 +217,17 @@ function numberToWords(amount) {
 
 function renderBill(b) {
     const items  = b.items   || [];
-    let pmts     = b.payments|| [];
+    const allPayments = b.payments || [];
     
-    // Filter by receipt if requested
-    if (RECEIPT_ID && pmts.length > 0) {
-        pmts = pmts.filter(p => p.receipt_id === RECEIPT_ID);
-    }
+    // Total paid across all payments/receipts
+    const totalPaidFromPayments = allPayments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+    const totalAmountPaid = (allPayments.length > 0) ? totalPaidFromPayments : parseFloat(b.amount_paid || 0);
+    const grandTotal = parseFloat(b.grand_total || 0);
+    const balanceDue = parseFloat(b.balance_due !== undefined ? b.balance_due : (grandTotal - totalAmountPaid));
+    const effectiveBalance = Math.max(0, balanceDue);
 
-    const isReceiptPrint = RECEIPT_ID && pmts.length > 0;
-    const status = (b.payment_status||'Pending');
+    const hasSplits = allPayments.length > 1;
+    const status = (b.payment_status || (effectiveBalance <= 0.01 ? 'Paid' : 'Pending'));
     const stampClass = status.toLowerCase() === 'paid' ? 'stamp-paid' : 'stamp-pending';
 
     const itemRows = items.map((it, i) => `
@@ -238,13 +240,16 @@ function renderBill(b) {
             <td>₹${fmt(it.total_price)}</td>
         </tr>`).join('');
 
-    const pmtRows = pmts.map((p, i) => `
+    const pmtRows = allPayments.map((p, i) => `
         <tr>
-            <td>${i + 1}</td>
-            <td>${esc(b.receipt_no || '—')}</td>
-            <td>${fmtDate(p.payment_date)}</td>
-            <td>${esc(p.payment_method || 'Cash')}</td>
-            <td style="text-align:right;font-weight:600;">₹${fmt(p.amount)}</td>
+            <td style="color:#94a3b8;font-size:11px;">${i + 1}</td>
+            <td style="font-weight:600; color:#1f6b4a;">${esc(p.receipt_id || p.receipt_no || b.receipt_no || '—')}</td>
+            <td>${fmtDate(p.payment_date)}${p.payment_time ? ' · ' + p.payment_time.substring(0,5) : ''}</td>
+            <td>
+                <span class="type-badge" style="background:rgba(31,107,74,.1); color:#1f6b4a; font-weight:700;">${esc(p.payment_method || 'Cash')}</span>
+                ${p.transaction_id ? `<span style="color:#64748b; font-size:10px; margin-left:4px;">(Ref: ${esc(p.transaction_id)})</span>` : ''}
+            </td>
+            <td style="text-align:right;font-weight:700; color:#1e293b;">₹${fmt(p.amount)}</td>
         </tr>`).join('');
 
     document.getElementById('billWrapper').innerHTML = `
@@ -276,9 +281,9 @@ function renderBill(b) {
                 `}
             </div>
             <div class="bill-meta">
-                <h2>${isReceiptPrint ? 'Payment Receipt' : 'OPD Invoice'}</h2>
+                <h2>${b.bill_id && b.bill_id.startsWith('IPD') ? 'IPD Invoice' : 'OPD Invoice'}</h2>
                 <div class="bid">${esc(b.bill_id)}</div>
-                
+                ${b.receipt_no ? `<div style="font-size:11px;color:#1f6b4a;font-weight:600;margin-top:2px;">Receipt: ${esc(b.receipt_no)}</div>` : ''}
                 <div class="bdate">${fmtDate(b.bill_date)} ${b.bill_time ? '· ' + b.bill_time.substring(0,5) : ''}</div>
             </div>
         </div>
@@ -290,7 +295,7 @@ function renderBill(b) {
             <div class="info-row"><span class="info-label">Phone</span><span class="info-val">${esc(b.patient_phone || b.phone || '—')}</span></div>
             <div class="info-row"><span class="info-label">Doctor</span><span class="info-val">${esc(b.doctor_name || '—')}</span></div>
             <div class="info-row"><span class="info-label">Appointment</span><span class="info-val">${esc(b.appointment_id || '—')}</span></div>
-            <div class="info-row"><span class="info-label">Created By</span><span class="info-val">${esc(b.created_by || '—')}</span></div>
+            <div class="info-row"><span class="info-label">Payment Mode</span><span class="info-val" style="font-weight:700; color:#1f6b4a;">${esc(b.payment_mode || (allPayments.map(p => p.payment_method).filter(Boolean).join(' + ')) || 'Cash')}</span></div>
         </div>
 
         <!-- Items -->
@@ -313,34 +318,79 @@ function renderBill(b) {
         <div class="totals-section">
             <div class="totals-box">
                 <div class="total-row"><span>Subtotal</span><span>₹${fmt(b.subtotal)}</span></div>
-                <div class="total-row"><span>Discount</span><span>₹${fmt(b.discount_amount)}</span></div>
-                <div class="total-row grand"><span>${isReceiptPrint ? 'Receipt Amount' : 'Grand Total'}</span><span>₹${fmt(isReceiptPrint ? pmts[0].amount : b.grand_total)}</span></div>
-                <div class="total-row paid"><span>${isReceiptPrint ? 'Payment Mode' : 'Amount Paid'}</span><span>${isReceiptPrint ? esc(pmts[0].payment_method) : '₹' + fmt(b.amount_paid)}</span></div>
-                ${isReceiptPrint && pmts[0].amount < b.grand_total ? `<div class="total-row balance"><span>Balance After This</span><span>₹${fmt(b.grand_total - b.amount_paid)}</span></div>` : ''}
-                ${!isReceiptPrint ? `<div class="total-row balance"><span>Balance Due</span><span>₹${fmt(b.balance_due)}</span></div>` : ''}
+                ${parseFloat(b.discount_amount || 0) > 0 ? `<div class="total-row"><span>Discount</span><span>-₹${fmt(b.discount_amount)}</span></div>` : ''}
+                <div class="total-row grand"><span>Grand Total</span><span>₹${fmt(grandTotal)}</span></div>
+                <div class="total-row paid"><span>Amount Paid</span><span>₹${fmt(totalAmountPaid)}</span></div>
+                
+                ${hasSplits ? `
+                <!-- Split Payment Breakdown in Totals -->
+                <div style="background:#f0fdf4; border:1px dashed #86efac; border-radius:6px; padding:6px 8px; margin:5px 0;">
+                    <div style="font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#15803d; margin-bottom:3px; display:flex; justify-content:space-between;">
+                        <span>Split Payment Details</span>
+                        <span style="font-weight:800; font-size:8.5px; background:#dcfce7; color:#15803d; padding:1px 5px; border-radius:4px;">${allPayments.length} SPLITS</span>
+                    </div>
+                    ${allPayments.map(p => `
+                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#166534; padding:2px 0;">
+                            <span>• ${esc(p.payment_method || 'Cash')}${p.transaction_id ? ' <span style="font-size:9px;color:#64748b;">(' + esc(p.transaction_id) + ')</span>' : ''}</span>
+                            <span style="font-weight:700;">₹${fmt(p.amount)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                ` : (allPayments.length === 1 ? `
+                <div class="total-row" style="font-size:11px; color:#64748b;">
+                    <span>Payment Mode</span>
+                    <span style="font-weight:600;">${esc(allPayments[0].payment_method || b.payment_mode || 'Cash')}</span>
+                </div>
+                ` : '')}
+                
+                <div class="total-row balance" style="${effectiveBalance <= 0.01 ? 'color:#16a34a;' : 'color:#dc2626;'}">
+                    <span>Balance Due</span>
+                    <span>₹${fmt(effectiveBalance)}</span>
+                </div>
             </div>
         </div>
 
         <!-- Amount in Words -->
         <div style="margin-bottom:16px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;">
             <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#64748b;">Amount in Words: </span>
-            <span style="font-weight:600;color:#1e293b;">${numberToWords(parseFloat(b.grand_total||0))}</span>
+            <span style="font-weight:600;color:#1e293b;">${numberToWords(grandTotal)}</span>
         </div>
 
-        ${pmts.length > 0 ? `
-        <!-- Receipt Details -->
-        <p class="section-title">Receipt Details</p>
+        ${allPayments.length > 0 ? `
+        <!-- Payment / Split Receipt Details Table -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <p class="section-title" style="margin-bottom:0;">
+                ${hasSplits ? 'Payment Split & Receipt Details' : 'Receipt Details'}
+            </p>
+            ${hasSplits ? `
+                <span style="font-size:10px; font-weight:700; color:#15803d; background:#dcfce7; border:1px solid #bbf7d0; padding:2px 8px; border-radius:99px;">
+                    <i class="fas fa-layer-group" style="margin-right:4px;"></i> Split Payment (${allPayments.length} modes)
+                </span>
+            ` : ''}
+        </div>
         <table class="items" style="margin-bottom:16px;">
             <thead>
                 <tr>
-                    <th>#</th>
+                    <th style="width:30px;">#</th>
                     <th>Receipt No.</th>
-                    <th>Date</th>
+                    <th>Payment Date & Time</th>
                     <th>Mode of Payment</th>
-                    <th style="text-align:right;">Amount (₹)</th>
+                    <th style="text-align:right;">Split Amount (₹)</th>
                 </tr>
             </thead>
             <tbody>${pmtRows}</tbody>
+            ${hasSplits ? `
+            <tfoot>
+                <tr style="background:#f8fafc; font-weight:700; border-top:1.5px solid #cbd5e1;">
+                    <td colspan="4" style="text-align:right; text-transform:uppercase; font-size:10px; color:#475569; letter-spacing:0.4px;">
+                        Total Received via Splits:
+                    </td>
+                    <td style="text-align:right; color:#16a34a; font-size:12.5px; font-weight:800;">
+                        ₹${fmt(totalAmountPaid)}
+                    </td>
+                </tr>
+            </tfoot>
+            ` : ''}
         </table>` : ''}
 
         <!-- Print Info -->

@@ -379,13 +379,13 @@ class DischargeClearanceController {
         $where = "overall_status != 'Completed'";
 
         if ($module === 'reception') {
-            $where = "(reception_status = 'Pending' OR reception_status = 'Query' OR overall_status = 'All Cleared') AND overall_status != 'Completed'";
+            $where = "(reception_status = 'Pending' OR reception_status = 'Query') AND overall_status != 'Completed'";
         } elseif ($module === 'pharmacy') {
-            $where = "(pharmacy_status = 'Pending' OR pharmacy_status = 'Query' OR overall_status = 'All Cleared') AND overall_status != 'Completed'";
+            $where = "(pharmacy_status = 'Pending' OR pharmacy_status = 'Query') AND overall_status != 'Completed'";
         } elseif ($module === 'lab' || $module === 'laboratory') {
-            $where = "(lab_status = 'Pending' OR lab_status = 'Query' OR overall_status = 'All Cleared') AND overall_status != 'Completed'";
+            $where = "(lab_status = 'Pending' OR lab_status = 'Query') AND overall_status != 'Completed'";
         } elseif ($module === 'radiology') {
-            $where = "(radiology_status = 'Pending' OR radiology_status = 'Query' OR overall_status = 'All Cleared') AND overall_status != 'Completed'";
+            $where = "(radiology_status = 'Pending' OR radiology_status = 'Query') AND overall_status != 'Completed'";
         }
 
         $list = [];

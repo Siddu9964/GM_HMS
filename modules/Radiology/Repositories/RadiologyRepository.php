@@ -68,10 +68,118 @@ class RadiologyRepository
         );
     }
 
-    public function getServiceById($serviceId)
+    public function getServiceById($query)
     {
-        return $this->db->fetchOne("SELECT * FROM radiology_services WHERE service_id = ?", [$serviceId]);
+        $query = trim((string)$query);
+        if (empty($query)) return null;
+
+        // 1. Match by service_id
+        $svc = $this->db->fetchOne("SELECT * FROM radiology_services WHERE service_id = ?", [$query]);
+        if ($svc) return $svc;
+
+        // 2. Exact match by billing_name
+        $svc = $this->db->fetchOne("SELECT * FROM radiology_services WHERE billing_name = ?", [$query]);
+        if ($svc) return $svc;
+
+        // 3. Case-insensitive match by billing_name
+        $svc = $this->db->fetchOne("SELECT * FROM radiology_services WHERE LOWER(billing_name) = LOWER(?)", [$query]);
+        if ($svc) return $svc;
+
+        // 4. Like match by billing_name
+        $svc = $this->db->fetchOne("SELECT * FROM radiology_services WHERE billing_name LIKE ? ORDER BY LENGTH(billing_name) ASC LIMIT 1", ['%' . $query . '%']);
+        if ($svc) return $svc;
+
+        return null;
     }
+
+    public function findServiceByKeywords($text)
+    {
+        $text = trim((string)$text);
+        if (empty($text)) return null;
+
+        $svc = $this->getServiceById($text);
+        if ($svc) return $svc;
+
+        $clean = strtolower(preg_replace('/[^a-zA-Z0-9\s]/', ' ', $text));
+        $words = array_values(array_filter(explode(' ', $clean), function($w) {
+            return strlen($w) > 1 && !in_array($w, ['view', 'plain', 'with', 'contrast', 'both', 'and', 'the', 'for']);
+        }));
+
+        if (empty($words)) return null;
+
+        $hasXray = in_array('xray', $words) || in_array('ray', $words);
+        $hasChest = in_array('chest', $words);
+        $hasHead = in_array('head', $words);
+        $hasBrain = in_array('brain', $words);
+        $hasCt = in_array('ct', $words);
+
+        if ($hasChest && $hasXray) {
+            $svc = $this->db->fetchOne("SELECT * FROM radiology_services WHERE service_id = 'RDS250' OR billing_name = 'X-RAY CHEST PA' LIMIT 1");
+            if ($svc) return $svc;
+        }
+
+        if (($hasHead || $hasBrain) && $hasCt) {
+            $svc = $this->db->fetchOne("SELECT * FROM radiology_services WHERE billing_name LIKE '%BRAIN%' AND modality_name = 'CT' ORDER BY LENGTH(billing_name) ASC LIMIT 1");
+            if ($svc) return $svc;
+        }
+
+        $conditions = [];
+        $params = [];
+        foreach ($words as $w) {
+            $conditions[] = "billing_name LIKE ?";
+            $params[] = '%' . $w . '%';
+        }
+        $svc = $this->db->fetchOne("SELECT * FROM radiology_services WHERE " . implode(' AND ', $conditions) . " ORDER BY LENGTH(billing_name) ASC LIMIT 1", $params);
+        if ($svc) return $svc;
+
+        if (count($words) >= 2) {
+            $svc = $this->db->fetchOne("SELECT * FROM radiology_services WHERE billing_name LIKE ? AND billing_name LIKE ? ORDER BY LENGTH(billing_name) ASC LIMIT 1", ['%' . $words[0] . '%', '%' . $words[1] . '%']);
+            if ($svc) return $svc;
+        }
+
+        return null;
+    }
+
+    /**
+     * Generate ORC + 6 digits unique receipt number (Option B for OPD)
+     */
+    public function generateORCNumber()
+    {
+        $prefix = 'ORC';
+        
+        $lastMaster = $this->db->fetchOne(
+            "SELECT receipt_no FROM opd_billing_master WHERE receipt_no LIKE 'ORC%' ORDER BY receipt_no DESC LIMIT 1"
+        );
+        $num1 = ($lastMaster && !empty($lastMaster['receipt_no'])) ? intval(substr($lastMaster['receipt_no'], 3)) : 0;
+
+        $lastReceipt = $this->db->fetchOne(
+            "SELECT receipt_id FROM payment_receipts WHERE receipt_id LIKE 'ORC%' ORDER BY receipt_id DESC LIMIT 1"
+        );
+        $num2 = ($lastReceipt && !empty($lastReceipt['receipt_id'])) ? intval(substr($lastReceipt['receipt_id'], 3)) : 0;
+
+        $newNum = max($num1, $num2) + 1;
+        
+        return sprintf("%s%06d", $prefix, $newNum);
+    }
+
+    /**
+     * Generate standard OPB bill ID (OPB-YYYYMMDD-XXXX) exactly like normal OPD bills
+     */
+    public function generateBillId($date = null)
+    {
+        $prefix = 'OPB';
+        $dateStr = $date ? date('Ymd', strtotime($date)) : date('Ymd');
+        $lastBill = $this->db->fetchOne(
+            "SELECT bill_id FROM opd_billing_master WHERE bill_id LIKE ? ORDER BY bill_id DESC LIMIT 1",
+            ["{$prefix}-{$dateStr}-%"]
+        );
+        $newNum = 1;
+        if ($lastBill && preg_match('/-(\d+)$/', $lastBill['bill_id'], $m)) {
+            $newNum = intval($m[1]) + 1;
+        }
+        return sprintf("%s-%s-%04d", $prefix, $dateStr, $newNum);
+    }
+
 
     public function generateNextId($prefix = 'RDS')
     {
@@ -167,8 +275,8 @@ class RadiologyRepository
                 FROM opd_billing_master obm
                 JOIN opd_billing_items obi ON obm.bill_id = obi.bill_id
                 LEFT JOIN patient p ON CONVERT(obm.patient_id USING utf8mb4) COLLATE utf8mb4_unicode_ci = CONVERT(p.patient_id USING utf8mb4) COLLATE utf8mb4_unicode_ci
-                LEFT JOIN doctors d ON CONVERT(obm.doctor_id USING utf8mb4) COLLATE utf8mb4_unicode_ci  = CONVERT(d.doctor_id USING utf8mb4) COLLATE utf8mb4_unicode_ci
-                WHERE obi.item_code LIKE 'RDS%'";
+                LEFT JOIN doctors d ON CONVERT(obm.doctor_id USING utf8mb4) COLLATE utf8mb4_unicode_ci = CONVERT(d.doctor_id USING utf8mb4) COLLATE utf8mb4_unicode_ci
+                WHERE (obi.item_code LIKE 'RDS%' OR obi.item_type = 'Radiology' OR obm.purpose = 'Radiology Order')";
 
         $params = [];
 
@@ -263,7 +371,10 @@ class RadiologyRepository
 
     public function createOrder($data)
     {
-        $billId = 'OPB-RAD-' . date('Ymd') . '-' . rand(1000, 9999);
+        $orderDate = $data['order_date'] ?? date('Y-m-d');
+        $orderTime = date('H:i:s');
+        $billId = $this->generateBillId($orderDate);
+        $receiptNo = $this->generateORCNumber();
 
         $combinedNotes = [];
         if (!empty($data['patient_type'])) $combinedNotes[] = $data['patient_type'];
@@ -302,60 +413,179 @@ class RadiologyRepository
         if (empty($patientName)) $patientName = 'Walkin Patient';
         $createdBy = $_SESSION['user_id'] ?? $_SESSION['username'] ?? 'system';
 
+        $doctorId = $data['doctor_id'] ?? '';
+        $doctorName = 'Radiologist';
+        if (!empty($doctorId)) {
+            $doc = $this->db->fetchOne("SELECT full_name FROM doctors WHERE doctor_id = ?", [$doctorId]);
+            if ($doc && !empty($doc['full_name'])) {
+                $doctorName = $doc['full_name'];
+            }
+        }
+
+        // Insert initial bill record into opd_billing_master
         $this->db->execute(
-            "INSERT INTO opd_billing_master (bill_id, patient_id, doctor_id, appointment_id, bill_date, bill_time, purpose, notes, name, mobile, referral_type, referred_by, sponsor, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO opd_billing_master (
+                bill_id, receipt_no, patient_id, doctor_id, doctor_name, appointment_id,
+                bill_date, bill_time, purpose, notes, name, mobile, referral_type, referred_by,
+                sponsor, payment_mode, payment_status, subtotal, taxable_amount, tax_amount,
+                grand_total, amount_paid, balance_due, created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 $billId,
+                $receiptNo,
                 $data['patient_id'],
-                $data['doctor_id'] ?? '',
+                $doctorId,
+                $doctorName,
                 $appointmentId,
-                $data['order_date'] ?? date('Y-m-d'),
-                date('H:i:s'),
-                'Radiology Order',
+                $orderDate,
+                $orderTime,
+                'OPD Service',
                 $clinicalNotesStr,
                 $patientName,
                 $patientMobile,
                 'None',
                 '',
                 '',
+                'Cash',
+                'Paid',
+                0.00,
+                0.00,
+                0.00,
+                0.00,
+                0.00,
+                0.00,
                 $createdBy
             ]
         );
 
-        $tests = is_array($data['test_name']) ? $data['test_name'] : array_filter(array_map('trim', explode('|||', (string)$data['test_name'])));
-
-        foreach ($tests as $testId) {
-            $itemName = $testId;
-            if (preg_match('/\(([A-Z]{2,4}-?\d+)\)$/i', trim($testId), $matches)) {
-                $testId = strtoupper($matches[1]);
-                $itemName = trim(substr($itemName, 0, strrpos($itemName, '(')));
+        // Parse tests
+        if (is_array($data['test_name'])) {
+            $tests = $data['test_name'];
+        } else {
+            $decoded = json_decode($data['test_name'], true);
+            if (is_array($decoded)) {
+                $tests = $decoded;
+            } else {
+                $tests = array_filter(array_map('trim', explode('|||', (string)$data['test_name'])));
             }
-            
-            $svc = $this->getServiceById($testId);
-            $unitPrice = $svc ? (float)($svc['opd_price'] ?? 0) : 0;
-            $itemName = $svc ? $svc['billing_name'] : $itemName;
+        }
+
+        $totalBillAmount = 0.00;
+        $primaryItemName = '';
+        $primaryServiceId = '';
+
+        foreach ($tests as $testItem) {
+            $rawTest = $testItem;
+            $itemCode = '';
+            $itemName = '';
+
+            if (is_array($rawTest)) {
+                $itemName = $rawTest['name'] ?? ($rawTest['billing_name'] ?? '');
+                $itemCode = $rawTest['id'] ?? ($rawTest['service_id'] ?? '');
+            } else {
+                $itemName = (string)$rawTest;
+                if (preg_match('/\(([A-Z0-9\-_]+)\)$/i', trim($itemName), $matches)) {
+                    $itemCode = strtoupper($matches[1]);
+                    $itemName = trim(substr($itemName, 0, strrpos($itemName, '(')));
+                } else {
+                    $itemCode = $itemName;
+                }
+            }
+
+            // Lookup service to get accurate billing_name and opd_price
+            $svc = $this->getServiceById($itemCode);
+            if (!$svc && $itemName !== $itemCode) {
+                $svc = $this->getServiceById($itemName);
+            }
+            if (!$svc) {
+                $svc = $this->findServiceByKeywords($itemName ?: $itemCode);
+            }
+
+            $unitPrice = $svc ? (float)($svc['opd_price'] ?? 0) : 0.00;
+            if ($svc) {
+                $itemCode = $svc['service_id'];
+                $itemName = $svc['billing_name'];
+            }
+
+            $totalItemPrice = $unitPrice;
+            $totalBillAmount += $totalItemPrice;
+
+            if (empty($primaryItemName)) {
+                $primaryItemName = $itemName;
+                $primaryServiceId = $itemCode;
+            }
 
             $this->db->execute(
-                "INSERT INTO opd_billing_items (bill_id, item_code, item_name, item_type, quantity, unit_price, total_price, bill_purpose) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO opd_billing_items (
+                    bill_id, receipt_no, item_code, item_name, item_type, quantity,
+                    unit_price, total_price, is_taxable, tax_percentage, discount_amount,
+                    discount_percentage, bill_purpose
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     $billId,
-                    $testId,
+                    $receiptNo,
+                    $itemCode,
                     $itemName,
                     'Radiology',
                     1,
                     $unitPrice,
-                    $unitPrice,
+                    $totalItemPrice,
+                    0,
+                    0.00,
+                    0.00,
+                    0.00,
                     'Radiology Examination'
                 ]
             );
         }
 
+        // Update totals in opd_billing_master
+        $this->db->execute(
+            "UPDATE opd_billing_master SET 
+                subtotal = ?,
+                taxable_amount = ?,
+                grand_total = ?,
+                amount_paid = ?,
+                balance_due = 0.00,
+                payment_status = 'Paid',
+                service_id = ?,
+                item_name = ?
+             WHERE bill_id = ?",
+            [
+                $totalBillAmount,
+                $totalBillAmount,
+                $totalBillAmount,
+                $totalBillAmount,
+                $primaryServiceId,
+                $primaryItemName,
+                $billId
+            ]
+        );
+
+        // Record immediate payment receipt (Option B)
+        $this->db->execute(
+            "INSERT INTO payment_receipts (
+                receipt_id, bill_id, bill_type, patient_id, payment_date, payment_time,
+                amount, payment_method, received_by, notes
+            ) VALUES (?, ?, 'OPD', ?, ?, ?, ?, 'Cash', ?, ?)",
+            [
+                $receiptNo,
+                $billId,
+                $data['patient_id'],
+                $orderDate,
+                $orderTime,
+                $totalBillAmount,
+                $createdBy,
+                'Radiology Order Payment'
+            ]
+        );
+
         // Insert Notification for Radiology
         $nid = 'NOT-' . strtoupper(substr(uniqid(), -6));
-        $patientName = $data['patient_name'] ?? 'Walking Patient';
+        $notifPatientName = $patientName ?: ($data['patient_name'] ?? 'Walking Patient');
         $patientId = $data['patient_id'] ?? '';
         $title = "New OPD Scan Order Added";
-        $message = "A new scan order ({$billId}) has been added for {$patientName} ({$patientId}).";
+        $message = "A new scan order ({$billId}) has been added for {$notifPatientName} ({$patientId}). Receipt: {$receiptNo}, Amount: ₹" . number_format($totalBillAmount, 2);
         try {
             $this->db->execute(
                 "INSERT INTO notifications (notification_id, recipient_id, recipient_type, title, message, category, priority, action_url) 
@@ -364,7 +594,11 @@ class RadiologyRepository
             );
         } catch (\Throwable $ne) {}
 
-        return ['order_id' => $billId];
+        return [
+            'order_id'   => $billId,
+            'receipt_id' => $receiptNo,
+            'amount'     => $totalBillAmount
+        ];
     }
 
     public function updateOrderStatus($orderId, $status)

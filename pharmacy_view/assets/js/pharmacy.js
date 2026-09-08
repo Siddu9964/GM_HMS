@@ -92,17 +92,25 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadNotifCount() {
   try {
     const r = await phGet(API_BASE + 'pharmacy/notifications/counts');
-    if (!r.success) return;
+    if (!r.success || !r.data) return;
     const d = r.data;
-    const el = document.getElementById('ph-notif-count');
-    const total = (d.low_stock || 0) + (d.expiry || 0) + (d.pending_indents || 0) + (d.pending_ip_orders || 0);
-    if (el && total > 0) { el.textContent = total; el.style.display = 'inline-flex'; } else if (el) { el.style.display = 'none'; }
     // Update sidebar badges
-    ['low-stock-badge', 'expiry-badge', 'indent-badge', 'ip-orders-badge'].forEach((id, i) => {
-      const b = document.getElementById(id);
-      const v = [d.low_stock, d.expiry, d.pending_indents, d.pending_ip_orders][i];
-      if (b && v > 0) { b.textContent = v; b.style.display = 'inline'; } else if (b) { b.style.display = 'none'; }
-    });
+    const totalStockAlerts = (d.low_stock || 0) + (d.expiry || 0);
+    const expiryBadgeEl = document.getElementById('expiry-badge');
+    if (expiryBadgeEl) {
+      if (totalStockAlerts > 0) { expiryBadgeEl.textContent = totalStockAlerts; expiryBadgeEl.style.display = 'inline'; }
+      else { expiryBadgeEl.style.display = 'none'; }
+    }
+    const indentBadgeEl = document.getElementById('indent-badge');
+    if (indentBadgeEl) {
+      if ((d.pending_indents || 0) > 0) { indentBadgeEl.textContent = d.pending_indents; indentBadgeEl.style.display = 'inline'; }
+      else { indentBadgeEl.style.display = 'none'; }
+    }
+    const ipOrdersBadgeEl = document.getElementById('ip-orders-badge');
+    if (ipOrdersBadgeEl) {
+      if ((d.pending_ip_orders || 0) > 0) { ipOrdersBadgeEl.textContent = d.pending_ip_orders; ipOrdersBadgeEl.style.display = 'inline'; }
+      else { ipOrdersBadgeEl.style.display = 'none'; }
+    }
   } catch (e) { }
 }
 

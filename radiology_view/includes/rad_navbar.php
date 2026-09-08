@@ -473,10 +473,10 @@ async function fetchRadNotifications() {
     const d = await r.json();
 
     if (d.success && Array.isArray(d.data)) {
-      window.radClearanceData = d.data;
-      if (d.data.length > 0) {
+      window.radClearanceData = d.data.filter(item => item.radiology_status === 'Pending' || item.radiology_status === 'Query');
+      if (window.radClearanceData.length > 0) {
         badgeElements.forEach(el => {
-          el.textContent = d.data.length;
+          el.textContent = window.radClearanceData.length;
           el.style.display = 'inline-block';
         });
       } else {

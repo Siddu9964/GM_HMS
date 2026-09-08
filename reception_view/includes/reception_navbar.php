@@ -1064,26 +1064,40 @@ async function fetchReceptionDischargeClearances() {
         const badge = document.getElementById('navbar-notification-badge');
         const list = document.getElementById('notifications-list');
 
-        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-            if (badge) {
-                badge.textContent = json.data.length;
-                badge.style.display = 'flex';
-            }
-            if (list) {
-                list.innerHTML = json.data.map(item => `
-                    <div style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; background: ${item.reception_status==='Pending'?'#fdfbf7':'#ffffff'};">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
-                            <strong style="font-size: 0.85rem; color: #1f6b4a;">${item.patient_name || 'Patient'}</strong>
-                            <span class="badge" style="font-size: 0.68rem; background: ${item.reception_status==='Approved'?'#dcfce7':item.reception_status==='Query'?'#fee2e2':'#fef3c7'}; color: ${item.reception_status==='Approved'?'#15803d':item.reception_status==='Query'?'#dc2626':'#b45309'};">${item.reception_status}</span>
+        if (json.success && Array.isArray(json.data)) {
+            const pendingRec = json.data.filter(item => item.reception_status === 'Pending' || item.reception_status === 'Query');
+            if (pendingRec.length > 0) {
+                if (badge) {
+                    badge.textContent = pendingRec.length;
+                    badge.style.display = 'flex';
+                }
+                if (list) {
+                    list.innerHTML = pendingRec.map(item => `
+                        <div style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; background: ${item.reception_status==='Pending'?'#fdfbf7':'#ffffff'};">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                                <strong style="font-size: 0.85rem; color: #1f6b4a;">${item.patient_name || 'Patient'}</strong>
+                                <span class="badge" style="font-size: 0.68rem; background: ${item.reception_status==='Approved'?'#dcfce7':item.reception_status==='Query'?'#fee2e2':'#fef3c7'}; color: ${item.reception_status==='Approved'?'#15803d':item.reception_status==='Query'?'#dc2626':'#b45309'};">${item.reception_status}</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: #64748b;">${item.bed_info || 'Ward'} • IP: ${item.admission_id}</div>
+                            <button type="button" onclick='openRecClearanceModal(${JSON.stringify(item)})' style="margin-top: 6px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; background: #1f6b4a; color: #ffffff; border: none; border-radius: 6px; cursor: pointer;">
+                                <i class="fas fa-clipboard-check"></i> Review & Clear
+                            </button>
                         </div>
-                        <div style="font-size: 0.75rem; color: #64748b;">${item.bed_info || 'Ward'} • IP: ${item.admission_id}</div>
-                        <button type="button" onclick='openRecClearanceModal(${JSON.stringify(item)})' style="margin-top: 6px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; background: #1f6b4a; color: #ffffff; border: none; border-radius: 6px; cursor: pointer;">
-                            <i class="fas fa-clipboard-check"></i> Review & Clear
-                        </button>
-                    </div>
-                `).join('');
+                    `).join('');
+                }
+                checkAndShowRecDischargeReminder(pendingRec);
+            } else {
+                if (badge) badge.style.display = 'none';
+                if (list) {
+                    list.innerHTML = `
+                        <div style="padding: 2rem; text-align: center; color: var(--gray-400);">
+                            <i class="fas fa-bell-slash" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
+                            <p>No new notifications</p>
+                        </div>
+                    `;
+                }
+                checkAndShowRecDischargeReminder([]);
             }
-            checkAndShowRecDischargeReminder(json.data);
         } else {
             if (badge) badge.style.display = 'none';
             if (list) {
