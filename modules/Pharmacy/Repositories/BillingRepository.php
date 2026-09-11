@@ -205,32 +205,11 @@ class BillingRepository {
                     ]
                 );
 
-                // Deduct Aggregate Stock
+                // Deduct Stock from ph_product
                 $this->db->execute(
                     "UPDATE ph_product SET quantity = quantity - ? WHERE product_id = ?",
                     [$item['qty'], $item['product_id']]
                 );
-
-                // FIFO Batch Deduction
-                $qtyToDeduct = (int)$item['qty'];
-                $batches = $this->db->fetchAll(
-                    "SELECT id, quantity FROM ph_product_batches 
-                     WHERE product_id = ? AND quantity > 0 
-                     ORDER BY COALESCE(expiry_date, '2099-12-31') ASC",
-                    [$item['product_id']]
-                );
-
-                foreach ($batches as $batch) {
-                    if ($qtyToDeduct <= 0) break;
-                    $batchQty = (int)$batch['quantity'];
-                    $deduct = min($qtyToDeduct, $batchQty);
-                    
-                    $this->db->execute(
-                        "UPDATE ph_product_batches SET quantity = quantity - ? WHERE id = ?",
-                        [$deduct, $batch['id']]
-                    );
-                    $qtyToDeduct -= $deduct;
-                }
             }
 
             $conn->commit();

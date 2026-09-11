@@ -591,7 +591,7 @@ include 'includes/ph_head.php';
                 </div>
                 <div class="pay-input-grp">
                   <label>Amount Received (₹)</label>
-                  <input type="number" id="payReceived" class="pay-input" style="color:var(--ph-success); background:#f0fdf4; border-color:#bbf7d0;" value="0" min="0" oninput="recalc()">
+                  <input type="number" id="payReceived" class="pay-input" style="color:var(--ph-success); background:#f0fdf4; border-color:#bbf7d0;" placeholder="0" min="0" onfocus="this.select()" oninput="recalc()">
                 </div>
 
                 <div class="sum-row mt-2" style="margin-bottom:0;">
@@ -1149,7 +1149,7 @@ include 'includes/ph_head.php';
     document.getElementById('payCreditView').style.display = mode === 'credit' ? 'block' : 'none';
     document.getElementById('paySplitView').style.display = mode === 'split' ? 'block' : 'none';
 
-    if (mode === 'credit') document.getElementById('payReceived').value = 0;
+    if (mode === 'credit') document.getElementById('payReceived').value = '';
     if (mode === 'split' && splitPayments.length === 0) {
       addSplitRow('cash');
       addSplitRow('upi');
@@ -1179,7 +1179,7 @@ include 'includes/ph_head.php';
                 <option value="upi" ${p.method==='upi'?'selected':''}>UPI</option>
                 <option value="card" ${p.method==='card'?'selected':''}>Card</option>
             </select>
-            <input type="number" class="pay-input" style="width:100px; padding:6px; font-size:0.9rem;" value="${p.amount||0}" oninput="splitPayments[${i}].amount=parseFloat(this.value)||0; recalc()">
+            <input type="number" class="pay-input" style="width:100px; padding:6px; font-size:0.9rem;" placeholder="0" value="${p.amount || ''}" onfocus="this.select()" oninput="splitPayments[${i}].amount=parseFloat(this.value)||0; recalc()">
             <button class="btn btn-sm text-danger" style="border:1px solid #f1f5f9; background:#fff;" onclick="removeSplitRow(${i})"><i class="fas fa-times"></i></button>
         </div>
     `).join('');
@@ -1193,7 +1193,7 @@ include 'includes/ph_head.php';
     }
     cart = [];
     document.getElementById('globalDiscount').value = '';
-    document.getElementById('payReceived').value = 0;
+    document.getElementById('payReceived').value = '';
     if (currentPatMode === 'search') clearPatient();
     renderCart();
     setTimeout(() => {

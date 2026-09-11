@@ -416,21 +416,6 @@ class PharmacyGrnController extends BaseController {
                         [$newProductId, $item['id']]
                     );
                 }
-
-                // Upsert Batch into ph_product_batches
-                $batchNo = $item['batch_no'] ?: 'DEFAULT-BATCH';
-                $this->db->execute(
-                    "INSERT INTO ph_product_batches (product_id, batch_number, expiry_date, quantity)
-                     VALUES (?, ?, ?, ?)
-                     ON DUPLICATE KEY UPDATE quantity = quantity + ?",
-                    [
-                        $newProductId,
-                        $batchNo,
-                        $item['expiry_date'] ?: null,
-                        (int)($item['net_qty'] ?? 0),
-                        (int)($item['net_qty'] ?? 0)
-                    ]
-                );
             }
 
             mysqli_commit($conn);
@@ -553,18 +538,6 @@ class PharmacyGrnController extends BaseController {
                             }
                         }
                     }
-
-                    // Deduct from ph_product_batches
-                    if ($batchNo) {
-                        $this->db->execute(
-                            "UPDATE ph_product_batches SET quantity = quantity - ? WHERE product_id = ? AND batch_number = ?",
-                            [$netQty, $productId, $batchNo]
-                        );
-                        $this->db->execute(
-                            "DELETE FROM ph_product_batches WHERE product_id = ? AND batch_number = ? AND quantity <= 0",
-                            [$productId, $batchNo]
-                        );
-                    }
                 }
             }
 
@@ -637,11 +610,6 @@ class PharmacyGrnController extends BaseController {
                             $this->db->execute("DELETE FROM ph_product WHERE product_id = ?", [$productId]);
                         }
                     }
-                }
-                
-                if ($batchNo) {
-                    $this->db->execute("UPDATE ph_product_batches SET quantity = quantity - ? WHERE product_id = ? AND batch_number = ?", [$netQty, $productId, $batchNo]);
-                    $this->db->execute("DELETE FROM ph_product_batches WHERE product_id = ? AND batch_number = ? AND quantity <= 0", [$productId, $batchNo]);
                 }
             }
             

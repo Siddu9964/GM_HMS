@@ -75,50 +75,31 @@ graph TD
 
 The pharmacy module operates across several inter-related tables:
 
-1. **`ph_product`**: Contains product details. Each batch is stored as a separate unique record (`product_id` format `PRD-XXXXXX`) to enforce price/expiry isolation.
+1. **`ph_product`**: Contains product and batch details. Each batch is stored as a separate unique record (`product_id` format `PRD-XXXXXX`) to enforce price/expiry/stock isolation.
    - Core fields: `product_id`, `product_name`, `strength`, `form`, `hsn_code`, `manufacturer`, `purchase_rate`, `mrp`, `tax_percent`, `quantity`, `batch_number`, `expiry_date`.
-2. **`ph_product_batches`**: Keeps stock allocations separated strictly by batch numbers.
-   - Core fields: `id`, `product_id`, `batch_number`, `expiry_date`, `quantity`.
-3. **`ph_sales_master`**: Sales invoice registry.
+2. **`ph_sales_master`**: Sales invoice registry.
    - Core fields: `invoice_no` (`INV-XXXXX`), `invoice_date`, `invoice_time`, `customer_id`, `customer_name`, `customer_phone`, `subtotal`, `discount_amount`, `tax_total`, `grand_total`, `paid_amount`, `balance`, `payment_method`, `status`.
-4. **`ph_sales_items`**: Line items sold per invoice.
+3. **`ph_sales_items`**: Line items sold per invoice.
    - Core fields: `id`, `invoice_no`, `paient_id`, `product_id`, `product_name`, `batch_no`, `qty`, `rate`, `discount_percent`, `tax_percent`, `tax_amount`, `total`.
-5. **`ph_stock_receive`**: Log of received goods (GRNs).
+4. **`ph_stock_receive`**: Log of received goods (GRNs).
    - Core fields: `id`, `receive_no` (`GRN-XXXXX`), `receive_date`, `po_no`, `supplier_id`, `supplier_name`, `invoice_no`, `product_id`, `item_name`, `batch_no`, `expiry_date`, `received_qty`, `damaged_qty`, `net_qty`, `rate`, `status` (0: Draft, 1: Submitted).
-6. **`ph_indent_requests`**: Procurement indents for replenishing stock.
+5. **`ph_indent_requests`**: Procurement indents for replenishing stock.
    - Core fields: `id`, `indent_no` (`IND-XXXXX`), `request_date`, `requested_by`, `department`, `product_id`, `item_name`, `qty`, `priority`, `status` (`pending`, `approved`, `ordered`, `cancelled`).
 
 ---
 
 ## ⚙️ Core Logic & Business Rules
 
-### 1. FIFO (First-In, First-Out) Batch Deductions
-When a POS invoice is saved in [BillingRepository.php](file:///d:/xampp/htdocs/GM_HMS/modules/Pharmacy/Repositories/BillingRepository.php#L193-L212), stock is deducted from the master item row, and individual batches are decremented chronologically:
-- Query `ph_product_batches` for the given `product_id` where `quantity > 0`.
-- Sort by `expiry_date` ascending (`COALESCE(expiry_date, '2099-12-31') ASC`).
-- Loop through the batches, deducting the required quantity from the earliest batch first until the checkout count is satisfied.
-
+### 1. Batch Stock Deductions
+When a POS invoice is saved in [BillingRepository.php](file:///d:/xampp/htdocs/GM_HMS/modules/Pharmacy/Repositories/BillingRepository.php), stock is deducted directly from the selected batch row in `ph_product`:
+- The cashier selects the specific medicine and batch in the POS (`product_id`).
+- Stock is directly deducted from `ph_product`:
 ```php
-// FIFO Batch Deduction snippet from BillingRepository.php
-$qtyToDeduct = (int)$item['qty'];
-$batches = $this->db->fetchAll(
-    "SELECT id, quantity FROM ph_product_batches 
-     WHERE product_id = ? AND quantity > 0 
-     ORDER BY COALESCE(expiry_date, '2099-12-31') ASC",
-    [$item['product_id']]
+// Deduct Stock from ph_product
+$this->db->execute(
+    "UPDATE ph_product SET quantity = quantity - ? WHERE product_id = ?",
+    [$item['qty'], $item['product_id']]
 );
-
-foreach ($batches as $batch) {
-    if ($qtyToDeduct <= 0) break;
-    $batchQty = (int)$batch['quantity'];
-    $deduct = min($qtyToDeduct, $batchQty);
-    
-    $this->db->execute(
-        "UPDATE ph_product_batches SET quantity = quantity - ? WHERE id = ?",
-        [$deduct, $batch['id']]
-    );
-    $qtyToDeduct -= $deduct;
-}
 ```
 
 ### 2. Batch Isolation during GRN Submission
