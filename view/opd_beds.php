@@ -839,6 +839,10 @@ if (!isset($_SESSION['user_id'])) {
                     updateKPIStats();
                     applyFilters();
                     setViewMode(currentViewMode);
+                    if (currentBed) {
+                        const updated = allBeds.find(b => b.sl_no == currentBed.sl_no);
+                        if (updated) selectBed(updated);
+                    }
                 } else {
                     throw new Error(json.error || 'Failed to load bed records');
                 }
@@ -1200,6 +1204,9 @@ if (!isset($_SESSION['user_id'])) {
                                 <button onclick="releaseBedById(${bed.sl_no}, '${bed.bed_number}')" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border border-emerald-200 rounded-xl transition-all text-xs font-bold flex items-center gap-1 shadow-xs" title="Release Bed & Mark Available">
                                     <i class="fas fa-check-circle"></i> Release
                                 </button>
+                                <button onclick="editBedById(${bed.sl_no})" class="p-1.5 bg-slate-100 hover:bg-[#1f6b4a] hover:text-white text-slate-700 rounded-lg transition-all" title="Edit Bed Specs & Pricing">
+                                    <i class="fas fa-edit text-xs"></i>
+                                </button>
                                 ${bed.patient_id ? `
                                     <a href="/GM_HMS/view/ipd_billing.php?patient_id=${encodeURIComponent(bed.patient_id)}" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg transition-all text-xs font-bold" title="Open IPD Billing">
                                         <i class="fas fa-file-invoice-dollar"></i>
@@ -1209,7 +1216,7 @@ if (!isset($_SESSION['user_id'])) {
                                 <button onclick="quickUpdateStatusOnTile(${bed.sl_no}, 'Available')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all text-xs font-bold flex items-center gap-1 shadow-xs" title="Mark Clean & Available">
                                     <i class="fas fa-check"></i> Make Available
                                 </button>
-                                <button onclick="editBedRecord(${JSON.stringify(bed).replace(/"/g, '&quot;')})" class="p-1.5 bg-slate-100 hover:bg-[#1f6b4a] hover:text-white text-slate-700 rounded-lg transition-all" title="Edit Bed Specs & Pricing">
+                                <button onclick="editBedById(${bed.sl_no})" class="p-1.5 bg-slate-100 hover:bg-[#1f6b4a] hover:text-white text-slate-700 rounded-lg transition-all" title="Edit Bed Specs & Pricing">
                                     <i class="fas fa-edit text-xs"></i>
                                 </button>
                                 <button onclick="deleteBedById(${bed.sl_no}, '${bed.bed_number}')" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-all" title="Delete Bed">
@@ -1219,7 +1226,7 @@ if (!isset($_SESSION['user_id'])) {
                                 <button onclick="quickUpdateStatusOnTile(${bed.sl_no}, 'Cleaning')" class="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg transition-all text-xs" title="Mark for Cleaning">
                                     <i class="fas fa-broom"></i>
                                 </button>
-                                <button onclick="editBedRecord(${JSON.stringify(bed).replace(/"/g, '&quot;')})" class="p-1.5 bg-slate-100 hover:bg-[#1f6b4a] hover:text-white text-slate-700 rounded-lg transition-all" title="Edit Bed Specs & Pricing">
+                                <button onclick="editBedById(${bed.sl_no})" class="p-1.5 bg-slate-100 hover:bg-[#1f6b4a] hover:text-white text-slate-700 rounded-lg transition-all" title="Edit Bed Specs & Pricing">
                                     <i class="fas fa-edit text-xs"></i>
                                 </button>
                                 <button onclick="deleteBedById(${bed.sl_no}, '${bed.bed_number}')" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-all" title="Delete Bed">
@@ -1644,10 +1651,10 @@ if (!isset($_SESSION['user_id'])) {
         // ── 8. BED MODAL (ADD / EDIT) ──
         function openBedModal(mode = 'create', bed = null) {
             document.getElementById('bedForm').reset();
-            document.getElementById('formAction').value = mode;
+            document.getElementById('formAction').value = (mode === 'edit') ? 'edit' : 'create';
 
             const floors = [...new Set(allBeds.map(b => b.floor_name))].filter(Boolean);
-            const floorNums = [...new Set(allBeds.map(b => b.floor_number))].filter(Boolean);
+            const floorNums = [...new Set(allBeds.map(b => b.floor_number))].filter(n => n !== null && n !== undefined && n !== '');
             const wards = [...new Set(allBeds.map(b => b.ward_name))].filter(Boolean);
 
             const floorNumSel = document.getElementById('modalFloorNum');
@@ -1665,16 +1672,32 @@ if (!isset($_SESSION['user_id'])) {
                 wards.map(w => `<option value="${w}">${w}</option>`).join('') + 
                 '<option value="ADD_NEW_CUSTOM">+ Add Custom...</option>';
 
+            function setOrAddOption(sel, val) {
+                if (val === null || val === undefined || val === '') return;
+                const str = String(val);
+                const exists = [...sel.options].some(o => String(o.value) === str);
+                if (!exists) {
+                    const opt = new Option(str, str);
+                    if (sel.options.length > 0) {
+                        sel.add(opt, sel.options[sel.options.length - 1]);
+                    } else {
+                        sel.add(opt);
+                    }
+                }
+                sel.value = str;
+            }
+
             if (mode === 'edit' && bed) {
                 document.getElementById('modalTitle').textContent = `Edit Bed ${bed.bed_number}`;
                 document.getElementById('modalSubtitle').textContent = `Modifying room specs & pricing for record #${bed.sl_no}`;
                 document.getElementById('formSlNo').value = bed.sl_no;
                 document.getElementById('batchBedOption').classList.add('hidden');
 
-                floorNumSel.value = bed.floor_number || '';
-                floorNameSel.value = bed.floor_name || '';
-                wardSel.value = bed.ward_name || '';
-                document.getElementById('modalRoomType').value = bed.room_type || 'General Ward';
+                setOrAddOption(floorNumSel, bed.floor_number);
+                setOrAddOption(floorNameSel, bed.floor_name);
+                setOrAddOption(wardSel, bed.ward_name);
+                setOrAddOption(document.getElementById('modalRoomType'), bed.room_type || 'General Ward');
+
                 document.getElementById('modalRoomNumber').value = bed.room_number || '';
                 document.getElementById('modalRoomName').value = bed.room_name || '';
                 document.getElementById('modalBedNumber').value = bed.bed_number || '';
@@ -1698,6 +1721,11 @@ if (!isset($_SESSION['user_id'])) {
         function closeBedModal() {
             document.getElementById('bedModal').classList.remove('active');
             document.querySelectorAll('[id$="Custom"]').forEach(el => el.classList.add('hidden'));
+        }
+
+        function editBedById(sl_no) {
+            const bed = allBeds.find(b => b.sl_no == sl_no);
+            if (bed) openBedModal('edit', bed);
         }
 
         function editBedRecord(bed) {
