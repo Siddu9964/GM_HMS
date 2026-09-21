@@ -103,10 +103,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $new_floor_number = trim($_POST['floor_number'] ?? '0');
             $new_floor_name   = trim($_POST['floor_name'] ?? '');
 
-            $amount_per_day   = floatval($_POST['amount_per_day'] ?? 0);
-            $nursig_charge    = floatval($_POST['nursig_charge'] ?? 0);
-            $doctor_charge    = floatval($_POST['doctor_charge'] ?? 0);
-            $service_charge   = floatval($_POST['service_charge'] ?? 0);
+            $amount_per_day   = intval(round(floatval($_POST['amount_per_day'] ?? 0)));
+            $nursig_charge    = intval(round(floatval($_POST['nursig_charge'] ?? 0)));
+            $doctor_charge    = intval(round(floatval($_POST['doctor_charge'] ?? 0)));
+            $service_charge   = intval(round(floatval($_POST['service_charge'] ?? 0)));
             $total_bed_amount = $amount_per_day + $nursig_charge + $doctor_charge + $service_charge;
 
             $updatePayload = [
@@ -202,16 +202,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Handle custom text inputs if 'ADD_NEW_CUSTOM' was selected
         if (!empty($_POST['floor_number_custom'])) $floor_number = trim($_POST['floor_number_custom']);
+        $floor_number = intval($floor_number);
+
         if (!empty($_POST['floor_name_custom']))   $floor_name   = trim($_POST['floor_name_custom']);
         if (!empty($_POST['ward_name_custom']))    $ward_name    = trim($_POST['ward_name_custom']);
         if (!empty($_POST['room_type_custom']))    $room_type    = trim($_POST['room_type_custom']);
         if (!empty($_POST['room_name_custom']))    $room_name    = trim($_POST['room_name_custom']);
         if (!empty($_POST['bed_number_custom']))   $bed_number   = trim($_POST['bed_number_custom']);
 
-        $amount_per_day   = floatval($_POST['amount_per_day'] ?? 0);
-        $nursig_charge    = floatval($_POST['nursig_charge'] ?? 0);
-        $doctor_charge    = floatval($_POST['doctor_charge'] ?? 0);
-        $service_charge   = floatval($_POST['service_charge'] ?? 0);
+        $amount_per_day   = intval(round(floatval($_POST['amount_per_day'] ?? 0)));
+        $nursig_charge    = intval(round(floatval($_POST['nursig_charge'] ?? 0)));
+        $doctor_charge    = intval(round(floatval($_POST['doctor_charge'] ?? 0)));
+        $service_charge   = intval(round(floatval($_POST['service_charge'] ?? 0)));
         $total_bed_amount = $amount_per_day + $nursig_charge + $doctor_charge + $service_charge;
         $bed_status       = in_array(trim($_POST['bed_status'] ?? ''), ['Available', 'Occupied', 'Cleaning', 'Maintenance', 'Reserved', 'Blocked']) ? trim($_POST['bed_status']) : 'Available';
 
