@@ -43,6 +43,18 @@ $router->add('ANY', '#^/api/discharge[-_]clearance(\.php)?/?$#', function () {
     exit;
 }, null);
 
+// Save Bed Bridge Route
+$router->add('ANY', '#^/api/save_bed(\.php)?/?$#', function () {
+    require __DIR__ . '/save_bed.php';
+    exit;
+}, null);
+
+// Get Patient Details Full Bridge Route
+$router->add('ANY', '#^/api/get_patient_details_full(\.php)?/?$#', function () {
+    require __DIR__ . '/get_patient_details_full.php';
+    exit;
+}, null);
+
 // Patient Routes
 $router->add('GET', '#^/api/patients/?$#', 'GM_HMS\Controllers\api\PatientController', 'index');
 $router->add('GET', '#^/api/patients/(PID-\d{8}-\d{3})/?$#', 'GM_HMS\Controllers\api\PatientController', 'show');
