@@ -335,7 +335,8 @@ function renderBill(b) {
             if (it.status !== 'CANCELLED') {
                 let cType = it.charge_type || 'OTHER';
                 const desc = (it.description || '').toLowerCase();
-                if (desc.includes('nursing charge')) cType = 'NURSING';
+                if (cType === 'ROOM_RENT' || cType === 'BED_UPGRADE_OVERRIDE') cType = 'ROOM_RENT';
+                else if (desc.includes('nursing charge')) cType = 'NURSING';
                 else if (desc.includes('duty doctor')) cType = 'DUTY_DR';
                 else if (desc.includes('service charge')) cType = 'SERVICE';
                 else if (cType === 'MISC') cType = 'OTHER';

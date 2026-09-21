@@ -144,12 +144,9 @@ class OpdBillingModel
             if (!empty($billData['appointment_id'])) {
                 $this->db->execute(
                     "UPDATE appointments 
-                     SET payment_status = 'Paid',
-                         doctor_id = CASE WHEN ? != '' THEN ? ELSE doctor_id END,
-                         doctor_name = CASE WHEN ? != '' THEN ? ELSE doctor_name END,
-                         appointment_date = CASE WHEN ? != '' THEN ? ELSE appointment_date END
+                     SET payment_status = 'Paid'
                      WHERE appointment_id = ?",
-                    [$doctorId, $doctorId, $doctorName, $doctorName, $billDate, $billDate, $billData['appointment_id']]
+                    [$billData['appointment_id']]
                 );
             }
 
@@ -740,7 +737,7 @@ class OpdBillingModel
                 );
             }
 
-            if (!$sameDocBill) {
+            if (!$sameDocBill && empty($currentDocId) && empty($currentDocName)) {
                 // Check latest consultation bill overall
                 $sameDocBill = $this->db->fetchOne(
                     "SELECT obm.bill_date, obm.doctor_id, obm.doctor_name

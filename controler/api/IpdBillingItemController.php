@@ -63,6 +63,21 @@ class IpdBillingItemController extends IpdBaseController {
                 else $this->error($result['message'], isset($result['duplicate']) ? 409 : 400);
                 break;
 
+            case 'add_batch':
+                $required = ['bill_id', 'admission_id', 'patient_id', 'items'];
+                $errors   = $this->validateRequired($data, $required);
+                if ($errors) { $this->error('Validation failed', 400, $errors); return; }
+                if (!is_array($data['items']) || empty($data['items'])) {
+                    $this->error('Items must be a non-empty array', 400); return;
+                }
+                $result = $this->model->addBatchItems(
+                    $data['bill_id'], $data['admission_id'], $data['patient_id'],
+                    $data['items'], $user
+                );
+                if ($result['success']) $this->success($result, $result['message']);
+                else $this->error($result['message'], 400);
+                break;
+
             case 'room_rent':
                 $required = ['bill_id', 'admission_id', 'patient_id', 'from_date', 'to_date'];
                 $errors   = $this->validateRequired($data, $required);

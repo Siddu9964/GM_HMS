@@ -466,7 +466,10 @@ const billing = (function () {
         // Group items by charge_type
         const grouped = {};
         items.forEach(item => {
-            const cType = item.charge_type || 'OTHER';
+            let cType = item.charge_type || 'OTHER';
+            if (cType === 'BED_UPGRADE_OVERRIDE') {
+                cType = 'ROOM_RENT';
+            }
             if (!grouped[cType]) {
                 grouped[cType] = {
                     charge_type: cType,
@@ -618,7 +621,7 @@ const billing = (function () {
             if (it.status !== 'CANCELLED') {
                 const amt = parseFloat(it.total_amount || 0);
                 const t = String(it.charge_type || '').toUpperCase();
-                if (t === 'ROOM_RENT') liveBreakdown.ROOM_RENT += amt;
+                if (t === 'ROOM_RENT' || t === 'BED_UPGRADE_OVERRIDE') liveBreakdown.ROOM_RENT += amt;
                 else if (t === 'DOCTOR_VISIT') liveBreakdown.DOCTOR_VISIT += amt;
                 else if (t === 'LAB') liveBreakdown.LAB += amt;
                 else if (t === 'RADIOLOGY') liveBreakdown.RADIOLOGY += amt;
@@ -874,8 +877,10 @@ const billing = (function () {
     }
 
     function closeChargeMenu() {
-        document.getElementById('chargeMenu').classList.remove('open');
-        document.getElementById('chargeArrow').classList.remove('open');
+        const menu = document.getElementById('chargeMenu');
+        const arrow = document.getElementById('chargeArrow');
+        if (menu) menu.classList.remove('open');
+        if (arrow) arrow.classList.remove('open');
     }
 
     function initCloseClick() {
@@ -4973,7 +4978,668 @@ const billing = (function () {
 
 
     // Export exposed functions
-    return {
+    
+    // ==========================================
+    // MULTIPLE SERVICES CART LOGIC
+    // ==========================================
+    let multiServiceCart = [];
+    let currentMultiSearchResults = [];
+    let multiSearchTimeout = null;
+
+    function getMultiCategoryBadge(cat) {
+        const map = {
+            'BED_UPGRADE_OVERRIDE': '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:4px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;"><i class="fas fa-arrow-circle-up"></i> Bed Upgrade</span>',
+            'WARD_TRANSFER': '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:4px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;"><i class="fas fa-exchange-alt"></i> Ward Shift</span>',
+            'DOCTOR_VISIT': '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;background:#ccfbf1;color:#115e59;border:1px solid #99f6e4;"><i class="fas fa-user-md"></i> Doctor</span>',
+            'LAB': '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe;"><i class="fas fa-flask"></i> Lab Test</span>',
+            'RADIOLOGY': '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;background:#ede9fe;color:#6b21a8;border:1px solid #ddd6fe;"><i class="fas fa-x-ray"></i> Radiology</span>',
+            'PHARMACY': '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;"><i class="fas fa-pills"></i> Pharmacy</span>',
+            'PROCEDURE': '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;"><i class="fas fa-stethoscope"></i> Procedure</span>',
+            'OT': '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe;"><i class="fas fa-procedures"></i> OT</span>',
+            'DIALYSIS': '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;background:#fae8ff;color:#86198f;border:1px solid #f5d0fe;"><i class="fas fa-tint"></i> Dialysis</span>',
+            'OXYGEN': '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;background:#cffafe;color:#155e75;border:1px solid #a5f3fc;"><i class="fas fa-lungs"></i> Oxygen</span>',
+            'VENTILATION': '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;background:#ffe4e6;color:#9f1239;border:1px solid #fecdd3;"><i class="fas fa-wind"></i> Ventilator</span>',
+            'BLOOD_TRANSFUSION': '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;background:#fee2e2;color:#991b1b;border:1px solid #fecaca;"><i class="fas fa-hand-holding-water"></i> Blood</span>',
+            'CONSUMABLE': '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;"><i class="fas fa-band-aid"></i> Consumable</span>',
+            'MISC': '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;"><i class="fas fa-tags"></i> Misc</span>'
+        };
+        return map[cat] || `<span style="display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:#1f6b4a;color:#f3efe6;">${cat}</span>`;
+    }
+
+    function openMultiServiceModal() {
+        if (!currentMaster || !currentBillId) {
+            showToast('Please select a patient/admission first', 'warning');
+            return;
+        }
+        if (currentMaster.billing_status === 'FINALIZED' || currentMaster.billing_status === 'CANCELLED') {
+            showToast('Cannot add charges to Finalized/Cancelled bill', 'warning');
+            return;
+        }
+
+        multiServiceCart = [];
+        const catSelect = document.getElementById('multiCategorySelect');
+        if (catSelect) catSelect.value = '';
+
+        // Check if role is admin; if non-admin, ensure BED_UPGRADE_OVERRIDE is not available
+        const isAdmin = (window.USER_ROLE && window.USER_ROLE.toLowerCase() === 'admin');
+        if (!isAdmin && catSelect) {
+            const upgradeOpt = catSelect.querySelector('option[value="BED_UPGRADE_OVERRIDE"]');
+            if (upgradeOpt) upgradeOpt.remove();
+        }
+
+        const searchInput = document.getElementById('multiSearchInput');
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.placeholder = 'Search any service, GRBS, test, doctor, medicine...';
+        }
+        document.getElementById('multiDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('multiSearchResults').style.display = 'none';
+
+        // Populate Patient Name & Present Location in modal banner
+        const pName = currentMaster?.patient_name || [currentMaster?.first_name, currentMaster?.last_name].filter(Boolean).join(' ') || 'Patient';
+        const curBed = currentMaster?.bed_number ? 'Bed ' + currentMaster.bed_number : '';
+        const curRoomName = currentMaster?.room_name && currentMaster.room_name !== currentMaster.ward_name ? currentMaster.room_name : '';
+        const curWard = currentMaster?.ward_name || '';
+        const curRoom = [curBed, curRoomName, curWard].filter(Boolean).join(' — ') || 'General Ward';
+
+        const bannerPat = document.getElementById('multiBannerPatient');
+        if (bannerPat) bannerPat.textContent = pName;
+        const bannerBed = document.getElementById('multiBannerPresentBed');
+        if (bannerBed) bannerBed.textContent = curRoom;
+        
+        renderMultiCart();
+        openModal('modalMultiService');
+    }
+
+    function handleMultiCategoryChange() {
+        const input = document.getElementById('multiSearchInput');
+        const cat = document.getElementById('multiCategorySelect')?.value || '';
+        currentMultiSearchResults = [];
+
+        const isAdmin = (window.USER_ROLE && window.USER_ROLE.toLowerCase() === 'admin');
+
+        // Security check: Only admin can access BED_UPGRADE_OVERRIDE
+        if (cat === 'BED_UPGRADE_OVERRIDE' && !isAdmin) {
+            showToast('Bed Upgrade is restricted to Administrator access only', 'warning');
+            if (document.getElementById('multiCategorySelect')) {
+                document.getElementById('multiCategorySelect').value = '';
+            }
+            return;
+        }
+
+        if (cat === 'BED_UPGRADE_OVERRIDE') {
+            if (input) input.placeholder = 'Search available bed number or room type (e.g. ICU, Deluxe, Private, 1304A)...';
+        } else if (cat === 'WARD_TRANSFER') {
+            if (input) input.placeholder = 'Search Room Type or Available Bed (e.g. ICU, Private, 1304A)...';
+        } else {
+            if (input) {
+                if (cat === 'PHARMACY') input.placeholder = 'Search Medicine / Pharmacy product...';
+                else if (cat === 'LAB') input.placeholder = 'Search Lab Test / Profile...';
+                else if (cat === 'DOCTOR_VISIT') input.placeholder = 'Search Doctor name or specialization...';
+                else input.placeholder = 'Search any service, GRBS, test, doctor, medicine...';
+            }
+        }
+
+        handleMultiSearch('');
+        if (input) input.focus();
+    }
+
+    // Bind event listener for Multi Search Input
+    document.addEventListener('DOMContentLoaded', () => {
+        const input = document.getElementById('multiSearchInput');
+        if (input) {
+            input.addEventListener('input', (e) => {
+                clearTimeout(multiSearchTimeout);
+                multiSearchTimeout = setTimeout(() => handleMultiSearch(e.target.value), 200);
+            });
+            input.addEventListener('focus', () => {
+                handleMultiSearch(input.value);
+            });
+            // Handle arrow keys for search results
+            input.addEventListener('keydown', (e) => {
+                const results = document.querySelectorAll('#multiSearchResults .catalog-item');
+                if (results.length === 0) return;
+                
+                let activeIdx = -1;
+                results.forEach((el, idx) => { if (el.classList.contains('active')) activeIdx = idx; });
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (activeIdx < results.length - 1) {
+                        if (activeIdx >= 0) results[activeIdx].classList.remove('active');
+                        results[activeIdx + 1].classList.add('active');
+                        results[activeIdx + 1].scrollIntoView({ block: 'nearest' });
+                    }
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (activeIdx > 0) {
+                        results[activeIdx].classList.remove('active');
+                        results[activeIdx - 1].classList.add('active');
+                        results[activeIdx - 1].scrollIntoView({ block: 'nearest' });
+                    }
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (activeIdx >= 0) {
+                        selectMultiItemByIndex(activeIdx);
+                    } else if (results.length > 0) {
+                        selectMultiItemByIndex(0);
+                    }
+                }
+            });
+            // Close dropdown if click outside
+            document.addEventListener('click', (e) => {
+                const results = document.getElementById('multiSearchResults');
+                if (results && !input.contains(e.target) && !results.contains(e.target)) {
+                    results.style.display = 'none';
+                }
+            });
+        }
+    });
+
+    async function handleMultiSearch(query) {
+        query = (query || '').trim();
+        const resultsDiv = document.getElementById('multiSearchResults');
+        const category = document.getElementById('multiCategorySelect')?.value || '';
+        const searchType = category || 'ALL';
+
+        try {
+            const roomType = currentMaster?.room_type || currentMaster?.ward_name || currentMaster?.ward || '';
+            const admId = currentAdmissionId || currentMaster?.admission_id || '';
+            let res = await fetch(`${API_URL}ipd-catalog-search?type=${encodeURIComponent(searchType)}&q=${encodeURIComponent(query)}&room_type=${encodeURIComponent(roomType)}&admission_id=${encodeURIComponent(admId)}`);
+            let json = await res.json();
+            
+            // If searching a specific category yielded 0 results and user entered query >= 2 chars, fallback to universal ALL search
+            if ((!json.success || !json.data || json.data.length === 0) && searchType !== 'ALL' && query.length >= 2) {
+                res = await fetch(`${API_URL}ipd-catalog-search?type=ALL&q=${encodeURIComponent(query)}&room_type=${encodeURIComponent(roomType)}&admission_id=${encodeURIComponent(admId)}`);
+                json = await res.json();
+            }
+
+            if (json.success && json.data && json.data.length > 0) {
+                currentMultiSearchResults = json.data;
+                let html = '';
+
+                // Header for Bed Upgrade or Ward Transfer
+                if (searchType === 'BED_UPGRADE_OVERRIDE') {
+                    html += `
+                        <div style="padding: 10px 14px; background: #faf5ea; border-bottom: 1.5px solid #eeddc0; font-size: 12px; font-weight: 700; color: #855304; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 5;">
+                            <span><i class="fas fa-bed"></i> Available Hospital Beds for Upgrade (${json.data.length} Available)</span>
+                            <span style="font-size: 11px; color: #1f6b4a; font-weight: 800;">Rates reflect total_bed_amount</span>
+                        </div>
+                    `;
+                } else if (searchType === 'WARD_TRANSFER') {
+                    html += `
+                        <div style="padding: 10px 14px; background: #f0fdf4; border-bottom: 1.5px solid #bbf7d0; font-size: 12px; font-weight: 700; color: #166534; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 5;">
+                            <span><i class="fas fa-exchange-alt"></i> Available Beds for Ward Shifting (${json.data.length} Available)</span>
+                            <span style="font-size: 11px; color: #1f6b4a; font-weight: 800;">Standard Daily Rent</span>
+                        </div>
+                    `;
+                }
+
+                json.data.forEach((item, index) => {
+                    const itemCat = item.category || category || 'SERVICE';
+                    
+                    // For beds (Bed Upgrade or Ward Transfer)
+                    if (itemCat === 'BED_UPGRADE_OVERRIDE' || (itemCat === 'WARD_TRANSFER' && item.bed_number)) {
+                        const totalBedAmt = parseFloat(item.total_bed_amount || item.price || 0);
+                        const roomRent = parseFloat(item.amount_per_day || 0);
+                        const nursing = parseFloat(item.nursing_charge || 0);
+                        const doctor = parseFloat(item.doctor_charge || 0);
+                        
+                        let breakdownText = '';
+                        if (roomRent > 0) {
+                            breakdownText = `Room: ₹${roomRent.toLocaleString('en-IN')} + Nursing: ₹${nursing.toLocaleString('en-IN')} + Dr: ₹${doctor.toLocaleString('en-IN')}`;
+                        } else {
+                            breakdownText = item.department || 'Standard Daily Bed Charge';
+                        }
+
+                        const isUpgrade = (itemCat === 'BED_UPGRADE_OVERRIDE');
+                        const badgeTag = isUpgrade 
+                            ? `<span style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 10.5px;"><i class="fas fa-arrow-circle-up"></i> Bed Upgrade</span>`
+                            : `<span style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 10.5px;"><i class="fas fa-exchange-alt"></i> Shift</span>`;
+
+                        html += `
+                            <div class="catalog-item" onclick="billing.selectMultiItemByIndex(${index})" style="padding: 12px 16px; border-bottom: 1px solid rgba(31,107,74,0.12); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s;" onmouseover="this.style.background='#f0f7f3'" onmouseout="this.style.background='transparent'">
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                        ${badgeTag}
+                                        <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 800; padding: 3px 9px; border-radius: 5px; background: #1f6b4a; color: #fff; box-shadow: 0 1px 2px rgba(31,107,74,0.25);">
+                                            <i class="fas fa-bed"></i> Bed ${item.bed_number || item.id}
+                                        </span>
+                                        <span style="font-weight: 800; color: #1f6b4a; font-size: 14px;">
+                                            ${item.room_type || item.room_name} <span style="font-size: 12px; color: #555; font-weight: 600;">(${item.ward_name})</span>
+                                        </span>
+                                        <span style="font-size: 10.5px; background: #e8f5e9; color: #047857; padding: 2px 8px; border-radius: 4px; font-weight: 700; border: 1px solid #a5d6a7;">
+                                            🟢 Vacant & Available
+                                        </span>
+                                    </div>
+                                    <div style="font-size: 11.5px; color: #555; padding-left: 2px;">
+                                        ${breakdownText}
+                                    </div>
+                                </div>
+                                <div style="text-align: right; margin-left: 16px;">
+                                    <div style="font-weight: 900; color: #1f6b4a; font-size: 15px; white-space: nowrap;">
+                                        ₹${totalBedAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}
+                                        <span style="font-size: 11px; font-weight: 600; color: #666;">/ day</span>
+                                    </div>
+                                    <div style="font-size: 10.5px; color: #166534; font-weight: 800;">
+                                        Total Bed Amount
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // All standard clinical and hospital services
+                        const catBadge = getMultiCategoryBadge(itemCat);
+                        const desc = item.department || item.desc || '';
+                        const tier = item.room_tier ? ` <span style="font-size:11px;background:#e6f1eb;color:#1f6b4a;padding:2px 6px;border-radius:4px;font-weight:600;">${item.room_tier}</span>` : '';
+                        const rawPrice = item.price !== undefined ? item.price : (item.rate !== undefined ? item.rate : (item.unit_price !== undefined ? item.unit_price : (item.mrp !== undefined ? item.mrp : (item.sales_price !== undefined ? item.sales_price : 0))));
+                        const priceNum = parseFloat(rawPrice) || 0;
+                        const priceStr = priceNum.toLocaleString('en-IN', {minimumFractionDigits: 2});
+                        const titleHtml = `<span style="font-weight:700;color:#1f6b4a;font-size:13.5px;">${item.name}</span>`;
+
+                        html += `
+                            <div class="catalog-item" onclick="billing.selectMultiItemByIndex(${index})" style="padding:10px 14px;border-bottom:1px solid rgba(31,107,74,0.1);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background 0.15s;" onmouseover="this.style.background='#f0f7f3'" onmouseout="this.style.background='transparent'">
+                                <div style="display:flex;flex-direction:column;gap:3px;">
+                                    <div style="display:flex;align-items:center;gap:6px;">
+                                        ${catBadge}
+                                        ${titleHtml}
+                                    </div>
+                                    <div style="font-size:0.75rem;color:#666;padding-left:2px;">${desc}${tier}</div>
+                                </div>
+                                <div style="font-weight:800;color:#1f6b4a;font-size:0.95rem;white-space:nowrap;margin-left:14px;">₹${priceStr}</div>
+                            </div>
+                        `;
+                    }
+                });
+                resultsDiv.innerHTML = html;
+                resultsDiv.style.display = 'block';
+            } else {
+                resultsDiv.innerHTML = '<div style="padding:14px;color:#666;font-size:13px;text-align:center;">No matching services or beds found.</div>';
+                resultsDiv.style.display = 'block';
+                currentMultiSearchResults = [];
+            }
+        } catch (e) {
+            console.error('Search error', e);
+        }
+    }
+
+    function selectMultiItemByIndex(index) {
+        if (!currentMultiSearchResults[index]) return;
+        const item = currentMultiSearchResults[index];
+        
+        // Category for this specific cart item
+        const itemCat = item.category || document.getElementById('multiCategorySelect')?.value || 'PROCEDURE';
+        
+        let rawPrice = item.price !== undefined ? item.price : (item.rate !== undefined ? item.rate : (item.unit_price !== undefined ? item.unit_price : (item.mrp !== undefined ? item.mrp : (item.sales_price !== undefined ? item.sales_price : 0))));
+        let rate = parseFloat(rawPrice) || 0;
+        
+        let itemDesc = item.name;
+        let fromRoom = '';
+        let destRoom = '';
+
+        if (itemCat === 'WARD_TRANSFER') {
+            const curBedNum = currentMaster?.bed_number ? 'Bed ' + currentMaster.bed_number : 'Present Bed';
+            const curWard = currentMaster?.ward_name || '';
+            const curRoomName = currentMaster?.room_name && currentMaster.room_name !== curWard ? currentMaster.room_name : '';
+            const curLocation = [curBedNum, curRoomName, curWard].filter(Boolean).join(' - ');
+
+            fromRoom = curLocation;
+            destRoom = item.destination_bed || (item.bed_number ? `Bed ${item.bed_number} (${item.room_type || item.room_name || ''})` : item.name);
+            itemDesc = `Ward Shift: ${curBedNum} → ${destRoom}`;
+        } else if (itemCat === 'BED_UPGRADE_OVERRIDE') {
+            const curBedNum = currentMaster?.bed_number ? 'Bed ' + currentMaster.bed_number : 'Present Bed';
+            const curWard = currentMaster?.ward_name || '';
+            const curRoomName = currentMaster?.room_name && currentMaster.room_name !== curWard ? currentMaster.room_name : (curWard || 'General Ward');
+            const curLocation = [curBedNum, curRoomName].filter(Boolean).join(' - ');
+
+            const curRoomRent = parseFloat(currentMaster?.amount_per_day || 0);
+            const curNursing = parseFloat(currentMaster?.nursig_charge || 0);
+            const curDoctor = parseFloat(currentMaster?.doctor_charge || 0);
+            const curTotalRent = parseFloat(currentMaster?.total_bed_amount || currentMaster?.adm_total_bed_amount || (curRoomRent + curNursing + curDoctor) || 3000.00);
+
+            // Total bed amount consideration as requested by user
+            const physTotalRent = parseFloat(item.total_bed_amount || item.price || item.room_rent || 0);
+            const destBedStr = `Bed ${item.bed_number || ''} (${item.room_type || item.room_name || ''})`;
+
+            fromRoom = curLocation;
+            destRoom = destBedStr;
+            rate = physTotalRent; // Default to total_bed_amount directly (e.g. 3500)
+
+            const rRent = parseFloat(item.amount_per_day || 0);
+            const nRent = parseFloat(item.nursig_charge || item.nursing_charge || 0);
+            const dRent = parseFloat(item.doctor_charge || 0);
+            const sRent = parseFloat(item.service_charge || 0);
+            const rType = item.room_type || item.room_name || 'Room Rent';
+
+            let breakdownHtml = '';
+            if (rRent > 0 || nRent > 0 || dRent > 0) {
+                breakdownHtml = `<br><small style='color: #6c757d; font-size: 0.85em;'>Room Rent: ₹${rRent.toLocaleString('en-IN')} | Nursing Charges: ₹${nRent.toLocaleString('en-IN')} | Duty Doctor Charges: ₹${dRent.toLocaleString('en-IN')} | Service Charges: ₹${sRent.toLocaleString('en-IN')}</small>`;
+            }
+
+            itemDesc = `Room Rent - ${rType} (${curBedNum})${breakdownHtml}`;
+
+            const cartItem = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                category: itemCat,
+                is_bed_upgrade: 1,
+                upgraded_room_type: rType,
+                amount_per_day: rRent,
+                nursing_charge: nRent,
+                doctor_charge: dRent,
+                service_charge: sRent,
+                total_bed_amount: physTotalRent,
+                code: item.code || item.id || '',
+                description: itemDesc,
+                from_room: curLocation,
+                dest_room: destBedStr,
+                physical_bed_price: physTotalRent,
+                qty: 1,
+                unit_price: rate,
+                discount: 0,
+                date: document.getElementById('multiDate').value
+            };
+            
+            multiServiceCart.push(cartItem);
+            
+            const searchInput = document.getElementById('multiSearchInput');
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.focus();
+            }
+            
+            document.getElementById('multiSearchResults').style.display = 'none';
+            currentMultiSearchResults = [];
+            
+            renderMultiCart();
+            return;
+        }
+
+        const cartItem = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+            category: itemCat,
+            code: item.code || item.id || '',
+            description: itemDesc,
+            from_room: fromRoom,
+            dest_room: destRoom,
+            physical_bed_price: parseFloat(rawPrice) || 0,
+            billed_tariff: '',
+            override_reason: '',
+            authorized_by: '',
+            qty: 1,
+            unit_price: rate,
+            discount: 0,
+            date: document.getElementById('multiDate').value
+        };
+        
+        multiServiceCart.push(cartItem);
+        
+        const searchInput = document.getElementById('multiSearchInput');
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.focus();
+        }
+        
+        document.getElementById('multiSearchResults').style.display = 'none';
+        currentMultiSearchResults = [];
+        
+        renderMultiCart();
+    }
+
+    function renderMultiCart() {
+        const tbody = document.getElementById('multiCartBody');
+        let grandTotal = 0;
+        
+        if (multiServiceCart.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="padding: 110px 20px; text-align: center; color: #526159;">
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;">
+                            <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(31, 107, 74, 0.08); display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="shopping-cart" style="width: 28px; height: 28px; color: #1f6b4a; opacity: 0.7;"></i>
+                            </div>
+                            <div style="font-size: 15px; font-weight: 700; color: #2d3748;">No services added yet. Select a category and search to add items.</div>
+                            <div style="font-size: 12.5px; color: #718096; max-width: 440px; line-height: 1.4;">Select a category and search to add services, lab tests, medications, or bed charges. Multiple items will appear here together.</div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            document.getElementById('multiGrandTotal').textContent = '0.00';
+            if(window.lucide) lucide.createIcons();
+            return;
+        }
+
+        let html = '';
+        multiServiceCart.forEach((item, index) => {
+            let total = (item.qty * item.unit_price) - item.discount;
+            if (total < 0) total = 0;
+            grandTotal += total;
+            
+            let descExtra = '';
+            let datalistAttr = '';
+            if (item.category === 'WARD_TRANSFER') {
+                datalistAttr = 'list="multiDestBedOptions"';
+                const fromRoom = item.from_room || [
+                    currentMaster?.ward_name,
+                    currentMaster?.room_name && currentMaster.room_name !== currentMaster.ward_name ? currentMaster.room_name : '',
+                    currentMaster?.bed_number ? 'Bed ' + currentMaster.bed_number : ''
+                ].filter(Boolean).join(' - ') || 'Present Room';
+                
+                let destRoom = item.dest_room || '';
+                if (!destRoom && item.description.includes('→')) {
+                    destRoom = item.description.split(/→|->/)[1]?.trim() || '';
+                }
+                if (!destRoom) destRoom = item.description.replace(/^Ward Shift:\s*/i, '').trim();
+
+                const rentBadge = item.unit_price > 0 
+                    ? `<span style="background: #fff8e1; color: #b78103; padding: 2px 7px; border-radius: 4px; font-weight: 700; border: 1px solid #ffe082;">Rent: ₹${item.unit_price.toLocaleString('en-IN', {minimumFractionDigits: 2})}/day</span>`
+                    : '';
+
+                descExtra = `
+                    <div style="font-size: 11px; margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <span style="background: rgba(31,107,74,0.1); color: #1f6b4a; padding: 2px 7px; border-radius: 4px; font-weight: 700; border: 1px solid rgba(31,107,74,0.25); display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-bed" style="font-size: 10px;"></i> <strong>From:</strong> ${fromRoom}
+                        </span>
+                        <span style="color: #1f6b4a; font-weight: 900;">➔</span>
+                        <span style="background: #e8f5e9; color: #1b5e20; padding: 2px 7px; border-radius: 4px; font-weight: 700; border: 1px solid #a5d6a7; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-sign-in-alt" style="font-size: 10px;"></i> <strong>To:</strong> ${destRoom}
+                        </span>
+                        ${rentBadge}
+                    </div>
+                `;
+            }
+
+            html += `
+                <tr style="border-bottom: 1px solid rgba(31, 107, 74, 0.1);">
+                    <td style="padding: 6px 8px; font-weight: 600; color: #1f6b4a; vertical-align: middle;">
+                        ${getMultiCategoryBadge(item.category)}
+                    </td>
+                    <td style="padding: 6px 8px; min-width: 440px; vertical-align: middle;">
+                        <input type="text" ${datalistAttr} value="${item.description.replace(/"/g, '&quot;')}" oninput="billing.updateMultiCartDescription(${index}, this.value)" style="width: 100%; min-width: 420px; height: 36px; padding: 5px 10px; border: 1.5px solid #1f6b4a; border-radius: 6px; background: #fff; color: #1f6b4a; font-size: 13px; font-weight: 700; outline: none; box-sizing: border-box;" title="${item.description.replace(/"/g, '&quot;')}">
+                        ${descExtra}
+                    </td>
+                    <td style="padding: 6px 8px; vertical-align: middle;">
+                        <input type="number" value="${item.qty}" min="1" step="1" oninput="billing.updateMultiCartQty(${index}, this.value)" style="width: 100%; height: 36px; text-align: center; padding: 5px 4px; border: 1.2px solid #1f6b4a; border-radius: 5px; background: #fff; color: #1f6b4a; font-size: 13px; font-weight: 600; outline: none; box-sizing: border-box;">
+                    </td>
+                    <td style="padding: 6px 8px; vertical-align: middle;">
+                        <input type="number" value="${item.unit_price}" min="0" step="0.01" oninput="billing.updateMultiCartRate(${index}, this.value)" style="width: 100%; height: 36px; text-align: right; padding: 5px 8px; border: 1.2px solid #1f6b4a; border-radius: 5px; background: #fff; color: #1f6b4a; font-size: 13px; font-weight: 600; outline: none; box-sizing: border-box;">
+                    </td>
+                    <td style="padding: 6px 8px; vertical-align: middle;">
+                        <input type="number" value="${item.discount}" min="0" step="0.01" oninput="billing.updateMultiCartDiscount(${index}, this.value)" style="width: 100%; height: 36px; text-align: right; padding: 5px 8px; border: 1.2px solid #1f6b4a; border-radius: 5px; background: #fff; color: #1f6b4a; font-size: 13px; font-weight: 600; outline: none; box-sizing: border-box;">
+                    </td>
+                    <td id="multiRowTotal_${index}" style="padding: 6px 8px; text-align: right; font-weight: 800; color: #1f6b4a; font-size: 13.5px; vertical-align: middle;">
+                        ₹${total.toLocaleString('en-IN', {minimumFractionDigits: 2})}
+                    </td>
+                    <td style="padding: 6px 8px; text-align: center; vertical-align: middle;">
+                        <button class="btn-tbl-cancel" onclick="billing.removeMultiCartItem(${index})" style="background: transparent; border: none; color: #d32f2f; cursor: pointer; padding: 6px;" title="Remove service">
+                            <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        const curRoomForList = [
+            currentMaster?.ward_name,
+            currentMaster?.room_name && currentMaster.room_name !== currentMaster.ward_name ? currentMaster.room_name : '',
+            currentMaster?.bed_number ? 'Bed ' + currentMaster.bed_number : ''
+        ].filter(Boolean).join(' - ') || 'Present Room';
+
+        html += `
+            <datalist id="multiDestBedOptions">
+                <option value="Ward Shift: ${curRoomForList} → ICU Bed (Critical Care)"></option>
+                <option value="Ward Shift: ${curRoomForList} → Private Room / Deluxe"></option>
+                <option value="Ward Shift: ${curRoomForList} → Semi-Private Room"></option>
+                <option value="Ward Shift: ${curRoomForList} → General Ward Step-Down"></option>
+                <option value="Ward Shift: ${curRoomForList} → Emergency Room"></option>
+                <option value="Ward Shift: ${curRoomForList} → Cardiac Care Unit (CCU)"></option>
+                <option value="Ward Shift: ${curRoomForList} → Major OT 1"></option>
+                <option value="Ward Shift: ${curRoomForList} → Minor OT"></option>
+            </datalist>
+        `;
+        
+        tbody.innerHTML = html;
+        document.getElementById('multiGrandTotal').textContent = grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        if(window.lucide) lucide.createIcons();
+    }
+
+    function recalcMultiTotals() {
+        let grandTotal = 0;
+        multiServiceCart.forEach((item, idx) => {
+            let total = (item.qty * item.unit_price) - item.discount;
+            if (total < 0) total = 0;
+            grandTotal += total;
+            const el = document.getElementById(`multiRowTotal_${idx}`);
+            if (el) el.textContent = '₹' + total.toLocaleString('en-IN', {minimumFractionDigits: 2});
+        });
+        const gt = document.getElementById('multiGrandTotal');
+        if (gt) gt.textContent = grandTotal.toLocaleString('en-IN', {minimumFractionDigits: 2});
+    }
+
+    function updateMultiCartDescription(index, desc) {
+        if (multiServiceCart[index]) {
+            multiServiceCart[index].description = desc;
+        }
+    }
+
+    function updateMultiCartQty(index, qty) {
+        qty = parseFloat(qty);
+        if (isNaN(qty) || qty < 0) qty = 0;
+        if (multiServiceCart[index]) {
+            multiServiceCart[index].qty = qty;
+            recalcMultiTotals();
+        }
+    }
+    
+    function updateMultiCartRate(index, rate) {
+        rate = parseFloat(rate);
+        if (isNaN(rate) || rate < 0) rate = 0;
+        if (multiServiceCart[index]) {
+            multiServiceCart[index].unit_price = rate;
+            recalcMultiTotals();
+        }
+    }
+
+    function updateMultiCartDiscount(index, discount) {
+        discount = parseFloat(discount);
+        if (isNaN(discount) || discount < 0) discount = 0;
+        if (multiServiceCart[index]) {
+            const maxTotal = multiServiceCart[index].qty * multiServiceCart[index].unit_price;
+            if (discount > maxTotal) discount = maxTotal;
+            multiServiceCart[index].discount = discount;
+            recalcMultiTotals();
+        }
+    }
+
+    function removeMultiCartItem(index) {
+        multiServiceCart.splice(index, 1);
+        renderMultiCart();
+    }
+
+    async function saveMultiServices() {
+        if (!currentMaster || !currentBillId) return;
+        if (multiServiceCart.length === 0) {
+            showToast('Cart is empty', 'warning');
+            return;
+        }
+
+        const btn = document.getElementById('btnSaveMultiServices');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        btn.disabled = true;
+
+        const itemsPayload = multiServiceCart.map(item => ({
+            charge_type: item.category,
+            description: item.description,
+            item_code: item.code,
+            quantity: item.qty,
+            unit_price: item.unit_price,
+            discount_amt: item.discount,
+            charge_date: item.date,
+            is_bed_upgrade: item.is_bed_upgrade ? 1 : 0,
+            upgraded_room_type: item.upgraded_room_type || '',
+            amount_per_day: item.amount_per_day || 0,
+            nursing_charge: item.nursing_charge || 0,
+            doctor_charge: item.doctor_charge || 0,
+            service_charge: item.service_charge || 0,
+            total_bed_amount: item.total_bed_amount || item.unit_price || 0,
+            source: 'MANUAL'
+        }));
+
+        try {
+            const formData = new FormData();
+            formData.append('action', 'add_batch');
+            formData.append('bill_id', currentBillId);
+            formData.append('admission_id', currentMaster.admission_id);
+            formData.append('patient_id', currentMaster.patient_id);
+            itemsPayload.forEach((obj, i) => {
+                Object.keys(obj).forEach(key => {
+                    formData.append(`items[${i}][${key}]`, obj[key]);
+                });
+            });
+
+            const res = await fetch(`${API_URL}ipd-billing-items`, {
+                method: 'POST',
+                body: formData
+            });
+            const json = await res.json();
+            
+            if (json.success) {
+                showToast(json.message || 'Charges added successfully', 'success');
+                multiServiceCart = [];
+                closeModal('modalMultiService');
+                
+                if (json.data && json.data.financial) {
+                    currentMaster = { ...currentMaster, ...json.data.financial };
+                    updateWorkspaceUI();
+                }
+                if (currentAdmissionId && currentPatientId) {
+                    loadAdmission(currentAdmissionId, currentPatientId);
+                } else {
+                    loadItems();
+                }
+            } else {
+                showToast(json.message || 'Failed to add charges', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Network error saving charges', 'error');
+        } finally {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+        }
+    }
+
+return {
+        openMultiServiceModal,
+        handleMultiCategoryChange,
+        selectMultiItemByIndex,
+        updateMultiCartDescription,
+        updateMultiCartQty,
+        updateMultiCartRate,
+        updateMultiCartDiscount,
+        removeMultiCartItem,
+        saveMultiServices,
+
         init,
         loadAdmission,
         filterItems,

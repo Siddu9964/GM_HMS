@@ -467,7 +467,10 @@ const billing = (function () {
         // Group items by charge_type
         const grouped = {};
         items.forEach(item => {
-            const cType = item.charge_type || 'OTHER';
+            let cType = item.charge_type || 'OTHER';
+            if (cType === 'BED_UPGRADE_OVERRIDE') {
+                cType = 'ROOM_RENT';
+            }
             if (!grouped[cType]) {
                 grouped[cType] = {
                     charge_type: cType,
@@ -619,7 +622,7 @@ const billing = (function () {
             if (it.status !== 'CANCELLED') {
                 const amt = parseFloat(it.total_amount || 0);
                 const t = String(it.charge_type || '').toUpperCase();
-                if (t === 'ROOM_RENT') liveBreakdown.ROOM_RENT += amt;
+                if (t === 'ROOM_RENT' || t === 'BED_UPGRADE_OVERRIDE') liveBreakdown.ROOM_RENT += amt;
                 else if (t === 'DOCTOR_VISIT') liveBreakdown.DOCTOR_VISIT += amt;
                 else if (t === 'LAB') liveBreakdown.LAB += amt;
                 else if (t === 'RADIOLOGY') liveBreakdown.RADIOLOGY += amt;
@@ -875,8 +878,10 @@ const billing = (function () {
     }
 
     function closeChargeMenu() {
-        document.getElementById('chargeMenu').classList.remove('open');
-        document.getElementById('chargeArrow').classList.remove('open');
+        const menu = document.getElementById('chargeMenu');
+        const arrow = document.getElementById('chargeArrow');
+        if (menu) menu.classList.remove('open');
+        if (arrow) arrow.classList.remove('open');
     }
 
     function initCloseClick() {

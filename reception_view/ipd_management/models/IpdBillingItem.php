@@ -21,8 +21,16 @@ class IpdBillingItem extends BaseModel {
         'PHARMACY'     => 'pharmacy_charges',
         'OT'           => 'ot_charges',
         'PROCEDURE'    => 'procedure_charges',
-        'CONSUMABLE'   => 'consumable_charges',
-        'OTHER'        => 'other_charges',
+        'CONSUMABLE'        => 'consumable_charges',
+        'MISC'              => 'other_charges',
+        'OTHER'             => 'other_charges',
+        'DIALYSIS'          => 'procedure_charges',
+        'OXYGEN'            => 'other_charges',
+        'VENTILATION'       => 'other_charges',
+        'VENTILATOR'        => 'other_charges',
+        'BLOOD_TRANSFUSION' => 'other_charges',
+        'WARD_TRANSFER'        => 'other_charges',
+        'BED_UPGRADE_OVERRIDE' => 'room_charges',
     ];
 
     /* ───────────────────────────────────────────────────────────────
@@ -52,8 +60,65 @@ class IpdBillingItem extends BaseModel {
             }
         }
 
+        $isUpgrade = !empty($data['is_bed_upgrade']) || ($data['charge_type'] ?? '') === 'BED_UPGRADE_OVERRIDE';
+        if ($isUpgrade) {
+            $data['charge_type'] = 'ROOM_RENT';
+
+            // Update admission room tariff (physical bed allocation is untouched)
+            $updFields = [];
+            $updParams = [];
+            if (!empty($data['upgraded_room_type'])) {
+                $updFields[] = "room_type = ?";
+                $updParams[] = $data['upgraded_room_type'];
+            }
+            if (isset($data['amount_per_day']) && (float)$data['amount_per_day'] > 0) {
+                $updFields[] = "amount_per_day = ?";
+                $updParams[] = (int)round((float)$data['amount_per_day']);
+            }
+            if (isset($data['nursing_charge']) || isset($data['nursig_charge'])) {
+                $updFields[] = "nursig_charge = ?";
+                $updParams[] = (int)round((float)($data['nursing_charge'] ?? $data['nursig_charge'] ?? 0));
+            }
+            if (isset($data['doctor_charge'])) {
+                $updFields[] = "doctor_charge = ?";
+                $updParams[] = (int)round((float)$data['doctor_charge']);
+            }
+            if (isset($data['service_charge'])) {
+                $updFields[] = "service_charge = ?";
+                $updParams[] = (int)round((float)$data['service_charge']);
+            }
+            $bedTotal = (float)($data['total_bed_amount'] ?? $data['unit_price'] ?? 0);
+            if ($bedTotal > 0) {
+                $updFields[] = "total_bed_amount = ?";
+                $updParams[] = (int)round($bedTotal);
+            }
+
+            if (!empty($updFields)) {
+                $updFields[] = "updated_at = NOW()";
+                $updParams[] = $admissionId;
+                $this->db->execute(
+                    "UPDATE ipd_admissions SET " . implode(', ', $updFields) . " WHERE admission_id = ?",
+                    $updParams
+                );
+            }
+
+            // Cancel any old room rent for this date so the upgrade replaces it cleanly
+            $chgDate = $data['charge_date'] ?? date('Y-m-d');
+            $existingRoom = $this->fetchOne(
+                "SELECT item_id FROM ipd_billing_items 
+                 WHERE bill_id = ? AND charge_type = 'ROOM_RENT' AND charge_date = ? AND status != 'CANCELLED'",
+                [$billId, $chgDate]
+            );
+            if ($existingRoom) {
+                $this->db->execute(
+                    "UPDATE ipd_billing_items SET status = 'CANCELLED', updated_at = NOW() WHERE item_id = ?",
+                    [$existingRoom['item_id']]
+                );
+            }
+        }
+
         // Duplicate check for ROOM_RENT
-        if ($data['charge_type'] === 'ROOM_RENT') {
+        if ($data['charge_type'] === 'ROOM_RENT' && !$isUpgrade) {
             $dup = $this->fetchOne(
                 "SELECT item_id FROM ipd_billing_items
                  WHERE bill_id = ? AND charge_type = 'ROOM_RENT'
@@ -140,10 +205,15 @@ class IpdBillingItem extends BaseModel {
         string $toDate,
         string $createdBy
     ): array {
-        // Get bed details from ipd_admissions → hospital_beds
+        // Get bed details from ipd_admissions → hospital_beds, prioritizing updated tariff on admission if set
         $bedInfo = $this->fetchOne(
-            "SELECT hb.sl_no, hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
-                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.service_charge, hb.total_bed_amount
+            "SELECT hb.sl_no, hb.ward_name, hb.room_name, hb.bed_number,
+                    COALESCE(NULLIF(ia.room_type, ''), hb.room_type) AS room_type,
+                    COALESCE(NULLIF(ia.amount_per_day, 0), hb.amount_per_day) AS amount_per_day,
+                    COALESCE(NULLIF(ia.nursig_charge, 0), hb.nursig_charge) AS nursig_charge,
+                    COALESCE(NULLIF(ia.doctor_charge, 0), hb.doctor_charge) AS doctor_charge,
+                    COALESCE(NULLIF(ia.service_charge, 0), hb.service_charge) AS service_charge,
+                    COALESCE(NULLIF(ia.total_bed_amount, 0), hb.total_bed_amount) AS total_bed_amount
              FROM ipd_admissions ia
              JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
              WHERE ia.admission_id = ?",
@@ -182,7 +252,8 @@ class IpdBillingItem extends BaseModel {
 
         $totalPerDay = $isInsurance ? $baseBedRent : $totalBedAmount;
         $breakdownText = "Room Rent: ₹" . number_format($baseBedRent, 0) . " | Nursing Charges: ₹" . number_format($baseNursing, 0) . " | Duty Doctor Charges: ₹" . number_format($baseDoctor, 0) . " | Service Charges: ₹" . number_format($baseService, 0);
-        $descriptionBase  = "Room Rent – {$bedInfo['ward_name']} – {$bedInfo['bed_number']}";
+        $roomTypeDesc = !empty($bedInfo['room_type']) ? $bedInfo['room_type'] : $bedInfo['ward_name'];
+        $descriptionBase  = "Room Rent – {$roomTypeDesc} – {$bedInfo['bed_number']}";
 
         $addedDates   = [];
         $skippedDates = [];
@@ -365,8 +436,13 @@ class IpdBillingItem extends BaseModel {
      * ─────────────────────────────────────────────────────────────── */
     public function previewRoomRent(string $billId, string $admissionId, string $fromDate, string $toDate): array {
         $bedInfo = $this->fetchOne(
-            "SELECT hb.ward_name, hb.room_name, hb.bed_number,
-                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount
+            "SELECT hb.sl_no, hb.ward_name, hb.room_name, hb.bed_number,
+                    COALESCE(NULLIF(ia.room_type, ''), hb.room_type) AS room_type,
+                    COALESCE(NULLIF(ia.amount_per_day, 0), hb.amount_per_day) AS amount_per_day,
+                    COALESCE(NULLIF(ia.nursig_charge, 0), hb.nursig_charge) AS nursig_charge,
+                    COALESCE(NULLIF(ia.doctor_charge, 0), hb.doctor_charge) AS doctor_charge,
+                    COALESCE(NULLIF(ia.service_charge, 0), hb.service_charge) AS service_charge,
+                    COALESCE(NULLIF(ia.total_bed_amount, 0), hb.total_bed_amount) AS total_bed_amount
              FROM ipd_admissions ia
              JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
              WHERE ia.admission_id = ?",

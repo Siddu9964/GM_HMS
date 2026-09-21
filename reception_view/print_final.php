@@ -317,7 +317,7 @@ function renderBill(b) {
         let type = it.charge_type;
         const desc = (it.description || '').toLowerCase();
 
-        if (type === 'ROOM_RENT') {
+        if (type === 'ROOM_RENT' || type === 'BED_UPGRADE_OVERRIDE') {
             type = 'BED CHARGES / ROOM RENT';
         } else if (desc.includes('nursing charge')) {
             type = 'NURSING CHARGES';

@@ -807,44 +807,10 @@ try {
                                         <span class="item-count-badge" id="itemCountBadge">0</span>
                                     </div>
                                     <div class="panel-card-actions">
-                                        <div class="add-charge-wrap">
-                                            <button class="btn-add-charge" id="btnAddCharge" onclick="billing.toggleChargeMenu()">
-                                                <i data-lucide="plus-circle"></i> Add Charge
-                                                <i data-lucide="chevron-down" class="charge-arrow" id="chargeArrow"></i>
+                                        <div class="add-charge-wrap" style="display: flex; gap: 8px;">
+                                            <button class="btn-add-charge" id="btnAddCharge" onclick="billing.openMultiServiceModal()">
+                                                <i data-lucide="layers"></i> Add Charges
                                             </button>
-                                            <div class="charge-menu" id="chargeMenu">
-                                                <?php
-                                                $chargeTypes = [
-                                                    ['ROOM_RENT',        'bed-double',      'Room Rent',           'Opens room rent generator'],
-                                                    ['DOCTOR_VISIT',     'stethoscope',     'Doctor Visit',        'Consultant/visiting doctor'],
-                                                    ['LAB',              'flask-conical',   'Laboratory',          'Lab tests & reports'],
-                                                    ['RADIOLOGY',        'radio',           'Radiology',           'X-ray, MRI, CT, USG'],
-                                                    ['PHARMACY',         'pill',            'Pharmacy',            'Medicines & drugs'],
-                                                    ['OT',               'syringe',         'Operation Theatre',   'OT charges'],
-                                                    ['PROCEDURE',        'activity',        'Procedure',           'Minor procedures'],
-                                                    ['DIALYSIS',         'filter',          'Dialysis Record',     'Hemodialysis & PD charges'],
-                                                    ['OXYGEN',           'wind',            'Oxygen Therapy',      'L/min oxygen charges'],
-                                                    ['VENTILATION',      'activity',        'Ventilator Support',  'Invasive / Non-invasive'],
-                                                    ['BLOOD_TRANSFUSION','droplet',         'Blood Transfusion',   'Blood unit & crossmatch'],
-                                                    ['WARD_TRANSFER',    'arrow-right-left','Ward Transfer',       'Shift & transfer charges'],
-                                                    ['CONSUMABLE',       'bandage',         'Consumables',         'Dressings, gloves etc.'],
-                                                    ['MISC',             'more-horizontal', 'Miscellaneous',       'Misc charges'],
-                                                    ['OTHER',            'layers',          'Other',               'Other charges'],
-                                                ];
-                                                foreach ($chargeTypes as [$type, $icon, $label, $desc]):
-                                                    if ($type === 'ROOM_RENT'):
-                                                ?>
-                                                <div class="charge-menu-item" onclick="billing.closeChargeMenu(); billing.openRoomRentModal();">
-                                                    <i data-lucide="<?= $icon ?>" class="charge-menu-icon"></i>
-                                                    <div><div class="cmi-label"><?= $label ?></div><div class="cmi-desc"><?= $desc ?></div></div>
-                                                </div>
-                                                <?php else: ?>
-                                                <div class="charge-menu-item" onclick="billing.closeChargeMenu(); billing.openAddChargeModal('<?= $type ?>');">
-                                                    <i data-lucide="<?= $icon ?>" class="charge-menu-icon"></i>
-                                                    <div><div class="cmi-label"><?= $label ?></div><div class="cmi-desc"><?= $desc ?></div></div>
-                                                </div>
-                                                <?php endif; endforeach; ?>
-                                            </div>
                                         </div>
                                         <button class="btn-room-rent" onclick="billing.openRoomRentModal()">
                                             <i data-lucide="bed-double"></i> Room Rent
@@ -1202,736 +1168,110 @@ try {
      MODALS
 ══════════════════════════════════════════════════════════════════ -->
 
-<!-- MODAL: Add Charge (Nurse Workspace Pattern Forms) -->
-<div class="billing-modal-overlay" id="modalAddCharge">
-    <div class="billing-modal" style="max-width:680px;">
+<!-- MODAL: Multiple Services (Cart) -->
+<div class="billing-modal-overlay" id="modalMultiService">
+    <div class="billing-modal" style="max-width: 1220px; width: 96%; max-height: 94vh; display: flex; flex-direction: column;">
         <div class="bm-head">
-            <div class="bm-title"><i class="fas fa-plus-circle"></i> Add Billing Charge</div>
-            <button class="bm-close" onclick="billing.closeModal('modalAddCharge')"><i data-lucide="x"></i></button>
+            <div class="bm-title"><i data-lucide="layers"></i> Add Multiple Services</div>
+            <button class="bm-close" onclick="billing.closeModal('modalMultiService')"><i data-lucide="x"></i></button>
         </div>
-        <div class="bm-body">
-            <!-- ── Top Category Tabs ── -->
-            <div class="treatment-subtabs" style="margin-bottom: 16px;">
-                <button type="button" class="t-tab active" data-tab="tab-doctor" onclick="billing.selectSubTab('tab-doctor', this)">
-                    <i class="fas fa-user-md"></i> Doctor Visit
-                </button>
-                <button type="button" class="t-tab" data-tab="tab-lab" onclick="billing.selectSubTab('tab-lab', this)">
-                    <i class="fas fa-flask"></i> Lab Test
-                </button>
-                <button type="button" class="t-tab" data-tab="tab-radiology" onclick="billing.selectSubTab('tab-radiology', this)">
-                    <i class="fas fa-radiation"></i> Radiology
-                </button>
-                <button type="button" class="t-tab" data-tab="tab-other-services" onclick="billing.selectSubTab('tab-other-services', this)">
-                    <i class="fas fa-stethoscope"></i> Other Services
-                </button>
-                <button type="button" class="t-tab" data-tab="tab-pharmacy" onclick="billing.selectSubTab('tab-pharmacy', this)">
-                    <i class="fas fa-pills"></i> Pharmacy
-                </button>
-                <button type="button" class="t-tab" data-tab="tab-dialysis" onclick="billing.selectSubTab('tab-dialysis', this)">
-                    <i class="fas fa-filter"></i> 14. Dialysis Chart
-                </button>
-                <button type="button" class="t-tab" data-tab="tab-oxygen" onclick="billing.selectSubTab('tab-oxygen', this)">
-                    <i class="fas fa-lungs"></i> 15. Oxygen Chart
-                </button>
-                <button type="button" class="t-tab" data-tab="tab-ventilator" onclick="billing.selectSubTab('tab-ventilator', this)">
-                    <i class="fas fa-procedures"></i> 16. Ventilation Chart
-                </button>
-                <button type="button" class="t-tab" data-tab="tab-transfusion" onclick="billing.selectSubTab('tab-transfusion', this)">
-                    <i class="fas fa-syringe"></i> 17. Blood Transfusion
-                </button>
-                <button type="button" class="t-tab" data-tab="tab-ward-transfer" onclick="billing.selectSubTab('tab-ward-transfer', this)">
-                    <i class="fas fa-exchange-alt"></i> 18. Ward Transfer
-                </button>
-                <button type="button" class="t-tab" data-tab="tab-consumables" onclick="billing.selectSubTab('tab-consumables', this)">
-                    <i class="fas fa-box"></i> Consumables & Other
-                </button>
+        <div class="bm-body" style="display: flex; flex-direction: column; gap: 12px; padding: 18px 22px; overflow-y: auto; flex: 1;">
+            
+            <!-- Patient Present Location Banner -->
+            <div id="multiPatientBedBanner" style="display: flex; align-items: center; justify-content: space-between; background: #eef6f2; border: 1.5px solid rgba(31, 107, 74, 0.25); padding: 9px 16px; border-radius: 6px; font-size: 13px; color: #1f6b4a;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="user" style="width: 16px; height: 16px; color: #1f6b4a;"></i>
+                    <span style="font-weight: 600; color: #555;">Patient:</span>
+                    <strong id="multiBannerPatient" style="color: #1f6b4a; font-size: 13.5px;">-</strong>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="bed" style="width: 16px; height: 16px; color: #1f6b4a;"></i>
+                    <span style="font-weight: 600; color: #555;">Present Location:</span>
+                    <span id="multiBannerPresentBed" style="background: #1f6b4a; color: #f3efe6; padding: 3px 10px; border-radius: 4px; font-weight: 700; font-size: 12px; letter-spacing: 0.3px;">-</span>
+                </div>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 1. DOCTOR VISIT (Clean 2-Field Focus with Advance Search)
-                 ══════════════════════════════════════════════════════════ -->
-            <div class="t-panel active" id="tab-doctor">
-                <div class="t-title"><i class="fas fa-user-md"></i> Consultant Round Visit</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; background: #faf8f5; padding: 12px 16px; border-radius: 8px; border: 1.5px solid rgba(31, 107, 74, 0.2); box-sizing: border-box; align-items: start;">
+                <div style="display: flex; flex-direction: column; gap: 6px; width: 100%; box-sizing: border-box;">
+                    <label style="font-size: 13px; font-weight: 700; color: #1f6b4a; margin: 0; display: flex; align-items: center; gap: 4px;">Charge Category <span style="color: #dc2626;">*</span></label>
+                    <select id="multiCategorySelect" onchange="billing.handleMultiCategoryChange()" style="width: 100%; height: 42px; min-height: 42px; padding: 0 12px; border: 1.5px solid #1f6b4a; border-radius: 6px; background: #fff; color: #1f6b4a; font-size: 13.5px; font-family: 'Inter', sans-serif; outline: none; box-sizing: border-box; cursor: pointer;">
+                        <option value="">-- All Categories (Auto Detect) --</option>
+                        <option value="DOCTOR_VISIT">Doctor Visit / Consultation</option>
+                        <option value="LAB">Laboratory Test</option>
+                        <option value="RADIOLOGY">Radiology / Imaging</option>
+                        <option value="PHARMACY">Pharmacy / Medicine</option>
+                        <option value="OT">Operation Theatre</option>
+                        <option value="PROCEDURE">Procedure</option>
+                        <option value="DIALYSIS">Dialysis</option>
+                        <option value="OXYGEN">Oxygen Therapy</option>
+                        <option value="VENTILATION">Ventilator Support</option>
+                        <option value="BLOOD_TRANSFUSION">Blood Transfusion</option>
+                        <option value="WARD_TRANSFER">Ward Shifting / Bed Transfer</option>
+                        <?php if (strtolower($userRole) === 'admin'): ?>
+                        <option value="BED_UPGRADE_OVERRIDE">Bed Upgrade</option>
+                        <?php endif; ?>
+                        <option value="CONSUMABLE">Consumables</option>
+                        <option value="MISC">Miscellaneous</option>
+                    </select>
+                </div>
                 
-                <!-- Advance Search Doctor Bar -->
-                <div class="fmg" style="position: relative; margin-bottom: 10px;">
-                    <label>Doctor Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Doctor</span></label>
-                    <input type="text" id="doc-search-input" placeholder="Type doctor name, specialization, or ID (e.g. Dr. Girish, Cardiology, DOC011)..." autocomplete="off">
-                    <div id="doc-results"></div>
+                <div style="display: flex; flex-direction: column; gap: 6px; width: 100%; position: relative; box-sizing: border-box;">
+                    <label style="font-size: 13px; font-weight: 700; color: #1f6b4a; margin: 0; display: flex; align-items: center; gap: 4px;">Search Service / Item <span style="color: #dc2626;">*</span></label>
+                    <div style="position: relative; width: 100%; box-sizing: border-box;">
+                        <input type="text" id="multiSearchInput" placeholder="Search any service, GRBS, test..." autocomplete="off" style="width: 100%; height: 42px; min-height: 42px; padding: 0 38px 0 12px; border: 1.5px solid #1f6b4a; border-radius: 6px; background: #fff; color: #1f6b4a; font-size: 13.5px; font-family: 'Inter', sans-serif; outline: none; box-sizing: border-box;">
+                        <i data-lucide="search" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #1f6b4a; opacity: 0.6; pointer-events: none;"></i>
+                    </div>
+                    <div id="multiSearchResults" class="catalog-results" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; width: 100%; z-index: 1000; max-height: 280px; overflow-y: auto; background: #fff; border: 1.5px solid #1f6b4a; border-radius: 6px; box-shadow: 0 8px 24px rgba(31, 107, 74, 0.2); box-sizing: border-box;"></div>
                 </div>
 
-                <div class="fg">
-                    <div class="fmg">
-                        <label>Selected Doctor Name <span class="req">*</span></label>
-                        <input type="text" id="doc-name" placeholder="Selected doctor name" readonly style="font-weight:700;">
-                    </div>
-                    <div class="fmg">
-                        <label>Round Shift <span class="req">*</span></label>
-                        <select id="doc-shift">
-                            <option value="Morning">🌅 Morning Round</option>
-                            <option value="Afternoon">☀️ Afternoon Round</option>
-                            <option value="Evening">🌇 Evening Round</option>
-                            <option value="Night">🌙 Night Emergency Visit</option>
-                            <option value="Specialist Consultation">🩺 Specialist Consultation</option>
-                        </select>
-                    </div>
-                    <div class="fmg">
-                        <label>Visit Date <span class="req">*</span></label>
-                        <input type="date" id="doc-date">
-                    </div>
-                    <div class="fmg">
-                        <label>Visit Time <span class="req">*</span></label>
-                        <input type="time" id="doc-time">
-                    </div>
-                    <div class="fmg">
-                        <label>Entered By (Logged-in User)</label>
-                        <input type="text" id="doc-user" value="<?php echo htmlspecialchars($userName); ?>" readonly style="opacity: 0.9; font-weight: 600;">
-                    </div>
-                    <div class="fmg">
-                        <label>Consultation Fee (₹) <span class="req">*</span></label>
-                        <input type="number" id="doc-fee" value="500" min="0" step="0.01" oninput="billing.calcDoctorTotal()">
-                    </div>
-                    <div class="fmg">
-                        <label>Discount (₹)</label>
-                        <input type="number" id="doc-discount" value="0" min="0" step="0.01" oninput="billing.calcDoctorTotal()">
-                    </div>
-                    <div class="fmg" style="grid-column: 1 / -1;">
-                        <label>Doctor Remarks / Round Instructions</label>
-                        <input type="text" id="doc-notes" placeholder="Enter doctor round notes, observations, or instructions...">
-                    </div>
-                </div>
-
-                <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
-                    <span id="doc-total-preview" class="bm-total-val">₹ 500.00</span>
-                </div>
-
-                <div class="bm-footer" style="margin-top: 14px;">
-                    <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
-                    <button type="button" class="bm-btn bm-btn-primary" id="doc-save-btn" onclick="billing.saveDoctorVisitCharge()">
-                        <i class="fas fa-plus"></i> Add Round Visit Charge
-                    </button>
+                <div style="display: flex; flex-direction: column; gap: 6px; width: 100%; box-sizing: border-box;">
+                    <label style="font-size: 13px; font-weight: 700; color: #1f6b4a; margin: 0; display: flex; align-items: center; gap: 4px;">Charge Date <span style="color: #dc2626;">*</span></label>
+                    <input type="date" id="multiDate" value="<?= date('Y-m-d') ?>" style="width: 100%; height: 42px; min-height: 42px; padding: 0 12px; border: 1.5px solid #1f6b4a; border-radius: 6px; background: #fff; color: #1f6b4a; font-size: 13.5px; font-family: 'Inter', sans-serif; outline: none; box-sizing: border-box; cursor: pointer;">
                 </div>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 2. LAB TEST (Table: lab_services with Room-Tier Pricing)
-                 ══════════════════════════════════════════════════════════ -->
-            <div class="t-panel" id="tab-lab">
-                <div class="t-title"><i class="fas fa-flask"></i> Laboratory Test Order</div>
-                
-                <div class="fmg" style="position: relative; margin-bottom: 10px;">
-                    <label>Test Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Lab Tests (Table: lab_services)</span></label>
-                    <input type="text" id="lab-input" placeholder="Type lab test name e.g. CBC, Lipid Profile, Blood Urea, Fasting Blood Sugar..." autocomplete="off">
-                    <div id="lab-results"></div>
-                </div>
-
-                <div class="fg">
-                    <div class="fmg">
-                        <label>Selected Test Name <span class="req">*</span></label>
-                        <input type="text" id="lab-name" placeholder="Selected lab test" readonly style="font-weight:700;">
-                    </div>
-                    <div class="fmg">
-                        <label>Test Code / ID</label>
-                        <input type="text" id="lab-code" placeholder="Auto-filled" readonly style="opacity: 0.9;">
-                    </div>
-                    <div class="fmg">
-                        <label>Order Date <span class="req">*</span></label>
-                        <input type="date" id="lab-date">
-                    </div>
-                    <div class="fmg">
-                        <label>Patient Room Tier Rate</label>
-                        <input type="text" id="lab-tier" placeholder="Auto-calculated rate" readonly style="opacity: 0.9; font-weight:600;">
-                    </div>
-                    <div class="fmg">
-                        <label>Entered By (Logged-in User)</label>
-                        <input type="text" id="lab-user" value="<?php echo htmlspecialchars($userName); ?>" readonly style="opacity: 0.9; font-weight:600;">
-                    </div>
-                    <div class="fmg">
-                        <label>Test Amount (₹) <span class="req">*</span></label>
-                        <input type="number" id="lab-fee" value="0" min="0" step="0.01" oninput="billing.calcLabTotal()">
-                    </div>
-                    <div class="fmg">
-                        <label>Discount (₹)</label>
-                        <input type="number" id="lab-discount" value="0" min="0" step="0.01" oninput="billing.calcLabTotal()">
-                    </div>
-                    <div class="fmg" style="grid-column: 1 / -1;">
-                        <label>Clinical Notes / Specimen Remarks</label>
-                        <input type="text" id="lab-notes" placeholder="Optional specimen / clinical notes">
-                    </div>
-                </div>
-
-                <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
-                    <span id="lab-total-preview" class="bm-total-val">₹ 0.00</span>
-                </div>
-
-                <div class="bm-footer" style="margin-top: 14px;">
-                    <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
-                    <button type="button" class="bm-btn bm-btn-primary" id="lab-save-btn" onclick="billing.saveLabCharge()">
-                        <i class="fas fa-plus"></i> Add Lab Test Charge
-                    </button>
-                </div>
+            <!-- Cart Table -->
+            <div style="border: 1.5px solid rgba(31, 107, 74, 0.25); border-radius: 8px; overflow-x: auto; overflow-y: auto; min-height: 440px; max-height: 560px; background: #ffffff; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                    <thead style="background: #1f6b4a; color: #f3efe6; position: sticky; top: 0; z-index: 10;">
+                        <tr>
+                            <th style="padding: 9px 10px; text-align: left; width: 130px; white-space: nowrap; font-size: 13px;">Category</th>
+                            <th style="padding: 9px 10px; text-align: left; min-width: 440px; font-size: 13px;">Description</th>
+                            <th style="padding: 9px 10px; text-align: center; width: 70px; font-size: 13px;">Qty</th>
+                            <th style="padding: 9px 10px; text-align: right; width: 110px; font-size: 13px;">Rate (₹)</th>
+                            <th style="padding: 9px 10px; text-align: right; width: 95px; font-size: 13px;">Discount (₹)</th>
+                            <th style="padding: 9px 10px; text-align: right; width: 115px; font-size: 13px;">Total (₹)</th>
+                            <th style="padding: 9px 10px; text-align: center; width: 45px; font-size: 13px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="multiCartBody">
+                        <tr>
+                            <td colspan="7" style="padding: 110px 20px; text-align: center; color: #526159;">
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;">
+                                    <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(31, 107, 74, 0.08); display: flex; align-items: center; justify-content: center;">
+                                        <i data-lucide="shopping-cart" style="width: 28px; height: 28px; color: #1f6b4a; opacity: 0.7;"></i>
+                                    </div>
+                                    <div style="font-size: 15px; font-weight: 700; color: #2d3748;">No services added yet. Select a category and search to add items.</div>
+                                    <div style="font-size: 12.5px; color: #718096; max-width: 440px; line-height: 1.4;">Select a category and search to add services, lab tests, medications, or bed charges. Multiple items will appear here together.</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <!-- ══════════════════════════════════════════════════════════
-                 3. RADIOLOGY (Table: radiology_services with Room-Tier Pricing)
-                 ══════════════════════════════════════════════════════════ -->
-            <div class="t-panel" id="tab-radiology">
-                <div class="t-title"><i class="fas fa-radiation"></i> Radiology Investigation</div>
-                
-                <div class="fmg" style="position: relative; margin-bottom: 10px;">
-                    <label>Radiology Test Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Radiology (Table: radiology_services)</span></label>
-                    <input type="text" id="rad-input" placeholder="Type radiology test name e.g. X-Ray Chest, CT Brain, USG Abdomen, MRI..." autocomplete="off">
-                    <div id="rad-results"></div>
+            <div style="display: flex; justify-content: flex-end; align-items: center; padding-top: 10px; border-top: 1.5px dashed rgba(31, 107, 74, 0.2);">
+                <div style="font-size: 1.2rem; font-weight: 800; color: #1f6b4a; margin-right: 20px;">
+                    Grand Total: ₹<span id="multiGrandTotal">0.00</span>
                 </div>
-
-                <div class="fg">
-                    <div class="fmg">
-                        <label>Selected Investigation <span class="req">*</span></label>
-                        <input type="text" id="rad-name" placeholder="Selected radiology test" readonly style="font-weight:700;">
-                    </div>
-                    <div class="fmg">
-                        <label>Modality / Code</label>
-                        <input type="text" id="rad-code" placeholder="Auto-filled" readonly style="opacity: 0.9;">
-                    </div>
-                    <div class="fmg">
-                        <label>Order Date <span class="req">*</span></label>
-                        <input type="date" id="rad-date">
-                    </div>
-                    <div class="fmg">
-                        <label>Room Tier Rate Applied</label>
-                        <input type="text" id="rad-tier" placeholder="Auto-calculated rate" readonly style="opacity: 0.9; font-weight:600;">
-                    </div>
-                    <div class="fmg">
-                        <label>Entered By (Logged-in User)</label>
-                        <input type="text" id="rad-user" value="<?php echo htmlspecialchars($userName); ?>" readonly style="opacity: 0.9; font-weight:600;">
-                    </div>
-                    <div class="fmg">
-                        <label>Radiology Amount (₹) <span class="req">*</span></label>
-                        <input type="number" id="rad-fee" value="0" min="0" step="0.01" oninput="billing.calcRadTotal()">
-                    </div>
-                    <div class="fmg">
-                        <label>Discount (₹)</label>
-                        <input type="number" id="rad-discount" value="0" min="0" step="0.01" oninput="billing.calcRadTotal()">
-                    </div>
-                    <div class="fmg" style="grid-column: 1 / -1;">
-                        <label>Clinical History / Instructions</label>
-                        <input type="text" id="rad-notes" placeholder="e.g. Rule out fracture, Contrast study notes...">
-                    </div>
-                </div>
-
-                <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
-                    <span id="rad-total-preview" class="bm-total-val">₹ 0.00</span>
-                </div>
-
-                <div class="bm-footer" style="margin-top: 14px;">
-                    <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
-                    <button type="button" class="bm-btn bm-btn-primary" id="rad-save-btn" onclick="billing.saveRadCharge()">
-                        <i class="fas fa-plus"></i> Add Radiology Charge
-                    </button>
-                </div>
+                <button type="button" class="bm-btn-primary" id="btnSaveMultiServices" onclick="billing.saveMultiServices()" style="padding: 10px 24px; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="save"></i> Save All Charges
+                </button>
             </div>
-
-            <!-- ══════════════════════════════════════════════════════════
-                 4. OTHER SERVICES (Table: other_services with Room-Tier Pricing)
-                 ══════════════════════════════════════════════════════════ -->
-            <div class="t-panel" id="tab-other-services">
-                <div class="t-title"><i class="fas fa-stethoscope"></i> Hospital Services & Procedures</div>
-                
-                <div class="fmg" style="position: relative; margin-bottom: 10px;">
-                    <label>Service Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Other Services (Table: other_services)</span></label>
-                    <input type="text" id="other-input" placeholder="Type service name e.g. ECG, Nebulization, Dressing, Physiotherapy, Nursing..." autocomplete="off">
-                    <div id="other-results"></div>
-                </div>
-
-                <!-- Advance Search Doctor for Other Services -->
-                <div class="fmg" style="position: relative; margin-bottom: 10px;">
-                    <label>Performing Doctor / Attending Staff <span class="badge"><i class="fas fa-search"></i> Advance Search Doctor</span></label>
-                    <input type="text" id="proc-doc-search" placeholder="Type doctor or consultant name..." autocomplete="off">
-                    <div id="proc-doc-results"></div>
-                </div>
-
-                <div class="fg">
-                    <div class="fmg">
-                        <label>Selected Service <span class="req">*</span></label>
-                        <input type="text" id="other-name" placeholder="Selected service name" readonly style="font-weight:700;">
-                    </div>
-                    <div class="fmg">
-                        <label>Doctor / Performed By</label>
-                        <input type="text" id="proc-doctor" placeholder="Selected doctor name" readonly style="font-weight:700;">
-                    </div>
-                    <div class="fmg">
-                        <label>Service Date <span class="req">*</span></label>
-                        <input type="date" id="other-date">
-                    </div>
-                    <div class="fmg">
-                        <label>Quantity</label>
-                        <input type="number" id="other-qty" value="1" min="1" step="1" oninput="billing.calcOtherTotal()">
-                    </div>
-                    <div class="fmg">
-                        <label>Room Tier Rate Applied</label>
-                        <input type="text" id="other-tier" placeholder="Auto-calculated rate" readonly style="opacity: 0.9; font-weight:600;">
-                    </div>
-                    <div class="fmg">
-                        <label>Entered By (Logged-in User)</label>
-                        <input type="text" id="other-user" value="<?php echo htmlspecialchars($userName); ?>" readonly style="opacity: 0.9; font-weight:600;">
-                    </div>
-                    <div class="fmg">
-                        <label>Unit Fee (₹) <span class="req">*</span></label>
-                        <input type="number" id="other-fee" value="0" min="0" step="0.01" oninput="billing.calcOtherTotal()">
-                    </div>
-                    <div class="fmg">
-                        <label>Discount (₹)</label>
-                        <input type="number" id="other-discount" value="0" min="0" step="0.01" oninput="billing.calcOtherTotal()">
-                    </div>
-                    <div class="fmg" style="grid-column: 1 / -1;">
-                        <label>Service Remarks / Instructions</label>
-                        <input type="text" id="other-notes" placeholder="Optional service notes">
-                    </div>
-                </div>
-
-                <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
-                    <span id="other-total-preview" class="bm-total-val">₹ 0.00</span>
-                </div>
-
-                <div class="bm-footer" style="margin-top: 14px;">
-                    <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
-                    <button type="button" class="bm-btn bm-btn-primary" id="other-save-btn" onclick="billing.saveOtherCharge()">
-                        <i class="fas fa-plus"></i> Add Service Charge
-                    </button>
-                </div>
-            </div>
-
-            <!-- ══════════════════════════════════════════════════════════
-                 5. PHARMACY MEDICINES (Inventory search & order)
-                 ══════════════════════════════════════════════════════════ -->
-            <div class="t-panel" id="tab-pharmacy">
-                <div class="t-title"><i class="fas fa-pills"></i> Pharmacy Medicine Order</div>
-                <div class="fmg" style="margin-bottom: 8px;">
-                    <label>Dispense Date <span class="req">*</span></label>
-                    <input type="date" id="ph-date" style="max-width: 200px;">
-                </div>
-                <div class="fmg" style="position: relative;">
-                    <label>Search Medicine from Pharmacy <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Live Inventory</span></label>
-                    <input type="text" id="ph-input" placeholder="Type brand or generic name e.g. Paracetamol, DNS, Pantoprazole..." autocomplete="off">
-                    <div id="ph-results"></div>
-                </div>
-
-                <!-- Pharmacy Cart -->
-                <div id="ph-cart" style="margin-top: 10px; max-height: 220px; overflow-y: auto;"></div>
-
-                <div class="fmg" style="margin-top: 6px;">
-                    <label>Dosage / Administration Instructions</label>
-                    <input type="text" id="ph-notes" placeholder="e.g. 1 vial IV BD x 3 days / stat dose">
-                </div>
-
-                <div class="bm-total-preview" style="margin-top: 12px;">
-                    <span>Total Pharmacy Amount:</span>
-                    <span id="ph-total-preview" class="bm-total-val">₹ 0.00</span>
-                </div>
-
-                <div class="bm-footer" style="margin-top: 14px;">
-                    <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
-                    <button type="button" class="bm-btn bm-btn-primary" id="ph-save-btn" onclick="billing.savePharmacyOrder()">
-                        <i class="fas fa-paper-plane"></i> Submit Pharmacy Order
-                    </button>
-                </div>
-            </div>
-
-            <!-- ══════════════════════════════════════════════════════════
-                 6. DIALYSIS RECORD (14. dialysis_chart from nurse_workspace.php)
-                 ══════════════════════════════════════════════════════════ -->
-            <div class="t-panel" id="tab-dialysis">
-                <div class="t-title"><i class="fas fa-filter"></i> 14. Dialysis Record (dialysis_chart)</div>
-                
-                <!-- Advance Search Doctor -->
-                <div class="fmg" style="position: relative; margin-bottom: 8px;">
-                    <label>Doctor Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Doctor</span></label>
-                    <input type="text" id="dia-doc-search" placeholder="Type doctor / nephrologist name..." autocomplete="off">
-                    <div id="dia-doc-results"></div>
-                </div>
-
-                <div class="fg">
-                    <div class="fmg">
-                        <label>Selected Doctor Name <span class="req">*</span></label>
-                        <input type="text" id="dia-doctor" placeholder="Selected doctor name" readonly style="font-weight:700;">
-                    </div>
-                    <div class="fmg">
-                        <label>Date (dia_date) <span class="req">*</span></label>
-                        <input type="date" id="dia-date">
-                    </div>
-                    <div class="fmg">
-                        <label>Duration (dia_dur) <span class="req">*</span></label>
-                        <input type="text" id="dia-dur" placeholder="Auto / e.g. 4h">
-                    </div>
-                    <div class="fmg">
-                        <label>Start Time (dia_start)</label>
-                        <input type="time" id="dia-start" onchange="billing.calcDiaDuration()">
-                    </div>
-                    <div class="fmg">
-                        <label>End Time (dia_end)</label>
-                        <input type="time" id="dia-end" onchange="billing.calcDiaDuration()">
-                    </div>
-                    <div class="fmg">
-                        <label>Nurse Signature (dia_nurse) <span class="req">*</span></label>
-                        <input type="text" id="dia-nurse" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
-                    </div>
-                    <div class="fmg">
-                        <label>Dialysis Charge (₹) <span class="req">*</span></label>
-                        <input type="number" id="dia-fee" value="2500" min="0" step="0.01" oninput="billing.calcDiaTotal()">
-                    </div>
-                    <div class="fmg">
-                        <label>Discount (₹)</label>
-                        <input type="number" id="dia-discount" value="0" min="0" step="0.01" oninput="billing.calcDiaTotal()">
-                    </div>
-                </div>
-
-                <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
-                    <span id="dia-total-preview" class="bm-total-val">₹ 2,500.00</span>
-                </div>
-
-                <div class="bm-footer" style="margin-top: 14px;">
-                    <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
-                    <button type="button" class="bm-btn bm-btn-primary" id="dia-save-btn" onclick="billing.saveDialysisCharge()">
-                        <i class="fas fa-plus"></i> Add Dialysis Charge
-                    </button>
-                </div>
-            </div>
-
-            <!-- ══════════════════════════════════════════════════════════
-                 7. OXYGEN THERAPY (15. oxygen_chart from nurse_workspace.php)
-                 ══════════════════════════════════════════════════════════ -->
-            <div class="t-panel" id="tab-oxygen">
-                <div class="t-title"><i class="fas fa-lungs"></i> 15. Oxygen Therapy (oxygen_chart)</div>
-                
-                <!-- Advance Search Doctor -->
-                <div class="fmg" style="position: relative; margin-bottom: 8px;">
-                    <label>Doctor Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Doctor</span></label>
-                    <input type="text" id="oxy-doc-search" placeholder="Type prescribing doctor name..." autocomplete="off">
-                    <div id="oxy-doc-results"></div>
-                </div>
-
-                <div class="fg">
-                    <div class="fmg">
-                        <label>Selected Doctor Name <span class="req">*</span></label>
-                        <input type="text" id="oxy-doctor" placeholder="Selected doctor name" readonly style="font-weight:700;">
-                    </div>
-                    <div class="fmg">
-                        <label>Date (oxy_date) <span class="req">*</span></label>
-                        <input type="date" id="oxy-date">
-                    </div>
-                    <div class="fmg">
-                        <label>Flow Rate (L/min) (oxy_flow) <span class="req">*</span></label>
-                        <input type="text" id="oxy-flow" placeholder="e.g. 2 L/min">
-                    </div>
-                    <div class="fmg">
-                        <label>Start Time (oxy_start)</label>
-                        <input type="time" id="oxy-start" onchange="billing.calcOxyDuration()">
-                    </div>
-                    <div class="fmg">
-                        <label>End Time (oxy_end)</label>
-                        <input type="time" id="oxy-end" onchange="billing.calcOxyDuration()">
-                    </div>
-                    <div class="fmg">
-                        <label>Duration (oxy_dur) <span class="req">*</span></label>
-                        <input type="text" id="oxy-dur" placeholder="Auto / e.g. 2h">
-                    </div>
-                    <div class="fmg">
-                        <label>Nurse Signature (oxy_nurse) <span class="req">*</span></label>
-                        <input type="text" id="oxy-nurse" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
-                    </div>
-                    <div class="fmg">
-                        <label>Oxygen Charge (₹) <span class="req">*</span></label>
-                        <input type="number" id="oxy-fee" value="500" min="0" step="0.01" oninput="billing.calcOxyTotal()">
-                    </div>
-                    <div class="fmg">
-                        <label>Discount (₹)</label>
-                        <input type="number" id="oxy-discount" value="0" min="0" step="0.01" oninput="billing.calcOxyTotal()">
-                    </div>
-                </div>
-
-                <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
-                    <span id="oxy-total-preview" class="bm-total-val">₹ 500.00</span>
-                </div>
-
-                <div class="bm-footer" style="margin-top: 14px;">
-                    <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
-                    <button type="button" class="bm-btn bm-btn-primary" id="oxy-save-btn" onclick="billing.saveOxygenCharge()">
-                        <i class="fas fa-plus"></i> Add Oxygen Charge
-                    </button>
-                </div>
-            </div>
-
-            <!-- ══════════════════════════════════════════════════════════
-                 8. VENTILATOR SUPPORT (16. ventilation_chart from nurse_workspace.php)
-                 ══════════════════════════════════════════════════════════ -->
-            <div class="t-panel" id="tab-ventilator">
-                <div class="t-title"><i class="fas fa-procedures"></i> 16. Ventilator Support (ventilation_chart)</div>
-                
-                <!-- Advance Search Doctor -->
-                <div class="fmg" style="position: relative; margin-bottom: 8px;">
-                    <label>Doctor Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Doctor</span></label>
-                    <input type="text" id="vent-doc-search" placeholder="Type doctor / intensivist name..." autocomplete="off">
-                    <div id="vent-doc-results"></div>
-                </div>
-
-                <div class="fg">
-                    <div class="fmg">
-                        <label>Selected Doctor Name <span class="req">*</span></label>
-                        <input type="text" id="vent-doctor" placeholder="Selected doctor name" readonly style="font-weight:700;">
-                    </div>
-                    <div class="fmg">
-                        <label>Date (vent_date) <span class="req">*</span></label>
-                        <input type="date" id="vent-date">
-                    </div>
-                    <div class="fmg">
-                        <label>Vent Mode (vent_mode) <span class="req">*</span></label>
-                        <select id="vent-mode">
-                            <option value="CMV">CMV</option>
-                            <option value="SIMV">SIMV</option>
-                            <option value="CPAP">CPAP</option>
-                            <option value="BiPAP">BiPAP</option>
-                        </select>
-                    </div>
-                    <div class="fmg">
-                        <label>Start Time (vent_start)</label>
-                        <input type="time" id="vent-start" onchange="billing.calcVentDuration()">
-                    </div>
-                    <div class="fmg">
-                        <label>End Time (vent_end)</label>
-                        <input type="time" id="vent-end" onchange="billing.calcVentDuration()">
-                    </div>
-                    <div class="fmg">
-                        <label>Duration (vent_dur) <span class="req">*</span></label>
-                        <input type="text" id="vent-dur" placeholder="Auto / e.g. 6h">
-                    </div>
-                    <div class="fmg">
-                        <label>Nurse Signature (vent_nurse) <span class="req">*</span></label>
-                        <input type="text" id="vent-nurse" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
-                    </div>
-                    <div class="fmg">
-                        <label>Ventilator Charge (₹) <span class="req">*</span></label>
-                        <input type="number" id="vent-fee" value="2000" min="0" step="0.01" oninput="billing.calcVentTotal()">
-                    </div>
-                    <div class="fmg">
-                        <label>Discount (₹)</label>
-                        <input type="number" id="vent-discount" value="0" min="0" step="0.01" oninput="billing.calcVentTotal()">
-                    </div>
-                </div>
-
-                <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
-                    <span id="vent-total-preview" class="bm-total-val">₹ 2,000.00</span>
-                </div>
-
-                <div class="bm-footer" style="margin-top: 14px;">
-                    <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
-                    <button type="button" class="bm-btn bm-btn-primary" id="vent-save-btn" onclick="billing.saveVentilatorCharge()">
-                        <i class="fas fa-plus"></i> Add Ventilator Charge
-                    </button>
-                </div>
-            </div>
-
-            <!-- ══════════════════════════════════════════════════════════
-                 9. BLOOD TRANSFUSION (17. blood_transfusion_chart from nurse_workspace.php)
-                 ══════════════════════════════════════════════════════════ -->
-            <div class="t-panel" id="tab-transfusion">
-                <div class="t-title"><i class="fas fa-syringe"></i> 17. Blood Transfusion Record (blood_transfusion)</div>
-                
-                <!-- Advance Search Doctor -->
-                <div class="fmg" style="position: relative; margin-bottom: 8px;">
-                    <label>Doctor Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Doctor</span></label>
-                    <input type="text" id="bt-doc-search" placeholder="Type prescribing doctor name..." autocomplete="off">
-                    <div id="bt-doc-results"></div>
-                </div>
-
-                <div class="fg">
-                    <div class="fmg">
-                        <label>Selected Doctor Name <span class="req">*</span></label>
-                        <input type="text" id="bt-doctor" placeholder="Selected doctor name" readonly style="font-weight:700;">
-                    </div>
-                    <div class="fmg">
-                        <label>Date (trans_date) <span class="req">*</span></label>
-                        <input type="date" id="trans-date">
-                    </div>
-                    <div class="fmg">
-                        <label>Blood Group (blood_group) <span class="req">*</span></label>
-                        <input type="text" id="blood-group" placeholder="e.g. O+ / AB+ / A+">
-                    </div>
-                    <div class="fmg">
-                        <label>Bag Number (bag_number) <span class="req">*</span></label>
-                        <input type="text" id="bag-number" placeholder="e.g. 2563">
-                    </div>
-                    <div class="fmg">
-                        <label>Qty (ml) (quantity) <span class="req">*</span></label>
-                        <input type="number" id="trans-qty" value="350" min="1" step="1">
-                    </div>
-                    <div class="fmg">
-                        <label>Vitals During Transfusion (vitals_during)</label>
-                        <input type="text" id="vitals-during" placeholder="BP, Pulse, Temp...">
-                    </div>
-                    <div class="fmg">
-                        <label>Nurse Signature (nurse_sign) <span class="req">*</span></label>
-                        <input type="text" id="bt-nurse" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
-                    </div>
-                    <div class="fmg">
-                        <label>Transfusion Charge (₹) <span class="req">*</span></label>
-                        <input type="number" id="bt-fee" value="1200" min="0" step="0.01" oninput="billing.calcBtTotal()">
-                    </div>
-                    <div class="fmg">
-                        <label>Discount (₹)</label>
-                        <input type="number" id="bt-discount" value="0" min="0" step="0.01" oninput="billing.calcBtTotal()">
-                    </div>
-                </div>
-
-                <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
-                    <span id="bt-total-preview" class="bm-total-val">₹ 1,200.00</span>
-                </div>
-
-                <div class="bm-footer" style="margin-top: 14px;">
-                    <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
-                    <button type="button" class="bm-btn bm-btn-primary" id="bt-save-btn" onclick="billing.saveTransfusionCharge()">
-                        <i class="fas fa-plus"></i> Add Transfusion Charge
-                    </button>
-                </div>
-            </div>
-
-            <!-- ══════════════════════════════════════════════════════════
-                 10. WARD TRANSFER (18. ward_transfer from nurse_workspace.php)
-                 ══════════════════════════════════════════════════════════ -->
-            <div class="t-panel" id="tab-ward-transfer">
-                <div class="t-title"><i class="fas fa-exchange-alt"></i> 18. Ward Transfer / Bed Shift</div>
-                
-                <!-- Advance Search Doctor -->
-                <div class="fmg" style="position: relative; margin-bottom: 8px;">
-                    <label>Doctor Name <span class="req">*</span> <span class="badge"><i class="fas fa-search"></i> Advance Search Doctor</span></label>
-                    <input type="text" id="wt-doc-search" placeholder="Type authorising doctor name..." autocomplete="off">
-                    <div id="wt-doc-results"></div>
-                </div>
-
-                <div class="fg">
-                    <div class="fmg">
-                        <label>Selected Doctor Name <span class="req">*</span></label>
-                        <input type="text" id="wt-doctor" placeholder="Selected doctor name" readonly style="font-weight:700;">
-                    </div>
-                    <div class="fmg">
-                        <label>Transfer Date <span class="req">*</span></label>
-                        <input type="date" id="wt-date">
-                    </div>
-                    <div class="fmg">
-                        <label>Transfer Time <span class="req">*</span></label>
-                        <input type="time" id="wt-time">
-                    </div>
-                    <div class="fmg">
-                        <label>From Ward / Bed <span class="req">*</span></label>
-                        <input type="text" id="wt-from" placeholder="e.g. ICU / Bed 3">
-                    </div>
-                    <div class="fmg">
-                        <label>To Ward / Bed <span class="req">*</span></label>
-                        <input type="text" id="wt-to" placeholder="e.g. General Ward / Bed 12">
-                    </div>
-                    <div class="fmg">
-                        <label>Staff Signature <span class="req">*</span></label>
-                        <input type="text" id="wt-nurse" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
-                    </div>
-                    <div class="fmg">
-                        <label>Transfer Fee (₹)</label>
-                        <input type="number" id="wt-fee" value="0" min="0" step="0.01" oninput="billing.calcWtTotal()">
-                    </div>
-                    <div class="fmg">
-                        <label>Discount (₹)</label>
-                        <input type="number" id="wt-discount" value="0" min="0" step="0.01" oninput="billing.calcWtTotal()">
-                    </div>
-                    <div class="fmg" style="grid-column: 1 / -1;">
-                        <label>Transfer Reason / Notes</label>
-                        <input type="text" id="wt-reason" placeholder="e.g. Condition stabilized, Step down to ward, Attender request">
-                    </div>
-                </div>
-
-                <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
-                    <span id="wt-total-preview" class="bm-total-val">₹ 0.00</span>
-                </div>
-
-                <div class="bm-footer" style="margin-top: 14px;">
-                    <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
-                    <button type="button" class="bm-btn bm-btn-primary" id="wt-save-btn" onclick="billing.saveWardTransferCharge()">
-                        <i class="fas fa-plus"></i> Add Transfer Charge
-                    </button>
-                </div>
-            </div>
-
-            <!-- ══════════════════════════════════════════════════════════
-                 11. CONSUMABLES & OTHER CHARGES
-                 ══════════════════════════════════════════════════════════ -->
-            <div class="t-panel" id="tab-consumables">
-                <div class="t-title"><i class="fas fa-box"></i> Medical Consumables & Other Charges</div>
-                <div class="fg">
-                    <div class="fmg">
-                        <label>Charge Date <span class="req">*</span></label>
-                        <input type="date" id="misc-date">
-                    </div>
-                    <div class="fmg">
-                        <label>Charge Category</label>
-                        <select id="misc-type">
-                            <option value="CONSUMABLE">🧪 Medical Consumables</option>
-                            <option value="MISC">📦 Miscellaneous</option>
-                            <option value="OTHER">📁 Other Charges</option>
-                        </select>
-                    </div>
-                    <div class="fmg" style="grid-column: 1 / -1;">
-                        <label>Description / Item Name <span class="req">*</span></label>
-                        <input type="text" id="misc-desc" placeholder="e.g. IV Cannula 20G, Bandage Roll, Oxygen Mask, Ambulance...">
-                    </div>
-                    <div class="fmg">
-                        <label>Department / Category</label>
-                        <input type="text" id="misc-dept" placeholder="e.g. Nursing, General, Admin">
-                    </div>
-                    <div class="fmg">
-                        <label>Quantity</label>
-                        <input type="number" id="misc-qty" value="1" min="0.01" step="0.01" oninput="billing.calcConsumableTotal()">
-                    </div>
-                    <div class="fmg">
-                        <label>Entered By (Logged-in User)</label>
-                        <input type="text" id="misc-user" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
-                    </div>
-                    <div class="fmg">
-                        <label>Unit Price (₹) <span class="req">*</span></label>
-                        <input type="number" id="misc-fee" value="0" min="0" step="0.01" oninput="billing.calcConsumableTotal()">
-                    </div>
-                    <div class="fmg">
-                        <label>Discount (₹)</label>
-                        <input type="number" id="misc-discount" value="0" min="0" step="0.01" oninput="billing.calcConsumableTotal()">
-                    </div>
-                    <div class="fmg" style="grid-column: 1 / -1;">
-                        <label>Reference Notes</label>
-                        <input type="text" id="misc-notes" placeholder="Optional reference notes">
-                    </div>
-                </div>
-
-                <div class="bm-total-preview" style="margin-top: 14px;">
-                    <span>Total Amount:</span>
-                    <span id="misc-total-preview" class="bm-total-val">₹ 0.00</span>
-                </div>
-
-                <div class="bm-footer" style="margin-top: 14px;">
-                    <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalAddCharge')">Cancel</button>
-                    <button type="button" class="bm-btn bm-btn-primary" id="misc-save-btn" onclick="billing.saveConsumableCharge()">
-                        <i class="fas fa-plus"></i> Add Consumable Charge
-                    </button>
-                </div>
-            </div>
-
+            
         </div>
     </div>
 </div>
-
 <!-- MODAL: Room Rent Generator -->
 <div class="billing-modal-overlay" id="modalRoomRent">
     <div class="billing-modal" style="max-width:640px;">

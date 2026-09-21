@@ -347,7 +347,10 @@ class OpdBillingManager {
     }
 
     selectPatient(p) {
-        this.selectedPatient = p;
+        this.selectedPatient = Object.assign({}, p);
+        this.selectedPatient.original_doctor_id = p.doctor_id || null;
+        this.selectedPatient.original_doctor_name = p.doctor_name || null;
+        this.selectedPatient.has_custom_doctor = false;
 
         // Mark card as selected
         document.querySelectorAll('.patient-card').forEach(c => {
@@ -422,7 +425,7 @@ class OpdBillingManager {
                            onclick="opdBilling._openDoctorSearch('')"
                            oninput="opdBilling._filterDoctorSearch(this.value)"
                            onkeydown="if(event.key==='Enter'){event.preventDefault(); opdBilling._onDoctorEnter(this.value);}"
-                           onblur="opdBilling._onDoctorBlur(this.value)"
+                           onblur="opdBilling._onDoctorBlur()"
                            style="width:100%; height:38px; border:1.5px solid var(--teal); border-radius:8px; padding:0.35rem 2rem 0.35rem 0.65rem; font-size:0.86rem; font-weight:600; background:#f0fafa; color:#1e293b; outline:none; cursor:text; transition:all 0.2s ease;">
                     <i class="fas fa-chevron-down" onclick="opdBilling._toggleDoctorSearch(); event.stopPropagation();" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:0.8rem; color:var(--teal); cursor:pointer; padding:6px; z-index:5;" title="Click to choose doctor"></i>
                     <div id="doctorSearchDropdown" style="position:absolute; top:calc(100% + 4px); left:0; width:100%; min-width:300px; max-height:240px; overflow-y:auto; background:#ffffff; border:1.5px solid var(--teal); border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.18); z-index:1500; display:none;"></div>
@@ -451,10 +454,23 @@ class OpdBillingManager {
     }
 
     async fetchAndApplyConsultationFee(patientId, appointmentId = '', doctorId = '', visitDate = '') {
+        this.consultationRequestId = (this.consultationRequestId || 0) + 1;
+        const currentReqId = this.consultationRequestId;
         try {
             const vDate = visitDate || document.getElementById('editAppointmentDate')?.value || new Date().toISOString().split('T')[0];
             const dId = doctorId || this.selectedPatient?.doctor_id || '';
             const result = await this.api('GET', `/api/billing/opd/consultation-fee?patient_id=${encodeURIComponent(patientId)}&appointment_id=${encodeURIComponent(appointmentId)}&doctor_id=${encodeURIComponent(dId)}&visit_date=${encodeURIComponent(vDate)}`);
+
+            // If a newer request was dispatched while waiting for API, ignore this stale response
+            if (currentReqId !== this.consultationRequestId) {
+                return;
+            }
+
+            // If user has already explicitly chosen a custom doctor, do not let old doctor overwrite
+            if (this.selectedPatient?.has_custom_doctor && this.selectedPatient.doctor_id !== dId) {
+                return;
+            }
+
             if (result) {
                 const isRegistrationPaid = result.is_registration_paid === true;
                 const consultations = Array.isArray(result.consultations) ? result.consultations : [];
@@ -470,7 +486,7 @@ class OpdBillingManager {
                     this.addItemRow('Registration Fee', 'Registration Fee', 1, 50);
                 }
 
-                // 2. Add consultations based on per-doctor follow-up status
+                // 2. Add consultations based on current chosen doctor
                 const currentDocVal = document.getElementById('editDoctorSearchInput')?.value?.trim();
                 let chosenDocName = this.selectedPatient?.doctor_name || currentDocVal || '';
                 if (chosenDocName.includes(' (')) {
@@ -480,11 +496,12 @@ class OpdBillingManager {
                 if (consultations.length > 1) {
                     consultations.forEach(c => {
                         const fee = parseFloat(c.consultation_fee) || 0;
+                        const docTitle = chosenDocName || c.doctor_name;
                         if (c.is_followup) {
-                            const title = c.doctor_name ? `Follow-up Fee (${c.doctor_name})` : 'Follow-up Fee';
+                            const title = docTitle ? `Follow-up Fee (${docTitle})` : 'Follow-up Fee';
                             this.addItemRow('Follow-up Fee', title, 1, fee);
                         } else {
-                            const title = c.doctor_name ? `Consultation Fee (${c.doctor_name})` : 'Consultation Fee';
+                            const title = docTitle ? `Consultation Fee (${docTitle})` : 'Consultation Fee';
                             this.addItemRow('Consultation', title, 1, fee);
                         }
                     });
@@ -515,7 +532,8 @@ class OpdBillingManager {
         } catch (e) {
             console.warn('Could not fetch consultation fee:', e.message);
             if (this.items.length === 0) {
-                this.addItemRow('Consultation', 'Consultation Fee', 1, 500);
+                const docName = this.selectedPatient?.doctor_name || 'Consultation Fee';
+                this.addItemRow('Consultation', `Consultation Fee (${docName})`, 1, 500);
             }
         }
     }
@@ -635,6 +653,12 @@ class OpdBillingManager {
         let cleanName = trimmed;
         if (cleanName.includes(' (')) cleanName = cleanName.split(' (')[0].trim();
 
+        if (this.selectedPatient?.doctor_name && 
+            cleanName.toLowerCase() === this.selectedPatient.doctor_name.trim().toLowerCase()) {
+            this._hideDoctorSearch();
+            return;
+        }
+
         const docsList = (this.doctors && this.doctors.length > 0) ? this.doctors : (window.ALL_DOCTORS || []);
         const match = docsList.find(d => this._doctorMatches(d, cleanName));
 
@@ -643,28 +667,34 @@ class OpdBillingManager {
         }
     }
 
-    _onDoctorBlur(val) {
+    _onDoctorBlur() {
         setTimeout(() => {
             if (this.isSelectingDoctor) return;
-            const trimmed = (val || '').trim();
+            const inp = document.getElementById('editDoctorSearchInput');
+            if (!inp) return;
+            const trimmed = (inp.value || '').trim();
             if (!trimmed) return;
             let cleanName = trimmed;
             if (cleanName.includes(' (')) {
                 cleanName = cleanName.split(' (')[0].trim();
             }
 
+            // If input matches currently selected patient doctor, nothing to do
+            if (this.selectedPatient?.doctor_name && 
+                cleanName.toLowerCase() === this.selectedPatient.doctor_name.trim().toLowerCase()) {
+                return;
+            }
+
             const docsList = (this.doctors && this.doctors.length > 0) ? this.doctors : (window.ALL_DOCTORS || []);
             const match = docsList.find(d => this._doctorMatches(d, cleanName));
             if (match) {
+                if (this.selectedPatient?.doctor_id === match.doctor_id) return;
                 this.selectDoctorFromSearch(match.doctor_id, match.full_name, match.specialization || '', parseFloat(match.consultation_fee) || 500);
             } else if (this.selectedPatient?.doctor_name) {
-                // Restore last known doctor text if typed query didn't match any doctor
-                const inp = document.getElementById('editDoctorSearchInput');
-                if (inp) {
-                    const doc = docsList.find(d => d.doctor_id === this.selectedPatient.doctor_id);
-                    const spec = doc?.specialization ? ` (${doc.specialization})` : '';
-                    inp.value = `${this.selectedPatient.doctor_name}${spec}`;
-                }
+                // Restore currently selected doctor text if typed query didn't match any doctor
+                const doc = docsList.find(d => d.doctor_id === this.selectedPatient.doctor_id);
+                const spec = doc?.specialization ? ` (${doc.specialization})` : '';
+                inp.value = `${this.selectedPatient.doctor_name}${spec}`;
             }
         }, 300);
     }
@@ -678,6 +708,7 @@ class OpdBillingManager {
         if (!this.selectedPatient) this.selectedPatient = {};
         this.selectedPatient.doctor_id = doctorId || null;
         this.selectedPatient.doctor_name = doctorName;
+        this.selectedPatient.has_custom_doctor = true;
 
         const defaultFee = parseFloat(doctorFee) > 0 ? parseFloat(doctorFee) : 500;
         this.selectedPatient.doctor_fee = defaultFee;
@@ -713,10 +744,21 @@ class OpdBillingManager {
 
         // STEP 2: Asynchronously check if patient qualifies for follow-up fee discount (₹300) with this doctor
         if (this.selectedPatient.patient_id) {
+            this.consultationRequestId = (this.consultationRequestId || 0) + 1;
+            const currentReqId = this.consultationRequestId;
+
             try {
-                const aptId = this.selectedPatient.appointment_id && !this.selectedPatient.appointment_id.startsWith('NOAPT-') ? this.selectedPatient.appointment_id : '';
+                // If doctor is changed from original appointment, treat as direct visit for this doctor
+                const aptId = (this.selectedPatient.original_doctor_id && this.selectedPatient.original_doctor_id !== doctorId)
+                    ? ''
+                    : (this.selectedPatient.appointment_id && !this.selectedPatient.appointment_id.startsWith('NOAPT-') ? this.selectedPatient.appointment_id : '');
                 const vDate = document.getElementById('editAppointmentDate')?.value || this.selectedPatient.bill_date || new Date().toISOString().split('T')[0];
                 const result = await this.api('GET', `/api/billing/opd/consultation-fee?patient_id=${encodeURIComponent(this.selectedPatient.patient_id)}&appointment_id=${encodeURIComponent(aptId)}&doctor_id=${encodeURIComponent(doctorId || '')}&visit_date=${encodeURIComponent(vDate)}`);
+
+                if (currentReqId !== this.consultationRequestId) {
+                    return;
+                }
+
                 if (result) {
                     if (result.is_followup) {
                         finalFee = parseFloat(result.consultation_fee) || 300;
@@ -752,7 +794,7 @@ class OpdBillingManager {
             }
         }
 
-        setTimeout(() => { this.isSelectingDoctor = false; }, 400);
+        setTimeout(() => { this.isSelectingDoctor = false; }, 500);
     }
 
     onDateChange(value) {
@@ -760,7 +802,9 @@ class OpdBillingManager {
         this.selectedPatient.appointment_date = value;
         this.selectedPatient.bill_date = value;
         if (this.selectedPatient.patient_id) {
-            const aptId = this.selectedPatient.appointment_id && !this.selectedPatient.appointment_id.startsWith('NOAPT-') ? this.selectedPatient.appointment_id : '';
+            const aptId = (this.selectedPatient.has_custom_doctor && this.selectedPatient.original_doctor_id !== this.selectedPatient.doctor_id)
+                ? ''
+                : (this.selectedPatient.appointment_id && !this.selectedPatient.appointment_id.startsWith('NOAPT-') ? this.selectedPatient.appointment_id : '');
             this.fetchAndApplyConsultationFee(this.selectedPatient.patient_id, aptId, this.selectedPatient.doctor_id || '', value);
         }
     }
@@ -2200,12 +2244,12 @@ class OpdBillingManager {
         // Find pending bills
         const pending = (this.filteredBills || []).filter(b => (b.payment_status || '').toLowerCase() === 'pending');
         if (pending.length === 0) {
-            this.showToast('No pending bills found to send reminders.', 'info');
+            this.toast('No pending bills found to send reminders.', 'info');
             return;
         }
         
         // Mock sending reminders
-        this.showToast(`Sending SMS/Email reminders to ${pending.length} patients...`, 'success');
+        this.toast(`Sending SMS/Email reminders to ${pending.length} patients...`, 'success');
     }
 
     _setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }

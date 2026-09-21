@@ -287,6 +287,7 @@ class IpdBillingMaster extends BaseModel {
             'MISC'         => 'other_charges',
             'MISCELLANEOUS'=> 'other_charges',
             'OTHER'        => 'other_charges',
+            'BED_UPGRADE_OVERRIDE' => 'room_charges',
         ];
 
         foreach ($itemSums as $row) {

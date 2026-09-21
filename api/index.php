@@ -37,6 +37,12 @@ $router->add('GET', '#^/api/test-routing/?$#', function () {
     exit;
 }, null);
 
+// Discharge Clearance Bridge Route
+$router->add('ANY', '#^/api/discharge[-_]clearance(\.php)?/?$#', function () {
+    require __DIR__ . '/discharge_clearance.php';
+    exit;
+}, null);
+
 // Patient Routes
 $router->add('GET', '#^/api/patients/?$#', 'GM_HMS\Controllers\api\PatientController', 'index');
 $router->add('GET', '#^/api/patients/(PID-\d{8}-\d{3})/?$#', 'GM_HMS\Controllers\api\PatientController', 'show');

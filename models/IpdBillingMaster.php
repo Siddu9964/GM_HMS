@@ -440,17 +440,24 @@ class IpdBillingMaster extends IpdBaseModel {
         ];
 
         $typeMap = [
-            'ROOM_RENT'    => 'room_charges',
-            'DOCTOR_VISIT' => 'doctor_charges',
-            'LAB'          => 'lab_charges',
-            'RADIOLOGY'    => 'radiology_charges',
-            'PHARMACY'     => 'pharmacy_charges',
-            'OT'           => 'ot_charges',
-            'PROCEDURE'    => 'procedure_charges',
-            'CONSUMABLE'   => 'consumable_charges',
-            'MISC'         => 'other_charges',
-            'MISCELLANEOUS'=> 'other_charges',
-            'OTHER'        => 'other_charges',
+            'ROOM_RENT'         => 'room_charges',
+            'DOCTOR_VISIT'      => 'doctor_charges',
+            'LAB'               => 'lab_charges',
+            'RADIOLOGY'         => 'radiology_charges',
+            'PHARMACY'          => 'pharmacy_charges',
+            'OT'                => 'ot_charges',
+            'PROCEDURE'         => 'procedure_charges',
+            'CONSUMABLE'        => 'consumable_charges',
+            'MISC'              => 'other_charges',
+            'MISCELLANEOUS'     => 'other_charges',
+            'OTHER'             => 'other_charges',
+            'DIALYSIS'          => 'procedure_charges',
+            'OXYGEN'            => 'other_charges',
+            'VENTILATION'       => 'other_charges',
+            'VENTILATOR'        => 'other_charges',
+            'BLOOD_TRANSFUSION' => 'other_charges',
+            'WARD_TRANSFER'        => 'other_charges',
+            'BED_UPGRADE_OVERRIDE' => 'room_charges',
         ];
 
         foreach ($itemSums as $row) {

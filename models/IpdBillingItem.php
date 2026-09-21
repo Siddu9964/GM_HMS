@@ -23,9 +23,16 @@ class IpdBillingItem extends IpdBaseModel {
         'PHARMACY'     => 'pharmacy_charges',
         'OT'           => 'ot_charges',
         'PROCEDURE'    => 'procedure_charges',
-        'CONSUMABLE'   => 'consumable_charges',
-        'MISC'         => 'other_charges',
-        'OTHER'        => 'other_charges',
+        'CONSUMABLE'        => 'consumable_charges',
+        'MISC'              => 'other_charges',
+        'OTHER'             => 'other_charges',
+        'DIALYSIS'          => 'procedure_charges',
+        'OXYGEN'            => 'other_charges',
+        'VENTILATION'       => 'other_charges',
+        'VENTILATOR'        => 'other_charges',
+        'BLOOD_TRANSFUSION' => 'other_charges',
+        'WARD_TRANSFER'        => 'other_charges',
+        'BED_UPGRADE_OVERRIDE' => 'room_charges',
     ];
 
     /* ───────────────────────────────────────────────────────────────
@@ -55,8 +62,65 @@ class IpdBillingItem extends IpdBaseModel {
             }
         }
 
+        $isUpgrade = !empty($data['is_bed_upgrade']) || ($data['charge_type'] ?? '') === 'BED_UPGRADE_OVERRIDE';
+        if ($isUpgrade) {
+            $data['charge_type'] = 'ROOM_RENT';
+
+            // Update admission room tariff (physical bed allocation is untouched)
+            $updFields = [];
+            $updParams = [];
+            if (!empty($data['upgraded_room_type'])) {
+                $updFields[] = "room_type = ?";
+                $updParams[] = $data['upgraded_room_type'];
+            }
+            if (isset($data['amount_per_day']) && (float)$data['amount_per_day'] > 0) {
+                $updFields[] = "amount_per_day = ?";
+                $updParams[] = (int)round((float)$data['amount_per_day']);
+            }
+            if (isset($data['nursing_charge']) || isset($data['nursig_charge'])) {
+                $updFields[] = "nursig_charge = ?";
+                $updParams[] = (int)round((float)($data['nursing_charge'] ?? $data['nursig_charge'] ?? 0));
+            }
+            if (isset($data['doctor_charge'])) {
+                $updFields[] = "doctor_charge = ?";
+                $updParams[] = (int)round((float)$data['doctor_charge']);
+            }
+            if (isset($data['service_charge'])) {
+                $updFields[] = "service_charge = ?";
+                $updParams[] = (int)round((float)$data['service_charge']);
+            }
+            $bedTotal = (float)($data['total_bed_amount'] ?? $data['unit_price'] ?? 0);
+            if ($bedTotal > 0) {
+                $updFields[] = "total_bed_amount = ?";
+                $updParams[] = (int)round($bedTotal);
+            }
+
+            if (!empty($updFields)) {
+                $updFields[] = "updated_at = NOW()";
+                $updParams[] = $admissionId;
+                $this->db->execute(
+                    "UPDATE ipd_admissions SET " . implode(', ', $updFields) . " WHERE admission_id = ?",
+                    $updParams
+                );
+            }
+
+            // Cancel any old room rent for this date so the upgrade replaces it cleanly
+            $chgDate = $data['charge_date'] ?? date('Y-m-d');
+            $existingRoom = $this->fetchOne(
+                "SELECT item_id FROM ipd_billing_items 
+                 WHERE bill_id = ? AND charge_type = 'ROOM_RENT' AND charge_date = ? AND status != 'CANCELLED'",
+                [$billId, $chgDate]
+            );
+            if ($existingRoom) {
+                $this->db->execute(
+                    "UPDATE ipd_billing_items SET status = 'CANCELLED', updated_at = NOW() WHERE item_id = ?",
+                    [$existingRoom['item_id']]
+                );
+            }
+        }
+
         // Duplicate check for ROOM_RENT
-        if ($data['charge_type'] === 'ROOM_RENT') {
+        if ($data['charge_type'] === 'ROOM_RENT' && !$isUpgrade) {
             $dup = $this->fetchOne(
                 "SELECT item_id FROM ipd_billing_items
                  WHERE bill_id = ? AND charge_type = 'ROOM_RENT'
@@ -135,6 +199,145 @@ class IpdBillingItem extends IpdBaseModel {
         $summary = (new IpdBillingMaster())->recalculateMaster($billId, $data['created_by'] ?? 'system');
 
         return ['success' => true, 'message' => 'Charge added successfully', 'total' => $total, 'financial' => $summary];
+    }
+
+    public function addBatchItems(string $billId, string $admissionId, string $patientId, array $items, string $user): array {
+        // Block adding charges if patient is discharged or billing is finalized
+        $master = $this->fetchOne(
+            "SELECT bm.billing_status, ia.status AS admission_status, ia.discharge_date
+             FROM ipd_billing_master bm
+             LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
+             WHERE bm.bill_id = ?",
+            [$billId]
+        );
+        if ($master) {
+            if ($master['billing_status'] === 'FINALIZED' || $master['billing_status'] === 'CANCELLED' || $master['admission_status'] === 'Discharged' || !empty($master['discharge_date'])) {
+                return [
+                    'success' => false,
+                    'message' => 'This patient has already been discharged.'
+                ];
+            }
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $totalAdded = 0;
+        $totalAmount = 0.0;
+        $validTypes = array_keys(self::TYPE_TO_MASTER_COL);
+
+        foreach ($items as $data) {
+            $isUpgrade = !empty($data['is_bed_upgrade']) || ($data['charge_type'] ?? '') === 'BED_UPGRADE_OVERRIDE';
+            if ($isUpgrade) {
+                $data['charge_type'] = 'ROOM_RENT';
+
+                // Update admission room tariff (physical bed allocation is untouched)
+                $updFields = [];
+                $updParams = [];
+                if (!empty($data['upgraded_room_type'])) {
+                    $updFields[] = "room_type = ?";
+                    $updParams[] = $data['upgraded_room_type'];
+                }
+                if (isset($data['amount_per_day']) && (float)$data['amount_per_day'] > 0) {
+                    $updFields[] = "amount_per_day = ?";
+                    $updParams[] = (int)round((float)$data['amount_per_day']);
+                }
+                if (isset($data['nursing_charge']) || isset($data['nursig_charge'])) {
+                    $updFields[] = "nursig_charge = ?";
+                    $updParams[] = (int)round((float)($data['nursing_charge'] ?? $data['nursig_charge'] ?? 0));
+                }
+                if (isset($data['doctor_charge'])) {
+                    $updFields[] = "doctor_charge = ?";
+                    $updParams[] = (int)round((float)$data['doctor_charge']);
+                }
+                if (isset($data['service_charge'])) {
+                    $updFields[] = "service_charge = ?";
+                    $updParams[] = (int)round((float)$data['service_charge']);
+                }
+                $bedTotal = (float)($data['total_bed_amount'] ?? $data['unit_price'] ?? 0);
+                if ($bedTotal > 0) {
+                    $updFields[] = "total_bed_amount = ?";
+                    $updParams[] = (int)round($bedTotal);
+                }
+
+                if (!empty($updFields)) {
+                    $updFields[] = "updated_at = NOW()";
+                    $updParams[] = $admissionId;
+                    $this->db->execute(
+                        "UPDATE ipd_admissions SET " . implode(', ', $updFields) . " WHERE admission_id = ?",
+                        $updParams
+                    );
+                }
+
+                // Cleanly replace any old room rent for this bill & charge_date
+                $chgDate = $data['charge_date'] ?? date('Y-m-d');
+                $existingRoom = $this->fetchOne(
+                    "SELECT item_id FROM ipd_billing_items 
+                     WHERE bill_id = ? AND charge_type = 'ROOM_RENT' AND charge_date = ? AND status != 'CANCELLED'",
+                    [$billId, $chgDate]
+                );
+                if ($existingRoom) {
+                    $this->db->execute(
+                        "UPDATE ipd_billing_items SET status = 'CANCELLED', updated_at = NOW() WHERE item_id = ?",
+                        [$existingRoom['item_id']]
+                    );
+                }
+            }
+
+            if (!isset($data['charge_type']) || !in_array($data['charge_type'], $validTypes)) {
+                continue;
+            }
+            if (empty($data['description'])) {
+                continue;
+            }
+
+            $qty       = (float)($data['quantity']   ?? 1);
+            $unitPrice = (float)($data['unit_price']  ?? 0);
+            $discount  = (float)($data['discount_amt'] ?? 0);
+            $total     = round(($qty * $unitPrice) - $discount, 2);
+            $totalAmount += $total;
+
+            $itemsJson = json_encode([
+                'quantity'       => $qty,
+                'unit_price'     => $unitPrice,
+                'discount_amt'   => $discount,
+                'bed_rent'       => (float)($data['bed_rent'] ?? 0),
+                'nursing_charge' => (float)($data['nursing_charge'] ?? 0),
+                'duty_dr_charge' => (float)($data['duty_dr_charge'] ?? 0),
+                'source'         => $data['source'] ?? 'MANUAL'
+            ]);
+
+            $this->db->insert('ipd_billing_items', [
+                'bill_id'         => $billId,
+                'patient_id'      => $patientId,
+                'admission_id'    => $admissionId,
+                'charge_date'     => $data['charge_date'] ?? date('Y-m-d'),
+                'charge_type'     => $data['charge_type'],
+                'department'      => $data['department']      ?? null,
+                'reference_table' => $data['reference_table'] ?? null,
+                'reference_id'    => $data['reference_id']    ?? null,
+                'description'     => $data['description']     ?? '',
+                'total_amount'    => $total,
+                'items_json'      => $itemsJson,
+                'status'          => 'COMPLETED',
+                'created_by'      => $user,
+                'created_at'      => $now,
+                'updated_at'      => $now,
+            ]);
+
+            try {
+                $this->syncToClinicalRecords($patientId, $admissionId, $data, $user);
+            } catch (\Throwable $e) {
+                error_log("IPD Clinical Sync Error: " . $e->getMessage());
+            }
+            $totalAdded++;
+        }
+
+        if ($totalAdded > 0) {
+            require_once __DIR__ . '/IpdBillingMaster.php';
+            $summary = (new IpdBillingMaster())->recalculateMaster($billId, $user);
+            return ['success' => true, 'message' => "{$totalAdded} charges added successfully", 'total' => $totalAmount, 'financial' => $summary];
+        }
+
+        return ['success' => false, 'message' => 'No valid charges were provided'];
     }
 
     /**
@@ -334,7 +537,7 @@ class IpdBillingItem extends IpdBaseModel {
                 break;
 
             case 'BLOOD_TRANSFUSION':
-                $column = 'blood_transfusion';
+                $column = 'blood_transfusion_chart';
                 $docName = $data['doctor_name'] ?? 'Prescribing Doctor';
                 $entry = [
                     'entry_id'        => uniqid('ent_'),
@@ -448,10 +651,15 @@ class IpdBillingItem extends IpdBaseModel {
         string $toDate,
         string $createdBy
     ): array {
-        // Get bed details from ipd_admissions → hospital_beds
+        // Get bed details from ipd_admissions → hospital_beds, prioritizing updated tariff on admission if set
         $bedInfo = $this->fetchOne(
-            "SELECT hb.sl_no, hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
-                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount, hb.service_charge
+            "SELECT hb.sl_no, hb.ward_name, hb.room_name, hb.bed_number,
+                    COALESCE(NULLIF(ia.room_type, ''), hb.room_type) AS room_type,
+                    COALESCE(NULLIF(ia.amount_per_day, 0), hb.amount_per_day) AS amount_per_day,
+                    COALESCE(NULLIF(ia.nursig_charge, 0), hb.nursig_charge) AS nursig_charge,
+                    COALESCE(NULLIF(ia.doctor_charge, 0), hb.doctor_charge) AS doctor_charge,
+                    COALESCE(NULLIF(ia.service_charge, 0), hb.service_charge) AS service_charge,
+                    COALESCE(NULLIF(ia.total_bed_amount, 0), hb.total_bed_amount) AS total_bed_amount
              FROM ipd_admissions ia
              JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
              WHERE ia.admission_id = ?",
@@ -491,7 +699,8 @@ class IpdBillingItem extends IpdBaseModel {
 
         $totalPerDay = $isInsurance ? $baseBedRent : $totalBedAmount;
         $breakdownText = "Room Rent: ₹" . number_format($baseBedRent, 0) . " | Nursing Charges: ₹" . number_format($baseNursing, 0) . " | Duty Doctor Charges: ₹" . number_format($baseDoctor, 0) . " | Service Charges: ₹" . number_format($baseService, 0);
-        $descriptionBase  = "Room Rent – {$bedInfo['ward_name']} – {$bedInfo['bed_number']}";
+        $roomTypeDesc = !empty($bedInfo['room_type']) ? $bedInfo['room_type'] : $bedInfo['ward_name'];
+        $descriptionBase  = "Room Rent – {$roomTypeDesc} – {$bedInfo['bed_number']}";
 
         $addedDates   = [];
         $skippedDates = [];
@@ -687,8 +896,13 @@ class IpdBillingItem extends IpdBaseModel {
      * ─────────────────────────────────────────────────────────────── */
     public function previewRoomRent(string $billId, string $admissionId, string $fromDate, string $toDate): array {
         $bedInfo = $this->fetchOne(
-            "SELECT hb.ward_name, hb.room_name, hb.bed_number,
-                    hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount, hb.service_charge
+            "SELECT hb.sl_no, hb.ward_name, hb.room_name, hb.bed_number,
+                    COALESCE(NULLIF(ia.room_type, ''), hb.room_type) AS room_type,
+                    COALESCE(NULLIF(ia.amount_per_day, 0), hb.amount_per_day) AS amount_per_day,
+                    COALESCE(NULLIF(ia.nursig_charge, 0), hb.nursig_charge) AS nursig_charge,
+                    COALESCE(NULLIF(ia.doctor_charge, 0), hb.doctor_charge) AS doctor_charge,
+                    COALESCE(NULLIF(ia.service_charge, 0), hb.service_charge) AS service_charge,
+                    COALESCE(NULLIF(ia.total_bed_amount, 0), hb.total_bed_amount) AS total_bed_amount
              FROM ipd_admissions ia
              JOIN hospital_beds hb ON ia.bed_id = hb.sl_no
              WHERE ia.admission_id = ?",
@@ -743,10 +957,10 @@ class IpdBillingItem extends IpdBaseModel {
                 'ward'    => $bedInfo['ward_name'],
                 'room'    => $bedInfo['room_name'],
                 'bed'     => $bedInfo['bed_number'],
-                'bed_rent'=> $bedRent,
-                'nursing' => $nursingChg,
-                'duty_dr' => $dutyDrChg,
-                'service' => $serviceChg,
+                'bed_rent'=> $baseBedRent,
+                'nursing' => $baseNursing,
+                'duty_dr' => $baseDoctor,
+                'service' => $baseService,
                 'food'    => $foodChg,
             ],
         ];
@@ -841,9 +1055,15 @@ class IpdBillingItem extends IpdBaseModel {
             if (!empty($item['items_json'])) {
                 $meta = json_decode($item['items_json'], true) ?: [];
                 foreach ($meta as $k => $v) {
-                    if (!isset($item[$k])) {
-                        $item[$k] = $v;
-                    }
+                    $item[$k] = $v;
+                }
+                
+                // Map short aliases used by sync to full names expected by JS
+                if (isset($item['qty']) && !isset($item['quantity'])) {
+                    $item['quantity'] = $item['qty'];
+                }
+                if (isset($item['price']) && !isset($item['unit_price'])) {
+                    $item['unit_price'] = $item['price'];
                 }
             }
         }
