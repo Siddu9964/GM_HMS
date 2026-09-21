@@ -90,11 +90,24 @@ class OpdBillingController extends BaseController {
     }
     
     /**
+     * Enforce role authority: Only Receptionist, Admin, and Accountant can perform billing actions
+     */
+    protected function requireBillingAuthority() {
+        $user = $this->requireAuth();
+        $role = strtolower(trim($user['role'] ?? ''));
+        $allowedRoles = ['receptionist', 'admin', 'administrator', 'accountant'];
+        if (!in_array($role, $allowedRoles, true)) {
+            $this->respondForbidden('Access Denied: Billing authority is restricted to Receptionist and Admin roles only.');
+        }
+        return $user;
+    }
+    
+    /**
      * POST /api/billing/opd
      */
     public function createBill() {
         $this->restrictMethod('POST');
-        $this->requireAuth();
+        $this->requireBillingAuthority();
         
         try {
             $input = $this->getJsonInput();
@@ -133,7 +146,7 @@ class OpdBillingController extends BaseController {
                 'tax_percentage'      => $input['tax_percentage']      ?? 18.00,
                 'notes'               => $input['notes']               ?? null,
                 'purpose'             => $input['purpose']             ?? 'OPD Service',
-                'created_by'          => $this->currentUser['username'] ?? 'system'
+                'created_by'          => !empty($this->currentUser['username']) ? $this->currentUser['username'] : (!empty($this->currentUser['full_name']) ? $this->currentUser['full_name'] : 'receptionist')
             ];
             
             $items = $input['items'] ?? [];
@@ -156,6 +169,7 @@ class OpdBillingController extends BaseController {
                             'amount' => $payment['amount'],
                             'payment_mode' => $payment['payment_mode'] ?? 'Cash',
                             'reference_no' => $payment['reference_no'] ?? null,
+                            'received_by' => !empty($this->currentUser['username']) ? $this->currentUser['username'] : (!empty($this->currentUser['full_name']) ? $this->currentUser['full_name'] : ($billData['created_by'] ?? 'receptionist')),
                             'notes' => $payment['notes'] ?? 'Initial payment'
                         ]);
                         if ($idx === 0) {
@@ -195,10 +209,10 @@ class OpdBillingController extends BaseController {
             if (isset($_GET['limit'])) $filters['limit'] = $_GET['limit'];
             if (isset($_GET['offset'])) $filters['offset'] = $_GET['offset'];
 
-            // Default: if no specific purpose is requested, exclude Registration/Appointment bills
+            // Default: if no specific purpose is requested, exclude Registration/Appointment and Lab Order bills
             // (appointment_bill.php explicitly sets purpose=Registration/Appointment so it still works)
             if (empty($filters['purpose']) && empty($filters['exclude_purpose']) && !isset($_GET['all'])) {
-                $filters['exclude_purpose'] = 'Registration/Appointment';
+                $filters['exclude_purpose'] = 'Registration/Appointment,Lab Order';
             }
             
             $bills = $this->model->getAllBills($filters);
@@ -231,7 +245,7 @@ class OpdBillingController extends BaseController {
      */
     public function recordPayment() {
         $this->restrictMethod('POST');
-        $this->requireAuth();
+        $this->requireBillingAuthority();
         
         try {
             $input = $this->getJsonInput();
@@ -244,6 +258,7 @@ class OpdBillingController extends BaseController {
                 'amount' => $input['amount'],
                 'payment_mode' => $input['payment_mode'] ?? 'Cash',
                 'reference_no' => $input['reference_no'] ?? null,
+                'received_by' => !empty($this->currentUser['username']) ? $this->currentUser['username'] : (!empty($this->currentUser['full_name']) ? $this->currentUser['full_name'] : 'receptionist'),
                 'notes' => $input['notes'] ?? null
             ]);
             
@@ -258,7 +273,7 @@ class OpdBillingController extends BaseController {
      */
     public function updateBill($billId) {
         $this->restrictMethod('PUT');
-        $this->requireAuth();
+        $this->requireBillingAuthority();
         
         try {
             $input = $this->getJsonInput();
@@ -290,7 +305,7 @@ class OpdBillingController extends BaseController {
                 'tax_percentage'      => $input['tax_percentage']      ?? 18.00,
                 'notes'               => $input['notes']               ?? null,
                 'purpose'             => $input['purpose']             ?? 'OPD Service',
-                'created_by'          => $this->currentUser['username'] ?? 'system'
+                'created_by'          => !empty($this->currentUser['username']) ? $this->currentUser['username'] : (!empty($this->currentUser['full_name']) ? $this->currentUser['full_name'] : 'receptionist')
             ];
             
             $items = $input['items'] ?? [];
@@ -357,7 +372,11 @@ class OpdBillingController extends BaseController {
      */
     public function deleteBill($billId) {
         $this->restrictMethod('DELETE');
-        $this->requireAuth();
+        $user = $this->requireAuth();
+        $role = strtolower(trim($user['role'] ?? ''));
+        if (!in_array($role, ['admin', 'administrator'], true)) {
+            $this->respondForbidden('Access Denied: Only Admin can delete billing records.');
+        }
         
         try {
             // Optional: Check if bill exists before deleting
@@ -668,7 +687,7 @@ class OpdBillingController extends BaseController {
      */
     public function cancelOrRefundReceipt() {
         $this->restrictMethod('POST');
-        $this->requireAuth();
+        $this->requireBillingAuthority();
 
         try {
             $input = $this->getJsonInput();

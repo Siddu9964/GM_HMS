@@ -14,7 +14,7 @@ class OpdBillingManager {
         this.doctorDebounce = null;
         this.referralDebounce = null;
         this.sponsorDebounce = null;
-        
+
         // Pagination state
         this.pageSize = 10;
         this.currentPage = 1;
@@ -98,7 +98,7 @@ class OpdBillingManager {
         const referredByGroup = document.getElementById('referredBy').closest('.form-group');
         const referredByInput = document.getElementById('referredBy');
         const addReferralBtn = referredByGroup ? referredByGroup.querySelector('.btn-inside-action') : null;
-        
+
         // Always show the container now
         if (referredByGroup) referredByGroup.style.display = 'block';
 
@@ -121,7 +121,7 @@ class OpdBillingManager {
                 referredByInput.style.borderColor = "";
             }
         }
-        
+
         if (referredByInput) referredByInput.value = ''; // clear on switch
         this.hideReferralSuggestions();
     }
@@ -233,10 +233,10 @@ class OpdBillingManager {
                     category: cat,
                     price: price
                 }));
-                
+
                 // Construct the display string showing the ID nicely
                 const idTag = s.service_id ? `<span style="color:var(--gray-500); font-size:0.7rem; background:#f1f5f9; padding:2px 4px; border-radius:4px; margin-right:6px; vertical-align:middle; border: 1px solid #cbd5e1;">${s.service_id}</span>` : '';
-                
+
                 html += `<div class="svc-item" data-svc="${encoded}"
                      onclick="opdBilling.pickService(this)"
                      style="padding:.55rem 1rem;cursor:pointer;font-size:.84rem;
@@ -267,9 +267,9 @@ class OpdBillingManager {
         const q = query.trim().toLowerCase();
         const filtered = q
             ? this.services.filter(s =>
-                (s.billing_name  || '').toLowerCase().includes(q) ||
+                (s.billing_name || '').toLowerCase().includes(q) ||
                 (s.modality_name || '').toLowerCase().includes(q) ||
-                (s.service_id    || '').toString().toLowerCase().includes(q)
+                (s.service_id || '').toString().toLowerCase().includes(q)
             )
             : this.services;
         this._buildServiceList(filtered);
@@ -280,7 +280,7 @@ class OpdBillingManager {
             this._selectedService = JSON.parse(decodeURIComponent(el.dataset.svc));
             document.getElementById('serviceSearchInput').value = this._selectedService.name;
             document.getElementById('serviceDropdown').style.display = 'none';
-            
+
             // Auto-add the item immediately to save a click
             this.addFromService();
         } catch { }
@@ -376,8 +376,8 @@ class OpdBillingManager {
         // Format initial doctor display (Name + Specialization if available)
         let initialDocDisplay = (p.doctor_name || '').trim();
         if (this.doctors && this.doctors.length > 0) {
-            const foundDoc = this.doctors.find(d => 
-                (p.doctor_id && d.doctor_id === p.doctor_id) || 
+            const foundDoc = this.doctors.find(d =>
+                (p.doctor_id && d.doctor_id === p.doctor_id) ||
                 (initialDocDisplay && d.full_name && d.full_name.toLowerCase() === initialDocDisplay.toLowerCase())
             );
             if (foundDoc) {
@@ -653,7 +653,7 @@ class OpdBillingManager {
         let cleanName = trimmed;
         if (cleanName.includes(' (')) cleanName = cleanName.split(' (')[0].trim();
 
-        if (this.selectedPatient?.doctor_name && 
+        if (this.selectedPatient?.doctor_name &&
             cleanName.toLowerCase() === this.selectedPatient.doctor_name.trim().toLowerCase()) {
             this._hideDoctorSearch();
             return;
@@ -680,7 +680,7 @@ class OpdBillingManager {
             }
 
             // If input matches currently selected patient doctor, nothing to do
-            if (this.selectedPatient?.doctor_name && 
+            if (this.selectedPatient?.doctor_name &&
                 cleanName.toLowerCase() === this.selectedPatient.doctor_name.trim().toLowerCase()) {
                 return;
             }
@@ -817,11 +817,11 @@ class OpdBillingManager {
         this.hideBillingModal();
         document.getElementById('patientSearchInput').value = '';
         this._renderNoResult('Enter at least 2 characters to search');
-        
+
         const container = document.getElementById('paymentSplitsContainer');
         if (container) container.innerHTML = '';
         this.addPaymentSplitRow('Cash', 0);
-        
+
         this.recalculate();
     }
 
@@ -910,7 +910,7 @@ class OpdBillingManager {
         if (field === 'type') {
             let autoName = value;
             if (value === 'Consultation') autoName = 'General Consultation';
-            
+
             // Only autofill if the current name is empty or was likely auto-filled
             const defaultNames = ['Consultation', 'General Consultation', 'Registration Fee', 'Emergency', 'Investigation', 'Procedure', 'Radiology', 'Scan', 'X-Ray', 'Blood Test', 'Medicine', 'Other', 'Follow-up Fee'];
             if (!item.name || defaultNames.includes(item.name)) {
@@ -964,7 +964,7 @@ class OpdBillingManager {
         const itemDiscounts = this.items.reduce((s, i) => s + (i.discount || 0), 0);
         // subtotal after item discounts
         const subtotalAfterItems = Math.max(0, subtotalBase - itemDiscounts);
-        
+
         const billDiscount = parseFloat(document.getElementById('billDiscount')?.value || 0);
         const grandTotal = Math.max(0, subtotalAfterItems - billDiscount);
 
@@ -995,11 +995,11 @@ class OpdBillingManager {
         const summaryBox = document.getElementById('paymentSummaryBox');
         const container = document.getElementById('paymentSplitsContainer');
         if (!container) return;
-        
+
         if (mode === 'single') {
             if (addBtn) addBtn.style.display = 'none';
             if (summaryBox) summaryBox.style.display = 'none';
-            
+
             // Keep only the first row, remove the rest
             while (container.children.length > 1) {
                 container.removeChild(container.lastChild);
@@ -1008,17 +1008,17 @@ class OpdBillingManager {
                 this.addPaymentSplitRow('Cash', 0);
                 return; // addPaymentSplitRow will call togglePaymentMode again
             }
-            
+
             // Hide the remove button on the single row
             const firstRowBtn = container.children[0].querySelector('button');
             if (firstRowBtn) firstRowBtn.style.display = 'none';
-            
+
             this.recalculate();
-            
+
         } else {
             if (addBtn) addBtn.style.display = 'inline-block';
             if (summaryBox) summaryBox.style.display = 'flex';
-            
+
             // Show the remove button on the first row
             const firstRowBtn = container.children[0].querySelector('button');
             if (firstRowBtn) firstRowBtn.style.display = 'block';
@@ -1035,7 +1035,7 @@ class OpdBillingManager {
         div.innerHTML = `
             <div class="form-group" style="margin-bottom: 0;">
                 <select class="split-mode" style="width:100%; padding: 0.4rem; border: 1.5px solid var(--gray-300); border-radius: 6px; font-size: 0.85rem;" onchange="opdBilling.calculatePaymentSplits()">
-                    ${['Cash', 'UPI', 'Credit Card', 'Debit Card', 'Insurance', 'NetBanking'].map(m => `<option value="${m}" ${m === mode ? 'selected' : ''}>${m}</option>`).join('')}
+                    ${['Cash', 'UPI', 'Credit Card', 'Debit Card', 'Insurance', 'Net Banking'].map(m => `<option value="${m}" ${m === mode ? 'selected' : ''}>${m}</option>`).join('')}
                 </select>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
@@ -1049,7 +1049,7 @@ class OpdBillingManager {
             </div>
         `;
         container.appendChild(div);
-        
+
         // Ensure UI state matches toggle
         this.togglePaymentMode();
         this.calculatePaymentSplits();
@@ -1069,7 +1069,7 @@ class OpdBillingManager {
         const subtotalAfterItems = Math.max(0, subtotalBase - itemDiscounts);
         const billDiscount = parseFloat(document.getElementById('billDiscount')?.value || 0);
         const grandTotal = Math.max(0, subtotalAfterItems - billDiscount);
-        
+
         const balance = grandTotal - total;
         const balEl = document.getElementById('sumBalance');
         if (balEl) {
@@ -1089,9 +1089,9 @@ class OpdBillingManager {
         if (!this.selectedPatient) { this.toast('Please select a patient first', 'error'); return; }
         if (this.items.length === 0) { this.toast('Add at least one billing item', 'error'); return; }
 
-        const discount    = parseFloat(document.getElementById('billDiscount').value || 0);
+        const discount = parseFloat(document.getElementById('billDiscount').value || 0);
         const discountPct = parseFloat(document.getElementById('billDiscountPct').value || 0);
-        const notes       = document.getElementById('billNotes').value;
+        const notes = document.getElementById('billNotes').value;
 
         // Gather Payments
         const payments = [];
@@ -1108,8 +1108,8 @@ class OpdBillingManager {
 
         // Referral / Sponsor Data
         const referralType = document.getElementById('referralType').value;
-        const referredBy   = document.getElementById('referredBy').value;
-        const sponsor      = document.getElementById('sponsorName').value;
+        const referredBy = document.getElementById('referredBy').value;
+        const sponsor = document.getElementById('sponsorName').value;
 
         if (referralType === 'External' && !referredBy.trim()) {
             this.toast('Please provide "Referred By" name for External referral', 'error');
@@ -1132,35 +1132,35 @@ class OpdBillingManager {
             }
         }
         doctorName = doctorName || this.selectedPatient?.doctor_name || 'Walk-in';
-        doctorId   = doctorId   || this.selectedPatient?.doctor_id   || null;
+        doctorId = doctorId || this.selectedPatient?.doctor_id || null;
 
         const billDate = document.getElementById('editAppointmentDate')?.value || this.selectedPatient.appointment_date || this.selectedPatient.bill_date || new Date().toISOString().split('T')[0];
 
         const payload = {
-            patient_id:          this.selectedPatient.patient_id,
-            name:                this.selectedPatient.patient_name || this.selectedPatient.name || null,
-            mobile:              this.selectedPatient.phone || this.selectedPatient.mobile || null,
-            doctor_id:           doctorId,
-            doctor_name:         doctorName,
-            appointment_id:      this.selectedPatient.appointment_id || null,
-            bill_date:           billDate,
-            appointment_date:    billDate,
-            referral_type:       referralType || null,
-            referred_by:         referredBy   || null,
-            sponsor:             sponsor      || null,
-            discount_amount:     discount,
+            patient_id: this.selectedPatient.patient_id,
+            name: this.selectedPatient.patient_name || this.selectedPatient.name || null,
+            mobile: this.selectedPatient.phone || this.selectedPatient.mobile || null,
+            doctor_id: doctorId,
+            doctor_name: doctorName,
+            appointment_id: this.selectedPatient.appointment_id || null,
+            bill_date: billDate,
+            appointment_date: billDate,
+            referral_type: referralType || null,
+            referred_by: referredBy || null,
+            sponsor: sponsor || null,
+            discount_amount: discount,
             discount_percentage: discountPct,
-            service_id:          firstSvcItem ? firstSvcItem.itemCode : null,
-            item_name:           firstSvcItem ? firstSvcItem.name    : (this.items[0]?.name || null),
+            service_id: firstSvcItem ? firstSvcItem.itemCode : null,
+            item_name: firstSvcItem ? firstSvcItem.name : (this.items[0]?.name || null),
             notes,
             items: this.items.map(i => ({
-                item_type:       i.type,
-                item_code:       i.itemCode || null,
-                item_name:       i.name,
-                quantity:        i.qty,
-                unit_price:      i.price,
-                is_taxable:      false,
-                tax_percentage:  0,
+                item_type: i.type,
+                item_code: i.itemCode || null,
+                item_name: i.name,
+                quantity: i.qty,
+                unit_price: i.price,
+                is_taxable: false,
+                tax_percentage: 0,
                 discount_amount: i.discount || 0
             })),
             payments: payments.length > 0 ? payments : null
@@ -1176,7 +1176,7 @@ class OpdBillingManager {
                 msg += ` <a href="javascript:void(0)" onclick="opdBilling.triggerPrint('${result.bill_id}', '${result.receipt_id}')" style="color:white;text-decoration:underline;margin-left:10px;font-weight:600;"><i class="fas fa-print"></i> Print Receipt</a>`;
             }
             this.toast(msg, 'success');
-            
+
             // Auto trigger print
             if (result.receipt_id) {
                 this.triggerPrint(result.bill_id, result.receipt_id);
@@ -1202,7 +1202,7 @@ class OpdBillingManager {
         document.getElementById('billDiscount').value = 0;
         document.getElementById('billDiscountPct').value = 0;
         document.getElementById('billNotes').value = '';
-        
+
         // Reset referral
         const refType = document.getElementById('referralType');
         if (refType) refType.value = '';
@@ -1214,11 +1214,11 @@ class OpdBillingManager {
 
         const container = document.getElementById('paymentSplitsContainer');
         if (container) container.innerHTML = '';
-        
+
         // Reset toggle to single
         const singleToggle = document.querySelector('input[name="paymentTypeMode"][value="single"]');
         if (singleToggle) singleToggle.checked = true;
-        
+
         this.addPaymentSplitRow('Cash', 0);
 
         this.recalculate();
@@ -1241,7 +1241,7 @@ class OpdBillingManager {
 
         this.filteredBills = this.allBills.filter(b => {
             const matchesStatus = status ? b.payment_status === status : true;
-            
+
             if (!query) return matchesStatus;
 
             const billId = String(b.bill_id || '').toLowerCase();
@@ -1250,11 +1250,11 @@ class OpdBillingManager {
             const phone = String(b.mobile || b.patient_phone || '').toLowerCase();
             const receipt = String(b.receipt_no || '').toLowerCase();
 
-            const matchesQuery = billId.includes(query) || 
-                                 ptId.includes(query) ||
-                                 name.includes(query) || 
-                                 phone.includes(query) || 
-                                 receipt.includes(query);
+            const matchesQuery = billId.includes(query) ||
+                ptId.includes(query) ||
+                name.includes(query) ||
+                phone.includes(query) ||
+                receipt.includes(query);
 
             return matchesStatus && matchesQuery;
         });
@@ -1286,7 +1286,7 @@ class OpdBillingManager {
         // Calculate pagination slice
         const totalItems = bills.length;
         const totalPages = Math.ceil(totalItems / this.pageSize);
-        
+
         // Ensure current page is valid
         if (this.currentPage > totalPages) this.currentPage = totalPages;
         if (this.currentPage < 1) this.currentPage = 1;
@@ -1300,7 +1300,7 @@ class OpdBillingManager {
             const status = (b.payment_status || 'Pending').toLowerCase();
             const badgeClass = status === 'paid' ? 'badge-paid' : 'badge-pending';
             const displayStatus = status === 'paid' ? 'PAID' : 'PENDING';
-            
+
             return `
             <tr class="bento-table-row">
                 <td style="font-weight: 600;">${b.bill_id}</td>
@@ -1431,7 +1431,7 @@ class OpdBillingManager {
         const cardBody = document.querySelector('.billing-right .billing-card-body .table-wrap');
         if (cardBody) cardBody.scrollTop = 0;
     }
-    
+
     // ─── Bill Details Modal ───────────────────────────────────
     async showBillDetails(billId) {
         const overlay = document.getElementById('billDetailModalOverlay');
@@ -1443,7 +1443,7 @@ class OpdBillingManager {
 
         billIdSpan.textContent = billId;
         overlay.classList.add('active');
-        
+
         // Show loading state
         content.innerHTML = `
             <div class="loading-state" style="padding:4rem; text-align:center;">
@@ -1455,7 +1455,7 @@ class OpdBillingManager {
         try {
             const data = await this.api('GET', `/api/billing/opd/${billId}`);
             this.renderBillDetailContent(data);
-            
+
             // Set up print button
             if (printBtn) {
                 printBtn.onclick = () => this.triggerPrint(billId, data.primary_receipt_id || '');
@@ -1472,7 +1472,7 @@ class OpdBillingManager {
 
     renderBillDetailContent(data) {
         const content = document.getElementById('billDetailContent');
-        const date = data.bill_date ? new Date(data.bill_date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '—';
+        const date = data.bill_date ? new Date(data.bill_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
         const time = data.bill_time || '—';
         const status = (data.payment_status || 'Pending').toLowerCase();
         const displayStatus = status === 'paid' ? 'PAID' : 'PENDING';
@@ -1617,7 +1617,7 @@ class OpdBillingManager {
                         ${data.payments && data.payments.length > 0 ? `
                         <div class="summary-row payment-mode">
                             <span style="color:#16a34a;">Payment Mode</span>
-                            <span style="color:#16a34a;">${data.payments[data.payments.length-1].payment_method}</span>
+                            <span style="color:#16a34a;">${data.payments[data.payments.length - 1].payment_method}</span>
                         </div>` : ''}
                     </div>
                 </div>
@@ -1646,7 +1646,7 @@ class OpdBillingManager {
                         <tr>
                             <td>${index + 1}</td>
                             <td>${p.receipt_id}</td>
-                            <td>${new Date(p.payment_date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</td>
+                            <td>${new Date(p.payment_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                             <td>${p.payment_method}</td>
                             <td style="text-align:right;">₹${this._fmt(p.amount)}</td>
                         </tr>`).join('')}
@@ -1656,7 +1656,7 @@ class OpdBillingManager {
                 <!-- Footer -->
                 <div class="receipt-footer">
                     <div class="footer-left">
-                        <p style="margin:0; font-size:0.75rem; color:#64748b;">Printed on: <strong style="color:#1e293b;">${new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric'})}, ${new Date().toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit', hour12:true})}</strong></p>
+                        <p style="margin:0; font-size:0.75rem; color:#64748b;">Printed on: <strong style="color:#1e293b;">${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}, ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}</strong></p>
                         <p style="margin:0; margin-bottom:1rem; font-size:0.75rem; color:#64748b;">Printed by: <strong style="color:#1e293b;">${this._escape(data.created_by || 'System')}</strong></p>
                         <p style="margin:0; font-size:0.8rem; color:#94a3b8;">Thank you for choosing GM Hospital.</p>
                         <p style="margin:0; font-size:0.75rem; color:#94a3b8;">This is a computer-generated bill and does not require a signature.</p>
@@ -1727,11 +1727,11 @@ class OpdBillingManager {
 
             this.toast('Payment processed successfully!', 'success');
             this.hideSettlementModal();
-            
+
             // Refresh details
             const data = await this.api('GET', `/api/billing/opd/${billId}`);
             this.renderBillDetailContent(data);
-            
+
             // Refresh lists
             this.loadStats();
             this.loadRecentBills();
@@ -1755,7 +1755,7 @@ class OpdBillingManager {
 
         input.addEventListener('input', (e) => {
             const query = e.target.value.trim();
-            
+
             clearTimeout(this.referralDebounce);
             if (query.length < 1) {
                 this.hideReferralSuggestions();
@@ -1784,17 +1784,17 @@ class OpdBillingManager {
 
     fetchInternalDoctorSuggestions(query) {
         const q = query.toLowerCase();
-        const list = this.doctors.filter(d => 
-            (d.full_name || '').toLowerCase().includes(q) || 
+        const list = this.doctors.filter(d =>
+            (d.full_name || '').toLowerCase().includes(q) ||
             (d.specialization || '').toLowerCase().includes(q)
         ).slice(0, 10);
-        
+
         // Map to format
         const mapped = list.map(d => ({
             name: d.full_name,
             mobile: d.specialization || 'Internal Doctor'
         }));
-        
+
         this.showReferralSuggestions(mapped);
     }
 
@@ -1845,7 +1845,7 @@ class OpdBillingManager {
         if (!list) return;
 
         list.innerHTML = '';
-        
+
         if (suggestions.length === 0) {
             list.innerHTML = `
                 <div class="suggestion-empty">
@@ -1900,7 +1900,7 @@ class OpdBillingManager {
         if (!list) return;
 
         list.innerHTML = '';
-        
+
         if (suggestions.length === 0) {
             list.innerHTML = `
                 <div class="suggestion-empty">
@@ -1980,9 +1980,9 @@ class OpdBillingManager {
             }
 
             // Save to permanent referral_data table
-            await this.api('POST', '/api/billing/opd/referral', { 
-                name: name, 
-                mobile: phone 
+            await this.api('POST', '/api/billing/opd/referral', {
+                name: name,
+                mobile: phone
             });
 
             // Update main form field
@@ -1991,7 +1991,7 @@ class OpdBillingManager {
             if (mainReferredBy) {
                 mainReferredBy.value = displayName;
             }
-            
+
             this.hideReferralModal();
             this.showSuccessOverlay('Referral saved to database successfully');
         } catch (e) {
@@ -2039,7 +2039,7 @@ class OpdBillingManager {
             }
 
             // Save to permanent sponsors_data table
-            await this.api('POST', '/api/billing/opd/sponsor', { 
+            await this.api('POST', '/api/billing/opd/sponsor', {
                 name: name,
                 sponsor_type: type
             });
@@ -2049,7 +2049,7 @@ class OpdBillingManager {
             if (mainSponsor) {
                 mainSponsor.value = name;
             }
-            
+
             this.hideSponsorModal();
             this.showSuccessOverlay('Sponsor saved to database successfully');
         } catch (e) {
@@ -2067,7 +2067,7 @@ class OpdBillingManager {
      */
     showSuccessOverlay(message) {
         let overlay = document.querySelector('.success-overlay');
-        
+
         if (!overlay) {
             overlay = document.createElement('div');
             overlay.className = 'success-overlay';
@@ -2174,14 +2174,14 @@ class OpdBillingManager {
         days.forEach((day, index) => {
             const x = index * xStep;
             const y = svgHeight - ((day.total / maxVal) * (svgHeight - 10)); // 10px padding top
-            
+
             // Adjust edges slightly so strokes aren't cut off
             const safeX = index === 0 ? x + 2 : (index === days.length - 1 ? x - 2 : x);
 
             points.push(`${safeX},${y}`);
             dotsHtml += `<circle cx="${safeX}" cy="${y}" r="3" fill="#1f6b4a" />`;
             labelsHtml += `<span>${day.label}</span>`;
-            
+
             // Add a small label for the highest day just for visual detail
             if (day.total === maxVal && day.total > 0) {
                 tooltipHtml += `<div style="position: absolute; font-size: 0.55rem; color: #1f6b4a; left: ${safeX - 15}px; top: ${y - 15}px;">(₹${this._fmt(day.total)})</div>`;
@@ -2247,7 +2247,7 @@ class OpdBillingManager {
             this.toast('No pending bills found to send reminders.', 'info');
             return;
         }
-        
+
         // Mock sending reminders
         this.toast(`Sending SMS/Email reminders to ${pending.length} patients...`, 'success');
     }

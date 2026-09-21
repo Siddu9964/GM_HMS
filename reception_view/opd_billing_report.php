@@ -315,8 +315,12 @@ $pageTitle = 'OPD Billing Report';
                         <option value="">All Modes</option>
                         <option value="Cash">Cash</option>
                         <option value="UPI">UPI</option>
-                        <option value="Card">Card</option>
-                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Card">All Cards</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Debit Card">Debit Card</option>
+                        <option value="Net Banking">Net Banking</option>
+                        <option value="Cheque">Cheque</option>
+                        <option value="Insurance">Insurance</option>
                     </select>
                 </div>
                 <button class="filter-btn" onclick="fetchReportData()">
@@ -626,7 +630,8 @@ $pageTitle = 'OPD Billing Report';
                         date_from: f.date_from,
                         date_to: f.date_to,
                         created_by: f.created_by,
-                        payment_mode: f.payment_mode
+                        payment_mode: f.payment_mode,
+                        exclude_purpose: 'Lab Order,Registration/Appointment'
                     };
                 },
                 dataSrc: function(json) {
@@ -637,7 +642,13 @@ $pageTitle = 'OPD Billing Report';
                 { data: 'bill_id' },
                 { data: 'bill_date', render: function(data) { return new Date(data).toLocaleDateString(); } },
                 { data: 'patient_name' },
-                { data: 'created_by' },
+                { data: 'created_by', render: function(data, type, row) {
+                    const name = row.creator_name || data || 'Reception';
+                    if (/^\d+$/.test(name)) {
+                        return `<span class="badge bg-secondary">Staff #${name}</span>`;
+                    }
+                    return `<strong>${name}</strong>`;
+                }},
                 { data: 'payment_mode' },
                 { data: 'grand_total', render: $.fn.dataTable.render.number(',', '.', 2, '₹') },
                 { data: 'amount_paid', render: $.fn.dataTable.render.number(',', '.', 2, '₹') },
@@ -668,8 +679,9 @@ $pageTitle = 'OPD Billing Report';
         // User Accountability
         let userHtml = '';
         data.receptionist_performance.forEach(u => {
+            const name = (/^\d+$/.test(u.receptionist)) ? 'Staff #' + u.receptionist : u.receptionist;
             userHtml += `<tr>
-                <td>${u.receptionist}</td>
+                <td><strong>${name}</strong></td>
                 <td>${u.bills_generated}</td>
                 <td>₹${parseFloat(u.total_billing).toFixed(2)}</td>
                 <td>₹${parseFloat(u.collected).toFixed(2)}</td>
@@ -724,6 +736,30 @@ $pageTitle = 'OPD Billing Report';
                 bg: '#f0f9ff',
                 border: '#bae6fd'
             },
+            'credit card': {
+                icon: 'fas fa-credit-card',
+                name: 'Credit Card',
+                category: 'Card POS',
+                color: '#0284c7',
+                bg: '#f0f9ff',
+                border: '#bae6fd'
+            },
+            'debit card': {
+                icon: 'fas fa-id-card',
+                name: 'Debit Card',
+                category: 'Card POS',
+                color: '#0369a1',
+                bg: '#e0f2fe',
+                border: '#7dd3fc'
+            },
+            'net banking': {
+                icon: 'fas fa-university',
+                name: 'Net Banking / NEFT',
+                category: 'Direct Bank',
+                color: '#0d9488',
+                bg: '#f0fdfa',
+                border: '#99f6e4'
+            },
             'bank transfer': {
                 icon: 'fas fa-university',
                 name: 'Bank Transfer / NEFT',
@@ -731,6 +767,14 @@ $pageTitle = 'OPD Billing Report';
                 color: '#0d9488',
                 bg: '#f0fdfa',
                 border: '#99f6e4'
+            },
+            'insurance': {
+                icon: 'fas fa-shield-alt',
+                name: 'Insurance / TPA',
+                category: 'TPA Settlement',
+                color: '#059669',
+                bg: '#ecfdf5',
+                border: '#a7f3d0'
             },
             'cheque': {
                 icon: 'fas fa-money-check-alt',

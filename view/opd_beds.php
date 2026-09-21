@@ -456,7 +456,7 @@ if (!isset($_SESSION['user_id'])) {
                                     <div class="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100">
                                         <div class="flex items-center justify-between mb-2.5">
                                             <span class="text-[10px] font-black uppercase tracking-wider text-emerald-800">Daily Billing Setup</span>
-                                            <button onclick="editCurrentBed()" class="text-xs font-bold text-[#1f6b4a] hover:underline flex items-center gap-1">
+                                            <button onclick="editCurrentBed('rates')" class="text-xs font-bold text-[#1f6b4a] hover:underline flex items-center gap-1">
                                                 <i class="fas fa-pen text-[10px]"></i> Edit Rates
                                             </button>
                                         </div>
@@ -502,7 +502,7 @@ if (!isset($_SESSION['user_id'])) {
 
                                     <!-- Action Buttons -->
                                     <div class="space-y-2 pt-2">
-                                        <button onclick="editCurrentBed()" class="w-full py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all">
+                                        <button onclick="editCurrentBed('rates')" class="w-full py-2.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all">
                                             <i class="fas fa-edit"></i> Edit Bed Pricing
                                         </button>
                                         <button onclick="deleteCurrentBed()" class="w-full py-2 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all">
@@ -753,23 +753,23 @@ if (!isset($_SESSION['user_id'])) {
                     <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-emerald-50/40 p-3.5 rounded-2xl border border-emerald-100">
                         <div>
                             <label class="block text-[10px] font-extrabold text-slate-600 mb-1">Room Rent</label>
-                            <input type="number" step="0.01" id="formRent" name="amount_per_day" value="0" oninput="calcModalTotal()" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold">
+                            <input type="number" step="any" min="0" id="formRent" name="amount_per_day" value="0" oninput="calcModalTotal()" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold">
                         </div>
                         <div>
                             <label class="block text-[10px] font-extrabold text-slate-600 mb-1">Nursing Fee</label>
-                            <input type="number" step="0.01" id="formNurse" name="nursig_charge" value="0" oninput="calcModalTotal()" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold">
+                            <input type="number" step="any" min="0" id="formNurse" name="nursig_charge" value="0" oninput="calcModalTotal()" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold">
                         </div>
                         <div>
                             <label class="block text-[10px] font-extrabold text-slate-600 mb-1">Doctor Round</label>
-                            <input type="number" step="0.01" id="formDoctor" name="doctor_charge" value="0" oninput="calcModalTotal()" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold">
+                            <input type="number" step="any" min="0" id="formDoctor" name="doctor_charge" value="0" oninput="calcModalTotal()" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold">
                         </div>
                         <div>
                             <label class="block text-[10px] font-extrabold text-slate-600 mb-1">Service Fee</label>
-                            <input type="number" step="0.01" id="formService" name="service_charge" value="0" oninput="calcModalTotal()" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold">
+                            <input type="number" step="any" min="0" id="formService" name="service_charge" value="0" oninput="calcModalTotal()" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold">
                         </div>
                         <div class="col-span-2 sm:col-span-1">
                             <label class="block text-[10px] font-extrabold text-[#1f6b4a] mb-1">Total / Day</label>
-                            <input type="text" id="formTotal" readonly value="₹0.00" class="w-full px-3 py-1.5 bg-emerald-100/70 border border-emerald-300 text-[#1f6b4a] rounded-xl text-xs font-black">
+                            <input type="number" step="any" min="0" id="formTotal" name="total_bed_amount" value="0" oninput="onDirectTotalInput(this.value)" placeholder="0" class="w-full px-3 py-1.5 bg-emerald-100/70 border border-emerald-300 text-[#1f6b4a] rounded-xl text-xs font-black">
                         </div>
                     </div>
                 </div>
@@ -1204,7 +1204,7 @@ if (!isset($_SESSION['user_id'])) {
                                 <button onclick="releaseBedById(${bed.sl_no}, '${bed.bed_number}')" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border border-emerald-200 rounded-xl transition-all text-xs font-bold flex items-center gap-1 shadow-xs" title="Release Bed & Mark Available">
                                     <i class="fas fa-check-circle"></i> Release
                                 </button>
-                                <button onclick="editBedById(${bed.sl_no})" class="p-1.5 bg-slate-100 hover:bg-[#1f6b4a] hover:text-white text-slate-700 rounded-lg transition-all" title="Edit Bed Specs & Pricing">
+                                <button onclick="editBedById(${bed.sl_no}, 'rates')" class="p-1.5 bg-slate-100 hover:bg-[#1f6b4a] hover:text-white text-slate-700 rounded-lg transition-all" title="Edit Bed Specs & Pricing">
                                     <i class="fas fa-edit text-xs"></i>
                                 </button>
                                 ${bed.patient_id ? `
@@ -1216,7 +1216,7 @@ if (!isset($_SESSION['user_id'])) {
                                 <button onclick="quickUpdateStatusOnTile(${bed.sl_no}, 'Available')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all text-xs font-bold flex items-center gap-1 shadow-xs" title="Mark Clean & Available">
                                     <i class="fas fa-check"></i> Make Available
                                 </button>
-                                <button onclick="editBedById(${bed.sl_no})" class="p-1.5 bg-slate-100 hover:bg-[#1f6b4a] hover:text-white text-slate-700 rounded-lg transition-all" title="Edit Bed Specs & Pricing">
+                                <button onclick="editBedById(${bed.sl_no}, 'rates')" class="p-1.5 bg-slate-100 hover:bg-[#1f6b4a] hover:text-white text-slate-700 rounded-lg transition-all" title="Edit Bed Specs & Pricing">
                                     <i class="fas fa-edit text-xs"></i>
                                 </button>
                                 <button onclick="deleteBedById(${bed.sl_no}, '${bed.bed_number}')" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-all" title="Delete Bed">
@@ -1226,7 +1226,7 @@ if (!isset($_SESSION['user_id'])) {
                                 <button onclick="quickUpdateStatusOnTile(${bed.sl_no}, 'Cleaning')" class="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg transition-all text-xs" title="Mark for Cleaning">
                                     <i class="fas fa-broom"></i>
                                 </button>
-                                <button onclick="editBedById(${bed.sl_no})" class="p-1.5 bg-slate-100 hover:bg-[#1f6b4a] hover:text-white text-slate-700 rounded-lg transition-all" title="Edit Bed Specs & Pricing">
+                                <button onclick="editBedById(${bed.sl_no}, 'rates')" class="p-1.5 bg-slate-100 hover:bg-[#1f6b4a] hover:text-white text-slate-700 rounded-lg transition-all" title="Edit Bed Specs & Pricing">
                                     <i class="fas fa-edit text-xs"></i>
                                 </button>
                                 <button onclick="deleteBedById(${bed.sl_no}, '${bed.bed_number}')" class="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-all" title="Delete Bed">
@@ -1392,7 +1392,7 @@ if (!isset($_SESSION['user_id'])) {
                                         <button onclick="releaseBedById(${bed.sl_no}, '${bed.bed_number}')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl flex items-center gap-1 shadow-xs transition-all" title="Release Bed & Mark Available">
                                             <i class="fas fa-check-circle"></i> Release Bed
                                         </button>
-                                        <button onclick="selectBed(${JSON.stringify(bed).replace(/"/g, '&quot;')})" class="p-1.5 text-slate-400 hover:text-slate-800" title="Inspect">
+                                        <button onclick="selectBedById(${bed.sl_no})" class="p-1.5 text-slate-400 hover:text-slate-800" title="Inspect">
                                             <i class="fas fa-chevron-right text-xs"></i>
                                         </button>
                                     </div>
@@ -1421,10 +1421,10 @@ if (!isset($_SESSION['user_id'])) {
                                     </div>
                                 </div>
                                 <div class="pt-3 border-t border-emerald-200/70 flex items-center justify-between gap-2">
-                                    <button onclick="selectBed(${JSON.stringify(bed).replace(/"/g, '&quot;')})" class="w-full py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition-all">
+                                    <button onclick="selectBedById(${bed.sl_no})" class="w-full py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition-all">
                                         <i class="fas fa-eye"></i> Inspect Bed
                                     </button>
-                                    <button onclick="editBedRecord(${JSON.stringify(bed).replace(/"/g, '&quot;')})" class="p-1.5 bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl" title="Edit Pricing">
+                                    <button onclick="editBedById(${bed.sl_no}, 'rates')" class="p-1.5 bg-white hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 border border-slate-200 rounded-xl transition-all" title="Edit Pricing">
                                         <i class="fas fa-pen text-xs"></i>
                                     </button>
                                 </div>
@@ -1649,7 +1649,7 @@ if (!isset($_SESSION['user_id'])) {
         }
 
         // ── 8. BED MODAL (ADD / EDIT) ──
-        function openBedModal(mode = 'create', bed = null) {
+        function openBedModal(mode = 'create', bed = null, focusSection = null) {
             document.getElementById('bedForm').reset();
             document.getElementById('formAction').value = (mode === 'edit') ? 'edit' : 'create';
 
@@ -1672,19 +1672,21 @@ if (!isset($_SESSION['user_id'])) {
                 wards.map(w => `<option value="${w}">${w}</option>`).join('') + 
                 '<option value="ADD_NEW_CUSTOM">+ Add Custom...</option>';
 
-            function setOrAddOption(sel, val) {
-                if (val === null || val === undefined || val === '') return;
-                const str = String(val);
-                const exists = [...sel.options].some(o => String(o.value) === str);
+            function setOrAddOption(sel, val, defaultVal = '') {
+                const targetVal = (val !== null && val !== undefined && String(val).trim() !== '') 
+                    ? String(val).trim() 
+                    : defaultVal;
+                if (!targetVal) return;
+                const exists = [...sel.options].some(o => String(o.value) === targetVal);
                 if (!exists) {
-                    const opt = new Option(str, str);
-                    if (sel.options.length > 0) {
-                        sel.add(opt, sel.options[sel.options.length - 1]);
+                    const opt = new Option(targetVal, targetVal);
+                    if (sel.options.length > 1) {
+                        sel.insertBefore(opt, sel.options[sel.options.length - 1]);
                     } else {
-                        sel.add(opt);
+                        sel.appendChild(opt);
                     }
                 }
-                sel.value = str;
+                sel.value = targetVal;
             }
 
             if (mode === 'edit' && bed) {
@@ -1693,25 +1695,38 @@ if (!isset($_SESSION['user_id'])) {
                 document.getElementById('formSlNo').value = bed.sl_no;
                 document.getElementById('batchBedOption').classList.add('hidden');
 
-                setOrAddOption(floorNumSel, bed.floor_number);
-                setOrAddOption(floorNameSel, bed.floor_name);
-                setOrAddOption(wardSel, bed.ward_name);
-                setOrAddOption(document.getElementById('modalRoomType'), bed.room_type || 'General Ward');
+                // Fallbacks guarantee that required select dropdowns have a valid selection and never block saving
+                setOrAddOption(floorNumSel, bed.floor_number, (floorNums[0] !== undefined ? String(floorNums[0]) : '0'));
+                setOrAddOption(floorNameSel, bed.floor_name, (floors[0] || 'Ground Floor'));
+                setOrAddOption(wardSel, bed.ward_name, (wards[0] || 'General Ward'));
+                setOrAddOption(document.getElementById('modalRoomType'), bed.room_type, 'General Ward');
 
                 document.getElementById('modalRoomNumber').value = bed.room_number || '';
                 document.getElementById('modalRoomName').value = bed.room_name || '';
                 document.getElementById('modalBedNumber').value = bed.bed_number || '';
-                document.getElementById('formRent').value = bed.amount_per_day || 0;
-                document.getElementById('formNurse').value = bed.nursig_charge || 0;
-                document.getElementById('formDoctor').value = bed.doctor_charge || 0;
-                document.getElementById('formService').value = bed.service_charge || 0;
+                
+                // Populate clean numeric rate values
+                document.getElementById('formRent').value = parseFloat(bed.amount_per_day) || 0;
+                document.getElementById('formNurse').value = parseFloat(bed.nursig_charge) || 0;
+                document.getElementById('formDoctor').value = parseFloat(bed.doctor_charge) || 0;
+                document.getElementById('formService').value = parseFloat(bed.service_charge) || 0;
                 document.getElementById('modalBedStatus').value = bed.bed_status || 'Available';
                 calcModalTotal();
+
+                if (focusSection === 'rates') {
+                    setTimeout(() => {
+                        document.getElementById('formRent')?.focus();
+                    }, 100);
+                }
             } else {
                 document.getElementById('modalTitle').textContent = 'Add Room & Bed';
                 document.getElementById('modalSubtitle').textContent = 'Configure location, classification, room category and daily billing rates.';
                 document.getElementById('formSlNo').value = '';
                 document.getElementById('batchBedOption').classList.remove('hidden');
+                document.getElementById('formRent').value = 0;
+                document.getElementById('formNurse').value = 0;
+                document.getElementById('formDoctor').value = 0;
+                document.getElementById('formService').value = 0;
                 calcModalTotal();
             }
 
@@ -1723,17 +1738,26 @@ if (!isset($_SESSION['user_id'])) {
             document.querySelectorAll('[id$="Custom"]').forEach(el => el.classList.add('hidden'));
         }
 
-        function editBedById(sl_no) {
+        function editBedById(sl_no, focusSection = null) {
             const bed = allBeds.find(b => b.sl_no == sl_no);
-            if (bed) openBedModal('edit', bed);
+            if (bed) openBedModal('edit', bed, focusSection);
         }
 
-        function editBedRecord(bed) {
-            openBedModal('edit', bed);
+        function editBedRecord(bed, focusSection = null) {
+            if (bed && bed.sl_no) {
+                editBedById(bed.sl_no, focusSection);
+            } else if (bed) {
+                openBedModal('edit', bed, focusSection);
+            }
         }
 
-        function editCurrentBed() {
-            if (currentBed) openBedModal('edit', currentBed);
+        function editCurrentBed(focusSection = null) {
+            if (currentBed) openBedModal('edit', currentBed, focusSection);
+        }
+
+        function selectBedById(sl_no) {
+            const bed = allBeds.find(b => b.sl_no == sl_no);
+            if (bed) selectBed(bed);
         }
 
         function applyRatePreset(rent, nurse, dr, service, type) {
@@ -1756,7 +1780,31 @@ if (!isset($_SESSION['user_id'])) {
             const dr = parseFloat(document.getElementById('formDoctor').value) || 0;
             const service = parseFloat(document.getElementById('formService').value) || 0;
             const total = rent + nurse + dr + service;
-            document.getElementById('formTotal').value = `₹${total.toFixed(2)}`;
+
+            const totalInput = document.getElementById('formTotal');
+            if (totalInput && document.activeElement !== totalInput) {
+                totalInput.value = total > 0 ? (total % 1 === 0 ? total : total.toFixed(2)) : 0;
+            }
+        }
+
+        function onDirectTotalInput(val) {
+            const total = parseFloat(val) || 0;
+            const nurse = parseFloat(document.getElementById('formNurse').value) || 0;
+            const dr = parseFloat(document.getElementById('formDoctor').value) || 0;
+            const service = parseFloat(document.getElementById('formService').value) || 0;
+            const otherSum = nurse + dr + service;
+
+            // Automatically allocate remainder to Room Rent
+            const newRent = Math.max(0, total - otherSum);
+            document.getElementById('formRent').value = newRent > 0 ? (newRent % 1 === 0 ? newRent : newRent.toFixed(2)) : 0;
+        }
+
+        function zeroAllRates() {
+            document.getElementById('formRent').value = 0;
+            document.getElementById('formNurse').value = 0;
+            document.getElementById('formDoctor').value = 0;
+            document.getElementById('formService').value = 0;
+            calcModalTotal();
         }
 
         function checkCustomOption(selectEl, customInputId) {
@@ -1770,12 +1818,30 @@ if (!isset($_SESSION['user_id'])) {
         }
 
         async function submitBedForm() {
+            const form = document.getElementById('bedForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
             const btn = document.getElementById('btnSubmitModal');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
-            const form = document.getElementById('bedForm');
             const formData = new FormData(form);
+
+            // Ensure clean numeric values for all rate breakdown fields
+            const rent = parseFloat(document.getElementById('formRent').value) || 0;
+            const nurse = parseFloat(document.getElementById('formNurse').value) || 0;
+            const dr = parseFloat(document.getElementById('formDoctor').value) || 0;
+            const service = parseFloat(document.getElementById('formService').value) || 0;
+            const total = rent + nurse + dr + service;
+
+            formData.set('amount_per_day', rent);
+            formData.set('nursig_charge', nurse);
+            formData.set('doctor_charge', dr);
+            formData.set('service_charge', service);
+            formData.set('total_bed_amount', total);
 
             try {
                 const res = await fetch('/GM_HMS/api/save_bed.php', {
@@ -1794,7 +1860,7 @@ if (!isset($_SESSION['user_id'])) {
                 if (json.status === 'success') {
                     showToast(json.message || 'Bed saved successfully', 'success');
                     closeBedModal();
-                    fetchBeds();
+                    await fetchBeds();
                 } else {
                     showToast(json.message || 'Error saving bed', 'error');
                 }

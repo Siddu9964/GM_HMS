@@ -695,7 +695,7 @@ class LaboratoryRepository
         }
 
         if (empty($patientName)) $patientName = 'Walkin Patient';
-        $createdBy = $_SESSION['user_id'] ?? $_SESSION['username'] ?? 'system';
+        $createdBy = $_SESSION['username'] ?? $_SESSION['full_name'] ?? $_SESSION['user_id'] ?? 'system';
 
         $res = $this->db->execute(
             "INSERT INTO opd_billing_master (bill_id, patient_id, doctor_id, appointment_id, bill_date, bill_time, purpose, notes, name, mobile, referral_type, referred_by, sponsor, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",

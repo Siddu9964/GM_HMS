@@ -266,7 +266,12 @@ class LaboratoryController extends BaseController
     public function createOrder()
     {
         $this->restrictMethod('POST');
-        $this->requireAuth();
+        $user = $this->requireAuth();
+        $role = strtolower(trim($user['role'] ?? ''));
+        $allowedRoles = ['receptionist', 'admin', 'administrator', 'accountant'];
+        if (!in_array($role, $allowedRoles, true)) {
+            $this->respondForbidden('Access Denied: Billing authority is restricted to Receptionist and Admin only. Please direct the patient to the Reception billing counter.');
+        }
         
         try {
             $data = $this->getJsonInput();

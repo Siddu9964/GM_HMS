@@ -213,6 +213,20 @@ class OpdBillingModel
         return 'Investigation'; // safe fallback
     }
 
+    public function normalizePaymentMethod($mode)
+    {
+        $m = strtolower(trim($mode ?? ''));
+        if ($m === 'credit card') return 'Credit Card';
+        if ($m === 'debit card') return 'Debit Card';
+        if (str_contains($m, 'card') || $m === 'credit' || $m === 'debit') return 'Card';
+        if ($m === 'cash') return 'Cash';
+        if (str_contains($m, 'upi') || str_contains($m, 'gpay') || str_contains($m, 'phonepe') || str_contains($m, 'paytm')) return 'UPI';
+        if ($m === 'netbanking' || str_contains($m, 'net') || str_contains($m, 'bank') || $m === 'online' || $m === 'neft' || $m === 'rtgs') return 'Net Banking';
+        if (str_contains($m, 'cheque') || str_contains($m, 'check')) return 'Cheque';
+        if (str_contains($m, 'insurance') || str_contains($m, 'tpa')) return 'Insurance';
+        return 'Other';
+    }
+
     public function addBillingItem($billId, $item, $receiptNo = null)
     {
         $quantity = $item['quantity'] ?? 1;
@@ -305,7 +319,7 @@ class OpdBillingModel
                 }
             }
 
-            $bill = $this->db->fetchOne("SELECT patient_id, grand_total, amount_paid FROM opd_billing_master WHERE bill_id = ?", [$billId]);
+            $bill = $this->db->fetchOne("SELECT patient_id, grand_total, amount_paid, created_by FROM opd_billing_master WHERE bill_id = ?", [$billId]);
             if (!$bill)
                 throw new Exception("Bill not found");
 
@@ -315,6 +329,9 @@ class OpdBillingModel
 
             $paymentStatus = ($balanceDue <= 0) ? 'Paid' : 'Pending';
 
+            $rawMethod = $paymentData['payment_mode'] ?? 'Cash';
+            $paymentMethod = $this->normalizePaymentMethod($rawMethod);
+
             $this->db->insert('payment_receipts', [
                 'receipt_id' => $receiptId,
                 'bill_id' => $billId,
@@ -323,9 +340,9 @@ class OpdBillingModel
                 'payment_date' => $paymentData['payment_date'] ?? date('Y-m-d'),
                 'payment_time' => $paymentData['payment_time'] ?? date('H:i:s'),
                 'amount' => $amount,
-                'payment_method' => $paymentData['payment_mode'] ?? 'Cash',
+                'payment_method' => $paymentMethod,
                 'transaction_id' => $paymentData['reference_no'] ?? null,
-                'received_by' => $paymentData['received_by'] ?? 'system',
+                'received_by' => $paymentData['received_by'] ?? ($bill['created_by'] ?? 'system'),
                 'notes' => $paymentData['notes'] ?? null
             ]);
 
@@ -390,11 +407,14 @@ class OpdBillingModel
                     a.reason,
                     COALESCE(obm.doctor_name, d.full_name, a.doctor_name) AS doctor_name,
                     d.specialization,
+                    COALESCE(s.full_name, s.username, u.username, obm.created_by) AS creator_name,
                     (SELECT receipt_id FROM payment_receipts WHERE bill_id = obm.bill_id ORDER BY (amount = obm.grand_total) DESC, receipt_id DESC LIMIT 1) AS primary_receipt_id
                 FROM opd_billing_master obm
                 LEFT JOIN appointments a ON BINARY obm.appointment_id = BINARY a.appointment_id
                 LEFT JOIN patient p ON BINARY obm.patient_id = BINARY p.patient_id
                 LEFT JOIN doctors d ON BINARY obm.doctor_id = BINARY d.doctor_id
+                LEFT JOIN staff s ON obm.created_by REGEXP '^[0-9]+$' AND s.sl_no = CAST(obm.created_by AS UNSIGNED)
+                LEFT JOIN user u ON obm.created_by REGEXP '^[0-9]+$' AND u.sl_no = CAST(obm.created_by AS UNSIGNED)
                 WHERE 1=1";
         $params = [];
 
@@ -419,16 +439,34 @@ class OpdBillingModel
             $params[] = $filters['purpose'];
         }
         if (!empty($filters['exclude_purpose'])) {
-            $sql .= " AND (obm.purpose IS NULL OR obm.purpose != ?)";
-            $params[] = $filters['exclude_purpose'];
+            $excludePurposes = is_array($filters['exclude_purpose'])
+                ? $filters['exclude_purpose']
+                : array_map('trim', explode(',', $filters['exclude_purpose']));
+            $excludePurposes = array_filter($excludePurposes);
+            if (!empty($excludePurposes)) {
+                $placeholders = implode(',', array_fill(0, count($excludePurposes), '?'));
+                $sql .= " AND (obm.purpose IS NULL OR obm.purpose NOT IN ($placeholders))";
+                foreach ($excludePurposes as $ep) {
+                    $params[] = $ep;
+                }
+            }
+        }
+        // By default hide zero-dollar dummy lab/radiology pending orders from financial billing list
+        if (empty($filters['include_dummy'])) {
+            $sql .= " AND NOT (obm.purpose = 'Lab Order' AND obm.grand_total = 0 AND obm.payment_status = 'Pending')";
         }
         if (!empty($filters['created_by'])) {
             $sql .= " AND obm.created_by = ?";
             $params[] = $filters['created_by'];
         }
         if (!empty($filters['payment_mode'])) {
-            $sql .= " AND obm.payment_mode = ?";
-            $params[] = $filters['payment_mode'];
+            if ($filters['payment_mode'] === 'Card') {
+                $sql .= " AND (obm.payment_mode = 'Card' OR obm.payment_mode = 'Credit Card' OR obm.payment_mode = 'Debit Card' OR obm.payment_mode LIKE '%Card%')";
+            } else {
+                $sql .= " AND (obm.payment_mode = ? OR obm.payment_mode LIKE ?)";
+                $params[] = $filters['payment_mode'];
+                $params[] = '%' . $filters['payment_mode'] . '%';
+            }
         }
 
         $sql .= " ORDER BY obm.bill_date DESC, obm.bill_id DESC";
@@ -969,14 +1007,23 @@ class OpdBillingModel
             }
 
             if (!empty($filters['payment_mode'])) {
-                $conditions[] = "payment_mode = ?";
-                $params[] = $filters['payment_mode'];
+                if ($filters['payment_mode'] === 'Card') {
+                    $conditions[] = "(payment_mode = 'Card' OR payment_mode = 'Credit Card' OR payment_mode = 'Debit Card' OR payment_mode LIKE '%Card%')";
+                } else {
+                    $conditions[] = "(payment_mode = ? OR payment_mode LIKE ?)";
+                    $params[] = $filters['payment_mode'];
+                    $params[] = '%' . $filters['payment_mode'] . '%';
+                }
             }
 
             if (!empty($filters['payment_status'])) {
                 $conditions[] = "payment_status = ?";
                 $params[] = $filters['payment_status'];
             }
+
+            // Exclude dummy internal Lab Orders and Registration bills so analytics reflects genuine counter billing
+            $conditions[] = "(purpose IS NULL OR (purpose != 'Lab Order' AND purpose != 'Registration/Appointment'))";
+            $conditions[] = "NOT (grand_total = 0 AND payment_status = 'Pending')";
 
             $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
 
@@ -998,14 +1045,16 @@ class OpdBillingModel
 
             // 2. Receptionist Performance
             $receptionistSql = "SELECT 
-                created_by as receptionist,
+                COALESCE(s.full_name, s.username, u.username, obm.created_by) as receptionist,
                 COUNT(*) as bills_generated,
-                SUM(grand_total) as total_billing,
-                SUM(amount_paid) as collected,
-                SUM(balance_due) as pending
-            FROM opd_billing_master 
+                SUM(obm.grand_total) as total_billing,
+                SUM(obm.amount_paid) as collected,
+                SUM(obm.balance_due) as pending
+            FROM opd_billing_master obm
+            LEFT JOIN staff s ON obm.created_by REGEXP '^[0-9]+$' AND s.sl_no = CAST(obm.created_by AS UNSIGNED)
+            LEFT JOIN user u ON obm.created_by REGEXP '^[0-9]+$' AND u.sl_no = CAST(obm.created_by AS UNSIGNED)
             $whereClause 
-            GROUP BY created_by 
+            GROUP BY receptionist 
             ORDER BY collected DESC";
             
             $receptionistPerformance = $this->db->fetchAll($receptionistSql, $params) ?: [];

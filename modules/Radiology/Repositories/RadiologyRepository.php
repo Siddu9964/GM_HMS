@@ -411,7 +411,7 @@ class RadiologyRepository
         }
 
         if (empty($patientName)) $patientName = 'Walkin Patient';
-        $createdBy = $_SESSION['user_id'] ?? $_SESSION['username'] ?? 'system';
+        $createdBy = $_SESSION['username'] ?? $_SESSION['full_name'] ?? $_SESSION['user_id'] ?? 'system';
 
         $doctorId = $data['doctor_id'] ?? '';
         $doctorName = 'Radiologist';
