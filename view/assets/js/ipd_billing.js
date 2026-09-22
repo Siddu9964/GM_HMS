@@ -5254,13 +5254,35 @@ const billing = (function () {
                 resultsDiv.innerHTML = html;
                 resultsDiv.style.display = 'block';
             } else {
-                resultsDiv.innerHTML = '<div style="padding:14px;color:#666;font-size:13px;text-align:center;">No matching services or beds found.</div>';
+                const queryEscaped = query.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                resultsDiv.innerHTML = `
+                    <div style="padding:14px;color:#666;font-size:13px;text-align:center;">
+                        No matching services or beds found.
+                        <div style="margin-top:10px;">
+                            <button class="phc-btn" style="background:#1f6b4a; color:white;" onclick="billing.addCustomMultiItem('${queryEscaped}')">
+                                <i data-lucide="plus" style="width:14px;height:14px;margin-right:4px;"></i> Add Custom: "${queryEscaped}"
+                            </button>
+                        </div>
+                    </div>`;
                 resultsDiv.style.display = 'block';
                 currentMultiSearchResults = [];
+                if(window.lucide) lucide.createIcons();
             }
         } catch (e) {
             console.error('Search error', e);
         }
+    }
+
+    function addCustomMultiItem(name) {
+        const cat = document.getElementById('multiCategorySelect')?.value || 'MISC';
+        const dummyItem = {
+            name: name,
+            category: cat,
+            price: 0,
+            code: 'CUSTOM'
+        };
+        currentMultiSearchResults.push(dummyItem);
+        selectMultiItemByIndex(currentMultiSearchResults.length - 1);
     }
 
     function selectMultiItemByIndex(index) {
@@ -5630,6 +5652,7 @@ const billing = (function () {
     }
 
 return {
+        addCustomMultiItem,
         openMultiServiceModal,
         handleMultiCategoryChange,
         selectMultiItemByIndex,
