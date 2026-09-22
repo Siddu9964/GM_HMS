@@ -314,8 +314,8 @@ class IpdBillingMaster extends IpdBaseModel {
                     hb.ward_name, hb.room_name, hb.bed_number, hb.room_type,
                     hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
                     ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount,
-                    COALESCE(ia.admission_date, bm.admission_date) AS admission_date,
-                    COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date
+                    TRIM(CONCAT(COALESCE(ia.admission_date, bm.admission_date), ' ', COALESCE(ia.admission_time, '00:00:00'))) AS admission_date,
+                    TRIM(CONCAT(COALESCE(ia.discharge_date, bm.discharge_date), ' ', COALESCE(ia.discharge_time, '00:00:00'))) AS discharge_date
              FROM ipd_billing_master bm
              LEFT JOIN ipd_admissions ia ON bm.admission_id = ia.admission_id
              LEFT JOIN patient p ON COALESCE(ia.patient_id, bm.patient_id) = p.patient_id
@@ -346,8 +346,8 @@ class IpdBillingMaster extends IpdBaseModel {
                     COALESCE(hb.room_number, ia.room_no, '') AS room_no,
                     hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
                     ia.admission_id AS adm_id, ia.bed_id, ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount,
-                    COALESCE(ia.admission_date, bm.admission_date) AS admission_date,
-                    COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date,
+                    TRIM(CONCAT(COALESCE(ia.admission_date, bm.admission_date), ' ', COALESCE(ia.admission_time, '00:00:00'))) AS admission_date,
+                    TRIM(CONCAT(COALESCE(ia.discharge_date, bm.discharge_date), ' ', COALESCE(ia.discharge_time, '00:00:00'))) AS discharge_date,
                     CASE WHEN bm.bill_type = 'SELF' THEN 'SELF' ELSE COALESCE(ins.insurance_type, bm.bill_type) END AS insurance_type,
                     CASE WHEN bm.bill_type = 'SELF' THEN '' ELSE COALESCE(ins.company_name, bm.sponsor, '') END AS insurance_company_name,
                     CASE WHEN bm.bill_type = 'SELF' THEN '' ELSE COALESCE(ins.tpa_name, '') END AS tpa_name,
@@ -386,8 +386,8 @@ class IpdBillingMaster extends IpdBaseModel {
                     COALESCE(hb.room_number, ia.room_no, '') AS room_no,
                     hb.amount_per_day, hb.nursig_charge, hb.doctor_charge, hb.total_bed_amount,
                     ia.sponsor, ia.credit_type, ia.total_bed_amount AS adm_total_bed_amount,
-                    COALESCE(ia.admission_date, bm.admission_date) AS admission_date,
-                    COALESCE(ia.discharge_date, bm.discharge_date) AS discharge_date,
+                    TRIM(CONCAT(COALESCE(ia.admission_date, bm.admission_date), ' ', COALESCE(ia.admission_time, '00:00:00'))) AS admission_date,
+                    TRIM(CONCAT(COALESCE(ia.discharge_date, bm.discharge_date), ' ', COALESCE(ia.discharge_time, '00:00:00'))) AS discharge_date,
                     CASE WHEN bm.bill_type = 'SELF' THEN 'SELF' ELSE COALESCE(ins.insurance_type, bm.bill_type) END AS insurance_type,
                     CASE WHEN bm.bill_type = 'SELF' THEN '' ELSE COALESCE(ins.company_name, bm.sponsor, '') END AS insurance_company_name,
                     CASE WHEN bm.bill_type = 'SELF' THEN '' ELSE COALESCE(ins.tpa_name, '') END AS tpa_name,
