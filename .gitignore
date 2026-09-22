@@ -16,3 +16,21 @@ scratch_test_key.php
 # Ignore debug logs
 reception_view/ipd_management/public/debug.log
 reception_view/ipd_management/public/debug_log.txt
+
+# Environment / local configuration
+config/.env
+config/.env.local
+config/.env.local-backup
+
+# Secrets & API keys
+config/groq_config.php
+
+# Generated files
+assets/radiology_reports/
+
+# User uploads (runtime generated)
+uploads/
+
+# Staff personal documents
+assets/staff_nagrabhavi/
+assets/vendor/

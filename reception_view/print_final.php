@@ -22,7 +22,7 @@ if (!$billId) { echo "No Bill ID provided."; exit(); }
         .print-container {
             width: 210mm; min-height: 297mm;
             margin: 20px auto; background: white;
-            padding: 20mm 15mm; position: relative;
+            padding: 15mm 15mm 20mm 15mm; position: relative;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
@@ -177,6 +177,10 @@ if (!$billId) { echo "No Bill ID provided."; exit(); }
 <script>
 const BILL_ID = '<?= $billId ?>';
 
+// Will be populated by renderBill() and used by downloadPDF()
+let _patientName = '';
+let _patientId   = '';
+
 // Formatting helpers
 function fmt(n) { return parseFloat(n||0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
 function fmtDate(d) {
@@ -226,6 +230,10 @@ async function loadBill() {
 function renderBill(b) {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('invoiceContainer').style.display = 'block';
+
+    // Store for use in downloadPDF()
+    _patientName = (b.patient_name || '').trim();
+    _patientId   = (b.patient_id   || '').trim();
 
     const now = new Date();
     document.getElementById('printDateTime').innerText = now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('en-US', {hour: 'numeric', minute:'2-digit'});
@@ -458,15 +466,80 @@ function renderBill(b) {
 }
 
 function downloadPDF() {
-    const element = document.getElementById('invoiceContainer');
+    const original = document.getElementById('invoiceContainer');
+
+    // --- Clone-based capture ---
+    // We clone the invoice and place it at absolute (0,0) with no margin/shadow.
+    // This guarantees html2canvas captures from the top-left corner with no offset,
+    // preventing the left-side clipping caused by centering margins.
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = [
+        'position:absolute',
+        'top:0',
+        'left:0',
+        'width:794px',        // 210 mm @ 96 dpi
+        'z-index:-9999',      // behind UI so user doesn't see it flicker
+        'overflow:visible',
+        'background:#ffffff'
+    ].join(';');
+
+    const clone = original.cloneNode(true);
+    // Remove all margin/shadow and fix width so content is not cropped
+    clone.style.cssText = [
+        'width:794px',
+        'min-height:auto',
+        'margin:0',
+        'padding:57px 57px 95px 57px',  // 15mm padding, 25mm bottom
+        'box-shadow:none',
+        'background:#ffffff',
+        'position:relative',
+        'display:block'
+    ].join(';');
+
+    wrapper.appendChild(clone);
+    document.body.appendChild(wrapper);
+
+    // Build filename: sanitize patient name (replace spaces & special chars)
+    const safeName = _patientName.replace(/[^a-zA-Z0-9]/g, '_') || 'Patient';
+    const safeId   = _patientId.replace(/[^a-zA-Z0-9\-]/g, '_') || BILL_ID;
+    const pdfFilename = `${safeName}_${safeId}_Final_Bill.pdf`;
+
     const opt = {
-        margin:       0,
-        filename:     `Final_Bill_${BILL_ID}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        margin:      0,
+        filename:    pdfFilename,
+        image:       { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+            scale:           2,
+            useCORS:         true,
+            logging:         false,
+            allowTaint:      true,
+            backgroundColor: '#ffffff',
+            scrollX:         0,
+            scrollY:         0
+        },
+        jsPDF: {
+            unit:        'mm',
+            format:      'a4',
+            orientation: 'portrait',
+            compress:    true
+        },
+        pagebreak: {
+            mode: ['css', 'legacy']
+        }
     };
-    html2pdf().set(opt).from(element).save();
+
+    const cleanup = () => {
+        if (document.body.contains(wrapper)) {
+            document.body.removeChild(wrapper);
+        }
+    };
+
+    html2pdf()
+        .set(opt)
+        .from(clone)
+        .save()
+        .then(cleanup)
+        .catch(cleanup);
 }
 
 window.onload = loadBill;
