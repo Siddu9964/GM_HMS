@@ -1,6 +1,16 @@
+# Secrets & API keys (never push these)
 config/gemini_secrets.php
+config/groq_config.php
 
+# Environment / local configuration
+config/.env
+config/.env.local
+config/.env.local-backup
+
+# Runtime log files
 logs/*
+
+# Temporary / test files
 scratch_test_key.php
 
 # Local images and documents - do not track
@@ -10,27 +20,18 @@ scratch_test_key.php
 /assets/precision_data/
 /assets/profile_photos/
 
+# Staff personal documents (HR data - sensitive)
+assets/staff_nagrabhavi/
+
+# Patient generated reports (runtime)
+assets/radiology_reports/
+
+# User uploads (runtime generated)
+uploads/
+
 # Ignore RAR files
 *.rar
 
 # Ignore debug logs
 reception_view/ipd_management/public/debug.log
 reception_view/ipd_management/public/debug_log.txt
-
-# Environment / local configuration
-config/.env
-config/.env.local
-config/.env.local-backup
-
-# Secrets & API keys
-config/groq_config.php
-
-# Generated files
-assets/radiology_reports/
-
-# User uploads (runtime generated)
-uploads/
-
-# Staff personal documents
-assets/staff_nagrabhavi/
-assets/vendor/
