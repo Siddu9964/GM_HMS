@@ -115,6 +115,89 @@ class IpdBillingItem extends BaseModel {
                     [$existingRoom['item_id']]
                 );
             }
+
+            // Insert separated items for the upgrade
+            $bedRent    = (float)($data['amount_per_day'] ?? $data['bed_rent'] ?? 0);
+            $nursingChg = (float)($data['nursing_charge'] ?? $data['nursig_charge'] ?? 0);
+            $dutyDrChg  = (float)($data['doctor_charge'] ?? $data['duty_dr_charge'] ?? 0);
+            $serviceChg = (float)($data['service_charge'] ?? 0);
+            $roomName   = strtoupper($data['upgraded_room_type'] ?? 'ROOM');
+            $dateLabel  = date('d/m/Y', strtotime($chgDate));
+            $createdBy  = $data['created_by'] ?? 'system';
+            $now        = date('Y-m-d H:i:s');
+
+            if ($bedRent > 0) {
+                $this->db->insert('ipd_billing_items', [
+                    'bill_id'      => $billId,
+                    'patient_id'   => $patientId,
+                    'admission_id' => $admissionId,
+                    'charge_date'  => $chgDate,
+                    'charge_type'  => 'ROOM_RENT',
+                    'description'  => "FROM {$dateLabel} TO {$dateLabel} ( ROOM RENT CHARGES-{$roomName} )",
+                    'unit_price'   => $bedRent,
+                    'total_amount' => $bedRent,
+                    'source'       => 'SYSTEM',
+                    'status'       => 'COMPLETED',
+                    'created_by'   => $createdBy,
+                    'created_at'   => $now,
+                    'updated_at'   => $now,
+                ]);
+            }
+            if ($nursingChg > 0) {
+                $this->db->insert('ipd_billing_items', [
+                    'bill_id'      => $billId,
+                    'patient_id'   => $patientId,
+                    'admission_id' => $admissionId,
+                    'charge_date'  => $chgDate,
+                    'charge_type'  => 'PROCEDURE',
+                    'description'  => "FROM {$dateLabel} TO {$dateLabel} ( NURSING CHARGES-{$roomName} )",
+                    'unit_price'   => $nursingChg,
+                    'total_amount' => $nursingChg,
+                    'source'       => 'SYSTEM',
+                    'status'       => 'COMPLETED',
+                    'created_by'   => $createdBy,
+                    'created_at'   => $now,
+                    'updated_at'   => $now,
+                ]);
+            }
+            if ($dutyDrChg > 0) {
+                $this->db->insert('ipd_billing_items', [
+                    'bill_id'      => $billId,
+                    'patient_id'   => $patientId,
+                    'admission_id' => $admissionId,
+                    'charge_date'  => $chgDate,
+                    'charge_type'  => 'DOCTOR_VISIT',
+                    'description'  => "FROM {$dateLabel} TO {$dateLabel} ( DUTY DOCTOR CHARGES-{$roomName} )",
+                    'unit_price'   => $dutyDrChg,
+                    'total_amount' => $dutyDrChg,
+                    'source'       => 'SYSTEM',
+                    'status'       => 'COMPLETED',
+                    'created_by'   => $createdBy,
+                    'created_at'   => $now,
+                    'updated_at'   => $now,
+                ]);
+            }
+            if ($serviceChg > 0) {
+                $this->db->insert('ipd_billing_items', [
+                    'bill_id'      => $billId,
+                    'patient_id'   => $patientId,
+                    'admission_id' => $admissionId,
+                    'charge_date'  => $chgDate,
+                    'charge_type'  => 'MISC',
+                    'description'  => "FROM {$dateLabel} TO {$dateLabel} ( SERVICE CHARGES-{$roomName} )",
+                    'unit_price'   => $serviceChg,
+                    'total_amount' => $serviceChg,
+                    'source'       => 'SYSTEM',
+                    'status'       => 'COMPLETED',
+                    'created_by'   => $createdBy,
+                    'created_at'   => $now,
+                    'updated_at'   => $now,
+                ]);
+            }
+
+            require_once __DIR__ . '/IpdBillingMaster.php';
+            (new IpdBillingMaster())->recalculateMaster($billId, $createdBy);
+            return ['success' => true, 'message' => 'Bed upgrade charges updated successfully'];
         }
 
         // Duplicate check for ROOM_RENT
@@ -250,10 +333,10 @@ class IpdBillingItem extends BaseModel {
             if ($insCheck) $isInsurance = true;
         }
 
-        $totalPerDay = $isInsurance ? $baseBedRent : $totalBedAmount;
-        $breakdownText = "Room Rent: ₹" . number_format($baseBedRent, 0) . " | Nursing Charges: ₹" . number_format($baseNursing, 0) . " | Duty Doctor Charges: ₹" . number_format($baseDoctor, 0) . " | Service Charges: ₹" . number_format($baseService, 0);
-        $roomTypeDesc = !empty($bedInfo['room_type']) ? $bedInfo['room_type'] : $bedInfo['ward_name'];
-        $descriptionBase  = "Room Rent – {$roomTypeDesc} – {$bedInfo['bed_number']}";
+        // For all patients (insurance or non-insurance): generate separate line items per component per day
+        $roomTypeLabel = !empty($bedInfo['room_type']) ? strtoupper($bedInfo['room_type']) : strtoupper($bedInfo['ward_name']);
+        $fromLabel     = date('d/m/Y', strtotime($fromDate));
+        $toLabel       = date('d/m/Y', strtotime($toDate));
 
         $addedDates   = [];
         $skippedDates = [];
@@ -262,150 +345,64 @@ class IpdBillingItem extends BaseModel {
         $current = strtotime($fromDate);
         $end     = strtotime($toDate);
 
-        while ($current <= $end) {
-            $dateStr = date('Y-m-d', $current);
+        $days = (int) round(($end - $current) / 86400) + 1;
+        if ($days <= 0) return ['success' => true, 'message' => 'No days to generate.'];
 
-            // Check duplicate
-            $dup = $this->fetchOne(
-                "SELECT item_id FROM ipd_billing_items
-                 WHERE bill_id = ? AND charge_type = 'ROOM_RENT' AND charge_date = ? AND status != 'CANCELLED'",
-                [$billId, $dateStr]
+        $endDateLabel = date('d/m/Y', $end);
+
+        $processCumulativeCharge = function($chargeType, $descPattern, $descTemplate, $baseRate) use ($billId, $patientId, $admissionId, $createdBy, $now, $days, $endDateLabel, $current) {
+            if ($baseRate <= 0) return;
+            
+            $existing = $this->fetchOne(
+                "SELECT * FROM ipd_billing_items WHERE bill_id = ? AND charge_type = ? AND description LIKE ? AND status != 'CANCELLED' ORDER BY item_id DESC LIMIT 1",
+                [$billId, $chargeType, $descPattern]
             );
-
-            if ($dup) {
-                $skippedDates[] = $dateStr;
-            } else {
-                if ($isInsurance) {
-                    if ($baseBedRent > 0) {
-                        $this->db->insert('ipd_billing_items', [
-                            'bill_id'        => $billId,
-                            'patient_id'     => $patientId,
-                            'admission_id'   => $admissionId,
-                            'charge_date'    => $dateStr,
-                            'charge_type'    => 'ROOM_RENT',
-                            'department'     => $bedInfo['ward_name'],
-                            'description'    => $descriptionBase . ' – ' . date('d-M-Y', $current),
-                            'quantity'       => 1,
-                            'unit_price'     => $baseBedRent,
-                            'total_amount'   => $baseBedRent,
-                            'source'         => 'SYSTEM',
-                            'status'         => 'COMPLETED',
-                            'created_by'     => $createdBy,
-                            'created_at'     => $now,
-                            'updated_at'     => $now,
-                        ]);
-                    }
-                    if ($baseNursing > 0) {
-                        $dupNurse = $this->fetchOne(
-                            "SELECT item_id FROM ipd_billing_items WHERE bill_id = ? AND charge_date = ? AND charge_type = 'PROCEDURE' AND description LIKE 'Nursing Charges%' AND status != 'CANCELLED'",
-                            [$billId, $dateStr]
-                        );
-                        if (!$dupNurse) {
-                            $this->db->insert('ipd_billing_items', [
-                                'bill_id'        => $billId,
-                                'patient_id'     => $patientId,
-                                'admission_id'   => $admissionId,
-                                'charge_date'    => $dateStr,
-                                'charge_type'    => 'PROCEDURE',
-                                'department'     => 'Nursing',
-                                'description'    => 'Nursing Charges – ' . date('d-M-Y', $current),
-                                'quantity'       => 1,
-                                'unit_price'     => $baseNursing,
-                                'total_amount'   => $baseNursing,
-                                'source'         => 'SYSTEM',
-                                'status'         => 'COMPLETED',
-                                'created_by'     => $createdBy,
-                                'created_at'     => $now,
-                                'updated_at'     => $now,
-                            ]);
-                        }
-                    }
-                    if ($baseDoctor > 0) {
-                        $dupDoc = $this->fetchOne(
-                            "SELECT item_id FROM ipd_billing_items WHERE bill_id = ? AND charge_date = ? AND charge_type = 'DOCTOR_VISIT' AND description LIKE 'Duty Doctor Charges%' AND status != 'CANCELLED'",
-                            [$billId, $dateStr]
-                        );
-                        if (!$dupDoc) {
-                            $this->db->insert('ipd_billing_items', [
-                                'bill_id'        => $billId,
-                                'patient_id'     => $patientId,
-                                'admission_id'   => $admissionId,
-                                'charge_date'    => $dateStr,
-                                'charge_type'    => 'DOCTOR_VISIT',
-                                'department'     => 'General',
-                                'description'    => 'Duty Doctor Charges – ' . date('d-M-Y', $current),
-                                'quantity'       => 1,
-                                'unit_price'     => $baseDoctor,
-                                'total_amount'   => $baseDoctor,
-                                'source'         => 'SYSTEM',
-                                'status'         => 'COMPLETED',
-                                'created_by'     => $createdBy,
-                                'created_at'     => $now,
-                                'updated_at'     => $now,
-                            ]);
-                        }
-                    }
-                    if ($baseService > 0) {
-                        $dupServ = $this->fetchOne(
-                            "SELECT item_id FROM ipd_billing_items WHERE bill_id = ? AND charge_date = ? AND charge_type = 'MISC' AND description LIKE 'Service Charges%' AND status != 'CANCELLED'",
-                            [$billId, $dateStr]
-                        );
-                        if (!$dupServ) {
-                            $this->db->insert('ipd_billing_items', [
-                                'bill_id'        => $billId,
-                                'patient_id'     => $patientId,
-                                'admission_id'   => $admissionId,
-                                'charge_date'    => $dateStr,
-                                'charge_type'    => 'MISC',
-                                'department'     => 'Hospital Services',
-                                'description'    => 'Service Charges – ' . date('d-M-Y', $current),
-                                'quantity'       => 1,
-                                'unit_price'     => $baseService,
-                                'total_amount'   => $baseService,
-                                'source'         => 'SYSTEM',
-                                'status'         => 'COMPLETED',
-                                'created_by'     => $createdBy,
-                                'created_at'     => $now,
-                                'updated_at'     => $now,
-                            ]);
-                        }
-                    }
-                } else {
-                    $this->db->insert('ipd_billing_items', [
-                        'bill_id'        => $billId,
-                        'patient_id'     => $patientId,
-                        'admission_id'   => $admissionId,
-                        'charge_date'    => $dateStr,
-                        'charge_type'    => 'ROOM_RENT',
-                        'department'     => $bedInfo['ward_name'],
-                        'description'    => $descriptionBase . ' – ' . date('d-M-Y', $current) . "<br><small style='color: #6c757d; font-size: 0.85em;'>" . $breakdownText . "</small>",
-                        'quantity'       => 1,
-                        'unit_price'     => $totalPerDay,
-                        'discount_amt'   => 0,
-                        'bed_rent'       => $baseBedRent,
-                        'nursing_charge' => $baseNursing,
-                        'duty_dr_charge' => $baseDoctor,
-                        'total_amount'   => $totalPerDay,
-                        'items_json'     => json_encode([
-                            'ward'        => $bedInfo['ward_name'],
-                            'room'        => $bedInfo['room_name'],
-                            'bed'         => $bedInfo['bed_number'],
-                            'bed_rent'    => $baseBedRent,
-                            'nursing'     => $baseNursing,
-                            'duty_dr'     => $baseDoctor,
-                        ]),
-                        'source'      => 'SYSTEM',
-                        'status'      => 'COMPLETED',
-                        'created_by'  => $createdBy,
-                        'created_at'  => $now,
-                        'updated_at'  => $now,
-                    ]);
+            
+            if ($existing) {
+                $firstDate = $endDateLabel;
+                if (preg_match('/FROM\s+(\d{2}\/\d{2}\/\d{4})\s+TO/', $existing['description'], $matches)) {
+                    $firstDate = $matches[1];
                 }
-                $addedDates[] = $dateStr;
+                
+                $newQty = (int)$existing['quantity'] + $days;
+                $unitPrice = (float)$existing['unit_price']; 
+                $newTotal = $unitPrice * $newQty;
+                $newDesc = str_replace(['{first}', '{end}'], [$firstDate, $endDateLabel], $descTemplate);
+                
+                $this->db->update('ipd_billing_items', [
+                    'quantity' => $newQty,
+                    'total_amount' => $newTotal,
+                    'description' => $newDesc,
+                    'updated_by' => $createdBy,
+                    'updated_at' => $now
+                ], 'item_id = ?', [$existing['item_id']]);
+            } else {
+                $firstDate = date('d/m/Y', $current);
+                $newDesc = str_replace(['{first}', '{end}'], [$firstDate, $endDateLabel], $descTemplate);
+                
+                $this->db->insert('ipd_billing_items', [
+                    'bill_id'      => $billId,
+                    'patient_id'   => $patientId,
+                    'admission_id' => $admissionId,
+                    'charge_date'  => date('Y-m-d', $current), 
+                    'charge_type'  => $chargeType,
+                    'description'  => $newDesc,
+                    'quantity'     => $days,
+                    'unit_price'   => $baseRate,
+                    'total_amount' => $baseRate * $days,
+                    'status'       => 'COMPLETED',
+                    'created_by'   => $createdBy,
+                    'created_at'   => $now,
+                    'updated_at'   => $now
+                ]);
             }
+        };
 
-            $current = strtotime('+1 day', $current);
-        }
+        $processCumulativeCharge('ROOM_RENT', "%ROOM RENT CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( ROOM RENT CHARGES-{$roomTypeLabel} )", $baseBedRent);
+        $processCumulativeCharge('NURSING_CHARGE', "%NURSING CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( NURSING CHARGES-{$roomTypeLabel} )", $baseNursing);
+        $processCumulativeCharge('DUTY_DOCTOR', "%DUTY DOCTOR CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( DUTY DOCTOR CHARGES-{$roomTypeLabel} )", $baseDoctor);
+        $processCumulativeCharge('SERVICE_CHARGE', "%SERVICE CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( SERVICE CHARGES-{$roomTypeLabel} )", $baseService);
+
 
         // Recalculate master
         require_once __DIR__ . '/IpdBillingMaster.php';
@@ -451,10 +448,11 @@ class IpdBillingItem extends BaseModel {
 
         if (!$bedInfo) return ['success' => false, 'message' => 'Bed not found'];
 
-        $totalPerDay = (float)$bedInfo['total_bed_amount'];
-        $bedRent     = $totalPerDay;
-        $nursingChg  = 0;
-        $dutyDrChg   = 0;
+        $bedRent    = (float)$bedInfo['amount_per_day'];
+        $nursingChg = (float)$bedInfo['nursig_charge'];
+        $dutyDrChg  = (float)$bedInfo['doctor_charge'];
+        $serviceChg = (float)($bedInfo['service_charge'] ?? 0);
+        $totalPerDay = $bedRent + $nursingChg + $dutyDrChg + $serviceChg;
 
         $rows    = [];
         $current = strtotime($fromDate);
@@ -468,13 +466,14 @@ class IpdBillingItem extends BaseModel {
                 [$billId, $dateStr]
             );
             $rows[] = [
-                'date'          => $dateStr,
-                'display_date'  => date('d-M-Y', $current),
-                'bed_rent'      => $bedRent,
-                'nursing'       => $nursingChg,
-                'duty_dr'       => $dutyDrChg,
-                'total'         => $totalPerDay,
-                'already_exists'=> (bool)$dup,
+                'date'           => $dateStr,
+                'display_date'   => date('d/m/Y', $current),
+                'bed_rent'       => $bedRent,
+                'nursing'        => $nursingChg,
+                'duty_dr'        => $dutyDrChg,
+                'service'        => $serviceChg,
+                'total'          => $totalPerDay,
+                'already_exists' => (bool)$dup,
             ];
             $current = strtotime('+1 day', $current);
         }
@@ -488,12 +487,14 @@ class IpdBillingItem extends BaseModel {
             'new_total'   => count($newRows) * $totalPerDay,
             'per_day'     => $totalPerDay,
             'bed_info'    => [
-                'ward'    => $bedInfo['ward_name'],
-                'room'    => $bedInfo['room_name'],
-                'bed'     => $bedInfo['bed_number'],
-                'bed_rent'=> $bedRent,
-                'nursing' => $nursingChg,
-                'duty_dr' => $dutyDrChg,
+                'ward'       => $bedInfo['ward_name'],
+                'room'       => $bedInfo['room_name'],
+                'bed'        => $bedInfo['bed_number'],
+                'room_type'  => !empty($bedInfo['room_type']) ? $bedInfo['room_type'] : $bedInfo['ward_name'],
+                'bed_rent'   => $bedRent,
+                'nursing'    => $nursingChg,
+                'duty_dr'    => $dutyDrChg,
+                'service'    => $serviceChg,
             ],
         ];
     }
@@ -508,10 +509,7 @@ class IpdBillingItem extends BaseModel {
         );
 
         if (!$item) return ['success' => false, 'message' => 'Item not found'];
-        if ($item['source'] !== 'MANUAL' && $item['source'] !== 'SYSTEM') {
-            return ['success' => false, 'message' => 'System-generated items from external modules cannot be cancelled here'];
-        }
-
+        // Validation removed: Allow cancelling system-generated items (they won't be re-synced)
         $this->db->update('ipd_billing_items',
             ['status' => 'CANCELLED', 'updated_at' => date('Y-m-d H:i:s')],
             '`item_id` = ?', [$itemId]

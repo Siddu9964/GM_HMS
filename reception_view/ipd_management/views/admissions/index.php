@@ -1013,9 +1013,9 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
                                         <span id="lblGrandTotal" style="color: var(--teal-dark); font-weight: 700; font-size: 0.75rem; text-align: center; width: 100%;">-₹0.00</span>
                                     </div>
                                     <div class="d-none">
-                                        <input type="hidden" id="bdAdmissionCharge" name="admission_charge" value="350">
-                                        <input type="hidden" id="bdMrdCharge" name="mrd_charge" value="400">
-                                        <input type="hidden" id="bdFoodCharge" name="food_charge" value="570">
+                                        <input type="hidden" id="bdAdmissionCharge" name="admission_charge" value="0">
+                                        <input type="hidden" id="bdMrdCharge" name="mrd_charge" value="0">
+                                        <input type="hidden" id="bdFoodCharge" name="food_charge" value="0">
                                     </div>
                                 </div>
                                 
@@ -1945,9 +1945,9 @@ if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Receptionist'
             if(lbl) lbl.innerText = dailyTotal.toString();
             
             // Calculate Initial Total
-            const adm = parseFloat(document.getElementById('bdAdmissionCharge').value) || 350;
-            const mrd = parseFloat(document.getElementById('bdMrdCharge').value) || 400;
-            const food = parseFloat(document.getElementById('bdFoodCharge').value) || 570;
+            const adm = parseFloat(document.getElementById('bdAdmissionCharge').value) || 0;
+            const mrd = parseFloat(document.getElementById('bdMrdCharge').value) || 0;
+            const food = parseFloat(document.getElementById('bdFoodCharge').value) || 0;
             const initialTotal = adm + mrd + food;
             
             const lblInit = document.getElementById('lblInitialTotal');

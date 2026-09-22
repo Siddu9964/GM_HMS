@@ -358,12 +358,45 @@ function renderBill(b) {
 
     let html = '';
     let computedGross = 0;
-    const groupKeys = Object.keys(grouped);
+    
+    // Enforce custom order for categories
+    const desiredOrder = [
+        'BED CHARGES / ROOM RENT',
+        'NURSING CHARGES',
+        'DUTY DOCTOR CHARGES',
+        'SERVICE CHARGES',
+        'DOCTOR CONSULTATION & ROUND VISITS',
+        'LABORATORY INVESTIGATIONS',
+        'RADIOLOGY & IMAGING SERVICES',
+        'OPERATION THEATRE (OT) CHARGES',
+        'PROCEDURE CHARGES',
+        'DIALYSIS SERVICES',
+        'OXYGEN THERAPY',
+        'VENTILATOR SUPPORT',
+        'BLOOD TRANSFUSION',
+        'PHARMACY MEDICINES & CONSUMABLES',
+        'CONSUMABLES',
+        'WARD TRANSFER CHARGES'
+    ];
+
+    const groupKeys = Object.keys(grouped).sort((a, b) => {
+        let indexA = desiredOrder.indexOf(a);
+        let indexB = desiredOrder.indexOf(b);
+        // Put "OTHER CHARGES" at the very end
+        if (indexA === -1 && a === 'OTHER CHARGES') indexA = 999;
+        else if (indexA === -1) indexA = 998;
+        
+        if (indexB === -1 && b === 'OTHER CHARGES') indexB = 999;
+        else if (indexB === -1) indexB = 998;
+        
+        return indexA - indexB;
+    });
 
     if (groupKeys.length === 0) {
         html = `<tr><td colspan="6" style="text-align:center; padding: 25px; color:#6b7280; font-style:italic;">No active billable charges recorded.</td></tr>`;
     } else {
-        for(const [type, list] of Object.entries(grouped)) {
+        for(const type of groupKeys) {
+            const list = grouped[type];
             if(!list || list.length === 0) continue;
             html += `<tr><td colspan="6" class="group-header">${type}</td></tr>`;
             

@@ -1270,20 +1270,20 @@ try {
                         <input type="text" id="dia-dur" placeholder="Auto / e.g. 4h">
                     </div>
                     <div class="fmg">
-                        <label>Start Time (dia_start)</label>
-                        <input type="time" id="dia-start" onchange="billing.calcDiaDuration()">
+                        <label>Start Date & Time (dia_start) <span class="req">*</span></label>
+                        <input type="datetime-local" id="dia-start" onchange="billing.calcDiaDuration()">
                     </div>
                     <div class="fmg">
-                        <label>End Time (dia_end)</label>
-                        <input type="time" id="dia-end" onchange="billing.calcDiaDuration()">
+                        <label>End Date & Time (dia_end)</label>
+                        <input type="datetime-local" id="dia-end" onchange="billing.calcDiaDuration()">
                     </div>
                     <div class="fmg">
                         <label>Nurse Signature (dia_nurse) <span class="req">*</span></label>
                         <input type="text" id="dia-nurse" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
                     </div>
                     <div class="fmg">
-                        <label>Dialysis Charge (₹) <span class="req">*</span></label>
-                        <input type="number" id="dia-charge" value="2500" min="0" step="0.01" oninput="billing.calcDiaTotal()">
+                        <label>Rate per Hour (₹) <span class="req">*</span></label>
+                        <input type="number" id="dia-charge" value="500" min="0" step="0.01" oninput="billing.calcDiaTotal()">
                     </div>
                     <div class="fmg">
                         <label>Discount (₹)</label>
@@ -1317,12 +1317,12 @@ try {
                         <input type="text" id="oxy-flow" placeholder="e.g. 4 L/min via Nasal Cannula" style="font-weight:600;">
                     </div>
                     <div class="fmg">
-                        <label>Start Time (oxy_start)</label>
-                        <input type="time" id="oxy-start" onchange="billing.calcOxyDuration()">
+                        <label>Start Date & Time (oxy_start) <span class="req">*</span></label>
+                        <input type="datetime-local" id="oxy-start" onchange="billing.calcOxyDuration()">
                     </div>
                     <div class="fmg">
-                        <label>End Time (oxy_end)</label>
-                        <input type="time" id="oxy-end" onchange="billing.calcOxyDuration()">
+                        <label>End Date & Time (oxy_end)</label>
+                        <input type="datetime-local" id="oxy-end" onchange="billing.calcOxyDuration()">
                     </div>
                     <div class="fmg">
                         <label>Total Duration</label>
@@ -1333,7 +1333,7 @@ try {
                         <input type="text" id="oxy-nurse" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
                     </div>
                     <div class="fmg">
-                        <label>Oxygen Charge (₹) <span class="req">*</span></label>
+                        <label>Rate per Hour (₹) <span class="req">*</span></label>
                         <input type="number" id="oxy-charge" value="500" min="0" step="0.01" oninput="billing.calcOxyTotal()">
                     </div>
                     <div class="fmg">
@@ -1374,12 +1374,12 @@ try {
                         </select>
                     </div>
                     <div class="fmg">
-                        <label>Start Time (vent_start)</label>
-                        <input type="time" id="vent-start" onchange="billing.calcVentDuration()">
+                        <label>Start Date & Time (vent_start) <span class="req">*</span></label>
+                        <input type="datetime-local" id="vent-start" onchange="billing.calcVentDuration()">
                     </div>
                     <div class="fmg">
-                        <label>End Time (vent_end)</label>
-                        <input type="time" id="vent-end" onchange="billing.calcVentDuration()">
+                        <label>End Date & Time (vent_end)</label>
+                        <input type="datetime-local" id="vent-end" onchange="billing.calcVentDuration()">
                     </div>
                     <div class="fmg">
                         <label>Total Duration</label>
@@ -1390,7 +1390,7 @@ try {
                         <input type="text" id="vent-nurse" value="<?php echo htmlspecialchars($userName); ?>" readonly style="font-weight:600; opacity:0.9;">
                     </div>
                     <div class="fmg">
-                        <label>Ventilator Daily/Shift Charge (₹) <span class="req">*</span></label>
+                        <label>Rate per Hour (₹) <span class="req">*</span></label>
                         <input type="number" id="vent-charge" value="4500" min="0" step="0.01" oninput="billing.calcVentTotal()">
                     </div>
                     <div class="fmg">

@@ -1,5 +1,12 @@
 <?php
-session_start();
+ob_start(); // Buffer all output — prevents any PHP warnings from corrupting JSON
+
+// Start session only if not already active (prevents "session already active" warning)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+ob_clean(); // Discard any output buffered so far (PHP notices, warnings, etc.)
 header('Content-Type: application/json');
 
 // Auth check

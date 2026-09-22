@@ -1849,11 +1849,16 @@ if (!isset($_SESSION['user_id'])) {
                     body: formData
                 });
                 const text = await res.text();
+                console.log('[save_bed] HTTP', res.status, 'Raw response:', text);
+
                 let json;
                 try {
                     json = JSON.parse(text);
                 } catch(pe) {
-                    showToast('Server error: ' + text.substring(0, 120), 'error');
+                    // Server returned non-JSON — likely a PHP fatal error or warning
+                    const preview = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 300);
+                    console.error('[save_bed] JSON parse failed. Raw output:', text);
+                    showDetailedError('PHP/Server Error (not JSON)', preview || 'Server returned an unexpected response. Check browser Console (F12) for full output.');
                     return;
                 }
 
@@ -1862,10 +1867,14 @@ if (!isset($_SESSION['user_id'])) {
                     closeBedModal();
                     await fetchBeds();
                 } else {
-                    showToast(json.message || 'Error saving bed', 'error');
+                    // Show the exact server-side error message
+                    const errMsg = json.message || json.error || 'Unknown error from server (no message returned)';
+                    console.error('[save_bed] Server error:', json);
+                    showDetailedError('Save Failed', errMsg);
                 }
             } catch (e) {
-                showToast('Network error: ' + e.message, 'error');
+                console.error('[save_bed] Network error:', e);
+                showDetailedError('Network Error', e.message || 'Could not reach the server. Check your connection or XAMPP.');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = 'Save Bed';
@@ -1912,7 +1921,7 @@ if (!isset($_SESSION['user_id'])) {
         function showToast(msg, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            
+
             const colors = {
                 success: 'bg-emerald-800 text-white border-emerald-700',
                 error: 'bg-rose-800 text-white border-rose-700',
@@ -1926,15 +1935,48 @@ if (!isset($_SESSION['user_id'])) {
                 info: 'fa-info-circle text-sky-300'
             };
 
-            toast.className = `toast px-4 py-3 rounded-2xl shadow-xl border text-xs font-bold flex items-center gap-2.5 ${colors[type] || colors.info}`;
-            toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i> <span>${msg}</span>`;
+            const duration = (type === 'error' || type === 'warning') ? 8000 : 4000;
+            toast.className = `toast px-4 py-3 rounded-2xl shadow-xl border text-xs font-bold flex items-center gap-2.5 max-w-sm ${colors[type] || colors.info}`;
+            toast.innerHTML = `<i class="fas ${icons[type] || icons.info} flex-shrink-0"></i> <span>${msg}</span>`;
 
             container.appendChild(toast);
             setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateY(10px)';
                 setTimeout(() => toast.remove(), 300);
-            }, 3500);
+            }, duration);
+        }
+
+        // ── 10. DETAILED ERROR POPUP (shows full server error reason) ──
+        function showDetailedError(title, detail) {
+            // Remove any existing error popup
+            document.getElementById('bedSaveErrorPopup')?.remove();
+
+            const overlay = document.createElement('div');
+            overlay.id = 'bedSaveErrorPopup';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.65);backdrop-filter:blur(4px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;';
+            overlay.innerHTML = `
+                <div style="background:#fff;border-radius:20px;box-shadow:0 25px 60px rgba(0,0,0,0.3);max-width:520px;width:100%;overflow:hidden;">
+                    <div style="background:linear-gradient(135deg,#be123c,#9f1239);padding:1rem 1.25rem;display:flex;align-items:center;gap:0.75rem;">
+                        <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-exclamation-triangle" style="color:#fff;font-size:1rem;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size:0.65rem;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.7);">Save Failed — Exact Server Reason</div>
+                            <div style="font-size:1rem;font-weight:900;color:#fff;margin-top:1px;">${title}</div>
+                        </div>
+                    </div>
+                    <div style="padding:1.25rem;">
+                        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:0.875rem 1rem;font-size:0.8rem;font-weight:600;color:#7f1d1d;line-height:1.6;font-family:monospace;white-space:pre-wrap;max-height:220px;overflow-y:auto;">${detail}</div>
+                        <p style="font-size:0.7rem;color:#64748b;margin-top:0.75rem;font-weight:600;">💡 Also check <b>Browser Console (F12 → Console tab)</b> for the full server response.</p>
+                    </div>
+                    <div style="padding:0 1.25rem 1.25rem;display:flex;justify-content:flex-end;gap:0.5rem;">
+                        <button onclick="document.getElementById('bedSaveErrorPopup').remove()" style="padding:0.5rem 1.25rem;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;font-size:0.75rem;font-weight:700;color:#334155;cursor:pointer;">Close</button>
+                    </div>
+                </div>
+            `;
+            overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+            document.body.appendChild(overlay);
         }
     </script>
 </body>

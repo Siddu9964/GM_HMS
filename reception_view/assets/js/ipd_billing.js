@@ -2016,21 +2016,44 @@ const billing = (function () {
         return `${hrs}h ${mins}m`;
     }
 
+    // ── Helper Time Duration Calculator ──
+    function diffDateTimes(startDt, endDt) {
+        if (!startDt || !endDt) return { hours: 0, text: '' };
+        const s = new Date(startDt);
+        const e = new Date(endDt);
+        if (isNaN(s) || isNaN(e)) return { hours: 0, text: '' };
+        let diffMs = e - s;
+        if (diffMs < 0) diffMs = 0;
+        const totalHours = diffMs / (1000 * 60 * 60);
+        const hrs = Math.floor(totalHours);
+        const mins = Math.floor((totalHours - hrs) * 60);
+        let text = '';
+        if (hrs > 0) text += hrs + 'h ';
+        if (mins > 0) text += mins + 'm';
+        if (text === '') text = '0h';
+        return { hours: Number(totalHours.toFixed(2)), text: text.trim() };
+    }
+
     // ── 5. Dialysis Methods (14. dialysis_chart) ──
     function calcDiaDuration() {
         const s = document.getElementById('dia-start')?.value;
         const e = document.getElementById('dia-end')?.value;
-        const dur = diffHours(s, e);
-        if (dur) {
+        const dur = diffDateTimes(s, e);
+        if (dur.text) {
             const el = document.getElementById('dia-dur');
-            if (el) el.value = dur;
+            if (el) {
+                el.value = dur.text;
+                el.dataset.hours = dur.hours;
+            }
+            calcDiaTotal();
         }
     }
 
     function calcDiaTotal() {
-        const fee = parseFloat(document.getElementById('dia-fee')?.value) || 0;
+        const rate = parseFloat(document.getElementById('dia-charge')?.value) || 0;
+        const hoursDecimal = parseFloat(document.getElementById('dia-dur')?.dataset.hours) || 1;
         const disc = parseFloat(document.getElementById('dia-discount')?.value) || 0;
-        const total = Math.max(0, fee - disc);
+        const total = Math.max(0, (rate * hoursDecimal) - disc);
         const el = document.getElementById('dia-total-preview');
         if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
     }
@@ -2045,7 +2068,8 @@ const billing = (function () {
         const endTime = document.getElementById('dia-end')?.value || '';
         const duration = document.getElementById('dia-dur')?.value.trim() || '4h';
         const diaType = document.getElementById('dia-type')?.value || 'Hemodialysis';
-        const fee = parseFloat(document.getElementById('dia-fee')?.value) || 0;
+        const rate = parseFloat(document.getElementById('dia-charge')?.value) || 0;
+        const hoursDecimal = parseFloat(document.getElementById('dia-dur')?.dataset.hours) || 1;
         const discount = parseFloat(document.getElementById('dia-discount')?.value) || 0;
         const notes = document.getElementById('dia-notes')?.value.trim() || '';
 
@@ -2076,8 +2100,8 @@ const billing = (function () {
                     start_time: startTime,
                     end_time: endTime,
                     duration: duration,
-                    quantity: 1,
-                    unit_price: fee,
+                    quantity: hoursDecimal,
+                    unit_price: rate,
                     discount_amt: discount,
                     reference_id: notes,
                     notes: notes,
@@ -2106,17 +2130,22 @@ const billing = (function () {
     function calcOxyDuration() {
         const s = document.getElementById('oxy-start')?.value;
         const e = document.getElementById('oxy-end')?.value;
-        const dur = diffHours(s, e);
-        if (dur) {
+        const dur = diffDateTimes(s, e);
+        if (dur.text) {
             const el = document.getElementById('oxy-dur');
-            if (el) el.value = dur;
+            if (el) {
+                el.value = dur.text;
+                el.dataset.hours = dur.hours;
+            }
+            calcOxyTotal();
         }
     }
 
     function calcOxyTotal() {
-        const fee = parseFloat(document.getElementById('oxy-fee')?.value) || 0;
+        const rate = parseFloat(document.getElementById('oxy-charge')?.value) || 0;
+        const hoursDecimal = parseFloat(document.getElementById('oxy-dur')?.dataset.hours) || 1;
         const disc = parseFloat(document.getElementById('oxy-discount')?.value) || 0;
-        const total = Math.max(0, fee - disc);
+        const total = Math.max(0, (rate * hoursDecimal) - disc);
         const el = document.getElementById('oxy-total-preview');
         if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
     }
@@ -2132,7 +2161,8 @@ const billing = (function () {
         const startTime = document.getElementById('oxy-start')?.value || '';
         const endTime = document.getElementById('oxy-end')?.value || '';
         const duration = document.getElementById('oxy-dur')?.value.trim() || '2h';
-        const fee = parseFloat(document.getElementById('oxy-fee')?.value) || 0;
+        const rate = parseFloat(document.getElementById('oxy-charge')?.value) || 0;
+        const hoursDecimal = parseFloat(document.getElementById('oxy-dur')?.dataset.hours) || 1;
         const discount = parseFloat(document.getElementById('oxy-discount')?.value) || 0;
         const notes = document.getElementById('oxy-notes')?.value.trim() || '';
 
@@ -2164,8 +2194,8 @@ const billing = (function () {
                     start_time: startTime,
                     end_time: endTime,
                     duration: duration,
-                    quantity: 1,
-                    unit_price: fee,
+                    quantity: hoursDecimal,
+                    unit_price: rate,
                     discount_amt: discount,
                     reference_id: notes,
                     notes: notes,
@@ -2194,17 +2224,22 @@ const billing = (function () {
     function calcVentDuration() {
         const s = document.getElementById('vent-start')?.value;
         const e = document.getElementById('vent-end')?.value;
-        const dur = diffHours(s, e);
-        if (dur) {
+        const dur = diffDateTimes(s, e);
+        if (dur.text) {
             const el = document.getElementById('vent-dur');
-            if (el) el.value = dur;
+            if (el) {
+                el.value = dur.text;
+                el.dataset.hours = dur.hours;
+            }
+            calcVentTotal();
         }
     }
 
     function calcVentTotal() {
-        const fee = parseFloat(document.getElementById('vent-fee')?.value) || 0;
+        const rate = parseFloat(document.getElementById('vent-charge')?.value) || 0;
+        const hoursDecimal = parseFloat(document.getElementById('vent-dur')?.dataset.hours) || 1;
         const disc = parseFloat(document.getElementById('vent-discount')?.value) || 0;
-        const total = Math.max(0, fee - disc);
+        const total = Math.max(0, (rate * hoursDecimal) - disc);
         const el = document.getElementById('vent-total-preview');
         if (el) el.textContent = `₹ ${total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
     }
@@ -2219,7 +2254,8 @@ const billing = (function () {
         const startTime = document.getElementById('vent-start')?.value || '';
         const endTime = document.getElementById('vent-end')?.value || '';
         const duration = document.getElementById('vent-dur')?.value.trim() || '6h';
-        const fee = parseFloat(document.getElementById('vent-fee')?.value) || 0;
+        const rate = parseFloat(document.getElementById('vent-charge')?.value) || 0;
+        const hoursDecimal = parseFloat(document.getElementById('vent-dur')?.dataset.hours) || 1;
         const discount = parseFloat(document.getElementById('vent-discount')?.value) || 0;
         const notes = document.getElementById('vent-notes')?.value.trim() || '';
 
@@ -2251,8 +2287,8 @@ const billing = (function () {
                     start_time: startTime,
                     end_time: endTime,
                     duration: duration,
-                    quantity: 1,
-                    unit_price: fee,
+                    quantity: hoursDecimal,
+                    unit_price: rate,
                     discount_amt: discount,
                     reference_id: notes,
                     notes: notes,
