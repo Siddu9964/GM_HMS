@@ -174,14 +174,7 @@ $userName  = $_SESSION['username'] ?? 'Admin';
                             </div>
                             <div>
                                 <label class="form-label-custom"><i class="fas fa-door-closed"></i> Operating Theatre *</label>
-                                <select class="form-select-custom" id="surgTheatre">
-                                    <option value="">-- Select Theatre --</option>
-                                    <option value="OPERATION THEATER">Operation Theater</option>
-                                    <option value="CATHLAB">CATHLAB</option>
-                                    <option value="LABOUR ROOM">LABOUR ROOM</option>
-                                    <option value="MAJOR OT">MAJOR OT</option>
-                                    <option value="MINOR OT">MINOR OT</option>
-                                </select>
+                                <input type="text" id="surgTheatre" class="form-control-custom" placeholder="e.g. MAJOR OT">
                             </div>
                             <div>
                                 <label class="form-label-custom"><i class="fas fa-calendar-check"></i> Surgery Date</label>
@@ -189,13 +182,7 @@ $userName  = $_SESSION['username'] ?? 'Admin';
                             </div>
                             <div>
                                 <label class="form-label-custom"><i class="fas fa-syringe"></i> Anesthesia Type *</label>
-                                <select class="form-select-custom" id="surgAnesType">
-                                    <option value="">-- Select Type --</option>
-                                    <option value="General Anaesthesia">General Anaesthesia</option>
-                                    <option value="Local Anaesthesia">Local Anaesthesia</option>
-                                    <option value="Spinal Anaesthesia">Spinal Anaesthesia</option>
-                                    <option value="Epidural Anaesthesia">Epidural Anaesthesia</option>
-                                </select>
+                                <input type="text" id="surgAnesType" class="form-control-custom" placeholder="e.g. General Anesthesia">
                             </div>
                         </div>
                     </div>
@@ -219,10 +206,6 @@ $userName  = $_SESSION['username'] ?? 'Admin';
                                     <tr>
                                         <th>Team Particulars</th>
                                         <th>Doctor / Consultant</th>
-                                        <th class="text-center">Dr. %</th>
-                                        <th class="text-end">Dr. Charges (₹)</th>
-                                        <th class="text-center">Hosp %</th>
-                                        <th class="text-end">Hosp Charges (₹)</th>
                                         <th class="text-end">Service Charge (₹)</th>
                                         <th class="text-end" style="width: 130px;">Line Total (₹)</th>
                                         <th class="text-center" style="width: 45px;"></th>
@@ -244,16 +227,12 @@ $userName  = $_SESSION['username'] ?? 'Admin';
                                                 <div class="autocomplete-dropdown"></div>
                                             </div>
                                         </td>
-                                        <td><input type="number" class="form-control input-percent dr-perc mx-auto" placeholder="0"></td>
-                                        <td><input type="number" class="form-control input-amount dr-charge ms-auto calc-trigger" placeholder="0.00"></td>
-                                        <td><input type="number" class="form-control input-percent h-perc mx-auto" placeholder="0"></td>
-                                        <td><input type="number" class="form-control input-amount h-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td><input type="number" class="form-control input-amount s-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td class="calculated-amt row-amt">₹0.00</td>
                                         <td class="text-center"><button type="button" class="btn-row-clear" onclick="clearDoctorRow(this)" title="Clear Row"><i class="fas fa-times"></i></button></td>
                                     </tr>
                                     <!-- Asst Surgeon 1 -->
-                                    <tr class="doc-row" data-type="ASST_SURGEON_1">
+                                    <tr class="doc-row" data-type="ASST_SURGEON_1" style="display: none;">
                                         <td>
                                             <div class="role-pill">
                                                 <span class="role-dot"></span>
@@ -267,16 +246,12 @@ $userName  = $_SESSION['username'] ?? 'Admin';
                                                 <div class="autocomplete-dropdown"></div>
                                             </div>
                                         </td>
-                                        <td><input type="number" class="form-control input-percent dr-perc mx-auto" placeholder="0"></td>
-                                        <td><input type="number" class="form-control input-amount dr-charge ms-auto calc-trigger" placeholder="0.00"></td>
-                                        <td><input type="number" class="form-control input-percent h-perc mx-auto" placeholder="0"></td>
-                                        <td><input type="number" class="form-control input-amount h-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td><input type="number" class="form-control input-amount s-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td class="calculated-amt row-amt">₹0.00</td>
                                         <td class="text-center"><button type="button" class="btn-row-clear" onclick="clearDoctorRow(this)" title="Clear Row"><i class="fas fa-times"></i></button></td>
                                     </tr>
                                     <!-- Asst Surgeon 2 -->
-                                    <tr class="doc-row" data-type="ASST_SURGEON_2">
+                                    <tr class="doc-row" data-type="ASST_SURGEON_2" style="display: none;">
                                         <td>
                                             <div class="role-pill">
                                                 <span class="role-dot"></span>
@@ -290,16 +265,12 @@ $userName  = $_SESSION['username'] ?? 'Admin';
                                                 <div class="autocomplete-dropdown"></div>
                                             </div>
                                         </td>
-                                        <td><input type="number" class="form-control input-percent dr-perc mx-auto" placeholder="0"></td>
-                                        <td><input type="number" class="form-control input-amount dr-charge ms-auto calc-trigger" placeholder="0.00"></td>
-                                        <td><input type="number" class="form-control input-percent h-perc mx-auto" placeholder="0"></td>
-                                        <td><input type="number" class="form-control input-amount h-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td><input type="number" class="form-control input-amount s-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td class="calculated-amt row-amt">₹0.00</td>
                                         <td class="text-center"><button type="button" class="btn-row-clear" onclick="clearDoctorRow(this)" title="Clear Row"><i class="fas fa-times"></i></button></td>
                                     </tr>
                                     <!-- Other Doctor 1 -->
-                                    <tr class="doc-row" data-type="OTHER_DOC_1">
+                                    <tr class="doc-row" data-type="OTHER_DOC_1" style="display: none;">
                                         <td>
                                             <div class="role-pill">
                                                 <span class="role-dot"></span>
@@ -313,16 +284,12 @@ $userName  = $_SESSION['username'] ?? 'Admin';
                                                 <div class="autocomplete-dropdown"></div>
                                             </div>
                                         </td>
-                                        <td><input type="number" class="form-control input-percent dr-perc mx-auto" placeholder="0"></td>
-                                        <td><input type="number" class="form-control input-amount dr-charge ms-auto calc-trigger" placeholder="0.00"></td>
-                                        <td><input type="number" class="form-control input-percent h-perc mx-auto" placeholder="0"></td>
-                                        <td><input type="number" class="form-control input-amount h-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td><input type="number" class="form-control input-amount s-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td class="calculated-amt row-amt">₹0.00</td>
                                         <td class="text-center"><button type="button" class="btn-row-clear" onclick="clearDoctorRow(this)" title="Clear Row"><i class="fas fa-times"></i></button></td>
                                     </tr>
                                     <!-- Other Doctor 2 -->
-                                    <tr class="doc-row" data-type="OTHER_DOC_2">
+                                    <tr class="doc-row" data-type="OTHER_DOC_2" style="display: none;">
                                         <td>
                                             <div class="role-pill">
                                                 <span class="role-dot"></span>
@@ -336,16 +303,12 @@ $userName  = $_SESSION['username'] ?? 'Admin';
                                                 <div class="autocomplete-dropdown"></div>
                                             </div>
                                         </td>
-                                        <td><input type="number" class="form-control input-percent dr-perc mx-auto" placeholder="0"></td>
-                                        <td><input type="number" class="form-control input-amount dr-charge ms-auto calc-trigger" placeholder="0.00"></td>
-                                        <td><input type="number" class="form-control input-percent h-perc mx-auto" placeholder="0"></td>
-                                        <td><input type="number" class="form-control input-amount h-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td><input type="number" class="form-control input-amount s-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td class="calculated-amt row-amt">₹0.00</td>
                                         <td class="text-center"><button type="button" class="btn-row-clear" onclick="clearDoctorRow(this)" title="Clear Row"><i class="fas fa-times"></i></button></td>
                                     </tr>
                                     <!-- Anesthetist -->
-                                    <tr class="doc-row" data-type="ANESTHETIST">
+                                    <tr class="doc-row" data-type="ANESTHETIST" style="display: none;">
                                         <td>
                                             <div class="role-pill">
                                                 <span class="role-dot"></span>
@@ -359,16 +322,12 @@ $userName  = $_SESSION['username'] ?? 'Admin';
                                                 <div class="autocomplete-dropdown"></div>
                                             </div>
                                         </td>
-                                        <td><input type="number" class="form-control input-percent dr-perc mx-auto" placeholder="0"></td>
-                                        <td><input type="number" class="form-control input-amount dr-charge ms-auto calc-trigger" placeholder="0.00"></td>
-                                        <td><input type="number" class="form-control input-percent h-perc mx-auto" placeholder="0"></td>
-                                        <td><input type="number" class="form-control input-amount h-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td><input type="number" class="form-control input-amount s-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td class="calculated-amt row-amt">₹0.00</td>
                                         <td class="text-center"><button type="button" class="btn-row-clear" onclick="clearDoctorRow(this)" title="Clear Row"><i class="fas fa-times"></i></button></td>
                                     </tr>
                                     <!-- Stand-by Anesthetist -->
-                                    <tr class="doc-row" data-type="STANDBY_ANES">
+                                    <tr class="doc-row" data-type="STANDBY_ANES" style="display: none;">
                                         <td>
                                             <div class="role-pill">
                                                 <span class="role-dot"></span>
@@ -382,10 +341,6 @@ $userName  = $_SESSION['username'] ?? 'Admin';
                                                 <div class="autocomplete-dropdown"></div>
                                             </div>
                                         </td>
-                                        <td><input type="number" class="form-control input-percent dr-perc mx-auto" placeholder="0"></td>
-                                        <td><input type="number" class="form-control input-amount dr-charge ms-auto calc-trigger" placeholder="0.00"></td>
-                                        <td><input type="number" class="form-control input-percent h-perc mx-auto" placeholder="0"></td>
-                                        <td><input type="number" class="form-control input-amount h-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td><input type="number" class="form-control input-amount s-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td class="calculated-amt row-amt">₹0.00</td>
                                         <td class="text-center"><button type="button" class="btn-row-clear" onclick="clearDoctorRow(this)" title="Clear Row"><i class="fas fa-times"></i></button></td>
@@ -399,16 +354,17 @@ $userName  = $_SESSION['username'] ?? 'Admin';
                                             </div>
                                         </td>
                                         <td><input type="text" class="form-control select-consultant" placeholder="Description of OT service..."></td>
-                                        <td><input type="number" class="form-control input-percent dr-perc mx-auto" placeholder="0" disabled></td>
-                                        <td><input type="number" class="form-control input-amount dr-charge ms-auto calc-trigger" placeholder="0.00" disabled></td>
-                                        <td><input type="number" class="form-control input-percent h-perc mx-auto" placeholder="0" disabled></td>
-                                        <td><input type="number" class="form-control input-amount h-charge ms-auto calc-trigger" placeholder="0.00" disabled></td>
                                         <td><input type="number" class="form-control input-amount s-charge ms-auto calc-trigger" placeholder="0.00"></td>
                                         <td class="calculated-amt row-amt">₹0.00</td>
                                         <td class="text-center"><button type="button" class="btn-row-clear" onclick="clearDoctorRow(this)" title="Clear Row"><i class="fas fa-times"></i></button></td>
                                     </tr>
                                 </tbody>
                             </table>
+                            <div class="text-center p-2">
+                                <button type="button" class="btn btn-sm btn-outline-success" id="btnShowAllDoctors" style="border-radius: 8px; font-weight: 600; display: inline-block;" onclick="addDynamicDoctorRow()">
+                                    <i class="fas fa-plus"></i> Add Additional Team Member
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -30,6 +30,9 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         case 'Nursing_Superintendent':
             header("Location: nurse_view/dashboard.php");
             break;
+        case 'Scrub_Nurse':
+            header("Location: ot_view/dashboard.php");
+            break;
         case 'Pharmacist':
             header("Location: pharmacy_view/dashboard.php");
             break;

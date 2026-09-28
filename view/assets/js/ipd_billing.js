@@ -747,6 +747,16 @@ const billing = (function () {
         const statusFilter = isReception ? 'ACTIVE' : (document.getElementById('patientStatusFilter')?.value || 'ALL');
         const searchQuery = (document.getElementById('patientTableSearch')?.value || '').toLowerCase();
         
+        // Update Heading
+        const headingEl = document.getElementById('ipdPatientHeading');
+        if (headingEl) {
+            let titleText = "All IPD Patients";
+            if (statusFilter === 'ACTIVE') titleText = "Active IPD Patients";
+            if (statusFilter === 'DISCHARGED') titleText = "Discharged IPD Patients";
+            headingEl.innerHTML = `<i data-lucide="users" style="display:inline; vertical-align:middle; margin-right:8px;"></i> ${titleText}`;
+            if (window.lucide) lucide.createIcons();
+        }
+        
         // Filtering
         let filtered = window.allAdmittedPatientsList.filter(p => {
             const rawStatus = (p.status || '').toString().trim();

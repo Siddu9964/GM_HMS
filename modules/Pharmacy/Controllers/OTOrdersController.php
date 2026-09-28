@@ -5,7 +5,7 @@ use Exception;
 use GM_HMS\Controllers\BaseController;
 use GM_HMS\Modules\Payment\Repositories\PaymentRepository;
 
-class IPOrdersController extends BaseController {
+class OTOrdersController extends BaseController {
     
     public function __construct() {
         parent::__construct();
@@ -40,17 +40,17 @@ class IPOrdersController extends BaseController {
             
             $records = $db->fetchAll($sql);
             
-            // Filter out OT orders and returns, and remove empty records
+            // Filter out non-OT orders and returns, and remove empty records
             $filteredRecords = [];
             foreach ($records as $row) {
                 $orders = json_decode($row['pharmacy_orders'] ?? '[]', true) ?? [];
                 $returns = json_decode($row['pharmacy_returns'] ?? '[]', true) ?? [];
                 
                 $orders = array_values(array_filter($orders, function($item) {
-                    return !isset($item['source']) || $item['source'] !== 'OT';
+                    return isset($item['source']) && $item['source'] === 'OT';
                 }));
                 $returns = array_values(array_filter($returns, function($item) {
-                    return !isset($item['source']) || $item['source'] !== 'OT';
+                    return isset($item['source']) && $item['source'] === 'OT';
                 }));
                 
                 if (count($orders) > 0 || count($returns) > 0) {
@@ -165,7 +165,7 @@ class IPOrdersController extends BaseController {
                 ];
             }
             
-            $this->respondSuccess($formattedOrders, 'IP Orders fetched successfully');
+            $this->respondSuccess($formattedOrders, 'OT Orders fetched successfully');
             
         } catch (Exception $e) {
             $this->respondError('Failed to fetch IP orders: ' . $e->getMessage());
@@ -203,11 +203,11 @@ class IPOrdersController extends BaseController {
                 return $this->respondError('No items in this order');
             }
             
-            // Map the frontend index (based on non-OT array) to the real index
-            $ipIndices = [];
+            // Map the frontend index (based on OT array) to the real index
+            $otIndices = [];
             foreach ($orders as $realIdx => $item) {
-                if (!isset($item['source']) || $item['source'] !== 'OT') {
-                    $ipIndices[] = $realIdx;
+                if (isset($item['source']) && $item['source'] === 'OT') {
+                    $otIndices[] = $realIdx;
                 }
             }
             
@@ -232,12 +232,12 @@ class IPOrdersController extends BaseController {
 
                 if ($itemIndex !== null) {
                     // ── SINGLE ITEM COMPLETION ──
-                    if (!isset($ipIndices[$itemIndex])) {
+                    if (!isset($otIndices[$itemIndex])) {
                         $db->rollback();
                         return $this->respondError('Specified item index not found in order.');
                     }
                     
-                    $realItemIndex = $ipIndices[$itemIndex];
+                    $realItemIndex = $otIndices[$itemIndex];
                     $item = &$orders[$realItemIndex];
                     if (($item['status'] ?? '') === 'Completed') {
                         $db->rollback();
@@ -476,6 +476,83 @@ class IPOrdersController extends BaseController {
             
         } catch (Exception $e) {
             $this->respondError($e->getMessage());
+        }
+    }
+    
+    public function acceptReturn() {
+        try {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $recordId = $input['record_id'] ?? null;
+            $uniqueId = $input['unique_id'] ?? null;
+            $qty = (int)($input['qty'] ?? 0);
+            
+            if (!$recordId || !$uniqueId || $qty <= 0) {
+                return $this->respondError('Invalid input parameters');
+            }
+            
+            $db = $this->db;
+            $db->beginTransaction();
+            
+            // 1. Fetch clinical record
+            $row = $db->fetchOne("SELECT pharmacy_orders, patient_id, admission_id FROM ipd_clinical_records WHERE id = ? FOR UPDATE", [$recordId]);
+            if (!$row) {
+                $db->rollback();
+                return $this->respondError('Record not found');
+            }
+            
+            $orders = json_decode($row['pharmacy_orders'] ?: '[]', true) ?? [];
+            $foundIndex = -1;
+            foreach ($orders as $i => $item) {
+                if (isset($item['unique_id']) && $item['unique_id'] === $uniqueId) {
+                    $foundIndex = $i;
+                    break;
+                }
+            }
+            
+            if ($foundIndex === -1) {
+                $db->rollback();
+                return $this->respondError('Item not found in order');
+            }
+            
+            $item = &$orders[$foundIndex];
+            $returnedQty = (int)($item['data']['returned_qty'] ?? 0);
+            $acceptedQty = (int)($item['data']['accepted_return_qty'] ?? 0);
+            $pendingAccept = $returnedQty - $acceptedQty;
+            
+            if ($qty > $pendingAccept) {
+                $db->rollback();
+                return $this->respondError("Cannot accept {$qty}. Only {$pendingAccept} pending for return.");
+            }
+            
+            // 2. Update pharmacy stock
+            $productId = $item['data']['id'] ?? $item['data']['product_id'] ?? null;
+            if (!$productId) {
+                $db->rollback();
+                return $this->respondError('Product ID missing in item data');
+            }
+            
+            $prodRow = $db->fetchOne("SELECT quantity FROM ph_product WHERE product_id = ? FOR UPDATE", [$productId]);
+            if (!$prodRow) {
+                $db->rollback();
+                return $this->respondError('Product not found in pharmacy inventory');
+            }
+            
+            $db->execute("UPDATE ph_product SET quantity = quantity + ? WHERE product_id = ?", [$qty, $productId]);
+            
+            // 3. Update accepted quantity in orders
+            $item['data']['accepted_return_qty'] = $acceptedQty + $qty;
+            
+            $db->execute("UPDATE ipd_clinical_records SET pharmacy_orders = ? WHERE id = ?", [json_encode($orders), $recordId]);
+            
+            // 4. Also update ipd_pharmacy_return_requests if any
+            $db->execute("UPDATE ipd_pharmacy_return_requests SET status = 'ACCEPTED' WHERE patient_id = ? AND item_id = ? AND status = 'PENDING'", [$row['patient_id'], $productId]);
+            
+            $db->commit();
+            return $this->respondSuccess(['message' => 'Return accepted successfully', 'new_stock' => $prodRow['quantity'] + $qty], 'Return accepted successfully');
+            
+        } catch (\Throwable $e) {
+            if (isset($this->db)) $this->db->rollback();
+            $this->handleException($e);
         }
     }
 }

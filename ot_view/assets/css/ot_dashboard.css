@@ -1,0 +1,837 @@
+/* ==========================================================
+   OT DASHBOARD — Page-specific styles
+   Palette: #f3efe6 (warm cream) · #1f6b4a (forest green)
+   All tints are derived from these two colors only.
+   ========================================================== */
+
+/* ---------- Dashboard root variables ---------- */
+:root {
+  --d-green:        #1f6b4a;
+  --d-green-80:     rgba(31,107,74,.80);
+  --d-green-60:     rgba(31,107,74,.60);
+  --d-green-40:     rgba(31,107,74,.40);
+  --d-green-20:     rgba(31,107,74,.20);
+  --d-green-12:     rgba(31,107,74,.12);
+  --d-green-06:     rgba(31,107,74,.06);
+  --d-green-dark:   #144d34;
+  --d-cream:        #f3efe6;
+  --d-cream-dark:   #e8e3d8;
+  --d-cream-darker: #ddd8cc;
+  --d-white:        #ffffff;
+  --d-surface:      #fdfbf7;
+  --d-text:         #0f172a;
+  --d-text-muted:   #6b7280;
+  --d-radius-lg:    18px;
+  --d-radius-md:    12px;
+  --d-radius-sm:    8px;
+  --d-shadow:       0 2px 8px rgba(31,107,74,.06), 0 1px 3px rgba(0,0,0,.04);
+  --d-shadow-md:    0 8px 24px rgba(31,107,74,.10), 0 2px 8px rgba(0,0,0,.06);
+  --d-shadow-lg:    0 20px 48px rgba(31,107,74,.14), 0 4px 16px rgba(0,0,0,.08);
+  --d-transition:   all .25s cubic-bezier(.4,0,.2,1);
+}
+
+/* ============================================================
+   DASHBOARD GRID LAYOUT — 2 columns: Calendar | Main
+   ============================================================ */
+.ot-dash-grid {
+  display: grid;
+  grid-template-columns: 310px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+/* ============================================================
+   LEFT PANEL — Calendar + Quick Stats
+   ============================================================ */
+.ot-cal-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: calc(var(--ot-navbar-h) + 1.5rem);
+}
+
+/* --- Calendar Card --- */
+.ot-cal-card {
+  background: var(--d-white);
+  border-radius: var(--d-radius-lg);
+  box-shadow: var(--d-shadow-md);
+  overflow: hidden;
+  border: 1px solid var(--d-green-12);
+}
+
+.ot-cal-head {
+  background: var(--d-green);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ot-cal-month-label {
+  font-size: .95rem;
+  font-weight: 800;
+  color: var(--d-white);
+  letter-spacing: -.3px;
+}
+
+.ot-cal-nav {
+  display: flex;
+  gap: .35rem;
+}
+
+.ot-cal-nav-btn {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .8rem;
+  transition: var(--d-transition);
+  flex-shrink: 0;
+}
+
+.ot-cal-nav-btn:hover {
+  background: rgba(255,255,255,.28);
+  transform: scale(1.08);
+}
+
+/* Day-of-week header */
+.ot-cal-dow-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--d-green-06);
+  border-bottom: 1px solid var(--d-green-12);
+  padding: .45rem .75rem .3rem;
+}
+
+.ot-cal-dow {
+  text-align: center;
+  font-size: .6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--d-green-60);
+}
+
+/* Day grid */
+.ot-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  padding: .65rem .75rem .75rem;
+  background: var(--d-surface);
+}
+
+.ot-cal-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: .28rem .1rem .32rem;
+  border-radius: var(--d-radius-sm);
+  cursor: pointer;
+  transition: var(--d-transition);
+  min-height: 44px;
+  position: relative;
+}
+
+.ot-cal-day:not(.ot-cal-empty):hover {
+  background: var(--d-green-12);
+  transform: scale(1.06);
+}
+
+.ot-cal-day-num {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--d-text);
+  line-height: 1;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  transition: var(--d-transition);
+}
+
+.ot-cal-day.ot-cal-other .ot-cal-day-num {
+  color: var(--d-cream-darker);
+}
+
+.ot-cal-day.ot-cal-today .ot-cal-day-num {
+  background: var(--d-cream-dark);
+  color: var(--d-green);
+  font-weight: 900;
+  border: 2px solid var(--d-green-40);
+}
+
+.ot-cal-day.ot-cal-selected .ot-cal-day-num {
+  background: var(--d-green);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 4px 12px var(--d-green-40);
+}
+
+.ot-cal-day.ot-cal-selected:hover {
+  background: var(--d-green-06);
+}
+
+/* Dot indicators */
+.ot-cal-dots {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+  flex-wrap: nowrap;
+  min-height: 5px;
+}
+
+.ot-cal-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ot-cal-dot-scheduled  { background: var(--d-green); }
+.ot-cal-dot-ongoing    { background: var(--d-green-80); animation: dotPulse 1.4s ease-in-out infinite; }
+.ot-cal-dot-completed  { background: var(--d-green-60); }
+.ot-cal-dot-cancelled  { background: var(--d-cream-darker); }
+.ot-cal-dot-postponed  { background: var(--d-green-40); }
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .5; transform: scale(.75); }
+}
+
+/* --- Calendar month slide animation --- */
+.ot-cal-grid.slide-out-left  { animation: calSlideOutLeft  .2s ease forwards; }
+.ot-cal-grid.slide-in-right  { animation: calSlideInRight  .2s ease forwards; }
+.ot-cal-grid.slide-out-right { animation: calSlideOutRight .2s ease forwards; }
+.ot-cal-grid.slide-in-left   { animation: calSlideInLeft   .2s ease forwards; }
+
+@keyframes calSlideOutLeft  { to { opacity:0; transform: translateX(-20px); } }
+@keyframes calSlideInRight  { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: translateX(0); } }
+@keyframes calSlideOutRight { to { opacity:0; transform: translateX(20px); } }
+@keyframes calSlideInLeft   { from { opacity:0; transform: translateX(-20px); } to { opacity:1; transform: translateX(0); } }
+
+/* --- Calendar Legend --- */
+.ot-cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem .85rem;
+  padding: .6rem 1rem .75rem;
+  border-top: 1px solid var(--d-green-12);
+  background: var(--d-surface);
+}
+
+.ot-cal-legend-item {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .65rem;
+  font-weight: 600;
+  color: var(--d-text-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+/* --- Selected Day Info Box --- */
+.ot-selected-day-box {
+  background: var(--d-green);
+  border-radius: var(--d-radius-md);
+  padding: 1rem 1.15rem;
+  color: #fff;
+  box-shadow: var(--d-shadow-md);
+}
+
+.ot-selected-day-title {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  opacity: .75;
+  margin-bottom: .25rem;
+}
+
+.ot-selected-day-date {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin-bottom: .75rem;
+  letter-spacing: -.3px;
+}
+
+.ot-selected-day-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .45rem;
+}
+
+.ot-sds-item {
+  background: rgba(255,255,255,.12);
+  border-radius: var(--d-radius-sm);
+  padding: .45rem .6rem;
+  text-align: center;
+}
+
+.ot-sds-val {
+  font-size: 1.3rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.ot-sds-lbl {
+  font-size: .58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  opacity: .7;
+  margin-top: .1rem;
+}
+
+/* ============================================================
+   RIGHT PANEL
+   ============================================================ */
+.ot-main-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+/* ============================================================
+   STAT CARDS
+   ============================================================ */
+.ot-stat-grid-v2 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .9rem;
+}
+
+.ot-stat-v2 {
+  background: var(--d-white);
+  border: 1px solid var(--d-green-12);
+  border-radius: var(--d-radius-lg);
+  padding: 1.15rem 1.25rem 1rem;
+  box-shadow: var(--d-shadow);
+  position: relative;
+  overflow: hidden;
+  transition: var(--d-transition);
+  cursor: default;
+}
+
+.ot-stat-v2::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--d-green);
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform .35s cubic-bezier(.4,0,.2,1);
+}
+
+.ot-stat-v2:hover::before { transform: scaleX(1); }
+
+.ot-stat-v2:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--d-shadow-lg);
+  border-color: var(--d-green-20);
+}
+
+.ot-stat-v2-icon {
+  width: 44px; height: 44px;
+  border-radius: var(--d-radius-md);
+  background: var(--d-green-12);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--d-green);
+  font-size: 1.1rem;
+  margin-bottom: .85rem;
+  transition: var(--d-transition);
+}
+
+.ot-stat-v2:hover .ot-stat-v2-icon {
+  background: var(--d-green);
+  color: #fff;
+  transform: scale(1.1) rotate(-5deg);
+}
+
+.ot-stat-v2-val {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--d-green);
+  line-height: 1;
+  letter-spacing: -1.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ot-stat-v2-lbl {
+  font-size: .66rem;
+  font-weight: 700;
+  color: var(--d-text-muted);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-top: .3rem;
+}
+
+.ot-stat-v2-sub {
+  font-size: .7rem;
+  color: var(--d-green-60);
+  margin-top: .4rem;
+  font-weight: 500;
+}
+
+@keyframes statPop {
+  0%   { transform: scale(.85); opacity:0; }
+  60%  { transform: scale(1.04); }
+  100% { transform: scale(1);   opacity:1; }
+}
+
+.ot-stat-v2.appear { animation: statPop .4s ease forwards; opacity: 0; }
+.ot-stat-v2:nth-child(1).appear { animation-delay:.00s; }
+.ot-stat-v2:nth-child(2).appear { animation-delay:.08s; }
+.ot-stat-v2:nth-child(3).appear { animation-delay:.16s; }
+.ot-stat-v2:nth-child(4).appear { animation-delay:.24s; }
+
+/* ============================================================
+   SECTION HEADER
+   ============================================================ */
+.ot-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .75rem;
+}
+
+.ot-section-title {
+  font-size: .88rem;
+  font-weight: 800;
+  color: var(--d-text);
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+}
+
+.ot-section-title-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--d-green-12);
+  color: var(--d-green);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .75rem;
+}
+
+.ot-section-badge {
+  font-size: .65rem;
+  font-weight: 700;
+  padding: .2rem .65rem;
+  border-radius: 99px;
+  background: var(--d-green-12);
+  color: var(--d-green);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   SURGERY TIMELINE
+   ============================================================ */
+.ot-timeline-card {
+  background: var(--d-white);
+  border-radius: var(--d-radius-lg);
+  border: 1px solid var(--d-green-12);
+  box-shadow: var(--d-shadow);
+  overflow: hidden;
+}
+
+.ot-timeline-header {
+  padding: .9rem 1.25rem;
+  background: var(--d-surface);
+  border-bottom: 1px solid var(--d-green-12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ot-timeline-body {
+  padding: 1.1rem 1.25rem;
+  min-height: 100px;
+}
+
+.ot-tl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+
+.ot-tl-list::before {
+  content: '';
+  position: absolute;
+  left: 39px;
+  top: 18px;
+  bottom: 18px;
+  width: 2px;
+  background: var(--d-green-12);
+  border-radius: 2px;
+}
+
+.ot-tl-item {
+  display: flex;
+  align-items: flex-start;
+  gap: .9rem;
+  padding: .65rem 0;
+  position: relative;
+  animation: tlItemIn .35s ease forwards;
+  opacity: 0;
+}
+
+@keyframes tlItemIn {
+  from { opacity:0; transform: translateX(-10px); }
+  to   { opacity:1; transform: translateX(0); }
+}
+
+.ot-tl-item:nth-child(1) { animation-delay: .05s; }
+.ot-tl-item:nth-child(2) { animation-delay: .10s; }
+.ot-tl-item:nth-child(3) { animation-delay: .15s; }
+.ot-tl-item:nth-child(4) { animation-delay: .20s; }
+.ot-tl-item:nth-child(5) { animation-delay: .25s; }
+.ot-tl-item:nth-child(n+6) { animation-delay: .30s; }
+
+.ot-tl-time-col {
+  width: 52px;
+  flex-shrink: 0;
+  text-align: right;
+  padding-top: 4px;
+}
+
+.ot-tl-time {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--d-green);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.ot-tl-time-end {
+  font-size: .63rem;
+  color: var(--d-text-muted);
+  font-weight: 500;
+}
+
+.ot-tl-dot-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  padding-top: 6px;
+}
+
+.ot-tl-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2.5px solid var(--d-white);
+  flex-shrink: 0;
+}
+
+.ot-tl-dot-scheduled { background: var(--d-green);      box-shadow: 0 0 0 3px var(--d-green-20); }
+.ot-tl-dot-ongoing   { background: var(--d-green-80);   box-shadow: 0 0 0 3px var(--d-green-20); animation: dotPulse 1.4s ease-in-out infinite; }
+.ot-tl-dot-completed { background: var(--d-green-60);   box-shadow: 0 0 0 3px var(--d-green-12); }
+.ot-tl-dot-cancelled { background: var(--d-cream-darker); box-shadow: 0 0 0 3px var(--d-cream-dark); }
+.ot-tl-dot-postponed { background: var(--d-green-40);   box-shadow: 0 0 0 3px var(--d-green-12); }
+
+.ot-tl-content {
+  flex: 1;
+  min-width: 0;
+  background: var(--d-surface);
+  border-radius: var(--d-radius-md);
+  padding: .7rem .9rem;
+  border: 1px solid var(--d-green-06);
+  transition: var(--d-transition);
+}
+
+.ot-tl-content:hover {
+  background: var(--d-cream);
+  border-color: var(--d-green-20);
+  transform: translateX(3px);
+}
+
+.ot-tl-surgery-name {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--d-text);
+  margin-bottom: .2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ot-tl-patient-name {
+  font-size: .73rem;
+  color: var(--d-text-muted);
+  margin-bottom: .3rem;
+}
+
+.ot-tl-meta {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+
+.ot-tl-room {
+  font-size: .65rem;
+  font-weight: 600;
+  color: var(--d-green);
+  background: var(--d-green-06);
+  border-radius: 5px;
+  padding: .15rem .45rem;
+}
+
+/* ============================================================
+   UPGRADED TABLE CARD
+   ============================================================ */
+.ot-table-card-v2 {
+  background: var(--d-white);
+  border-radius: var(--d-radius-lg);
+  border: 1px solid var(--d-green-12);
+  box-shadow: var(--d-shadow);
+  overflow: hidden;
+}
+
+.ot-table-card-v2-header {
+  padding: .9rem 1.25rem;
+  background: var(--d-surface);
+  border-bottom: 1px solid var(--d-green-12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.ot-table-v2 {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.ot-table-v2 thead tr { background: var(--d-cream); }
+
+.ot-table-v2 th {
+  font-size: .63rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--d-green-60);
+  padding: .6rem 1rem;
+  text-align: left;
+  border-bottom: 2px solid var(--d-green-12);
+  white-space: nowrap;
+}
+
+.ot-table-v2 tbody tr {
+  border-bottom: 1px solid var(--d-green-06);
+  transition: var(--d-transition);
+  animation: rowSlideUp .3s ease forwards;
+  opacity: 0;
+}
+
+.ot-table-v2 tbody tr:last-child { border-bottom: none; }
+
+.ot-table-v2 tbody tr:hover { background: var(--d-cream); }
+
+.ot-table-v2 tbody tr:hover td { border-left-color: var(--d-green); }
+
+@keyframes rowSlideUp {
+  from { opacity:0; transform: translateY(8px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+.ot-table-v2 tbody tr:nth-child(1) { animation-delay:.04s; }
+.ot-table-v2 tbody tr:nth-child(2) { animation-delay:.08s; }
+.ot-table-v2 tbody tr:nth-child(3) { animation-delay:.12s; }
+.ot-table-v2 tbody tr:nth-child(4) { animation-delay:.16s; }
+.ot-table-v2 tbody tr:nth-child(5) { animation-delay:.20s; }
+.ot-table-v2 tbody tr:nth-child(n+6){ animation-delay:.24s; }
+
+.ot-table-v2 td {
+  padding: .8rem 1rem;
+  font-size: .79rem;
+  color: var(--d-text);
+  vertical-align: middle;
+  border-left: 3px solid transparent;
+  transition: border-color .2s;
+}
+
+/* Patient avatar */
+.ot-patient-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--d-green-12);
+  color: var(--d-green);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: .78rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  border: 2px solid var(--d-white);
+  box-shadow: 0 2px 6px var(--d-green-20);
+}
+
+.ot-patient-cell {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+}
+
+.ot-patient-name-text {
+  font-weight: 700;
+  font-size: .8rem;
+  color: var(--d-text);
+}
+
+.ot-patient-id-text {
+  font-size: .68rem;
+  color: var(--d-text-muted);
+}
+
+/* Status badges */
+.ot-badge-v2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: .28rem .75rem;
+  border-radius: 99px;
+  font-size: .65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+
+.ot-badge-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ot-bv2-scheduled { background: var(--d-green-12); color: var(--d-green); border: 1px solid var(--d-green-20); }
+.ot-bv2-ongoing   { background: var(--d-green); color: #fff; border: 1px solid var(--d-green-dark); box-shadow: 0 2px 8px var(--d-green-40); animation: badgePulse 2s ease-in-out infinite; }
+.ot-bv2-completed { background: var(--d-green-06); color: var(--d-green-dark); border: 1px solid var(--d-green-12); }
+.ot-bv2-cancelled { background: var(--d-cream-dark); color: var(--d-text-muted); border: 1px solid var(--d-cream-darker); }
+.ot-bv2-postponed { background: var(--d-green-06); color: var(--d-green-60); border: 1px solid var(--d-green-12); }
+.ot-bv2-preponed  { background: var(--d-green-20); color: var(--d-green-dark); border: 1px solid var(--d-green-40); }
+
+.ot-bv2-scheduled .ot-badge-dot { background: var(--d-green); }
+.ot-bv2-ongoing   .ot-badge-dot { background: #fff; animation: dotPulse 1.2s ease-in-out infinite; }
+.ot-bv2-completed .ot-badge-dot { background: var(--d-green-60); }
+.ot-bv2-cancelled .ot-badge-dot { background: var(--d-text-muted); }
+.ot-bv2-postponed .ot-badge-dot { background: var(--d-green-40); }
+.ot-bv2-preponed  .ot-badge-dot { background: var(--d-green-dark); }
+
+@keyframes badgePulse {
+  0%, 100% { box-shadow: 0 2px 8px var(--d-green-40); }
+  50%       { box-shadow: 0 2px 16px var(--d-green-60); }
+}
+
+/* ============================================================
+   EMPTY / LOADING STATES
+   ============================================================ */
+.ot-empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--d-text-muted);
+}
+
+.ot-empty-icon {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--d-green-06);
+  color: var(--d-green-40);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  margin: 0 auto .85rem;
+}
+
+.ot-empty-title {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--d-text-muted);
+  margin-bottom: .25rem;
+}
+
+.ot-empty-sub {
+  font-size: .72rem;
+  color: var(--d-cream-darker);
+}
+
+/* Month progress bar */
+.ot-month-bar-card {
+  background: var(--d-white);
+  border-radius: var(--d-radius-lg);
+  border: 1px solid var(--d-green-12);
+  box-shadow: var(--d-shadow);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  overflow: hidden;
+}
+
+.ot-month-bar-label {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--d-green);
+  white-space: nowrap;
+}
+
+.ot-month-sparkbar {
+  flex: 1;
+  height: 8px;
+  background: var(--d-cream);
+  border-radius: 99px;
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.ot-month-sparkbar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--d-green-60), var(--d-green));
+  border-radius: 99px;
+  width: 0;
+  transition: width .9s cubic-bezier(.4,0,.2,1);
+}
+
+.ot-month-bar-count {
+  font-size: .85rem;
+  font-weight: 800;
+  color: var(--d-green);
+  white-space: nowrap;
+}
+
+.ot-month-bar-sub {
+  font-size: .65rem;
+  color: var(--d-text-muted);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1200px) {
+  .ot-dash-grid { grid-template-columns: 280px 1fr; }
+  .ot-stat-grid-v2 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 992px) {
+  .ot-dash-grid { grid-template-columns: 1fr; }
+  .ot-cal-panel { position: static; }
+  .ot-stat-grid-v2 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 576px) {
+  .ot-stat-grid-v2 { grid-template-columns: repeat(2, 1fr); }
+  .ot-stat-v2-val { font-size: 1.5rem; }
+  .ot-table-v2 th, .ot-table-v2 td { padding: .6rem .65rem; }
+}

@@ -665,11 +665,11 @@ try {
                 <!-- ═══════════ ZONE 2: ADMITTED PATIENTS LIST ═══════════ -->
                 <div class="billing-empty-state" id="billingEmptyState" style="padding:20px; align-items: stretch; justify-content: flex-start; height: calc(100vh - 100px); display: flex; flex-direction: column;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 2px solid #1f6b4a; padding-bottom: 10px; flex-shrink: 0;">
-                        <h2 style="font-size: 1.5rem; color: #1f6b4a; margin: 0; text-align: left; font-weight: 800;"><i data-lucide="users" style="display:inline; vertical-align:middle; margin-right:8px;"></i> All IPD Patients</h2>
+                        <h2 id="ipdPatientHeading" style="font-size: 1.5rem; color: #1f6b4a; margin: 0; text-align: left; font-weight: 800;"><i data-lucide="users" style="display:inline; vertical-align:middle; margin-right:8px;"></i> Active IPD Patients</h2>
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <select id="patientStatusFilter" onchange="billing.filterPatientsTable()" style="padding: 8px 12px; border-radius: 6px; border: 1.5px solid #1f6b4a; font-size: 0.9rem; outline: none; background: #f3efe6; color: #1f6b4a; cursor: pointer; font-weight: 700;">
-                                <option value="ALL" selected>All Patients</option>
-                                <option value="ACTIVE">Active Patients Only</option>
+                                <option value="ALL">All Patients</option>
+                                <option value="ACTIVE" selected>Active Patients Only</option>
                                 <option value="DISCHARGED">Discharged</option>
                             </select>
                             <div style="position: relative;">

@@ -98,6 +98,8 @@ class AuthController extends BaseController {
                     $redirectUrl = 'reception_view/index.php';
                 } elseif ($checkRole === 'nurse') {
                     $redirectUrl = 'nurse_view/dashboard.php';
+                } elseif ($checkRole === 'scrub_nurse') {
+                    $redirectUrl = 'ot_view/dashboard.php';
                 } elseif ($checkRole === 'pharmacist') {
                     $redirectUrl = 'pharmacy_view/dashboard.php';
                 } elseif ($checkRole === 'labtechnician' || strpos($checkRole, 'lab') !== false) {
@@ -110,6 +112,8 @@ class AuthController extends BaseController {
                     // Default fallback based on common designations
                     if (strpos($checkRole, 'reception') !== false) {
                         $redirectUrl = 'reception_view/index.php';
+                    } elseif ($checkRole === 'scrub_nurse' || strpos($checkRole, 'scrub') !== false) {
+                        $redirectUrl = 'ot_view/dashboard.php';
                     } elseif (strpos($checkRole, 'nurse') !== false) {
                         $redirectUrl = 'nurse_view/dashboard.php';
                     } elseif (strpos($checkRole, 'pharmacy') !== false || strpos($checkRole, 'pharmacist') !== false) {

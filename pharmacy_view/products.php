@@ -627,6 +627,7 @@ function editProduct(p) {
 
 async function saveProduct(e) {
     e.preventDefault();
+    if (document.activeElement) document.activeElement.blur();
     const data = Object.fromEntries(new FormData(e.target).entries());
     const action = document.getElementById('formAction').value;
     const sl_no = document.getElementById('sl_no').value;

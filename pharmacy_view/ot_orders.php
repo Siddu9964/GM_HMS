@@ -5,7 +5,7 @@ ini_set('session.cookie_lifetime', 28800);
 session_start();
 if (!isset($_SESSION['user_id'])) { header("Location: ../login.php"); exit; }
 require_once 'includes/db.php';
-$pageTitle = 'IP Patient Orders';
+$pageTitle = 'OT Patient Orders';
 include 'includes/ph_head.php';
 ?>
 <style>
@@ -26,6 +26,23 @@ include 'includes/ph_head.php';
     font-size: 0.7rem;
     font-weight: 700;
 }
+/* Custom OT Tabs Styling */
+#otTabs .nav-link {
+    color: #475569;
+    border-radius: 8px;
+    padding: 10px 25px;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid transparent;
+}
+#otTabs .nav-link:hover {
+    background-color: #f1f5f9;
+    color: #1f6b4a;
+}
+#otTabs .nav-link.active {
+    background-color: #1f6b4a !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(31, 107, 74, 0.25);
+}
 </style>
 <div class="ph-wrap">
 <?php include 'includes/pharmacy_sidebar.php'; ?>
@@ -35,33 +52,67 @@ include 'includes/ph_head.php';
 
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
-    <h1 class="ph-page-title">IP Patient Orders</h1>
-    <p class="ph-page-subtitle">View pharmacy requests from inpatient wards</p>
+    <h1 class="ph-page-title">OT Patient Orders</h1>
+    <p class="ph-page-subtitle">View pharmacy requests from Operation Theatre</p>
   </div>
 </div>
 
-<!-- Orders Table -->
-<div class="ph-card">
-  <div class="ph-table-wrap">
-    <table class="ph-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Patient Name</th>
-          <th>Admission ID</th>
-          <th>Location (Ward/Room/Bed)</th>
-          <th>Items Ordered</th>
-          <th>Status</th>
-          <th class="text-end actions-cell">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody">
-        <tr><td colspan="7" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></td></tr>
-      </tbody>
-    </table>
+<!-- Tabs -->
+<ul class="nav nav-pills mb-4" id="otTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active fw-bold" id="orders-tab" data-bs-toggle="tab" data-bs-target="#orders-pane" type="button" role="tab">OT Orders</button>
+  </li>
+  <li class="nav-item ms-2" role="presentation">
+    <button class="nav-link fw-bold" id="returns-tab" data-bs-toggle="tab" data-bs-target="#returns-pane" type="button" role="tab">OT Returns (History)</button>
+  </li>
+</ul>
+
+<div class="tab-content" id="otTabsContent">
+  <div class="tab-pane fade show active" id="orders-pane" role="tabpanel" tabindex="0">
+    <!-- Orders Table -->
+    <div class="ph-card">
+      <div class="ph-table-wrap">
+        <table class="ph-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Patient Name</th>
+              <th>Admission ID</th>
+              <th>Location (Ward/Room/Bed)</th>
+              <th>Items Ordered</th>
+              <th>Status</th>
+              <th class="text-end actions-cell">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="7" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-pane fade" id="returns-pane" role="tabpanel" tabindex="0">
+    <div class="ph-card">
+      <div class="ph-table-wrap">
+        <table class="ph-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Patient Name</th>
+              <th>Admission ID</th>
+              <th>Returned Items</th>
+              <th class="text-end actions-cell">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="returnsTableBody">
+            <tr><td colspan="7" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
-
 </div></div></div>
 
 <!-- Order Detail Modal -->
@@ -92,7 +143,7 @@ let lastReturnedQty = null;
 
 async function loadOrders(silent = false) {
     try {
-        const res = await phGet(API_BASE + 'pharmacy/ip-orders');
+        const res = await phGet(API_BASE + 'pharmacy/ot-orders');
         if (res.success) {
             allOrders = res.data;
             
@@ -103,18 +154,15 @@ async function loadOrders(silent = false) {
                 (o.orders || []).forEach(item => {
                     const data = item.data || {};
                     currentOrderedQty += parseInt(data.qty) || 0;
-                });
-                (o.returns || []).forEach(item => {
-                    const data = item.data || {};
-                    currentReturnedQty += parseInt(data.qty) || 0;
+                    currentReturnedQty += parseInt(data.returned_qty) || 0;
                 });
             });
             
             if (lastOrderedQty !== null && currentOrderedQty > lastOrderedQty) {
-                PH.toast('info', 'New IP Order Received!', 5000);
+                PH.toast('info', 'New OT Order Received!', 5000);
             }
             if (lastReturnedQty !== null && currentReturnedQty > lastReturnedQty) {
-                PH.toast('info', 'New IP Return Received!', 5000);
+                PH.toast('info', 'New OT Return Received!', 5000);
             }
             
             lastOrderedQty = currentOrderedQty;
@@ -125,7 +173,7 @@ async function loadOrders(silent = false) {
                 renderOrders();
             }
         } else {
-            if (!silent) PH.error(res.error || 'Failed to load IP orders');
+            if (!silent) PH.error(res.error || 'Failed to load OT orders');
         }
     } catch (e) {
         console.error(e);
@@ -155,8 +203,10 @@ function escapeHtml(str) {
 
 function renderOrders() {
     let html = '';
+    let returnsHtml = '';
+    
     if (allOrders.length === 0) {
-        html = '<tr><td colspan="7" class="text-center py-5 text-muted"><i class="fas fa-inbox fa-3x mb-3 text-light"></i><br>No IP orders found.</td></tr>';
+        html = '<tr><td colspan="7" class="text-center py-5 text-muted"><i class="fas fa-inbox fa-3x mb-3 text-light"></i><br>No OT orders found.</td></tr>';
     } else {
         allOrders.forEach(o => {
             const itemCnt = o.orders ? o.orders.length : 0;
@@ -192,9 +242,51 @@ function renderOrders() {
                     </td>
                 </tr>
             `;
+            
+            // Build returns rows
+            let totalReturnedItems = 0;
+            let pendingAcceptItems = 0;
+            if (o.orders) {
+                o.orders.forEach(item => {
+                    const data = item.data || {};
+                    const returnedQty = parseInt(data.returned_qty) || 0;
+                    const acceptedQty = parseInt(data.accepted_return_qty) || 0;
+                    if (returnedQty > 0) {
+                        totalReturnedItems++;
+                        if (returnedQty > acceptedQty) {
+                            pendingAcceptItems++;
+                        }
+                    }
+                });
+            }
+            
+            if (totalReturnedItems > 0) {
+                let badgeHtml = pendingAcceptItems > 0 
+                    ? `<span class="badge bg-warning text-dark rounded-pill"><i class="fas fa-clock me-1"></i> ${pendingAcceptItems} Items Pending</span>` 
+                    : `<span class="badge bg-success rounded-pill"><i class="fas fa-check-double me-1"></i> Accepted</span>`;
+                    
+                returnsHtml += `
+                    <tr class="cursor-pointer" onclick="viewReturns(${o.id})" style="transition: all 0.2s;" onmouseover="this.style.backgroundColor='#f1f5f9';" onmouseout="this.style.backgroundColor='';">
+                        <td><div class="fw-bold">${formatDateStr(o.date)}</div></td>
+                        <td><div class="fw-bold text-dark">${escapeHtml(o.patient_name)}</div><div class="text-muted" style="font-size:0.7rem;">${escapeHtml(o.patient_id)}</div></td>
+                        <td><span class="order-badge">${escapeHtml(o.admission_id)}</span></td>
+                        <td>${badgeHtml}</td>
+                        <td class="text-end">
+                            <button class="ph-action-btn view-btn" title="View Returns">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
         });
     }
     document.getElementById('tableBody').innerHTML = html;
+    
+    if (returnsHtml === '') {
+        returnsHtml = '<tr><td colspan="7" class="text-center py-5 text-muted"><i class="fas fa-undo fa-3x mb-3 text-light"></i><br>No OT returns found.</td></tr>';
+    }
+    document.getElementById('returnsTableBody').innerHTML = returnsHtml;
 }
 
 let detailModal;
@@ -448,6 +540,165 @@ function viewOrder(id) {
     detailModal.show();
 }
 
+function viewReturns(id) {
+    const modalEl = document.getElementById('detailModal');
+    if (!modalEl) return;
+    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        detailModal = bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: 'static' });
+    }
+    const order = allOrders.find(o => o.id == id);
+    if (!order) return;
+    
+    let html = `
+    <div style="padding: 20px 30px; font-family: 'Inter', sans-serif;">
+        <div class="text-center mb-4">
+            <h2 style="color: #0d9488; font-weight: 800; margin-bottom: 5px;">GM HOSPITALS</h2>
+            <h5 class="text-muted" style="font-weight:600; text-transform:uppercase; letter-spacing:1px;">OT Return Details</h5>
+        </div>
+        
+        <div class="row mb-4" style="background:#f8fafc; border-radius:8px; padding:15px; border:1px solid #e2e8f0;">
+            <div class="col-md-6">
+                <p class="mb-1"><strong style="color:#475569;">Patient Name:</strong> <span style="font-weight:600; color:#1e293b;">${escapeHtml(order.patient_name)}</span></p>
+                <p class="mb-1"><strong style="color:#475569;">Patient ID:</strong> ${escapeHtml(order.patient_id)}</p>
+                <p class="mb-0"><strong style="color:#475569;">Admission ID:</strong> ${escapeHtml(order.admission_id)}</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <p class="mb-1"><strong style="color:#475569;">Date:</strong> ${formatDateStr(order.date)}</p>
+                <p class="mb-0"><strong style="color:#475569;">Location:</strong> ${escapeHtml(order.ward)} / Room ${escapeHtml(order.room)} / Bed ${escapeHtml(order.bed)}</p>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle" style="border-color:#e2e8f0;">
+                <thead style="background:#f1f5f9; color:#475569; font-size:0.85rem; text-transform:uppercase;">
+                    <tr>
+                        <th class="py-3">Medicine/Product</th>
+                        <th class="py-3 text-center">Req Qty</th>
+                        <th class="py-3 text-center">Used Qty</th>
+                        <th class="py-3 text-center text-success">Returned Qty</th>
+                        <th class="py-3 text-center" style="width: 120px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    if (order.orders) {
+        order.orders.forEach((item, index) => {
+            const data = item.data || {};
+            const returnedQty = parseInt(data.returned_qty) || 0;
+            const acceptedQty = parseInt(data.accepted_return_qty) || 0;
+            if (returnedQty > 0) {
+                const medName = escapeHtml(data.name || data.medicine_name || data.product_name || 'Medicine');
+                const pendingAccept = returnedQty - acceptedQty;
+                
+                if (pendingAccept > 0) {
+                    html += `
+                        <tr>
+                            <td class="fw-bold text-dark">${medName}</td>
+                            <td class="text-center">${parseInt(data.qty) || 0}</td>
+                            <td class="text-center">${parseInt(data.used_qty) || 0}</td>
+                            <td class="text-center fw-bold text-success" style="font-size:1.1rem;">${pendingAccept}</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-success" onclick="acceptReturn(${order.id}, '${item.unique_id}', ${pendingAccept})" id="btn-accept-${item.unique_id}">
+                                    <i class="fas fa-check-circle"></i> Accept
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    html += `
+                        <tr>
+                            <td class="text-muted">${medName}</td>
+                            <td class="text-center text-muted">${parseInt(data.qty) || 0}</td>
+                            <td class="text-center text-muted">${parseInt(data.used_qty) || 0}</td>
+                            <td class="text-center fw-bold text-success" style="font-size:1.1rem;">${returnedQty}</td>
+                            <td class="text-center">
+                                <span class="badge bg-success"><i class="fas fa-check"></i> Accepted</span>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+        });
+    }
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="mt-4 p-3 rounded" style="background:#f8fafc; border:1px solid #e2e8f0;">
+            <p class="mb-0 text-muted" style="font-size:0.85rem;"><i class="fas fa-info-circle me-1"></i> Accepting a return will automatically add the stock back to the pharmacy inventory.</p>
+        </div>
+        
+        <div class="text-center mt-4 mb-2">
+            <button class="btn btn-secondary px-4" data-bs-dismiss="modal">Close</button>
+        </div>
+    </div>
+    `;
+    
+    document.getElementById('invoiceContainer').innerHTML = html;
+    detailModal.show();
+}
+
+async function acceptReturn(recordId, uniqueId, qty) {
+    if (typeof Swal !== 'undefined') {
+        const result = await Swal.fire({
+            title: 'Accept Return?',
+            html: `Are you sure you want to accept this return and add <strong class="text-success">${qty}</strong> units back to stock?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#059669',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: '<i class="fas fa-check-circle"></i> Yes, Accept',
+            cancelButtonText: 'Cancel',
+            customClass: {
+                popup: 'rounded-4 shadow-lg border-0',
+                title: 'fw-bold fs-4 text-dark',
+                htmlContainer: 'fs-6 text-muted'
+            }
+        });
+        
+        if (!result.isConfirmed) return;
+    } else {
+        if (!confirm('Are you sure you want to accept this return and add ' + qty + ' back to stock?')) return;
+    }
+    
+    const btn = document.getElementById('btn-accept-' + uniqueId);
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    }
+    
+    try {
+        const res = await phPost(API_BASE + 'pharmacy/ot-orders/accept-return', {
+            record_id: recordId,
+            unique_id: uniqueId,
+            qty: qty
+        });
+        
+        if (res.success) {
+            PH.toast('success', 'Return accepted! Stock added.');
+            // Reload orders to get updated state
+            await loadOrders(true);
+            // Re-render the returns modal
+            viewReturns(recordId);
+        } else {
+            PH.error(res.error || 'Failed to accept return');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Accept';
+            }
+        }
+    } catch (e) {
+        PH.error('Network Error: ' + e.message);
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Accept';
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadOrders();
 });
@@ -519,7 +770,7 @@ async function completeSingleItem(orderId, idx) {
     }
     
     try {
-        const res = await phPost(API_BASE + 'pharmacy/ip-orders/complete', {
+        const res = await phPost(API_BASE + 'pharmacy/ot-orders/complete', {
             order_id: orderId,
             item_index: idx,
             disc_percent: discPercent,
@@ -617,7 +868,7 @@ async function completeEligibleItems(orderId) {
     }
     
     try {
-        const res = await phPost(API_BASE + 'pharmacy/ip-orders/complete', {
+        const res = await phPost(API_BASE + 'pharmacy/ot-orders/complete', {
             order_id: orderId,
             items: itemsData,
             global_discount: order.global_discount || 0

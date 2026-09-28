@@ -183,6 +183,9 @@ $router->add('POST', '#^/api/vendor/quotations/?$#',          'GM_HMS\\Controlle
 $router->add('GET',  '#^/api/pharmacy/dashboard/?$#',             'GM_HMS\\Modules\\Pharmacy\\Controllers\\DashboardController', 'index');
 $router->add('GET',  '#^/api/pharmacy/ip-orders/?$#',             'GM_HMS\\Modules\\Pharmacy\\Controllers\\IPOrdersController', 'index');
 $router->add('POST', '#^/api/pharmacy/ip-orders/complete/?$#',    'GM_HMS\\Modules\\Pharmacy\\Controllers\\IPOrdersController', 'complete');
+$router->add('GET',  '#^/api/pharmacy/ot-orders/?$#',             'GM_HMS\\Modules\\Pharmacy\\Controllers\\OTOrdersController', 'index');
+$router->add('POST', '#^/api/pharmacy/ot-orders/complete/?$#',    'GM_HMS\\Modules\\Pharmacy\\Controllers\\OTOrdersController', 'complete');
+$router->add('POST', '#^/api/pharmacy/ot-orders/accept-return/?$#', 'GM_HMS\\Modules\\Pharmacy\\Controllers\\OTOrdersController', 'acceptReturn');
 $router->add('POST', '#^/api/pharmacy/billing/checkout/?$#',      'GM_HMS\\Modules\\Pharmacy\\Controllers\\BillingController', 'checkout');
 $router->add('GET',  '#^/api/pharmacy/billing/print/?$#',         'GM_HMS\\Modules\\Pharmacy\\Controllers\\BillingController', 'printInvoice');
 $router->add('GET',  '#^/api/pharmacy/billing/patients/?$#',      'GM_HMS\\Modules\\Pharmacy\\Controllers\\BillingController', 'searchPatients');
@@ -409,8 +412,33 @@ $router->add('POST', '#^/api/radiology/templates/auto-generate/?$#',           '
 $router->add('GET',  '#^/api/radiology/notifications/?$#',                      'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getNotifications');
 $router->add('POST', '#^/api/radiology/notifications/([^/]+)/read/?$#',        'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'markNotificationRead');
 
+
 // Payment Module Routes
 $router->add('POST', '#^/api/payment/clinical-billing-sync/?$#',                'GM_HMS\Modules\Payment\Controllers\PaymentController', 'syncClinicalBilling');
+
+// ── OT (Operation Theatre) Module Routes ──────────────────────────────────────
+$router->add('GET',    '#^/api/ot/dashboard/?$#',               'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'getDashboard');
+$router->add('GET',    '#^/api/ot/rooms/?$#',                   'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'getOTRooms');
+$router->add('GET',    '#^/api/ot/roles/?$#',                   'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'getDoctorRoles');
+$router->add('GET',    '#^/api/ot/surgeries/?$#',               'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'getSurgeries');
+$router->add('POST',   '#^/api/ot/surgeries/?$#',               'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'createSurgery');
+$router->add('GET',    '#^/api/ot/surgeries/(\\d+)/?$#',        'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'getSurgery');
+$router->add('PUT',    '#^/api/ot/surgeries/(\\d+)/?$#',        'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'updateSurgery');
+$router->add('PUT',    '#^/api/ot/surgeries/(\\d+)/status/?$#', 'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'updateStatus');
+    $router->add('GET',    '#^/api/ot/patient/search/([^/]+)/?$#',  'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'searchPatient');
+    $router->add('GET',    '#^/api/ot/patient/search-list/?$#',     'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'searchPatientsList');
+    $router->add('DELETE', '#^/api/ot/surgeries/(\d+)/?$#',        'GM_HMS\Modules\OT\Controllers\OTController', 'deleteSurgery');
+    $router->add('PUT',    '#^/api/ot/surgeries/(\d+)/time/?$#',   'GM_HMS\Modules\OT\Controllers\OTController', 'updateTime');
+    $router->add('POST',   '#^/api/ot/check-room/?$#',             'GM_HMS\Modules\OT\Controllers\OTController', 'checkRoom');
+    $router->add('GET',    '#^/api/ot/departments/?$#',            'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'getDepartments');
+$router->add('GET',    '#^/api/ot/pharmacy/search/?$#',         'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'searchPharmacyProducts');
+$router->add('POST',   '#^/api/ot/pharmacy-order/?$#',          'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'createPharmacyOrder');
+$router->add('GET',    '#^/api/ot/pharmacy-order/pending/?$#',  'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'getPendingPharmacyOrders');
+$router->add('POST',   '#^/api/ot/pharmacy-order/edit/?$#',     'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'editPharmacyOrderItem');
+$router->add('POST',   '#^/api/ot/pharmacy-order/delete/?$#',   'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'deletePharmacyOrderItem');
+$router->add('POST',   '#^/api/ot/pharmacy-reconcile/?$#',      'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'reconcilePharmacyOrder');
+$router->add('GET',    '#^/api/ot/pharmacy-orders/history/?$#', 'GM_HMS\\Modules\\OT\\Controllers\\OTController', 'getAllPharmacyOrders');
+
 
 
 // IPD Summary Routes

@@ -40,6 +40,7 @@ class ProductController extends BaseController {
             $data = $this->getJsonInput();
             unset($data['action']);
             unset($data['sl_no']);
+            $this->cleanData($data);
             // TODO: Add Request Validation
             $id = $this->repository->create($data);
             $this->respondCreated(['sl_no' => $id]);
@@ -54,6 +55,7 @@ class ProductController extends BaseController {
             $data = $this->getJsonInput();
             unset($data['action']);
             unset($data['sl_no']);
+            $this->cleanData($data);
             $this->repository->update((int)$slNo, $data);
             $this->respondSuccess(null, "Product updated.");
         } catch (Exception $e) { $this->handleException($e); }
@@ -119,5 +121,20 @@ class ProductController extends BaseController {
             
             throw new Exception("Could not parse AI response.");
         } catch (Exception $e) { $this->handleException($e); }
+    }
+
+    private function cleanData(array &$data): void {
+        if (!isset($data['attachment'])) {
+            $data['attachment'] = '';
+        }
+        $numericFields = [
+            'purchase_rate', 'pack_rate', 'individual_rate', 'quantity', 
+            'pack_size', 'min_stock', 'max_stock', 'mrp', 'tax_percent'
+        ];
+        foreach ($numericFields as $field) {
+            if (isset($data[$field]) && $data[$field] === '') {
+                $data[$field] = 0;
+            }
+        }
     }
 }

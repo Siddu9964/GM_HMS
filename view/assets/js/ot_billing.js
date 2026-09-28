@@ -1,7 +1,11 @@
 const API_URL = '/GM_HMS/api/';
+let doctorRolesOptions = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) lucide.createIcons();
+    
+    // Fetch dynamic doctor roles from DB
+    fetchDoctorRoles();
     
     // Attach event listeners for calculations
     attachCalculationListeners();
@@ -39,6 +43,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial calculation run
     calculateAll();
 });
+
+async function fetchDoctorRoles() {
+    try {
+        const res = await fetch(`${API_URL}ot/roles`);
+        const data = await res.json();
+        if (data && Array.isArray(data.data)) {
+            doctorRolesOptions = data.data;
+        }
+    } catch(err) {
+        console.error('Failed to fetch doctor roles', err);
+    }
+}
 
 // ----------------------------------------------------
 // Calculation Engine
@@ -291,6 +307,175 @@ function populatePatientData(patient) {
     if (stickyPat) {
         stickyPat.innerHTML = `<i class="fas fa-user-check me-1"></i> <span>${patient.patient_name || 'Patient'}</span> (${patient.patient_id || 'ID'})`;
     }
+    
+    // Auto-fetch latest surgery data for this patient
+    if (patient.patient_id) {
+        fetchPatientSurgeryData(patient.patient_id);
+    }
+}
+
+async function fetchPatientSurgeryData(patientId) {
+    try {
+        const res = await fetch(`${API_URL}ot/surgeries?search=${encodeURIComponent(patientId)}`);
+        const result = await res.json();
+        const data = result.data || result;
+        
+        if (data && data.length > 0) {
+            const surgery = data[0]; // Get the most recent surgery for this patient
+            
+            // Populate Surgery Details
+            if (surgery.surgery_name) document.getElementById('surgName').value = surgery.surgery_name;
+            if (surgery.schedule_date) {
+                document.getElementById('surgDate').value = surgery.schedule_date.split('T')[0].split(' ')[0];
+            }
+            if (surgery.department) document.getElementById('surgDept').value = surgery.department;
+            
+            if (surgery.ot_room_name) document.getElementById('surgTheatre').value = surgery.ot_room_name;
+            if (surgery.anesthesia_type) document.getElementById('surgAnesType').value = surgery.anesthesia_type;
+            
+            // Populate Doctors
+            if (surgery.type && surgery.name) {
+                let types = [];
+                let names = [];
+                try {
+                    types = typeof surgery.type === 'string' ? JSON.parse(surgery.type) : surgery.type;
+                    names = typeof surgery.name === 'string' ? JSON.parse(surgery.name) : surgery.name;
+                } catch(e) { console.error('Error parsing doctor JSON', e); }
+                
+                // Clear existing doctor rows
+                document.querySelectorAll('.doc-row .select-consultant').forEach(inp => inp.value = '');
+                
+                // Remove any previously added dynamic rows
+                document.querySelectorAll('.doc-row.dynamic-row').forEach(r => r.remove());
+                
+                // Hide all rows initially except OT Service and Surgeon
+                document.querySelectorAll('.doc-row').forEach(row => {
+                    const type = row.dataset.type;
+                    if (type !== 'OT_SERVICE' && type !== 'SURGEON') {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                types.forEach((t, i) => {
+                    const docName = names[i];
+                    if (!docName) return;
+                    
+                    if (t === 'Surgeon') {
+                        const row = document.querySelector(`.doc-row[data-type="SURGEON"]`);
+                        if (row) {
+                            const input = row.querySelector('.select-consultant');
+                            if (input) input.value = docName;
+                            row.style.display = ''; // Make it visible
+                        }
+                    } else {
+                        // Dynamically add a row for this type
+                        addDynamicDoctorRow(t, docName);
+                    }
+                });
+                document.getElementById('btnShowAllDoctors').style.display = 'inline-block';
+            }
+            showToast('Surgery protocol and doctors auto-filled from scheduled surgery!', 'success');
+        }
+    } catch (err) {
+        console.error('Error fetching surgery data:', err);
+    }
+}
+
+function addDynamicDoctorRow(preType = null, preName = '') {
+    const tbody = document.querySelector('.ot-table tbody');
+    const otServiceRow = document.querySelector('.doc-row[data-type="OT_SERVICE"]');
+    
+    // Default fallback options if the API hasn't loaded or failed
+    let optionsHtml = `
+        <option value="Asst. Surgeon 1">Asst. Surgeon</option>
+        <option value="Anesthetist">Anesthetist</option>
+        <option value="St. by Anesthetist">St. by Anesthetist</option>
+        <option value="Other Doctor">Other Doctor</option>
+    `;
+    
+    // Use dynamic options from DB if available
+    if (typeof doctorRolesOptions !== 'undefined' && doctorRolesOptions.length > 0) {
+        optionsHtml = doctorRolesOptions.map(role => `<option value="${role}">${role}</option>`).join('');
+    }
+    
+    // Inject preType if it doesn't exist in optionsHtml
+    if (preType && !optionsHtml.includes(`value="${preType}"`)) {
+        optionsHtml += `<option value="${preType}">${preType}</option>`;
+    }
+    
+    const tr = document.createElement('tr');
+    tr.className = 'doc-row dynamic-row';
+    
+    // Extract the first value from the options html to set as initial dataset.type or use preType
+    const match = optionsHtml.match(/value="([^"]+)"/);
+    const initialVal = preType || (match ? match[1] : 'CUSTOM');
+    tr.dataset.type = initialVal;
+    
+    // Auto-select the preType if provided
+    if (preType) {
+        optionsHtml = optionsHtml.replace(`value="${preType}"`, `value="${preType}" selected`);
+    }
+    
+    tr.innerHTML = `
+        <td>
+            <div class="role-pill">
+                <span class="role-dot" style="background:#f39c12;"></span>
+                <select class="form-select form-select-sm doc-type-select" style="font-weight:700; color:#1f6b4a; border:none; background:transparent; padding-left:0;" onchange="this.closest('tr').dataset.type = this.value">
+                    ${optionsHtml}
+                </select>
+            </div>
+        </td>
+        <td>
+            <div class="autocomplete-wrapper">
+                <input type="text" class="form-control select-consultant dynamic-consultant" value="${preName ? preName.replace(/"/g, '&quot;') : ''}" placeholder="Type doctor name..." autocomplete="off">
+                <i class="fas fa-search search-icon"></i>
+                <div class="autocomplete-dropdown"></div>
+            </div>
+        </td>
+
+        <td><input type="number" class="form-control input-amount s-charge ms-auto calc-trigger" placeholder="0.00"></td>
+        <td class="calculated-amt row-amt">₹0.00</td>
+        <td class="text-center"><button type="button" class="btn-row-clear" onclick="this.closest('tr').remove(); calculateAll();" title="Remove Row"><i class="fas fa-times"></i></button></td>
+    `;
+    
+    // Insert before OT Service row
+    if (otServiceRow) {
+        tbody.insertBefore(tr, otServiceRow);
+    } else {
+        tbody.appendChild(tr);
+    }
+    
+    // Re-attach calculation listeners to the new row
+    tr.querySelectorAll('.calc-trigger').forEach(input => {
+        input.addEventListener('input', calculateAll);
+    });
+    
+    // Attach autocomplete to the new input
+    const input = tr.querySelector('.dynamic-consultant');
+    const dropdown = tr.querySelector('.autocomplete-dropdown');
+    let timeout = null;
+    
+    input.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        dropdown.style.display = 'none';
+        if (val.length < 2) return;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fetchDoctors(val, dropdown, input), 280);
+    });
+    
+    input.addEventListener('focus', () => {
+        if (input.value.trim().length >= 2 && dropdown.innerHTML !== '') {
+            dropdown.style.display = 'block';
+        }
+    });
+}
+
+function showAllDoctorRows() {
+    // Left for backward compatibility, but we now use addDynamicDoctorRow
+    document.querySelectorAll('.doc-row').forEach(row => {
+        row.style.display = '';
+    });
+    document.getElementById('btnShowAllDoctors').style.display = 'none';
 }
 
 function resetPatientDetails() {
