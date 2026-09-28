@@ -593,10 +593,14 @@ const billing = (function () {
                             <div class="item-desc" style="font-weight: 700;">${item.description} ${sourceIcon}</div>
                             ${subDesc}
                         </td>
-                        <td class="tbl-num" style="padding: 10px 14px; font-weight: 600;">${qty}</td>
-                        <td class="tbl-num" style="padding: 10px 14px; font-weight: 600;">${rate}</td>
+                        <td class="tbl-num" id="qty-cell-${item.item_id}" style="padding: 10px 14px; font-weight: 600;">
+                            ${canCancel ? `<span style="cursor:pointer; color:#1f6b4a; text-decoration:underline;" onclick="billing.startInlineEdit(${item.item_id}, ${qtyFloat}, ${rateFloat})" title="Click to edit Qty">${qty}</span>` : qty}
+                        </td>
+                        <td class="tbl-num" id="rate-cell-${item.item_id}" style="padding: 10px 14px; font-weight: 600;">
+                            ${canCancel ? `<span style="cursor:pointer; color:#1f6b4a; text-decoration:underline;" onclick="billing.startInlineEdit(${item.item_id}, ${qtyFloat}, ${rateFloat})" title="Click to edit Rate">${rate}</span>` : rate}
+                        </td>
                         <td class="tbl-amt" id="total-cell-${item.item_id}" style="padding: 10px 14px; font-weight: 800;">
-                            ${canCancel ? `<span style="cursor:pointer; color:#1f6b4a; text-decoration:underline;" onclick="billing.startInlineEdit(${item.item_id}, ${totalFloat})" title="Click to edit total">₹${total}</span>` : `₹${total}`}
+                            ₹${total}
                         </td>
                         <td style="padding: 10px 14px;">
                             <div class="item-status-badge" style="background: #1f6b4a; color: #f3efe6; border: 1px solid #1f6b4a; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700;">${item.status}</div>
@@ -4610,102 +4614,114 @@ const billing = (function () {
         }
     };
 
-    function startInlineEdit(itemId, currentTotal) {
-        const cell = document.getElementById(`total-cell-${itemId}`);
-        if (!cell) return;
-        cell.innerHTML = `
-            <input type="text" id="total-input-${itemId}" value="${currentTotal}" class="bm-input" 
-                   style="width: 80px; padding: 2px 4px; height: 26px; text-align:right; font-family: inherit; font-size: inherit; outline: 2px solid var(--primary); border: none; border-radius: 4px; box-shadow: 0 0 5px rgba(31, 107, 74, 0.3);" 
+    function startInlineEdit(itemId, currentQty, currentRate) {
+        const qtyCell = document.getElementById(`qty-cell-${itemId}`);
+        const rateCell = document.getElementById(`rate-cell-${itemId}`);
+        if (!qtyCell || !rateCell) return;
+        
+        qtyCell.innerHTML = `
+            <input type="text" inputmode="decimal" id="qty-input-${itemId}" value="${currentQty}" class="bm-input" 
+                   style="width: 70px; padding: 4px 8px; height: 32px; text-align:right; font-family: inherit; font-size: 0.95rem; outline: 2px solid var(--primary); border: none; border-radius: 4px; box-shadow: 0 0 5px rgba(31, 107, 74, 0.3);" 
                    autocomplete="off">
         `;
         
-        const input = document.getElementById(`total-input-${itemId}`);
-        if (input) {
-            input.focus();
-            input.select();
+        rateCell.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="text" inputmode="decimal" id="rate-input-${itemId}" value="${currentRate}" class="bm-input" 
+                       style="width: 100px; padding: 4px 8px; height: 32px; text-align:right; font-family: inherit; font-size: 0.95rem; outline: 2px solid var(--primary); border: none; border-radius: 4px; box-shadow: 0 0 5px rgba(31, 107, 74, 0.3);" 
+                       autocomplete="off">
+                <div style="display: inline-flex; gap: 4px;">
+                    <button type="button" class="btn-group-toggle" onclick="billing.saveInlineEdit(${itemId}, ${currentQty}, ${currentRate})" style="background: #1f6b4a; color: #f3efe6; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; height: 32px;" title="Save"><i class="fas fa-check"></i></button>
+                    <button type="button" class="btn-group-toggle" onclick="billing.cancelInlineEdit(${itemId}, ${currentQty}, ${currentRate})" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; border-radius: 4px; padding: 4px 8px; cursor: pointer; height: 32px;" title="Cancel"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+        `;
+        
+        const qtyInput = document.getElementById(`qty-input-${itemId}`);
+        const rateInput = document.getElementById(`rate-input-${itemId}`);
+        if (qtyInput && rateInput) {
+            qtyInput.focus();
+            qtyInput.select();
             
             let isHandling = false;
             
-            input.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if(!isHandling) { isHandling = true; billing.saveInlineEdit(itemId, currentTotal); }
-                }
-                if (e.key === 'Escape') {
-                    e.preventDefault();
-                    if(!isHandling) { isHandling = true; billing.cancelInlineEdit(itemId, currentTotal); }
-                }
-            });
-            
-            input.addEventListener('blur', function() {
-                if(!isHandling) {
-                    isHandling = true;
-                    const val = parseFloat(input.value);
-                    if (isNaN(val) || val === currentTotal) {
-                        billing.cancelInlineEdit(itemId, currentTotal);
-                    } else {
-                        billing.saveInlineEdit(itemId, currentTotal);
+            [qtyInput, rateInput].forEach(input => {
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if(!isHandling) { isHandling = true; billing.saveInlineEdit(itemId, currentQty, currentRate); }
                     }
-                }
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        if(!isHandling) { isHandling = true; billing.cancelInlineEdit(itemId, currentQty, currentRate); }
+                    }
+                });
             });
         }
     }
 
-    function cancelInlineEdit(itemId, originalTotal) {
-        const cell = document.getElementById(`total-cell-${itemId}`);
-        if (!cell) return;
-        const formattedTotal = originalTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-        cell.innerHTML = `<span style="cursor:pointer; color:var(--blue); text-decoration:underline;" onclick="billing.startInlineEdit(${itemId}, ${originalTotal})" title="Click to edit total">₹${formattedTotal}</span>`;
+    function cancelInlineEdit(itemId, originalQty, originalRate) {
+        const qtyCell = document.getElementById(`qty-cell-${itemId}`);
+        const rateCell = document.getElementById(`rate-cell-${itemId}`);
+        if (!qtyCell || !rateCell) return;
+        const fQty = isNaN(originalQty) ? '—' : originalQty.toString();
+        const fRate = isNaN(originalRate) ? '—' : originalRate.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+        
+        qtyCell.innerHTML = `<span style="cursor:pointer; color:#1f6b4a; text-decoration:underline;" onclick="billing.startInlineEdit(${itemId}, ${originalQty}, ${originalRate})" title="Click to edit Qty">${fQty}</span>`;
+        rateCell.innerHTML = `<span style="cursor:pointer; color:#1f6b4a; text-decoration:underline;" onclick="billing.startInlineEdit(${itemId}, ${originalQty}, ${originalRate})" title="Click to edit Rate">${fRate}</span>`;
     }
 
-    async function saveInlineEdit(itemId, originalTotal) {
-        const input = document.getElementById(`total-input-${itemId}`);
-        if (!input) return;
-        const newTotalStr = input.value;
-        const newTotal = parseFloat(newTotalStr);
+    async function saveInlineEdit(itemId, originalQty, originalRate) {
+        const qtyInput = document.getElementById(`qty-input-${itemId}`);
+        const rateInput = document.getElementById(`rate-input-${itemId}`);
+        if (!qtyInput || !rateInput) return;
         
-        if (isNaN(newTotal) || newTotal < 0) {
+        const newQty = parseFloat(qtyInput.value);
+        const newRate = parseFloat(rateInput.value);
+        
+        if (isNaN(newQty) || newQty < 0 || isNaN(newRate) || newRate < 0) {
             showToast('Invalid amount entered', 'warning');
-            input.focus();
+            qtyInput.focus();
             return;
         }
 
-        if (newTotal === originalTotal) {
-            billing.cancelInlineEdit(itemId, originalTotal);
+        if (newQty === originalQty && newRate === originalRate) {
+            billing.cancelInlineEdit(itemId, originalQty, originalRate);
             return;
         }
         
-        const cell = document.getElementById(`total-cell-${itemId}`);
-        if(cell) {
-            cell.innerHTML = `<i data-lucide="loader" class="spin" style="width:14px; height:14px;"></i>`;
-            if(window.lucide) lucide.createIcons();
-        }
+        const qtyCell = document.getElementById(`qty-cell-${itemId}`);
+        const rateCell = document.getElementById(`rate-cell-${itemId}`);
+        if(qtyCell) qtyCell.innerHTML = `<i data-lucide="loader" class="spin" style="width:14px; height:14px;"></i>`;
+        if(rateCell) rateCell.innerHTML = `<i data-lucide="loader" class="spin" style="width:14px; height:14px;"></i>`;
+        if(window.lucide) lucide.createIcons();
         
         try {
             const res = await fetch(`${API_URL}ipd-billing-items`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    action: 'update_total',
+                    action: 'update_qty_rate',
                     item_id: itemId,
-                    total_amount: newTotal
+                    quantity: newQty,
+                    unit_price: newRate
                 })
             });
             const json = await res.json();
             
             if (json.success) {
-                showToast('Total updated successfully', 'success');
+                showToast('Updated successfully', 'success');
                 currentMaster = { ...currentMaster, ...json.data.financial };
                 updateWorkspaceUI();
                 const activeTab = document.querySelector('.cat-tab.active').dataset.type;
                 loadItems(activeTab);
             } else {
                 showToast(json.message, 'error');
-                billing.cancelInlineEdit(itemId, originalTotal);
+                billing.cancelInlineEdit(itemId, originalQty, originalRate);
             }
         } catch (e) {
-            showToast('Error updating total', 'error');
-            billing.cancelInlineEdit(itemId, originalTotal);
+            showToast('Error updating', 'error');
+            billing.cancelInlineEdit(itemId, originalQty, originalRate);
         }
     }
 

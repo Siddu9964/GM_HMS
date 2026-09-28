@@ -104,6 +104,13 @@ class IpdBillingItemController extends IpdBaseController {
                 else $this->error($result['message'], 400);
                 break;
 
+            case 'update_qty_rate':
+                if (empty($data['item_id']) || !isset($data['quantity']) || !isset($data['unit_price'])) { $this->error('item_id, quantity, and unit_price required', 400); return; }
+                $result = $this->model->updateQtyRate((int)$data['item_id'], (float)$data['quantity'], (float)$data['unit_price'], $user);
+                if ($result['success']) $this->success($result, 'Updated successfully');
+                else $this->error($result['message'], 400);
+                break;
+
             default:
                 $this->error('Unknown action', 400);
         }

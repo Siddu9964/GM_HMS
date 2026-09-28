@@ -969,6 +969,37 @@ class IpdBillingItem extends IpdBaseModel {
         return ['success' => true, 'message' => 'Total updated', 'financial' => $summary];
     }
 
+    public function updateQtyRate(int $itemId, float $qty, float $rate, string $updatedBy): array {
+        $item = $this->fetchOne(
+            "SELECT item_id, bill_id, items_json FROM ipd_billing_items WHERE item_id = ?",
+            [$itemId]
+        );
+
+        if (!$item) return ['success' => false, 'message' => 'Item not found'];
+        
+        $meta = json_decode($item['items_json'] ?? '{}', true);
+        if ($qty <= 0) $qty = 1;
+
+        $newTotal = round($qty * $rate, 2);
+        
+        $meta['quantity'] = $qty;
+        $meta['unit_price'] = $rate;
+
+        $this->db->update('ipd_billing_items',
+            [
+                'total_amount' => $newTotal, 
+                'items_json' => json_encode($meta),
+                'updated_at' => date('Y-m-d H:i:s')
+            ],
+            '`item_id` = ?', [$itemId]
+        );
+
+        require_once __DIR__ . '/IpdBillingMaster.php';
+        $summary = (new IpdBillingMaster())->recalculateMaster($item['bill_id'], $updatedBy);
+
+        return ['success' => true, 'message' => 'Updated successfully', 'financial' => $summary];
+    }
+
     /* ───────────────────────────────────────────────────────────────
      * 5. GET ITEMS BY BILL
      * ─────────────────────────────────────────────────────────────── */

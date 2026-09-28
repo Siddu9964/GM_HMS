@@ -125,6 +125,20 @@
 
         .footer { background: #1f6b4a; color: #f3efe6; text-align: center; padding: 36px; font-size: 14px; opacity: 0.9; }
         
+        .print-btn { float: right; background: #1f6b4a; color: #f3efe6; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .print-btn:hover { background: #144a33; }
+        
+        @media print {
+            @page { margin: 1cm; size: landscape; }
+            html, body { background: white; margin: 0; padding: 0; }
+            .header, .nav-btn, .print-btn, .footer, .desc, .click-legend { display: none !important; }
+            .container { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+            .section { border: none; box-shadow: none; padding: 0; margin: 0; page-break-inside: auto; page-break-before: auto; }
+            .section h2 { border-bottom: none; margin-bottom: 10px; font-size: 18px; color: black; }
+            #main-diagram-container, .diagram { background: white; border: none; box-shadow: none; padding: 0; margin: 0; min-height: auto !important; }
+            svg { max-height: 85vh !important; width: auto !important; max-width: 100% !important; display: block; margin: 0 auto; }
+        }
+        
         @media (max-width: 768px) {
             .header { padding: 36px 16px 56px; }
             .header h1 { font-size: 26px; }
@@ -141,6 +155,7 @@
 <div class="header">
     <h1>GM_HMS Visual Architecture</h1>
     <p>Presentation-Quality System Diagrams for Management</p>
+    <button onclick="window.print()" class="print-btn" style="float: none; margin-top: 15px; font-size: 15px; padding: 10px 20px; background: white; color: #1f6b4a;">🖨️ Print All Diagrams</button>
 </div>
 
 <div class="container">
@@ -148,9 +163,9 @@
 
     <!-- 1. System Architecture -->
     <div class="section">
-        <h2>1. System Architecture Block Diagram</h2>
+        <h2>1. System Architecture Block Diagram <button class="print-btn" onclick="printDiagram('diag-1')">🖨️ Print Diagram</button></h2>
         <p class="desc">A high-level view of how users interact with the GM_HMS system, the internal modules, and the database. Designed for management to understand the technology landscape at a glance without reading code.</p>
-        <div class="diagram">
+        <div class="diagram" id="diag-1">
             <pre class="mermaid">
                 flowchart LR
                     %% Users
@@ -191,7 +206,7 @@
 
     <!-- 2. Patient Journey -->
     <div class="section" id="journey-section">
-        <h2>2. Complete Patient Journey Flowchart (Interactive)</h2>
+        <h2>2. Complete Patient Journey Flowchart (Interactive) <button class="print-btn" onclick="printDiagram('main-diagram-container')">🖨️ Print Diagram</button></h2>
         <p class="desc">
             Follow <strong>Ramesh Kumar (Patient ID: IPD000123)</strong> through the complete hospital journey — from arrival to discharge.
             <br><strong>Click any colored module box</strong> to expand its detailed workflow inline. Click again to collapse.
@@ -207,6 +222,7 @@
                 <span class="legend-chip chip-doctor">👨‍⚕️ Doctor</span>
                 <span class="legend-chip chip-pharmacy">💊 Pharmacy</span>
                 <span class="legend-chip chip-lab">🔬 Laboratory</span>
+                <span class="legend-chip" style="background:#bae6fd;color:#0369a1;border:1px solid #7dd3fc;">🩻 OT</span>
                 <span class="legend-chip chip-admin">⚙️ Admin</span>
             </div>
         </div>
@@ -219,30 +235,34 @@
 <script>
 const flowcharts = {
 reception: `
-    subgraph Reg ["📝 Reception Detailed Workflow"]
-
-        StartRec(["Patient Desk"]) --> SearchRec["Search/Register Patient<br>(Aadhar/Phone check)"]:::rc
-        SearchRec --> ActionRec{"Patient Type?"}
+    subgraph Reg ["📝 Reception: Registration & Appointment Workflow"]
+        direction TB
         
-        ActionRec -->|"OPD Checkup"| ApptRec["Book Appointment<br>Assign Token (APT-YYMMDD-XXX)"]:::rc
-        ApptRec --> QRec["Manage OPD Queue<br>(Arrived -> In-Progress)"]:::rc
-        QRec --> ConsultRec["Consultation Done"]:::sys
-        ConsultRec --> BillRec["Generate OPD Bill<br>(Duplicate check)"]:::rc
-        BillRec --> PayRec["Collect Payment"]:::rc
+        Arrive(["🏥 Patient Arrives at Reception"]) --> Ask["Ask for Patient Details<br>(Phone No. or Aadhar)"]:::rc
         
-        ActionRec -->|"IPD Admission"| AdmitRec["Create Admission<br>(ADM-YYMMDD-NNN)"]:::rc
-        AdmitRec --> BedRec["Assign Bed and Bill Type<br>(SELF/INSURANCE)"]:::rc
-        BedRec --> MasterRec["System: Open Billing Master<br>(BILL-YYMMDD-NNN)"]:::sys
-        MasterRec --> IPDStayRec["Patient Stays in Ward"]:::sys
-        IPDStayRec --> ManChargeRec["Add Manual Charges<br>(Lab/Pharm/OT)"]:::rc
-        ManChargeRec --> AdvPayRec["Record Advance Payments"]:::rc
-        AdvPayRec --> DisReqRec["Discharge Requested"]:::sys
-        DisReqRec --> FinalBillRec["Review Final Bill<br>(Apply Discounts)"]:::rc
-        FinalBillRec --> FinalPayRec["Collect Final Payment"]:::rc
+        Ask --> Check{"Is Patient<br>Already Registered?"}
         
-        PayRec --> PrintRec["Print Receipts and Documents"]:::rc
-        FinalPayRec --> PrintRec
-        PrintRec --> EndRec(["Completed"])
+        Check -->|"No (New Patient)"| FillForm["📋 Fill New Registration Form<br>(Name, Age, Gender, Address)"]:::rc
+        FillForm --> GenID["⚙️ System Generates Unique Patient ID<br>(e.g. PT-2026-001)"]:::sys
+        GenID --> SelectService
+        
+        Check -->|"Yes (Old Patient)"| FetchProfile["🔍 Fetch Existing Patient Profile<br>using Phone Number"]:::rc
+        FetchProfile --> SelectService{"What service is required?"}
+        
+        SelectService -->|"OPD Consultation"| SelectDoc["👨‍⚕️ Select Doctor & Department"]:::rc
+        SelectDoc --> BookAppt["📅 Book OPD Appointment"]:::rc
+        BookAppt --> GenToken["🎫 Generate OPD Token Number<br>(e.g. Token #14)"]:::sys
+        GenToken --> CollectOPDFee["💳 Collect Consultation Fee"]:::rc
+        CollectOPDFee --> SendToWait["Send Patient to OPD Waiting Area"]:::rc
+        
+        SelectService -->|"IPD Admission"| CheckBed["🛏️ Check Bed/Ward Availability"]:::rc
+        CheckBed --> CreateAdmit["📝 Create IPD Admission Record<br>(ADM-2026-101)"]:::sys
+        CreateAdmit --> SelectType["Select Billing Type<br>(Cash / Insurance)"]:::rc
+        SelectType --> CollectAdv["💳 Collect Advance Deposit"]:::rc
+        CollectAdv --> SendToWard["Transfer Patient to IPD Ward"]:::rc
+        
+        SendToWait --> EndRec(["Reception Process Complete"])
+        SendToWard --> EndRec
     end
 `,
 doctor: `
@@ -364,6 +384,51 @@ admin: `
         
         TasksAdm -->|"Nursing"| SchedulerAdm["Weekly Nurse Duty Scheduler<br>(Conflict Detection)"]:::ad
     end
+`,
+ot: `
+    subgraph OTDetailed ["🩻 Operation Theatre (OT) Detailed Workflow"]
+        StartOT["<b>Surgery Decision</b><br/>Doctor advises surgery"]:::sch
+    
+        subgraph PreOp ["<b>1. Pre-Operative (Scheduling)</b>"]
+            direction TB
+            Sched["📅 <b>Schedule Surgery</b><br/>Select Date, Time, Surgery Name"]:::sch
+            Room{"<b>Room Check</b><br/>Is OT Room Available?"}
+            Assign["👨‍⚕️ <b>Assign Team</b><br/>Surgeon, Anesthetist, Scrub Nurse"]:::sch
+            
+            Sched --> Room
+            Room -->|"No (Conflict)"| Sched
+            Room -->|"Yes"| Assign
+        end
+    
+        subgraph Operation ["<b>2. Operation (Ongoing)</b>"]
+            direction TB
+            StatusOn["⚙️ <b>Change Status: Ongoing</b><br/>Patient enters OT"]:::ong
+            Pharm["💊 <b>OT Pharmacy Order</b><br/>Scrub Nurse requests surgical items"]:::phar
+            Deduct["📉 <b>Stock Deducted</b><br/>Directly deducts from central pharmacy"]:::phar
+            
+            StatusOn --> Pharm
+            Pharm --> Deduct
+        end
+    
+        subgraph PostOp ["<b>3. Post-Operative (Completion)</b>"]
+            direction TB
+            StatusComp["✅ <b>Change Status: Completed</b><br/>Surgery finishes"]:::comp
+            Recon["🔄 <b>Pharmacy Reconciliation</b><br/>Nurse returns unused items"]:::phar
+            Refund["💸 <b>Bill Adjusted</b><br/>Refund applied to IPD Bill"]:::phar
+            
+            StatusComp --> Recon
+            Recon --> Refund
+        end
+    
+        StartOT --> PreOp
+        PreOp --> Operation
+        Operation --> PostOp
+    
+        classDef sch fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e40af,rx:6px,ry:6px;
+        classDef ong fill:#fef9c3,stroke:#ca8a04,stroke-width:2px,color:#854d0e,rx:6px,ry:6px;
+        classDef comp fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534,rx:6px,ry:6px;
+        classDef phar fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#991b1b,rx:6px,ry:6px;
+    end
 `
 };
 
@@ -380,12 +445,11 @@ const nodeModuleMap = {
     'IPDAdm': 'reception',
     'DischargeReq': 'nurse',
     'Admin': 'admin',
-    'Lab': 'laboratory'
+    'Lab': 'laboratory',
+    'OT': 'ot'
 };
 
 function buildDiagramString() {
-    let s = 'flowchart TD\n';
-
     // Helper: inject a native close-button node inside the subgraph string
     function withCloseBtn(chartStr) {
         var closeNode = '        ClosePanelBtn(["\u2715 Click here to CLOSE and return to Main Flow"]):::closebtn\n';
@@ -393,20 +457,35 @@ function buildDiagramString() {
         return chartStr.replace(/    end\n?$/, closeNode + '    end\n');
     }
 
+    if (currentlyExpanded && flowcharts[currentlyExpanded]) {
+        let s = 'flowchart TD\n' + withCloseBtn(flowcharts[currentlyExpanded]);
+        // Add required classDefs for the detailed views
+        s += `
+    classDef closebtn  fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#dc2626,font-weight:700,rx:6px,ry:6px;
+    classDef rc  fill:#eff6ff,stroke:#2563eb,stroke-width:1px,color:#1e40af,rx:6px,ry:6px;
+    classDef sys fill:#f8fafc,stroke:#94a3b8,stroke-width:1px,color:#64748b,rx:6px,ry:6px;
+    classDef dr  fill:#fdf2f8,stroke:#db2777,stroke-width:1px,color:#9d174d,rx:6px,ry:6px;
+    classDef nu  fill:#f0fdf4,stroke:#16a34a,stroke-width:1px,color:#166534,rx:6px,ry:6px;
+    classDef ph  fill:#fefce8,stroke:#ca8a04,stroke-width:1px,color:#854d0e,rx:6px,ry:6px;
+    classDef lb  fill:#faf5ff,stroke:#7c3aed,stroke-width:1px,color:#5b21b6,rx:6px,ry:6px;
+    classDef ad  fill:#fff7ed,stroke:#ea580c,stroke-width:1px,color:#9a3412,rx:6px,ry:6px;
+        `;
+        return s;
+    }
+
+    let s = 'flowchart TD\n';
+
     // ── NODES FIRST ──────────────────────────────────────────
     s += '    Arrival(["\ud83c\udfe5 PATIENT ARRIVES at Hospital"])\n';
 
     // Step 1: Reception
-    if (currentlyExpanded === 'reception') s += withCloseBtn(flowcharts['reception']);
-    else s += '    Reg["\ud83d\udcdd STEP 1 \u00b7 RECEPTION<br/>Register Patient \u00b7 Book Token<br/>Assign Queue Number"]:::reception\n';
+    s += '    Reg["\ud83d\udcdd STEP 1 \u00b7 RECEPTION<br/>Register Patient \u00b7 Book Token<br/>Assign Queue Number"]:::reception\n';
 
     // Step 2: Nurse
-    if (currentlyExpanded === 'nurse') s += withCloseBtn(flowcharts['nurse']);
-    else s += '    Nurse["\ud83d\udc69\u200d\u2695\ufe0f STEP 2 \u00b7 NURSE STATION<br/>Record BP \u00b7 Temp \u00b7 Weight<br/>Prepare Patient for Doctor"]:::nurse\n';
+    s += '    Nurse["\ud83d\udc69\u200d\u2695\ufe0f STEP 2 \u00b7 NURSE STATION<br/>Record BP \u00b7 Temp \u00b7 Weight<br/>Prepare Patient for Doctor"]:::nurse\n';
 
     // Step 3: Doctor
-    if (currentlyExpanded === 'doctor') s += withCloseBtn(flowcharts['doctor']);
-    else s += '    Doctor["\ud83d\udc68\u200d\u2695\ufe0f STEP 3 \u00b7 DOCTOR<br/>Examine Patient<br/>Diagnose and Prescribe"]:::doctor\n';
+    s += '    Doctor["\ud83d\udc68\u200d\u2695\ufe0f STEP 3 \u00b7 DOCTOR<br/>Examine Patient<br/>Diagnose and Prescribe"]:::doctor\n';
 
     // Decision diamond
     s += '    Decision{"\ud83d\udd00 Doctor Decides<br/>Treatment Type"}\n';
@@ -414,8 +493,7 @@ function buildDiagramString() {
     // ── OPD PATH (same-day visit) ──
     s += '    OPDBill["\ud83d\udcb3 RECEPTION \u00b7 OPD BILL<br/>Collect Consultation Fee<br/>(Click Reception to expand)"]:::reception\n';
 
-    if (currentlyExpanded === 'pharmacy') s += withCloseBtn(flowcharts['pharmacy']);
-    else s += '    Pharm["\ud83d\udc8a PHARMACY<br/>Dispense Prescribed Medicines<br/>(Click to expand details)"]:::pharmacy\n';
+    s += '    Pharm["\ud83d\udc8a PHARMACY<br/>Dispense Prescribed Medicines<br/>(Click to expand details)"]:::pharmacy\n';
 
     s += '    Leave(["\u2705 PATIENT GOES HOME<br/>OPD Visit Complete"])\n';
 
@@ -423,13 +501,13 @@ function buildDiagramString() {
     s += '    IPDAdm["\ud83d\udecf\ufe0f RECEPTION \u00b7 ADMISSION<br/>Assign Bed and Ward<br/>Open IPD Billing Account"]:::reception\n';
     s += '    IPDCare["\ud83d\udd04 DAILY HOSPITAL CARE<br/>Nurse Rounds Every Morning<br/>Medicines Administered Daily"]:::system\n';
 
-    if (currentlyExpanded === 'laboratory') s += withCloseBtn(flowcharts['laboratory']);
-    else s += '    Lab["\ud83d\udd2c LABORATORY<br/>Blood Tests and Scans<br/>Reports Sent to Doctor"]:::lab\n';
+    s += '    Lab["\ud83d\udd2c LABORATORY<br/>Blood Tests and Scans<br/>Reports Sent to Doctor"]:::lab\n';
+    
+    s += '    OT["\ud83e\ude7a OPERATION THEATRE (OT)<br/>Surgery performed if required<br/>(Click to expand OT workflow)"]:::ot\n';
 
     s += '    DischargeReq["\ud83d\udd14 DISCHARGE INITIATED<br/>Doctor Approves Discharge<br/>Nurse Notifies Admin Team"]:::nurse\n';
 
-    if (currentlyExpanded === 'admin') s += withCloseBtn(flowcharts['admin']);
-    else s += '    Admin["\u2699\ufe0f ADMIN \u00b7 FINAL BILLING<br/>Review All Charges<br/>Collect Final Payment"]:::admin\n';
+    s += '    Admin["\u2699\ufe0f ADMIN \u00b7 FINAL BILLING<br/>Review All Charges<br/>Collect Final Payment"]:::admin\n';
 
     s += '    IPDLeave(["\u2705 PATIENT DISCHARGED<br/>Bed Released \u00b7 IPD Closed"])\n';
 
@@ -451,6 +529,8 @@ function buildDiagramString() {
     IPDAdm -->|"Shifted to ward bed"| IPDCare
     IPDCare -->|"Doctor orders blood tests"| Lab
     Lab -->|"Reports reviewed by doctor"| DischargeReq
+    IPDCare -->|"Doctor advises surgery"| OT
+    OT -->|"Post-op recovery"| IPDCare
     IPDCare -->|"Doctor clears patient for discharge"| DischargeReq
     DischargeReq -->|"Admin receives discharge alert"| Admin
     Admin -->|"Payment done, bed freed"| IPDLeave
@@ -462,6 +542,7 @@ function buildDiagramString() {
     classDef lab       fill:#ede9fe,stroke:#7c3aed,stroke-width:1.5px,color:#5b21b6,font-weight:600;
     classDef admin     fill:#ffedd5,stroke:#ea580c,stroke-width:1.5px,color:#9a3412,font-weight:600;
     classDef system    fill:#e0f2fe,stroke:#0369a1,stroke-width:1.5px,color:#0369a1,font-weight:600;
+    classDef ot        fill:#bae6fd,stroke:#0369a1,stroke-width:1.5px,color:#0c4a6e,font-weight:600;
     classDef closebtn  fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#dc2626,font-weight:700;
 
     classDef rc  fill:#eff6ff,stroke:#2563eb,stroke-width:1px,color:#1e40af;
@@ -583,7 +664,7 @@ window.addEventListener('DOMContentLoaded', function() {
 
     <!-- OPD Module Flowchart -->
     <div class="section" id="opd-section">
-        <h2>Out-Patient Department (OPD) Module Flow</h2>
+        <h2>Out-Patient Department (OPD) Module Flow <button class="print-btn" onclick="printDiagram('diag-opd')">🖨️ Print Diagram</button></h2>
         <p class="desc">
             Follow <strong>Ramesh Kumar</strong> through a standard OPD (same-day) visit &mdash; from walking in to collecting medicines and going home.
             Each colored box shows which department handles that step.
@@ -601,7 +682,7 @@ window.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
 
-        <div class="diagram">
+        <div class="diagram" id="diag-opd">
             <pre class="mermaid">
 %%{init: {
   "theme": "base",
@@ -652,9 +733,9 @@ flowchart TD
 
     <!-- 3. IPD Admission & Billing Engine -->
     <div class="section">
-        <h2>3. IPD Module & Automated Billing Engine</h2>
+        <h2>3. IPD Module & Automated Billing Engine <button class="print-btn" onclick="printDiagram('diag-3')">🖨️ Print Diagram</button></h2>
         <p class="desc">Details how the system automatically tracks and accumulates charges for Ramesh Kumar (IPD000123) every day he stays in the hospital, ensuring zero revenue leakage.</p>
-        <div class="diagram">
+        <div class="diagram" id="diag-3">
             <pre class="mermaid">
                 sequenceDiagram
                     autonumber
@@ -690,7 +771,7 @@ flowchart TD
 
     <!-- 4. Laboratory (LIS) Workflow -->
     <div class="section">
-        <h2>4. Laboratory (LIS) Module Decision Flow</h2>
+        <h2>4. Laboratory (LIS) Module Decision Flow <button class="print-btn" onclick="printDiagram('diag-4')">🖨️ Print Diagram</button></h2>
         <p class="desc">
             How a blood test requested for <strong>Ramesh Kumar</strong> moves through the Laboratory module —
             from doctor's order to final PDF report, including the critical alert decision tree.
@@ -707,7 +788,7 @@ flowchart TD
             </div>
         </div>
 
-        <div class="diagram">
+        <div class="diagram" id="diag-4">
             <pre class="mermaid">
 %%{init: {
   "theme": "base",
@@ -777,9 +858,9 @@ flowchart TD
 
     <!-- 5. Pharmacy FIFO Inventory Flow -->
     <div class="section">
-        <h2>5. Pharmacy Module FIFO Inventory Flow</h2>
+        <h2>5. Pharmacy Module FIFO Inventory Flow <button class="print-btn" onclick="printDiagram('diag-5')">🖨️ Print Diagram</button></h2>
         <p class="desc">Shows how the pharmacy manages stock levels automatically and ensures the oldest medicines are given to Ramesh first to prevent expiry wastage.</p>
-        <div class="diagram">
+        <div class="diagram" id="diag-5">
             <pre class="mermaid">
                 flowchart TD
                     subgraph Receiving Stock
@@ -805,11 +886,111 @@ flowchart TD
         </div>
     </div>
 
+    <!-- 6. Operation Theatre (OT) Module Flow -->
+    <div class="section">
+        <h2>6. Operation Theatre (OT) Module Flow <button class="print-btn" onclick="printDiagram('diag-6')">🖨️ Print Diagram</button></h2>
+        <p class="desc">Follows the workflow of scheduling a surgery, placing OT pharmacy orders, managing stock reconciliation, and completing the surgical process.</p>
+        
+        <div class="click-legend" style="margin-bottom:14px;">
+            <span class="legend-dot" style="background:#0369a1;"></span>
+            <strong>Status Colors:</strong>
+            <div class="legend-chips">
+                <span class="legend-chip" style="background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;">📅 Scheduled</span>
+                <span class="legend-chip" style="background:#fef9c3;color:#854d0e;border:1px solid #fde047;">⚙️ Ongoing</span>
+                <span class="legend-chip" style="background:#dcfce7;color:#166534;border:1px solid #86efac;">✅ Completed</span>
+                <span class="legend-chip" style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;">💊 Pharmacy Link</span>
+            </div>
+        </div>
+
+        <div class="diagram" id="diag-6">
+            <pre class="mermaid">
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontSize": "12px",
+    "fontFamily": "Inter, system-ui, sans-serif"
+  },
+  "flowchart": {
+    "nodeSpacing": 20,
+    "rankSpacing": 30,
+    "curve": "linear",
+    "htmlLabels": true
+  }
+}}%%
+flowchart TD
+    Start["<b>Surgery Decision</b><br/>Doctor advises surgery for IPD/OPD Patient"]:::sch
+
+    subgraph PreOp ["<b>1. Pre-Operative (Scheduling)</b>"]
+        direction TB
+        Sched["📅 <b>Schedule Surgery</b><br/>Select Date, Time, Surgery Name"]:::sch
+        Room{"<b>Room Check</b><br/>Is OT Room Available?"}
+        Assign["👨‍⚕️ <b>Assign Team</b><br/>Surgeon, Anesthetist, Scrub Nurse"]:::sch
+        
+        Sched --> Room
+        Room -->|"No (Conflict)"| Sched
+        Room -->|"Yes"| Assign
+    end
+
+    subgraph Operation ["<b>2. Operation (Ongoing)</b>"]
+        direction TB
+        StatusOn["⚙️ <b>Change Status: Ongoing</b><br/>Patient enters OT"]:::ong
+        Pharm["💊 <b>OT Pharmacy Order</b><br/>Scrub Nurse requests surgical items"]:::phar
+        Deduct["📉 <b>Stock Deducted</b><br/>Directly deducts from central pharmacy"]:::phar
+        
+        StatusOn --> Pharm
+        Pharm --> Deduct
+    end
+
+    subgraph PostOp ["<b>3. Post-Operative (Completion)</b>"]
+        direction TB
+        StatusComp["✅ <b>Change Status: Completed</b><br/>Surgery finishes"]:::comp
+        Recon["🔄 <b>Pharmacy Reconciliation</b><br/>Nurse returns unused items"]:::phar
+        Refund["💸 <b>Bill Adjusted</b><br/>Refund applied to IPD Bill"]:::phar
+        
+        StatusComp --> Recon
+        Recon --> Refund
+    end
+
+    Start --> PreOp
+    PreOp --> Operation
+    Operation --> PostOp
+
+    classDef sch fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e40af,rx:6px,ry:6px;
+    classDef ong fill:#fef9c3,stroke:#ca8a04,stroke-width:2px,color:#854d0e,rx:6px,ry:6px;
+    classDef comp fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534,rx:6px,ry:6px;
+    classDef phar fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#991b1b,rx:6px,ry:6px;
+            </pre>
+        </div>
+    </div>
+
 </div>
 
 <div class="footer">
     <p>GM Hospital Management System — Visual Documentation for Management</p>
 </div>
+
+<script>
+function printDiagram(containerId) {
+    const el = document.getElementById(containerId);
+    if(!el) return;
+    
+    // Hide all sections except the one containing our diagram
+    const sections = document.querySelectorAll('.section');
+    sections.forEach(sec => {
+        if (!sec.contains(el)) {
+            sec.style.display = 'none';
+        }
+    });
+    
+    // Trigger print
+    window.print();
+    
+    // Restore all sections
+    sections.forEach(sec => {
+        sec.style.display = '';
+    });
+}
+</script>
 
 </body>
 </html>
