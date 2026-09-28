@@ -50,7 +50,7 @@ const OT = (() => {
                 if (res.success && res.data && res.data.length > 0) {
                     sel.innerHTML = '<option value="">Select OT Room...</option>' +
                         res.data.map(r => {
-                            const label = [r.ward_name, r.room_name].filter(Boolean).join(' - ');
+                            const label = r.room_name;
                             return `<option value="${esc(label)}">${esc(label)}</option>`;
                         }).join('');
                 } else {

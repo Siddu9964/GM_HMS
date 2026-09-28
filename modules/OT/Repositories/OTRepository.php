@@ -271,7 +271,7 @@ class OTRepository
             "SELECT DISTINCT ward_name, room_name, room_type, bed_status 
              FROM hospital_beds 
              WHERE room_type = 'OT'
-             ORDER BY ward_name, room_name"
+             ORDER BY room_name"
         );
     }
 
