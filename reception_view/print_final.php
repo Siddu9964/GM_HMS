@@ -406,43 +406,107 @@ function renderBill(b) {
         for(const type of groupKeys) {
             const list = grouped[type];
             if(!list || list.length === 0) continue;
-            html += `<tr><td colspan="6" class="group-header">${type}</td></tr>`;
             
-            let typeTotal = 0;
-            list.forEach(it => {
-                const itemTotal = parseFloat(it.total_amount || it.total_price || 0);
-                typeTotal += itemTotal;
+            // For OT Charges, we want to consolidate and hide doctor splits
+            if (type === 'OPERATION THEATRE (OT) CHARGES') {
+                let mainOtCharge = 0;
+                let firstDate = '';
+                let surgeryName = 'Operation Theatre Charges';
+                
+                // First, check if there's an explicit "OT Bill Charge" row from the standalone module
+                let hasMainModuleCharge = false;
+                list.forEach(it => {
+                    const desc = (it.description || it.item_name || '').toLowerCase();
+                    if (desc.includes('ot bill charge')) {
+                        hasMainModuleCharge = true;
+                    }
+                });
+                
+                list.forEach(it => {
+                    const desc = (it.description || it.item_name || '').toLowerCase();
+                    const itemTotal = parseFloat(it.total_amount || it.total_price || 0);
+                    
+                    if (!firstDate) firstDate = fmtDateOnly(it.charge_date || it.created_at);
+                    
+                    // If they used the main OT module, it already contains the grand total.
+                    // Therefore, we ignore the individual doctor splits so we don't double-charge on the printed bill.
+                    // If they ONLY used the IPD modal, we sum everything up to form the grand total.
+                    if (hasMainModuleCharge && desc.includes('fee -')) {
+                        return; // Ignore doctor fees
+                    }
+                    
+                    mainOtCharge += itemTotal;
+                    
+                    if (surgeryName === 'Operation Theatre Charges' && desc.includes('(')) {
+                        const match = desc.match(/\((.*?)\)/);
+                        if (match && match[1] && match[1].toLowerCase() !== 'unpaid') {
+                            surgeryName = `Operation Theatre Charges (${match[1]})`;
+                        }
+                    }
+                });
+                
+                if (mainOtCharge > 0) {
+                    html += `<tr><td colspan="6" class="group-header">${type}</td></tr>`;
+                    html += `
+                    <tr>
+                        <td>${firstDate}</td>
+                        <td>${surgeryName}</td>
+                        <td></td>
+                        <td class="right">1.00</td>
+                        <td class="right">${fmt(mainOtCharge)}</td>
+                        <td class="right">${fmt(mainOtCharge)}</td>
+                    </tr>`;
+                    
+                    computedGross += mainOtCharge;
+                    html += `
+                    <tr>
+                        <td colspan="4"></td>
+                        <td style="border-top:1px solid #000; border-bottom:1px solid #000;"></td>
+                        <td class="right" style="border-top:1px solid #000; border-bottom:1px solid #000; font-weight:bold;">${fmt(mainOtCharge)}</td>
+                    </tr>`;
+                }
+            } else {
+                html += `<tr><td colspan="6" class="group-header">${type}</td></tr>`;
+                let typeTotal = 0;
+                list.forEach(it => {
+                    const desc = it.description || it.item_name || '';
+                    const itemTotal = parseFloat(it.total_amount || it.total_price || 0);
+                    typeTotal += itemTotal;
+                    
+                    html += `
+                    <tr>
+                        <td>${fmtDateOnly(it.charge_date || it.created_at)}</td>
+                        <td>${desc}</td>
+                        <td></td>
+                        <td class="right">${it.quantity || '1.00'}</td>
+                        <td class="right">${fmt(it.unit_price)}</td>
+                        <td class="right">${fmt(itemTotal)}</td>
+                    </tr>`;
+                });
+                
+                computedGross += typeTotal;
                 html += `
                 <tr>
-                    <td>${fmtDateOnly(it.charge_date || it.created_at)}</td>
-                    <td>${it.description || it.item_name}</td>
-                    <td></td>
-                    <td class="right">${it.quantity || '1.00'}</td>
-                    <td class="right">${fmt(it.unit_price)}</td>
-                    <td class="right">${fmt(itemTotal)}</td>
+                    <td colspan="4"></td>
+                    <td style="border-top:1px solid #000; border-bottom:1px solid #000;"></td>
+                    <td class="right" style="border-top:1px solid #000; border-bottom:1px solid #000; font-weight:bold;">${fmt(typeTotal)}</td>
                 </tr>`;
-            });
-            
-            computedGross += typeTotal;
-            html += `
-            <tr>
-                <td colspan="4"></td>
-                <td style="border-top:1px solid #000; border-bottom:1px solid #000;"></td>
-                <td class="right" style="border-top:1px solid #000; border-bottom:1px solid #000; font-weight:bold;">${fmt(typeTotal)}</td>
-            </tr>`;
+            }
         }
     }
     
     document.getElementById('itemsBody').innerHTML = html;
 
-    // Totals
-    const subtotal = parseFloat(b.subtotal ?? computedGross);
+    // Totals - Force use of computedGross because some items (like OT Bill Charge) are hidden from print
+    const subtotal = parseFloat(computedGross);
     const discount = parseFloat(b.discount_amount || 0);
-    const grandTotal = parseFloat(b.grand_total ?? Math.max(0, subtotal - discount));
+    const grandTotal = Math.max(0, subtotal - discount);
     const amountPaid = parseFloat(b.amount_paid || 0);
     const insReceived = parseFloat(b.insurance_received_amount || 0);
     const insApproved = parseFloat(b.insurance_approved_amount || 0);
-    const balanceDue = parseFloat(b.balance_due ?? Math.max(0, grandTotal - amountPaid - insReceived));
+    
+    // Calculate balance based on the printed grandTotal
+    const balanceDue = Math.max(0, grandTotal - amountPaid - insReceived);
 
     let totalsHtml = `
         <div class="total-row"><span>Total Gross Amount</span><span>${fmt(subtotal)}</span></div>

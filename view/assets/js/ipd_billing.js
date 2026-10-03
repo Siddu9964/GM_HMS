@@ -5677,7 +5677,391 @@ const billing = (function () {
         }
     }
 
-return {
+    // ─────────────────────────────────────────────────────────────
+    // OT BILLING INTEGRATION
+    // ─────────────────────────────────────────────────────────────
+    function openOTModal() {
+        if (!currentMaster || !currentMaster.admission_id) {
+            showToast('Please load a patient first', 'error');
+            return;
+        }
+        
+        // Reset inputs
+        document.getElementById('otSurgName').value = '';
+        document.getElementById('otSurgDept').value = '';
+        document.getElementById('otSurgTheatre').value = '';
+        document.getElementById('otSurgAnesType').value = '';
+        document.getElementById('otSurgDate').value = new Date().toISOString().split('T')[0];
+        
+        document.getElementById('otAnesGas').value = '';
+        document.getElementById('otExtOt').value = '';
+        document.getElementById('otExtAnes').value = '';
+        document.getElementById('otChargePurpose').value = '';
+        
+        // Reset dynamic rows
+        document.querySelectorAll('.ot-doc-row.dynamic-row').forEach(r => r.remove());
+        document.querySelectorAll('.ot-doc-row input').forEach(i => i.value = '');
+        
+        calcOTTotals();
+        openModal('modalOTBilling');
+        
+        // Init autocomplete for existing rows
+        initOTDoctorAutocomplete();
+        
+        // Auto-fetch scheduled surgeries
+        fetchPatientSurgeryData(currentMaster.patient_id);
+    }
+
+    async function fetchPatientSurgeryData(patientId) {
+        try {
+            const btn = document.querySelector('#modalOTBilling .bm-btn-primary');
+            const origText = btn ? btn.innerHTML : 'Save OT Charges';
+            if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Fetching...';
+            
+            const res = await fetch(`${API_URL}ot/surgeries?search=${encodeURIComponent(patientId)}`);
+            const result = await res.json();
+            const data = result.data || result;
+            
+            if (btn) btn.innerHTML = origText;
+
+            if (data && data.length > 0) {
+                // Get the most recently scheduled surgery for this patient
+                const surgery = data[0]; 
+                
+                // Populate Surgery Details
+                if (surgery.surgery_name) document.getElementById('otSurgName').value = surgery.surgery_name;
+                if (surgery.schedule_date) {
+                    document.getElementById('otSurgDate').value = surgery.schedule_date.split('T')[0].split(' ')[0];
+                }
+                if (surgery.department) document.getElementById('otSurgDept').value = surgery.department;
+                if (surgery.ot_room_name) document.getElementById('otSurgTheatre').value = surgery.ot_room_name;
+                if (surgery.anesthesia_type) document.getElementById('otSurgAnesType').value = surgery.anesthesia_type;
+                
+                // Populate Doctors
+                if (surgery.type && surgery.name) {
+                    let types = [];
+                    let names = [];
+                    try {
+                        types = typeof surgery.type === 'string' ? JSON.parse(surgery.type) : surgery.type;
+                        names = typeof surgery.name === 'string' ? JSON.parse(surgery.name) : surgery.name;
+                    } catch(e) { console.error('Error parsing doctor JSON', e); }
+                    
+                    // Remove any previously added dynamic rows
+                    document.querySelectorAll('.ot-doc-row.dynamic-row').forEach(r => r.remove());
+                    
+                    types.forEach((t, i) => {
+                        const docName = names[i];
+                        if (!docName) return;
+                        
+                        if (t === 'Surgeon' || t === 'SURGEON') {
+                            const row = document.querySelector(`.ot-doc-row[data-type="SURGEON"]`);
+                            if (row) {
+                                const input = row.querySelector('.ot-doc-search');
+                                if (input) input.value = docName;
+                            }
+                        } else {
+                            let preType = t.toUpperCase().replace(/ /g, '_');
+                            // Ensure standard mapping
+                            if(preType.includes('ASST')) preType = 'ASST_SURGEON';
+                            else if(preType.includes('ST_BY') || preType.includes('STBY')) preType = 'STBY_ANESTHETIST';
+                            else if(preType.includes('ANES')) preType = 'ANESTHETIST';
+                            else if(preType.includes('PEDIATRICIAN')) preType = 'PEDIATRICIAN';
+                            else preType = 'OTHER_DOCTOR';
+                            
+                            addOTDynamicDoctorRow(preType, docName);
+                        }
+                    });
+                }
+                showToast('Surgery protocol and doctors auto-filled from scheduled surgery!', 'success');
+            }
+        } catch (err) {
+            console.error('Error fetching surgery data:', err);
+            const btn = document.querySelector('#modalOTBilling .bm-btn-primary');
+            if (btn) btn.innerHTML = 'Save OT Charges';
+        }
+    }
+
+    function applySurgeryPreset(name, dept, theatre, anes) {
+        document.getElementById('otSurgName').value = name;
+        document.getElementById('otSurgDept').value = dept;
+        document.getElementById('otSurgTheatre').value = theatre;
+        document.getElementById('otSurgAnesType').value = anes;
+        showToast(`Preset applied: ${name}`, 'info');
+    }
+
+    function addOTDynamicDoctorRow(preType = 'ASST_SURGEON', preName = '') {
+        const tbody = document.getElementById('otDoctorMatrixBody');
+        const otServiceRow = tbody.querySelector('.ot-doc-row[data-type="OT_SERVICE"]');
+        
+        const tr = document.createElement('tr');
+        tr.className = 'ot-doc-row dynamic-row';
+        tr.dataset.type = preType;
+        
+        tr.innerHTML = `
+            <td>
+                <div class="role-pill">
+                    <span class="role-dot" style="background:#f39c12;"></span>
+                    <select class="bm-input" style="padding: 4px; border: none; font-weight: 700; color: #1f6b4a; background: transparent; cursor: pointer; outline: none; box-shadow: none;" onchange="this.closest('tr').dataset.type = this.value">
+                        <option value="ASST_SURGEON" ${preType==='ASST_SURGEON'?'selected':''}>Asst. Surgeon</option>
+                        <option value="ANESTHETIST" ${preType==='ANESTHETIST'?'selected':''}>Anesthetist</option>
+                        <option value="STBY_ANESTHETIST" ${preType==='STBY_ANESTHETIST'?'selected':''}>St. by Anesthetist</option>
+                        <option value="PEDIATRICIAN" ${preType==='PEDIATRICIAN'?'selected':''}>Pediatrician</option>
+                        <option value="OTHER_DOCTOR" ${preType==='OTHER_DOCTOR'?'selected':''}>Other Doctor</option>
+                    </select>
+                </div>
+            </td>
+            <td>
+                <div class="autocomplete-wrapper" style="position: relative;">
+                    <input type="text" class="bm-input ot-doc-search" value="${preName}" placeholder="Type doctor name..." autocomplete="off">
+                    <input type="hidden" class="ot-doc-id">
+                    <div class="autocomplete-dropdown" style="display:none; position: absolute; top:100%; left:0; width:100%; background:#fff; border:1px solid #1f6b4a; z-index:100;"></div>
+                </div>
+            </td>
+            <td><input type="number" class="bm-input input-amount ot-charge calc-trigger" style="text-align: right;" placeholder="0.00" oninput="billing.calcOTTotals()"></td>
+            <td class="ot-row-amt" style="text-align: right;">₹0.00</td>
+            <td style="text-align: center;"><button type="button" class="btn-row-clear" onclick="billing.clearOTDoctorRow(this)" style="color: #dc2626; background:none; border:none; cursor:pointer;"><i class="fas fa-times"></i></button></td>
+        `;
+        
+        if (otServiceRow) {
+            tbody.insertBefore(tr, otServiceRow);
+        } else {
+            tbody.appendChild(tr);
+        }
+        initOTDoctorAutocomplete();
+    }
+
+    function clearOTDoctorRow(btn) {
+        const row = btn.closest('tr');
+        if (row.classList.contains('dynamic-row')) {
+            row.remove();
+        } else {
+            row.querySelectorAll('input').forEach(i => i.value = '');
+        }
+        calcOTTotals();
+    }
+
+    function calcOTTotals() {
+        let total = 0;
+        document.querySelectorAll('.ot-doc-row').forEach(row => {
+            const chargeInput = row.querySelector('.ot-charge');
+            let amt = 0;
+            if (chargeInput) {
+                amt = parseFloat(chargeInput.value) || 0;
+            }
+            const rowAmtEl = row.querySelector('.ot-row-amt');
+            if (rowAmtEl) {
+                rowAmtEl.textContent = '₹' + amt.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            }
+            total += amt;
+        });
+
+        total += parseFloat(document.getElementById('otAnesGas').value) || 0;
+        total += parseFloat(document.getElementById('otExtOt').value) || 0;
+        total += parseFloat(document.getElementById('otExtAnes').value) || 0;
+
+        document.getElementById('otTotalChargesPreview').textContent = total.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    function appendOTNote(tagText) {
+        const textarea = document.getElementById('otChargePurpose');
+        if (!textarea) return;
+        const current = textarea.value.trim();
+        if (current.length > 0) {
+            if (!current.includes(tagText)) {
+                textarea.value = current + ' • ' + tagText;
+            }
+        } else {
+            textarea.value = tagText;
+        }
+        textarea.focus();
+    }
+
+    function initOTDoctorAutocomplete() {
+        const inputs = document.querySelectorAll('.ot-doc-search');
+        
+        inputs.forEach(input => {
+            const oldInput = input.cloneNode(true);
+            input.parentNode.replaceChild(oldInput, input);
+            const newInput = oldInput;
+            
+            let timeout = null;
+            const wrapper = newInput.closest('.autocomplete-wrapper');
+            if (!wrapper) return;
+            
+            const dropdown = wrapper.querySelector('.autocomplete-dropdown');
+            if (!dropdown) return;
+            
+            newInput.addEventListener('input', (e) => {
+                const val = e.target.value.trim();
+                dropdown.style.display = 'none';
+                if (val.length < 2) return;
+                
+                clearTimeout(timeout);
+                timeout = setTimeout(async () => {
+                    try {
+                        const res = await fetch(`${API_URL}doctors?search=${encodeURIComponent(val)}`);
+                        const responseData = await res.json();
+                        dropdown.innerHTML = '';
+                        const data = responseData.data || responseData;
+                        
+                        if (data && Array.isArray(data) && data.length > 0) {
+                            data.forEach(doc => {
+                                const item = document.createElement('div');
+                                item.className = 'autocomplete-item';
+                                item.innerHTML = `
+                                    <span class="ac-name" style="font-weight:800; color:#1f6b4a; display:block; font-size:0.85rem;">
+                                        <i class="fas fa-user-md" style="margin-right:4px;"></i> ${doc.full_name}
+                                    </span>
+                                    <span class="ac-spec" style="font-size:0.74rem; color:#1f6b4a; opacity:0.8;">${doc.specialization || 'Consultant'}</span>
+                                `;
+                                item.addEventListener('click', () => {
+                                    newInput.value = doc.full_name;
+                                    const idField = wrapper.querySelector('.ot-doc-id');
+                                    if(idField) idField.value = doc.doctor_id || '';
+                                    dropdown.style.display = 'none';
+                                });
+                                dropdown.appendChild(item);
+                            });
+                            dropdown.style.display = 'block';
+                        }
+                    } catch (error) {
+                        console.error('Error fetching doctors:', error);
+                    }
+                }, 280);
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.autocomplete-wrapper')) {
+                document.querySelectorAll('.autocomplete-dropdown').forEach(d => d.style.display = 'none');
+            }
+        });
+    }
+
+    async function saveOTCharges() {
+        if (!currentMaster || !currentMaster.admission_id) return;
+        
+        const surgName = document.getElementById('otSurgName').value.trim();
+        if (!surgName) {
+            showToast('Surgery / Procedure Name is required', 'error');
+            return;
+        }
+
+        const items = [];
+        const dateStr = document.getElementById('otSurgDate').value;
+        const remarks = document.getElementById('otChargePurpose').value;
+
+        // Process Doctor Rows
+        document.querySelectorAll('.ot-doc-row').forEach(row => {
+            const type = row.dataset.type;
+            const chargeInput = row.querySelector('.ot-charge');
+            const amt = parseFloat(chargeInput ? chargeInput.value : 0) || 0;
+            
+            let shouldSave = false;
+            let docName = '';
+            
+            if (type === 'OT_SERVICE') {
+                shouldSave = true; // Always save OT Service row even if 0
+            } else {
+                const docInput = row.querySelector('.ot-doc-search');
+                docName = docInput ? docInput.value.trim() : '';
+                if (docName || amt > 0) {
+                    shouldSave = true; // Save if doctor name is entered OR amount > 0
+                }
+            }
+            
+            if (shouldSave) {
+                let desc = '';
+                if (type === 'OT_SERVICE') {
+                    const descInput = row.querySelector('.ot-desc-input');
+                    desc = descInput ? descInput.value.trim() : '';
+                    if (!desc) desc = 'OT Service Charge';
+                    items.push({
+                        charge_type: 'OT',
+                        description: desc + ' (' + surgName + ')',
+                        quantity: 1,
+                        unit_price: amt,
+                        charge_date: dateStr,
+                        remarks: remarks
+                    });
+                } else {
+                    desc = `${type.replace('_', ' ')} Fee - ${docName} (₹${amt}) (${surgName})`;
+                    items.push({
+                        charge_type: 'OT',
+                        description: desc,
+                        quantity: 1,
+                        unit_price: amt,
+                        charge_date: dateStr,
+                        remarks: remarks
+                    });
+                }
+            }
+        });
+
+        // Additional Overheads
+        const gasAmt = parseFloat(document.getElementById('otAnesGas').value) || 0;
+        if (gasAmt > 0) {
+            items.push({ charge_type: 'OT', description: `Anesthesia Gas (${surgName})`, quantity: 1, unit_price: gasAmt, charge_date: dateStr, remarks: remarks });
+        }
+        const extOtAmt = parseFloat(document.getElementById('otExtOt').value) || 0;
+        if (extOtAmt > 0) {
+            items.push({ charge_type: 'OT', description: `External OT Charge (${surgName})`, quantity: 1, unit_price: extOtAmt, charge_date: dateStr, remarks: remarks });
+        }
+        const extAnesAmt = parseFloat(document.getElementById('otExtAnes').value) || 0;
+        if (extAnesAmt > 0) {
+            items.push({ charge_type: 'OT', description: `External Anesthesia Charge (${surgName})`, quantity: 1, unit_price: extAnesAmt, charge_date: dateStr, remarks: remarks });
+        }
+
+        if (items.length === 0) {
+            showToast('No charges entered to save.', 'error');
+            return;
+        }
+
+        const btn = document.querySelector('#modalOTBilling .bm-btn-primary');
+        const origText = btn.innerHTML;
+        btn.innerHTML = 'Saving...';
+        btn.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('action', 'add_batch');
+            formData.append('bill_id', currentMaster.bill_id);
+            formData.append('admission_id', currentMaster.admission_id);
+            formData.append('patient_id', currentMaster.patient_id);
+            items.forEach((obj, i) => {
+                Object.keys(obj).forEach(key => {
+                    formData.append(`items[${i}][${key}]`, obj[key]);
+                });
+            });
+
+            const res = await fetch(`${API_URL}ipd-billing-items`, {
+                method: 'POST',
+                body: formData
+            });
+            const json = await res.json();
+            
+            if (json.success) {
+                showToast('OT charges added to IPD bill successfully!', 'success');
+                closeModal('modalOTBilling');
+                
+                if (json.data && json.data.financial) {
+                    currentMaster = { ...currentMaster, ...json.data.financial };
+                    updateWorkspaceUI();
+                }
+                loadItems();
+            } else {
+                showToast(json.message || 'Failed to save OT charges', 'error');
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Network error saving OT charges', 'error');
+        } finally {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+        }
+    }
+
+    return {
         addCustomMultiItem,
         openMultiServiceModal,
         handleMultiCategoryChange,
@@ -5688,6 +6072,15 @@ return {
         updateMultiCartDiscount,
         removeMultiCartItem,
         saveMultiServices,
+        
+        // OT Billing
+        openOTModal,
+        applySurgeryPreset,
+        addOTDynamicDoctorRow,
+        clearOTDoctorRow,
+        calcOTTotals,
+        appendOTNote,
+        saveOTCharges,
 
         init,
         loadAdmission,

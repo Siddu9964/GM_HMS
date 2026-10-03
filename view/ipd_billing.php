@@ -446,11 +446,34 @@ try {
             padding: 2px 8px;
         }
 
-        /* Inputs & Modals */
+        /* Inputs & Modals (Premium Styling) */
         input, select, textarea {
-            background: #f3efe6 !important;
+            background: #ffffff !important;
             color: #1f6b4a !important;
-            border: 1.5px solid #1f6b4a !important;
+            border: 1.5px solid rgba(31, 107, 74, 0.3) !important;
+            border-radius: 8px !important;
+            padding: 8px 12px !important;
+            transition: all 0.25s ease-in-out !important;
+            box-shadow: 0 2px 4px rgba(31, 107, 74, 0.02) !important;
+            outline: none !important;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        input:hover, select:hover, textarea:hover {
+            border-color: rgba(31, 107, 74, 0.6) !important;
+            background: #fcfbfa !important;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            background: #ffffff !important;
+            border-color: #1f6b4a !important;
+            box-shadow: 0 0 0 4px rgba(31, 107, 74, 0.15), 0 2px 4px rgba(31, 107, 74, 0.05) !important;
+            transform: translateY(-1px);
+        }
+
+        .bm-input {
+            width: 100%;
         }
 
         .bm-head {
@@ -472,6 +495,51 @@ try {
             font-weight: 600 !important;
         }
 
+        /* ── OT Billing Premium Styles ── */
+        .role-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #fdfbf7;
+            border: 1.5px solid rgba(31, 107, 74, 0.3);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #1f6b4a;
+            box-shadow: 0 2px 4px rgba(31, 107, 74, 0.04);
+            transition: all 0.2s ease;
+        }
+        .role-pill:hover {
+            border-color: #1f6b4a;
+            box-shadow: 0 4px 8px rgba(31, 107, 74, 0.08);
+            transform: translateY(-1px);
+        }
+        .role-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #1f6b4a;
+        }
+        .role-pill select {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            font-weight: 700 !important;
+            color: #1f6b4a !important;
+            box-shadow: none !important;
+            cursor: pointer;
+            outline: none !important;
+        }
+        .role-pill select:focus {
+            box-shadow: none !important;
+            transform: none !important;
+        }
+        .ot-doc-row td {
+            padding: 10px 8px !important;
+            vertical-align: middle;
+        }
+        
         /* ── Nurse Workspace Pattern Styles ── */
         .treatment-subtabs {
             display: flex;
@@ -810,6 +878,9 @@ try {
                                         <div class="add-charge-wrap" style="display: flex; gap: 8px;">
                                             <button class="btn-add-charge" id="btnAddCharge" onclick="billing.openMultiServiceModal()">
                                                 <i data-lucide="layers"></i> Add Charges
+                                            </button>
+                                            <button class="btn-add-charge" id="btnOTBilling" onclick="billing.openOTModal()" style="background: #1f6b4a; color: #f3efe6; border: 1.5px solid #1f6b4a; padding: 7px 14px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                                                <i class="fas fa-procedures"></i> OT / Surgery Charges
                                             </button>
                                         </div>
                                         <button class="btn-room-rent" onclick="billing.openRoomRentModal()">
@@ -1843,6 +1914,176 @@ try {
 
             <div class="bm-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
                 <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalClearanceDetail')">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: OT Billing / Surgery Charges -->
+<div class="billing-modal-overlay" id="modalOTBilling">
+    <div class="billing-modal" style="max-width: 95vw; width: 1100px; max-height: 94vh; display: flex; flex-direction: column;">
+        <div class="bm-head" style="background: #1f6b4a; color: #f3efe6;">
+            <div class="bm-title"><i class="fas fa-procedures"></i> Operation Theater Billing</div>
+            <button class="bm-close" style="color: #f3efe6;" onclick="billing.closeModal('modalOTBilling')"><i data-lucide="x"></i></button>
+        </div>
+        <div class="bm-body" style="overflow-y: auto; flex: 1; padding: 20px; background: #f3efe6;">
+            
+            <!-- Surgery & Anesthesia Protocol with Quick Presets -->
+            <div class="panel-card" style="margin-bottom: 20px;">
+                <div class="panel-card-head">
+                    <div class="panel-card-title">
+                        <i class="fas fa-heartbeat"></i> Surgery & OT Theater Protocol
+                    </div>
+                </div>
+                <div class="panel-card-body" style="padding: 16px;">
+                    <!-- Quick Fill Surgery Presets -->
+                    <div class="presets-ribbon" style="margin-bottom: 16px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                        <span style="font-weight: 700; color: #1f6b4a; font-size: 0.85rem;"><i class="fas fa-magic"></i> Quick Presets:</span>
+                        <span class="preset-pill" onclick="billing.applySurgeryPreset('Laparoscopic Appendectomy', 'General Surgery', 'MAJOR OT', 'General Anaesthesia')">
+                            <i class="fas fa-bolt"></i> Appendectomy
+                        </span>
+                        <span class="preset-pill" onclick="billing.applySurgeryPreset('Cesarean Section (LSCS)', 'Obstetrics & Gynaecology', 'LABOUR ROOM', 'Spinal Anaesthesia')">
+                            <i class="fas fa-baby"></i> C-Section (LSCS)
+                        </span>
+                        <span class="preset-pill" onclick="billing.applySurgeryPreset('Total Knee Replacement', 'Orthopaedics', 'MAJOR OT', 'Spinal Anaesthesia')">
+                            <i class="fas fa-bone"></i> Knee Replacement
+                        </span>
+                        <span class="preset-pill" onclick="billing.applySurgeryPreset('Coronary Angiography', 'Cardiology', 'CATHLAB', 'Local Anaesthesia')">
+                            <i class="fas fa-heart"></i> Angiography
+                        </span>
+                        <span class="preset-pill" onclick="billing.applySurgeryPreset('Inguinal Hernia Repair', 'General Surgery', 'MINOR OT', 'General Anaesthesia')">
+                            <i class="fas fa-shield-virus"></i> Hernia Repair
+                        </span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: #1f6b4a;"><i class="fas fa-file-medical-alt"></i> Surgery / Procedure Name *</label>
+                            <input type="text" id="otSurgName" class="bm-input" placeholder="e.g. Appendectomy, Angioplasty...">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: #1f6b4a;"><i class="fas fa-clinic-medical"></i> Department *</label>
+                            <input type="text" id="otSurgDept" class="bm-input" placeholder="e.g. General Surgery...">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: #1f6b4a;"><i class="fas fa-door-closed"></i> Operating Theatre *</label>
+                            <input type="text" id="otSurgTheatre" class="bm-input" placeholder="e.g. MAJOR OT">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: #1f6b4a;"><i class="fas fa-calendar-check"></i> Surgery Date</label>
+                            <input type="date" id="otSurgDate" class="bm-input" value="<?= date('Y-m-d') ?>">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: #1f6b4a;"><i class="fas fa-syringe"></i> Anesthesia Type *</label>
+                            <input type="text" id="otSurgAnesType" class="bm-input" placeholder="e.g. General Anesthesia">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Doctor & Surgical Team Charges Matrix -->
+            <div class="panel-card" style="margin-bottom: 20px;">
+                <div class="panel-card-head">
+                    <div class="panel-card-title">
+                        <i class="fas fa-user-md"></i> Surgical Team & Doctor Charges Allocation
+                    </div>
+                </div>
+                <div class="panel-card-body" style="padding: 0;">
+                    <div class="table-responsive">
+                        <table class="billing-items-table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th>Team Particulars</th>
+                                    <th>Doctor / Consultant</th>
+                                    <th style="text-align: right;">Service Charge (₹)</th>
+                                    <th style="text-align: right; width: 130px;">Line Total (₹)</th>
+                                    <th style="text-align: center; width: 45px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="otDoctorMatrixBody">
+                                <!-- Surgeon -->
+                                <tr class="ot-doc-row" data-type="SURGEON">
+                                    <td>
+                                        <div class="role-pill"><span class="role-dot"></span><span>Surgeon Name *</span></div>
+                                    </td>
+                                    <td>
+                                        <div class="autocomplete-wrapper" style="position: relative;">
+                                            <input type="text" class="bm-input ot-doc-search" placeholder="Type doctor name..." autocomplete="off">
+                                            <input type="hidden" class="ot-doc-id">
+                                            <div class="autocomplete-dropdown" style="display:none; position: absolute; top:100%; left:0; width:100%; background:#fff; border:1px solid #1f6b4a; z-index:100;"></div>
+                                        </div>
+                                    </td>
+                                    <td><input type="number" class="bm-input input-amount ot-charge calc-trigger" style="text-align: right;" placeholder="0.00" oninput="billing.calcOTTotals()"></td>
+                                    <td class="ot-row-amt" style="text-align: right;">₹0.00</td>
+                                    <td style="text-align: center;"><button type="button" class="btn-row-clear" onclick="billing.clearOTDoctorRow(this)" style="color: #dc2626; background:none; border:none; cursor:pointer;"><i class="fas fa-times"></i></button></td>
+                                </tr>
+                                <!-- OT Service -->
+                                <tr class="ot-doc-row" data-type="OT_SERVICE">
+                                    <td>
+                                        <div class="role-pill"><span class="role-dot"></span><span>OT Service Charge</span></div>
+                                    </td>
+                                    <td><input type="text" class="bm-input select-consultant ot-desc-input" placeholder="Description of OT service..."></td>
+                                    <td><input type="number" class="bm-input input-amount ot-charge calc-trigger" style="text-align: right;" placeholder="0.00" oninput="billing.calcOTTotals()"></td>
+                                    <td class="ot-row-amt" style="text-align: right;">₹0.00</td>
+                                    <td style="text-align: center;"><button type="button" class="btn-row-clear" onclick="billing.clearOTDoctorRow(this)" style="color: #dc2626; background:none; border:none; cursor:pointer;"><i class="fas fa-times"></i></button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style="text-align: center; padding: 10px;">
+                            <button type="button" class="bm-btn" style="background: transparent; color: #1f6b4a; border: 1.5px solid #1f6b4a; font-weight: 700; padding: 6px 12px; border-radius: 6px; cursor: pointer;" onclick="billing.addOTDynamicDoctorRow()">
+                                <i class="fas fa-plus"></i> Add Additional Team Member
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Charges & Clinical Remarks -->
+            <div class="panel-card">
+                <div class="panel-card-head">
+                    <div class="panel-card-title">
+                        <i class="fas fa-plus-circle"></i> Additional OT & Clinical Overheads
+                    </div>
+                </div>
+                <div class="panel-card-body" style="padding: 16px;">
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: #1f6b4a;"><i class="fas fa-wind"></i> Anesthesia Gas (₹)</label>
+                            <input type="number" id="otAnesGas" class="bm-input ot-charge calc-trigger" placeholder="0.00" step="0.01" oninput="billing.calcOTTotals()">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: #1f6b4a;"><i class="fas fa-hospital"></i> Ext. OT Charges (₹)</label>
+                            <input type="number" id="otExtOt" class="bm-input ot-charge calc-trigger" placeholder="0.00" step="0.01" oninput="billing.calcOTTotals()">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; font-weight: 700; color: #1f6b4a;"><i class="fas fa-syringe"></i> Ext. Anesthesia (₹)</label>
+                            <input type="number" id="otExtAnes" class="bm-input ot-charge calc-trigger" placeholder="0.00" step="0.01" oninput="billing.calcOTTotals()">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 0.8rem; font-weight: 700; color: #1f6b4a;"><i class="fas fa-notes-medical"></i> Surgical Clinical Remarks / Justification (Optional)</label>
+                        <textarea id="otChargePurpose" class="bm-input" rows="2" placeholder="Enter surgical notes, procedure justification..."></textarea>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <span class="preset-pill" onclick="billing.appendOTNote('Routine Elective OT')">+ Routine Elective</span>
+                            <span class="preset-pill" onclick="billing.appendOTNote('Emergency Surgical Procedure')">+ Emergency OT</span>
+                            <span class="preset-pill" onclick="billing.appendOTNote('Extended 2+ Hours Session')">+ Extended Hours</span>
+                            <span class="preset-pill" onclick="billing.appendOTNote('Special Implants Used')">+ Implants Used</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="bm-footer" style="padding: 14px 20px; border-top: 1.5px solid rgba(31,107,74,0.2); background: #f3efe6; display: flex; justify-content: flex-end; align-items: center; gap: 20px;">
+            <div style="font-size: 1.2rem; font-weight: 800; color: #1f6b4a;">
+                Total OT Charges: ₹<span id="otTotalChargesPreview">0.00</span>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="bm-btn bm-btn-cancel" onclick="billing.closeModal('modalOTBilling')">Cancel</button>
+                <button type="button" class="bm-btn bm-btn-primary" onclick="billing.saveOTCharges()" style="background: #1f6b4a; color: #f3efe6; border: 1px solid #1f6b4a; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                    <i data-lucide="check-circle-2"></i> Add to IPD Bill
+                </button>
             </div>
         </div>
     </div>
