@@ -261,9 +261,6 @@ body {
 }
 
 .ot-stat:hover .ot-stat-icon { transform: scale(1.12) rotate(-4deg); }
-
-.ot-stat-body {}
-
 .ot-stat-val {
   font-size: 1.6rem;
   font-weight: 900;

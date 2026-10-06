@@ -53,6 +53,20 @@ class AuthController extends BaseController {
         error_log("[DEBUG] AuthController::login hit");
         $this->restrictMethod('POST');
         
+        // Apply strict rate limiting (5 attempts per 5 minutes per IP) for login
+        $limiter = \GM_HMS\Middleware\RateLimiter::getInstance();
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $limitResult = $limiter->checkLimit($ip, 'ip', '/api/auth/login', 5, 300);
+        
+        if (!$limitResult['allowed']) {
+            http_response_code(429);
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Too many login attempts. Please try again after 5 minutes.'
+            ]);
+            exit;
+        }
+        
         // Get and validate JSON input
         $schema = [
             'required' => ['username', 'password'],

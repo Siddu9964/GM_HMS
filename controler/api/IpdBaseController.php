@@ -10,6 +10,12 @@ abstract class IpdBaseController {
         http_response_code($statusCode);
         header('Content-Type: application/json');
         
+        // --- API SECURITY HEADERS ---
+        header("X-Content-Type-Options: nosniff");
+        header("X-Frame-Options: DENY");
+        header("X-XSS-Protection: 1; mode=block");
+        // ----------------------------
+        
         $response = [
             'success' => $success,
             'message' => $message
@@ -83,8 +89,52 @@ abstract class IpdBaseController {
         }
         return $errors;
     }
+
+    /**
+     * Layer 2: Sanitize input to prevent XSS (Cross-Site Scripting)
+     */
+    protected function sanitizeInput($input) {
+        if (is_array($input)) {
+            foreach ($input as $key => $value) {
+                $input[$key] = $this->sanitizeInput($value);
+            }
+            return $input;
+        }
+        if ($input === null) return null;
+        $clean = strip_tags(trim((string)$input));
+        return htmlspecialchars($clean, ENT_QUOTES, 'UTF-8');
+    }
+
+    /**
+     * Layer 2: Validate string length to prevent oversized data injection (e.g., matching VARCHAR(200))
+     */
+    protected function validateStringLength($input, $fieldName, $maxLength = 200) {
+        if ($input !== null && mb_strlen((string)$input) > $maxLength) {
+            return "Security Error: Field '{$fieldName}' exceeds the maximum allowed length of {$maxLength} characters.";
+        }
+        return null;
+    }
     
     public function handleRequest() {
+        // --- API SECURITY LAYER ---
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // 1. Force Authentication
+        if (!isset($_SESSION['username']) || empty($_SESSION['username'])) {
+            $this->error('Unauthorized API access. Please log in.', 401);
+            return;
+        }
+
+        // 2. Block Automated Tools
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        if (empty($userAgent) || preg_match('/(curl|postman|python|wget|bot)/i', $userAgent)) {
+            $this->error('Automated tools are not allowed.', 403);
+            return;
+        }
+        // --------------------------
+
         try {
             $method = $_SERVER['REQUEST_METHOD'];
             

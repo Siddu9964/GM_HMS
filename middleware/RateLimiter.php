@@ -44,21 +44,31 @@ class RateLimiter {
         }
         
         // Get current window
-        $windowStart = date('Y-m-d H:i:s', time() - $windowSeconds);
-        $windowEnd = date('Y-m-d H:i:s');
+        $now = time();
+        $windowStart = date('Y-m-d H:i:s', $now - $windowSeconds);
+        $windowEnd = date('Y-m-d H:i:s', $now + $windowSeconds);
         
         // Get or create rate limit record
-        $record = $this->getRateLimitRecord($identifier, $type, $endpoint, $windowStart);
+        $record = $this->getRateLimitRecord($identifier, $type, $endpoint);
         
         if (!$record) {
-            // Create new record
-            $this->createRateLimitRecord($identifier, $type, $endpoint, $windowStart, $windowEnd);
+            // First time ever seeing this IP for this endpoint - create a new row
+            $this->createRateLimitRecord($identifier, $type, $endpoint, date('Y-m-d H:i:s'), $windowEnd);
+            $requestCount = 1;
+        } elseif (strtotime($record['window_end']) < $now) {
+            // Time window expired. Instead of creating a new row, just reset the EXISTING row!
+            $this->resetRateLimitRecord($record['id'], date('Y-m-d H:i:s'), $windowEnd);
             $requestCount = 1;
         } else {
+            // Same time window, increment the count
             $requestCount = $record['request_count'] + 1;
             
-            // Update record
-            $this->updateRateLimitRecord($record['id'], $requestCount);
+            // If they are blocked, push the block expiration out another 5 minutes!
+            if ($requestCount > $limit) {
+                $this->updateRateLimitRecordWithWindow($record['id'], $requestCount, $windowEnd);
+            } else {
+                $this->updateRateLimitRecord($record['id'], $requestCount);
+            }
         }
         
         // Calculate remaining requests
@@ -121,13 +131,13 @@ class RateLimiter {
     /**
      * Get rate limit record
      */
-    private function getRateLimitRecord($identifier, $type, $endpoint, $windowStart) {
+    private function getRateLimitRecord($identifier, $type, $endpoint) {
         try {
             return $this->db->fetchOne(
                 'SELECT * FROM rate_limit_tracking 
-                 WHERE identifier = ? AND identifier_type = ? AND endpoint = ? AND window_start >= ?
-                 ORDER BY window_start DESC LIMIT 1',
-                [$identifier, $type, $endpoint, $windowStart]
+                 WHERE identifier = ? AND identifier_type = ? AND endpoint = ?
+                 ORDER BY id DESC LIMIT 1',
+                [$identifier, $type, $endpoint]
             );
         } catch (Exception $e) {
             error_log('Rate limit check error: ' . $e->getMessage());
@@ -170,6 +180,45 @@ class RateLimiter {
     }
     
     /**
+     * Update rate limit record and push out the expiration window
+     */
+    private function updateRateLimitRecordWithWindow($id, $requestCount, $windowEnd) {
+        try {
+            $this->db->update(
+                'rate_limit_tracking',
+                [
+                    'request_count' => $requestCount,
+                    'window_end' => $windowEnd
+                ],
+                'id = ?',
+                [$id]
+            );
+        } catch (Exception $e) {
+            error_log('Rate limit update window error: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Reset expired rate limit record to keep it to 1 row per IP
+     */
+    private function resetRateLimitRecord($id, $windowStart, $windowEnd) {
+        try {
+            $this->db->update(
+                'rate_limit_tracking',
+                [
+                    'request_count' => 1,
+                    'window_start' => $windowStart,
+                    'window_end' => $windowEnd
+                ],
+                'id = ?',
+                [$id]
+            );
+        } catch (Exception $e) {
+            error_log('Rate limit reset error: ' . $e->getMessage());
+        }
+    }
+    
+    /**
      * Get client IP
      */
     private function getClientIP() {
@@ -181,6 +230,12 @@ class RateLimiter {
                     $ips = explode(',', $ip);
                     $ip = trim($ips[0]);
                 }
+                
+                // Convert IPv6 localhost to IPv4 localhost so it looks cleaner in the database
+                if ($ip === '::1') {
+                    $ip = '127.0.0.1';
+                }
+                
                 if (filter_var($ip, FILTER_VALIDATE_IP)) {
                     return $ip;
                 }

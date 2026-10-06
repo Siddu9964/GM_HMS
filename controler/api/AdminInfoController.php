@@ -59,6 +59,13 @@ class AdminInfoController extends BaseController {
     public function __construct() {
         try {
             parent::__construct();
+            
+            // 1. Enforce Authentication and Role Checking (Authorization)
+            $user = $this->requireAuth();
+            if (strtolower($user['role']) !== 'admin') {
+                $this->respondForbidden('Access denied. Admin privileges required.');
+            }
+            
             $this->appointmentModel = new AppointmentModel();
             
             // Check if IPD model files exist before instantiating

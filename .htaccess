@@ -8,3 +8,15 @@ RewriteRule ^ - [L]
 
 # Route all other /api requests to api/index.php
 RewriteRule ^api/(.*)$ api/index.php [L,QSA]
+
+# --- SERVER SECURITY RULES ---
+# 1. Disable directory listing (Prevents attackers from browsing folders)
+Options -Indexes
+
+# 2. Block access to hidden files and folders (e.g., .git, .env, .htaccess)
+RewriteCond %{SCRIPT_FILENAME} -d [OR]
+RewriteCond %{SCRIPT_FILENAME} -f
+RewriteRule "(^|/)\." - [F,L]
+
+# 3. Block access to backup files, logs, and sensitive extensions (e.g., .sql, .log, .zip)
+RewriteRule \.(bak|sql|log|sh|inc|swp|zip|tar\.gz)$ - [F,NC,L]
