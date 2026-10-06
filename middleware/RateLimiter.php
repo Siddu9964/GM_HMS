@@ -51,6 +51,22 @@ class RateLimiter {
         // Get or create rate limit record
         $record = $this->getRateLimitRecord($identifier, $type, $endpoint);
         
+        // If they are permanently blocked, stop them immediately regardless of time
+        if ($record && isset($record['is_blocked']) && $record['is_blocked'] == 1) {
+            $this->auditLogger->logRateLimitViolation($identifier, $endpoint);
+            return [
+                'allowed' => false,
+                'limit' => $limit,
+                'remaining' => 0,
+                'reset' => 0,
+                'is_permanently_blocked' => true,
+                'headers' => [
+                    'X-RateLimit-Limit' => $limit,
+                    'X-RateLimit-Remaining' => 0
+                ]
+            ];
+        }
+        
         if (!$record) {
             // First time ever seeing this IP for this endpoint - create a new row
             $this->createRateLimitRecord($identifier, $type, $endpoint, date('Y-m-d H:i:s'), $windowEnd);
@@ -63,9 +79,9 @@ class RateLimiter {
             // Same time window, increment the count
             $requestCount = $record['request_count'] + 1;
             
-            // If they are blocked, push the block expiration out another 5 minutes!
-            if ($requestCount > $limit) {
-                $this->updateRateLimitRecordWithWindow($record['id'], $requestCount, $windowEnd);
+            if ($requestCount >= $limit) {
+                // They hit the limit! Block them permanently.
+                $this->blockRateLimitRecord($record['id'], $requestCount);
             } else {
                 $this->updateRateLimitRecord($record['id'], $requestCount);
             }
@@ -176,6 +192,25 @@ class RateLimiter {
             );
         } catch (Exception $e) {
             error_log('Rate limit update error: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Update rate limit record and permanently block the user
+     */
+    private function blockRateLimitRecord($id, $requestCount) {
+        try {
+            $this->db->update(
+                'rate_limit_tracking',
+                [
+                    'request_count' => $requestCount,
+                    'is_blocked' => 1
+                ],
+                'id = ?',
+                [$id]
+            );
+        } catch (Exception $e) {
+            error_log('Rate limit block error: ' . $e->getMessage());
         }
     }
     

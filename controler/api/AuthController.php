@@ -60,9 +60,13 @@ class AuthController extends BaseController {
         
         if (!$limitResult['allowed']) {
             http_response_code(429);
+            
+            // Check if they are permanently blocked or just hit the limit this exact second
+            $message = 'Account blocked. Please contact Admin.';
+            
             echo json_encode([
                 'status' => 'error',
-                'message' => 'Too many login attempts. Please try again after 5 minutes.'
+                'message' => $message
             ]);
             exit;
         }
