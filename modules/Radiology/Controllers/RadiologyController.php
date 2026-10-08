@@ -136,9 +136,18 @@ class RadiologyController extends BaseController
         $this->restrictMethod('POST');
         $user = $this->requireAuth();
         $role = strtolower(trim($user['role'] ?? ''));
-        $allowedRoles = ['receptionist', 'admin', 'administrator', 'accountant'];
+        $allowedRoles = [
+            'receptionist',
+            'admin',
+            'administrator',
+            'accountant',
+            'radiologist',
+            'radiology_technician',
+            'doctor',
+            'nurse',
+        ];
         if (!in_array($role, $allowedRoles, true)) {
-            $this->respondForbidden('Access Denied: Billing authority is restricted to Receptionist and Admin only. Please direct the patient to the Reception billing counter.');
+            $this->respondForbidden('Access Denied: You do not have permission to create radiology orders. Please contact your administrator.');
         }
         
         try {

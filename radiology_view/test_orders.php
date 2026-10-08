@@ -423,6 +423,9 @@ function renderOrders(orders) {
           <button class="lb lb-primary" style="padding:4px 10px;font-size:0.75rem;" onclick="openResultModal('${escHtml(o.order_id)}', '${escHtml(o.patient_id)}', '${escHtml(o.resolved_test_names||o.test_name)}')">
             <i class="fas fa-file-medical"></i> Report
           </button>
+          <a href="#" onclick="openSomatiqViewer('${escHtml(o.order_id)}', '${escHtml(o.patient_id)}'); return false;" class="lb lb-primary" style="padding:4px 10px;font-size:0.75rem; background-color: #0ea5e9; border-color: #0ea5e9;" title="View DICOM Images">
+            <i class="fas fa-images"></i> Images
+          </a>
           <a href="print_result.php?order_id=${encodeURIComponent(o.order_id)}&source=OPD&from=orders" target="_blank" onclick="window.open(this.href, '_blank'); return false;" class="lb lb-outline" style="padding:4px 10px;font-size:0.75rem;" title="Print Report">
             <i class="fas fa-print"></i>
           </a>
@@ -994,4 +997,19 @@ document.addEventListener('keydown', function(e) {
 });
 
 loadOrders();
+</script>
+
+<script>
+/**
+ * Placeholder function for opening the Somatiq RIS DICOM Viewer.
+ * Once Somatiq provides the exact URL format, we update this link.
+ */
+function openSomatiqViewer(orderId, patientId) {
+  // Replace this URL with the actual Somatiq viewer URL format
+  // For example: `https://ris.somatiq.ai/viewer?studyUID=...`
+  const viewerUrl = `https://ris.somatiq.ai/worklist?patient_id=${patientId}&order_id=${orderId}`;
+  
+  // Open the viewer in a new browser tab
+  window.open(viewerUrl, '_blank');
+}
 </script>

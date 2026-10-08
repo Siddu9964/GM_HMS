@@ -301,8 +301,8 @@ class RadiologyRepository
             $row['priority'] = 'Routine'; 
 
             if (!empty($row['notes'])) {
-                if (preg_match('/(?:RadStatus|LabStatus):\s*([A-Za-z\s]+)(?:\||$)/', $row['notes'], $m)) {
-                    $row['status'] = trim($m[1]);
+                if (preg_match_all('/(?:RadStatus|LabStatus):\s*([A-Za-z\s]+)(?:\||$)/', $row['notes'], $matches)) {
+                    $row['status'] = trim(end($matches[1]));
                 }
                 if (preg_match('/Priority:\s*([A-Za-z]+)(?:\||$)/', $row['notes'], $m)) {
                     $row['priority'] = trim($m[1]);

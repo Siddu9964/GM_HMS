@@ -60,15 +60,61 @@ class RadiologyService
             }
         }
 
-        $data['order_date'] = $data['order_date'] ?? date('Y-m-d');
-        $data['status'] = $data['status'] ?? 'Ordered';
-        $data['priority'] = $data['priority'] ?? 'Routine';
+        $data['order_date']     = $data['order_date']     ?? date('Y-m-d');
+        $data['status']         = $data['status']         ?? 'Ordered';
+        $data['priority']       = $data['priority']       ?? 'Routine';
         $data['clinical_notes'] = $data['clinical_notes'] ?? '';
 
+        // ── Save the order in GM_HMS database ────────────────────────────────
         $result = $this->repo->createOrder($data);
         if (!$result) {
             throw new Exception("Failed to create radiology order");
         }
+
+        // ── Dispatch HL7 ORM^O01 to Somatiq RIS (non-fatal) ──────────────────
+        // If Somatiq is unreachable or rejects the message, the order still
+        // exists in GM_HMS — we just log the failure and carry on.
+        try {
+            $patientId = $data['patient_id'] ?? '';
+            error_log('[Somatiq HL7 Debug] Starting dispatch for patient_id: ' . $patientId);
+            
+            if (!empty($patientId)) {
+                $db      = \GM_HMS\Database\SecureDatabase::getInstance();
+                $patient = $db->fetchOne(
+                    "SELECT * FROM patient WHERE patient_id = ?",
+                    [$patientId]
+                );
+                error_log('[Somatiq HL7 Debug] Patient fetched: ' . ($patient ? 'YES' : 'NO'));
+
+                $fullOrder = $this->repo->getOrderById($result['order_id']);
+                error_log('[Somatiq HL7 Debug] Full order fetched: ' . ($fullOrder ? 'YES' : 'NO'));
+
+                if ($patient && $fullOrder) {
+                    error_log('[Somatiq HL7 Debug] Sending to SomatiqHL7Service...');
+                    $somatiq   = new \GM_HMS\Modules\Radiology\Services\SomatiqHL7Service();
+                    $hl7Result = $somatiq->sendOrder($fullOrder, $patient);
+                    error_log('[Somatiq HL7 Debug] SomatiqHL7Service returned success: ' . ($hl7Result['success'] ? 'true' : 'false'));
+
+                    $result['hl7_sent']    = $hl7Result['success'];
+                    $result['hl7_message'] = $hl7Result['message'];
+
+                    // Update UI status to show if it was accepted by RIS
+                    if ($hl7Result['success']) {
+                        $this->updateOrderStatus($result['order_id'], 'RIS Accepted');
+                    } else {
+                        $this->updateOrderStatus($result['order_id'], 'RIS Failed');
+                    }
+                } else {
+                    error_log('[Somatiq HL7 Debug] Skipping dispatch because patient or fullOrder is null');
+                }
+            }
+        } catch (\Throwable $hl7Err) {
+            // Non-fatal: log and continue
+            error_log('[Somatiq HL7] Non-fatal dispatch error: ' . $hl7Err->getMessage());
+            $result['hl7_sent']    = false;
+            $result['hl7_message'] = 'HL7 dispatch failed (non-fatal): ' . $hl7Err->getMessage();
+        }
+
         return $result;
     }
 
