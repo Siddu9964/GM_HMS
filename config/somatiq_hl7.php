@@ -40,7 +40,7 @@ return [
     | sending_facility    = CENTRE_CODE  (e.g., 'DEMO' for testing)
     */
     'sending_application'   => 'GM',       // MSH-3: your VENDOR_CODE
-    'sending_facility'      => 'DEMO',     // MSH-4: your CENTRE_CODE — CHANGE THIS TO PROD VALUE
+    'sending_facility'      => 'BS_BR',     // MSH-4: your CENTRE_CODE — CHANGE THIS TO PROD VALUE
 
     /*
     |--------------------------------------------------------------------------

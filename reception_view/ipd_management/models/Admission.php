@@ -477,7 +477,7 @@ class Admission extends BaseModel {
                 // ── 2. NURSING CHARGES ───────────────────────────────────────────
                 if ($nursingCharge > 0) {
                     $this->query(
-                        "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, unit_price, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'NURSING_CHARGE', ?, ?, ?, 'COMPLETED', ?, NOW())",
+                        "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, unit_price, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'PROCEDURE', ?, ?, ?, 'COMPLETED', ?, NOW())",
                         [$billId, $filteredData['patient_id'], $data['admission_id'], "FROM {$dateLabel} TO {$dateLabel} ( NURSING CHARGES-{$roomTypeLabel} )", $nursingCharge, $nursingCharge, $createdBy]
                     );
                 }
@@ -485,7 +485,7 @@ class Admission extends BaseModel {
                 // ── 3. DUTY DOCTOR CHARGES ───────────────────────────────────────
                 if ($doctorCharge > 0) {
                     $this->query(
-                        "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, unit_price, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'DUTY_DOCTOR', ?, ?, ?, 'COMPLETED', ?, NOW())",
+                        "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, unit_price, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'DOCTOR_VISIT', ?, ?, ?, 'COMPLETED', ?, NOW())",
                         [$billId, $filteredData['patient_id'], $data['admission_id'], "FROM {$dateLabel} TO {$dateLabel} ( DUTY DOCTOR CHARGES-{$roomTypeLabel} )", $doctorCharge, $doctorCharge, $createdBy]
                     );
                 }
@@ -493,7 +493,7 @@ class Admission extends BaseModel {
                 // ── 4. SERVICE CHARGES ───────────────────────────────────────────
                 if ($serviceCharge > 0) {
                     $this->query(
-                        "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, unit_price, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'SERVICE_CHARGE', ?, ?, ?, 'COMPLETED', ?, NOW())",
+                        "INSERT INTO ipd_billing_items (bill_id, patient_id, admission_id, charge_date, charge_type, description, total_amount, unit_price, status, created_by, created_at) VALUES (?, ?, ?, CURDATE(), 'MISC', ?, ?, ?, 'COMPLETED', ?, NOW())",
                         [$billId, $filteredData['patient_id'], $data['admission_id'], "FROM {$dateLabel} TO {$dateLabel} ( SERVICE CHARGES-{$roomTypeLabel} )", $serviceCharge, $serviceCharge, $createdBy]
                     );
                 }

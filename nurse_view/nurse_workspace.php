@@ -64,73 +64,110 @@ try {
 <title>Nurse Workspace - GM HMS</title>
 <link rel="stylesheet" href="/GM_HMS/assets/css/gm-theme.css?v=<?php echo time(); ?>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <style>
-/* ── GM HMS Signature 2-Color Theme System (#f3efe6 & #1f6b4a) ── */
+/* ═══════════════════════════════════════════════════════════════════
+   GM HMS NURSE WORKSPACE — Complete Modern UI/UX Redesign
+   Color System: STRICTLY #f3efe6 (Warm Cream) & #1f6b4a (Forest Green)
+   High-Efficiency Clinical Dashboard • Responsive • Accessible
+   ═══════════════════════════════════════════════════════════════════ */
+
 :root {
-    --gm-bg: #f3efe6;
-    --gm-bg-card: #ffffff;
-    --gm-primary: #1f6b4a;
-    --gm-primary-dark: #144d34;
-    --gm-primary-light: rgba(31, 107, 74, 0.08);
-    --gm-primary-mid: rgba(31, 107, 74, 0.15);
-    --gm-border: rgba(31, 107, 74, 0.22);
-    --gm-border-strong: #1f6b4a;
-    --gm-text: #1f6b4a;
-    --gm-text-body: #2c3e35;
-    --gm-text-muted: #527967;
-    --gm-sidebar-w: 185px;
+    --gm-bg:             #f3efe6;
+    --gm-surface:        #ffffff;
+    --gm-surface-warm:   #faf8f3;
+    --gm-primary:        #1f6b4a;
+    --gm-primary-dark:   #154c34;
+    --gm-primary-deep:   #0e3524;
+    --gm-primary-light:  rgba(31, 107, 74, 0.08);
+    --gm-primary-mid:    rgba(31, 107, 74, 0.14);
+    --gm-primary-glow:   rgba(31, 107, 74, 0.22);
+    --gm-border:         rgba(31, 107, 74, 0.18);
+    --gm-border-strong:  #1f6b4a;
+    --gm-border-light:   rgba(31, 107, 74, 0.10);
+    --gm-text:           #1f6b4a;
+    --gm-text-body:      #1a3829;
+    --gm-text-muted:     #466e5a;
+    --gm-text-light:     #6b907c;
+    --gm-radius-sm:      6px;
+    --gm-radius-md:      10px;
+    --gm-radius-lg:      14px;
+    --gm-radius-xl:      18px;
+    --gm-shadow-sm:      0 2px 8px rgba(31, 107, 74, 0.05);
+    --gm-shadow-md:      0 6px 20px rgba(31, 107, 74, 0.09);
+    --gm-shadow-lg:      0 12px 32px rgba(31, 107, 74, 0.14);
+    --gm-transition:     all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 html, body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: var(--gm-bg);
     color: var(--gm-text-body);
     min-height: 100vh;
     box-sizing: border-box;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
 }
 
-*, *::before, *::after {
-    box-sizing: border-box;
-}
-
+/* ── Main Layout Wrapper ── */
 .main-layout {
     display: flex;
     min-height: 100vh;
     width: 100%;
     position: relative;
     overflow-x: hidden;
+    background: var(--gm-bg);
 }
 
 .content-wrapper {
     flex: 1;
+    display: flex;
+    flex-direction: column;
     min-width: 0;
-    padding: 20px 24px;
     background-color: var(--gm-bg);
-    margin-left: var(--gm-sidebar-w, 185px);
-    width: calc(100% - var(--gm-sidebar-w, 185px));
-    box-sizing: border-box;
-    transition: margin-left 0.25s ease, width 0.25s ease, padding 0.2s ease;
+    font-size: 13.5px;
 }
 
-/* ============================================================
-   PATIENT DASHBOARD & SELECTION VIEW
-   ============================================================ */
+.main-content {
+    flex: 1;
+    padding: 20px 24px 36px;
+    box-sizing: border-box;
+}
 
+/* ══════════════════════════════════════════════════════════════
+   1. INPATIENT SELECTION DASHBOARD
+   ══════════════════════════════════════════════════════════════ */
 .nopt-dashboard {
-    background: #ffffff;
-    border-radius: 14px;
+    background: var(--gm-surface);
+    border-radius: var(--gm-radius-lg);
     border: 1.5px solid var(--gm-border);
     padding: 22px 24px;
-    box-shadow: 0 4px 16px rgba(31, 107, 74, 0.06);
-    margin-bottom: 24px;
+    box-shadow: var(--gm-shadow-md);
+    margin-bottom: 22px;
+    position: relative;
+    overflow: hidden;
+}
+
+.nopt-dashboard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--gm-primary) 0%, var(--gm-primary-dark) 100%);
 }
 
 .dash-header {
@@ -139,15 +176,26 @@ html, body {
     align-items: center;
     flex-wrap: wrap;
     gap: 16px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
     padding-bottom: 16px;
-    border-bottom: 1.5px solid var(--gm-border);
+    border-bottom: 1.5px solid var(--gm-border-light);
+}
+
+.dash-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--gm-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: -0.2px;
 }
 
 .search-box-wrap {
     position: relative;
     width: 100%;
-    max-width: 380px;
+    max-width: 360px;
 }
 
 .search-box-wrap i {
@@ -156,60 +204,63 @@ html, body {
     top: 50%;
     transform: translateY(-50%);
     color: var(--gm-primary);
+    font-size: 0.9rem;
+    pointer-events: none;
 }
 
 .search-box-wrap input {
     width: 100%;
-    padding: 10px 14px 10px 42px;
-    border-radius: 10px;
+    padding: 10px 14px 10px 40px;
+    border-radius: var(--gm-radius-md);
     border: 1.5px solid var(--gm-border);
-    font-size: 0.88rem;
+    font-size: 0.86rem;
     outline: none;
     background: var(--gm-bg);
-    color: var(--gm-primary);
+    color: var(--gm-text-body);
     font-weight: 600;
-    transition: all 0.2s ease;
+    font-family: inherit;
+    transition: var(--gm-transition);
 }
 
 .search-box-wrap input:focus {
     background: #ffffff;
     border-color: var(--gm-primary);
-    box-shadow: 0 0 0 3px var(--gm-primary-light);
+    box-shadow: 0 0 0 3.5px var(--gm-primary-light);
 }
 
 .dash-patient-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 14px;
 }
 
 .dash-patient-card {
     background: #ffffff;
     border: 1.5px solid var(--gm-border);
-    border-radius: 12px;
-    padding: 16px 18px;
+    border-radius: var(--gm-radius-md);
+    padding: 14px 16px;
     cursor: pointer;
-    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 6px rgba(31, 107, 74, 0.05);
+    transition: var(--gm-transition);
+    box-shadow: var(--gm-shadow-sm);
     display: flex;
     flex-direction: column;
     gap: 10px;
+    user-select: none;
+    position: relative;
 }
 
 .dash-patient-card:hover {
     border-color: var(--gm-primary);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(31, 107, 74, 0.16);
-    background: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: var(--gm-shadow-md);
+    background: var(--gm-surface-warm);
 }
 
 .dash-patient-name {
-    font-size: 1.05rem;
+    font-size: 0.98rem;
     font-weight: 800;
     color: var(--gm-primary);
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    line-height: 1.25;
 }
 
 .dash-chips-row {
@@ -219,36 +270,38 @@ html, body {
 }
 
 .chip-mini {
-    font-size: 0.75rem;
+    font-size: 0.73rem;
     font-weight: 700;
-    padding: 4px 9px;
+    padding: 3px 8px;
     background: var(--gm-primary-light);
     color: var(--gm-primary);
     border: 1px solid var(--gm-border);
-    border-radius: 6px;
+    border-radius: var(--gm-radius-sm);
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
+    white-space: nowrap;
 }
 
-/* ============================================================
-   STICKY ACTIVE PATIENT BANNER
-   ============================================================ */
-
+/* ══════════════════════════════════════════════════════════════
+   2. STICKY ACTIVE PATIENT BANNER
+   ══════════════════════════════════════════════════════════════ */
 .pt-banner {
-    background: var(--gm-primary);
+    background: linear-gradient(135deg, var(--gm-primary) 0%, var(--gm-primary-dark) 100%);
     color: #f3efe6;
-    padding: 14px 20px;
-    border-radius: 14px;
+    padding: 12px 18px;
+    border-radius: var(--gm-radius-lg);
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
     flex-wrap: wrap;
-    box-shadow: 0 6px 20px rgba(31, 107, 74, 0.28);
-    margin-bottom: 16px;
+    box-shadow: var(--gm-shadow-lg);
+    margin-bottom: 18px;
     position: sticky;
     top: 10px;
-    z-index: 90;
+    z-index: 85;
+    border: 1.5px solid rgba(243, 239, 230, 0.25);
+    backdrop-filter: blur(8px);
 }
 
 .pt-banner-av {
@@ -256,7 +309,7 @@ html, body {
     height: 44px;
     border-radius: 10px;
     background: rgba(243, 239, 230, 0.2);
-    border: 1.5px solid rgba(243, 239, 230, 0.4);
+    border: 1.5px solid rgba(243, 239, 230, 0.45);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -264,39 +317,43 @@ html, body {
     font-weight: 800;
     color: #f3efe6;
     flex-shrink: 0;
+    letter-spacing: 0.5px;
 }
 
 .pt-banner-info {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
     min-width: 0;
 }
 
 .pt-banner-nm {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     font-weight: 800;
-    color: #f3efe6;
+    color: #ffffff;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    letter-spacing: -0.2px;
 }
 
 .pt-banner-chips {
     display: flex;
-    gap: 8px;
+    gap: 7px;
     flex-wrap: wrap;
 }
 
 .ptchip {
-    font-size: 0.76rem;
-    background: rgba(243, 239, 230, 0.15);
-    padding: 3px 9px;
-    border-radius: 6px;
+    font-size: 0.74rem;
+    background: rgba(243, 239, 230, 0.16);
+    padding: 3px 8px;
+    border-radius: var(--gm-radius-sm);
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     color: #f3efe6;
+    font-weight: 600;
+    border: 1px solid rgba(243, 239, 230, 0.2);
 }
 
 .ptchip strong {
@@ -308,41 +365,64 @@ html, body {
     display: flex;
     gap: 8px;
     flex-shrink: 0;
+    align-items: center;
 }
 
 .pba {
-    padding: 8px 14px;
-    border-radius: 8px;
-    font-size: 0.82rem;
-    font-weight: 700;
+    padding: 7px 13px;
+    border-radius: var(--gm-radius-md);
+    font-size: 0.8rem;
+    font-weight: 750;
     border: none;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    transition: all 0.2s;
+    transition: var(--gm-transition);
     white-space: nowrap;
-    min-height: 38px;
+    min-height: 36px;
+    font-family: inherit;
+    text-decoration: none;
 }
 
-.pba.ksheet { background: #f3efe6; color: var(--gm-primary); }
-.pba.ksheet:hover { background: #ffffff; transform: translateY(-1px); }
-.pba.warn { background: rgba(243, 239, 230, 0.25); color: #f3efe6; border: 1px solid rgba(243, 239, 230, 0.4); }
-.pba.warn:hover { background: #f3efe6; color: var(--gm-primary); }
-.pba.sec { background: transparent; color: #f3efe6; border: 1px solid rgba(243, 239, 230, 0.3); }
-.pba.sec:hover { background: rgba(243, 239, 230, 0.2); }
+.pba.ksheet {
+    background: #f3efe6;
+    color: var(--gm-primary);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+.pba.ksheet:hover {
+    background: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+}
+.pba.warn {
+    background: rgba(243, 239, 230, 0.25);
+    color: #ffffff;
+    border: 1px solid rgba(243, 239, 230, 0.4);
+}
+.pba.warn:hover {
+    background: #f3efe6;
+    color: var(--gm-primary);
+}
+.pba.sec {
+    background: transparent;
+    color: #f3efe6;
+    border: 1px solid rgba(243, 239, 230, 0.35);
+}
+.pba.sec:hover {
+    background: rgba(243, 239, 230, 0.2);
+}
 
-/* ============================================================
-   WORKSPACE CATEGORY NAVIGATION PILLS
-   ============================================================ */
-
+/* ══════════════════════════════════════════════════════════════
+   3. QUICK CATEGORY NAVIGATION PILLS
+   ══════════════════════════════════════════════════════════════ */
 .workspace-tabs {
     display: flex;
     gap: 8px;
     overflow-x: auto;
-    padding-bottom: 8px;
-    margin-bottom: 18px;
+    padding: 4px 2px 14px;
+    margin-bottom: 12px;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
 }
@@ -352,10 +432,10 @@ html, body {
 }
 
 .tab-pill {
-    padding: 8px 16px;
+    padding: 7px 16px;
     border-radius: 20px;
-    font-size: 0.82rem;
-    font-weight: 700;
+    font-size: 0.8rem;
+    font-weight: 750;
     background: #ffffff;
     color: var(--gm-primary);
     border: 1.5px solid var(--gm-border);
@@ -364,36 +444,50 @@ html, body {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.2s ease;
-    min-height: 36px;
+    transition: var(--gm-transition);
+    min-height: 35px;
+    font-family: inherit;
+    box-shadow: var(--gm-shadow-sm);
 }
 
-.tab-pill:hover, .tab-pill.active {
+.tab-pill:hover {
+    background: var(--gm-primary-light);
+    border-color: var(--gm-primary);
+    transform: translateY(-1px);
+}
+
+.tab-pill.active {
     background: var(--gm-primary);
     color: #f3efe6;
     border-color: var(--gm-primary);
-    box-shadow: 0 4px 12px rgba(31, 107, 74, 0.2);
+    box-shadow: 0 4px 12px rgba(31, 107, 74, 0.22);
 }
 
-/* ============================================================
-   RESPONSIVE BENTO WORKSPACE CARDS
-   ============================================================ */
-
+/* ══════════════════════════════════════════════════════════════
+   4. BENTO-GRID & CLINICAL CARDS
+   ══════════════════════════════════════════════════════════════ */
 .ws-grid-new {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+    gap: 18px;
     width: 100%;
 }
 
 .card-new {
-    background: #ffffff;
+    background: var(--gm-surface);
     border: 1.5px solid var(--gm-border);
-    border-radius: 14px;
+    border-radius: var(--gm-radius-lg);
     padding: 18px 20px;
-    box-shadow: 0 2px 10px rgba(31, 107, 74, 0.04);
+    box-shadow: var(--gm-shadow-sm);
     display: flex;
     flex-direction: column;
+    transition: var(--gm-transition);
+    position: relative;
+}
+
+.card-new:hover {
+    box-shadow: var(--gm-shadow-md);
+    border-color: rgba(31, 107, 74, 0.32);
 }
 
 .card-new.full-width {
@@ -403,13 +497,25 @@ html, body {
 .card-title-new {
     color: var(--gm-primary);
     font-weight: 800;
-    font-size: 1.02rem;
+    font-size: 0.98rem;
     margin-bottom: 14px;
     padding-bottom: 10px;
-    border-bottom: 1.5px solid var(--gm-border);
+    border-bottom: 1.5px solid var(--gm-border-light);
     display: flex;
     align-items: center;
     justify-content: space-between;
+    letter-spacing: -0.1px;
+}
+
+.card-title-new span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-title-new i {
+    color: var(--gm-primary);
+    font-size: 1.05rem;
 }
 
 .split-card {
@@ -427,11 +533,11 @@ html, body {
     width: 100%;
     border-top: 1.5px dashed var(--gm-border);
     padding-top: 14px;
-    margin-top: 4px;
+    margin-top: 2px;
 }
 
 .ht-title {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 800;
     color: var(--gm-primary);
     text-transform: uppercase;
@@ -442,7 +548,9 @@ html, body {
     gap: 6px;
 }
 
-/* Forms */
+/* ══════════════════════════════════════════════════════════════
+   5. FORM CONTROLS & FIELD GROUPS
+   ══════════════════════════════════════════════════════════════ */
 .fg {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -457,25 +565,28 @@ html, body {
 }
 
 .fmg label {
-    font-size: 0.74rem;
-    font-weight: 700;
+    font-size: 0.72rem;
+    font-weight: 750;
     text-transform: uppercase;
     letter-spacing: 0.4px;
     color: var(--gm-primary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .fmg input, .fmg select, .fmg textarea {
-    padding: 9px 12px;
+    padding: 8px 12px;
     border: 1.5px solid var(--gm-border);
-    border-radius: 8px;
+    border-radius: var(--gm-radius-sm);
     font-size: 0.86rem;
-    background: var(--gm-bg);
-    color: var(--gm-primary);
+    background: #fdfcf9;
+    color: var(--gm-text-body);
     font-weight: 600;
     outline: none;
     font-family: inherit;
     width: 100%;
-    transition: all 0.2s ease;
+    transition: var(--gm-transition);
 }
 
 .fmg input:focus, .fmg select:focus, .fmg textarea:focus {
@@ -485,43 +596,233 @@ html, body {
 }
 
 .fmg input[readonly] {
-    background: rgba(31, 107, 74, 0.06) !important;
+    background: rgba(31, 107, 74, 0.05) !important;
     color: var(--gm-primary) !important;
-    border-color: rgba(31, 107, 74, 0.25) !important;
-    cursor: not-allowed !important;
+    border-color: rgba(31, 107, 74, 0.2) !important;
+    cursor: default !important;
     font-weight: 700 !important;
-    user-select: none;
 }
 
 .btn-sv-out {
-    background: var(--gm-primary-light);
+    background: var(--gm-primary);
     border: 1.5px solid var(--gm-primary);
-    color: var(--gm-primary);
+    color: #f3efe6;
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: var(--gm-radius-md);
     font-size: 0.82rem;
-    font-weight: 700;
+    font-weight: 750;
     cursor: pointer;
     margin-top: 12px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.2s ease;
+    transition: var(--gm-transition);
     min-height: 38px;
+    font-family: inherit;
+    box-shadow: 0 2px 6px rgba(31, 107, 74, 0.18);
 }
 
 .btn-sv-out:hover {
-    background: var(--gm-primary);
-    color: #f3efe6;
+    background: var(--gm-primary-dark);
+    border-color: var(--gm-primary-dark);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(31, 107, 74, 0.28);
 }
 
-/* History logs */
+.btn-sv-out:active {
+    transform: translateY(0);
+}
+
+.btn-cancel-edit {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, 0.25);
+    padding: 8px 14px;
+    border-radius: var(--gm-radius-md);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 12px;
+    margin-left: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: var(--gm-transition);
+    min-height: 38px;
+    font-family: inherit;
+}
+
+.btn-cancel-edit:hover {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   6. STREAMLINED GLASGOW COMA SCALE (GCS) UI
+   Standard Native Form Controls • High Speed • Clean Score Bar
+   ══════════════════════════════════════════════════════════════ */
+.gcs-streamlined-card {
+    grid-column: 1 / -1;
+    background: var(--gm-surface-warm);
+    border: 1.5px solid var(--gm-border);
+    border-radius: var(--gm-radius-md);
+    padding: 14px 16px;
+    margin-top: 6px;
+    margin-bottom: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.gcs-summary-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: #ffffff;
+    border: 1.5px solid var(--gm-border-light);
+    border-radius: var(--gm-radius-md);
+    padding: 10px 14px;
+    box-shadow: var(--gm-shadow-sm);
+}
+
+.gcs-score-badge-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.gcs-dial-pill {
+    padding: 4px 12px;
+    border-radius: var(--gm-radius-md);
+    background: var(--gm-primary-light);
+    border: 2px solid var(--gm-primary);
+    color: var(--gm-primary);
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font-weight: 800;
+}
+
+.gcs-dial-num {
+    font-size: 1.45rem;
+    line-height: 1;
+}
+
+.gcs-dial-max {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+.gcs-dial-pill.gcs-mild {
+    border-color: #16a34a;
+    background: #f0fdf4;
+    color: #15803d;
+}
+.gcs-dial-pill.gcs-moderate {
+    border-color: #d97706;
+    background: #fffbeb;
+    color: #b45309;
+}
+.gcs-dial-pill.gcs-severe {
+    border-color: #dc2626;
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.gcs-status-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gcs-status-badge {
+    font-size: 0.82rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--gm-primary);
+}
+
+.gcs-status-badge.gcs-mild { color: #15803d; }
+.gcs-status-badge.gcs-moderate { color: #b45309; }
+.gcs-status-badge.gcs-severe { color: #dc2626; }
+
+.gcs-status-desc {
+    font-size: 0.7rem;
+    color: var(--gm-text-muted);
+    font-weight: 600;
+}
+
+.gcs-breakdown-tags {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.gcs-tag {
+    font-size: 0.74rem;
+    font-weight: 750;
+    padding: 4px 8px;
+    border-radius: var(--gm-radius-sm);
+    background: var(--gm-bg);
+    border: 1px solid var(--gm-border);
+    color: var(--gm-text-body);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.gcs-tag strong {
+    color: var(--gm-primary);
+}
+
+.gcs-selects-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 900px) {
+    .gcs-selects-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.gcs-native-select {
+    padding: 9px 12px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    border-radius: var(--gm-radius-sm);
+    border: 1.5px solid var(--gm-border);
+    background: #ffffff;
+    color: var(--gm-text-body);
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    width: 100%;
+    transition: var(--gm-transition);
+}
+
+.gcs-native-select:focus {
+    border-color: var(--gm-primary);
+    box-shadow: 0 0 0 3px var(--gm-primary-light);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   7. HISTORY LOG TABLES
+   ══════════════════════════════════════════════════════════════ */
 .ht-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    border-radius: 8px;
+    border-radius: var(--gm-radius-md);
     border: 1px solid var(--gm-border);
-    max-height: 160px;
+    max-height: 165px;
     background: #ffffff;
 }
 
@@ -533,7 +834,7 @@ html, body {
 }
 
 .ht thead th {
-    background: var(--gm-bg);
+    background: var(--gm-surface-warm);
     padding: 8px 10px;
     text-align: left;
     font-size: 0.7rem;
@@ -542,11 +843,14 @@ html, body {
     color: var(--gm-primary);
     border-bottom: 1.5px solid var(--gm-border);
     white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .ht tbody td {
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--gm-bg);
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--gm-border-light);
     color: var(--gm-text-body);
     vertical-align: middle;
 }
@@ -564,16 +868,20 @@ html, body {
     color: var(--gm-text-muted);
     padding: 16px;
     font-size: 0.8rem;
+    font-style: italic;
 }
 
-.badge {
+.main-content .badge {
     padding: 3px 8px;
-    border-radius: 6px;
+    border-radius: var(--gm-radius-sm);
     font-size: 0.72rem;
-    font-weight: 700;
+    font-weight: 750;
     background: var(--gm-primary-light);
     color: var(--gm-primary);
     border: 1px solid var(--gm-border);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .btn-edit-log {
@@ -581,14 +889,14 @@ html, body {
     color: var(--gm-primary);
     border: 1px solid var(--gm-border);
     padding: 3px 8px;
-    border-radius: 6px;
+    border-radius: var(--gm-radius-sm);
     font-size: 0.72rem;
-    font-weight: 700;
+    font-weight: 750;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    transition: all 0.15s ease;
+    transition: var(--gm-transition);
 }
 
 .btn-edit-log:hover {
@@ -597,74 +905,9 @@ html, body {
     border-color: var(--gm-primary);
 }
 
-.btn-cancel-edit {
-    background: rgba(220, 38, 38, 0.1);
-    color: #dc2626;
-    border: 1px solid rgba(220, 38, 38, 0.25);
-    padding: 8px 14px;
-    border-radius: 8px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 12px;
-    margin-left: 8px;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: all 0.2s ease;
-    min-height: 38px;
-}
-
-.btn-cancel-edit:hover {
-    background: #dc2626;
-    color: #ffffff;
-}
-
-/* Treatments Subtabs & Panels */
-.treatment-subtabs {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-.t-tab {
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    background: var(--gm-bg);
-    color: var(--gm-primary);
-    border: 1.5px solid var(--gm-border);
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-}
-
-.t-tab:hover, .t-tab.active {
-    background: var(--gm-primary);
-    color: #f3efe6;
-    border-color: var(--gm-primary);
-    box-shadow: 0 4px 12px rgba(31, 107, 74, 0.22);
-}
-
-.t-panel {
-    width: 100%;
-}
-
-.t-title {
-    font-size: 0.95rem;
-    font-weight: 800;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--gm-primary);
-}
-
-/* Search Dropdowns */
+/* ══════════════════════════════════════════════════════════════
+   8. SEARCH DROPDOWNS & CARTS (LAB & PHARMACY)
+   ══════════════════════════════════════════════════════════════ */
 #ts-results, #ph-results {
     position: absolute;
     top: calc(100% + 4px);
@@ -672,22 +915,23 @@ html, body {
     right: 0;
     background: #ffffff;
     border: 1.5px solid var(--gm-primary);
-    border-radius: 10px;
+    border-radius: var(--gm-radius-md);
     z-index: 500;
     display: none;
-    box-shadow: 0 10px 25px rgba(31, 107, 74, 0.18);
+    box-shadow: var(--gm-shadow-lg);
     max-height: 240px;
     overflow-y: auto;
 }
 
 .ts-item, .ph-item {
-    padding: 10px 14px;
+    padding: 9px 12px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid var(--gm-bg);
+    border-bottom: 1px solid var(--gm-border-light);
     transition: background 0.15s;
+    font-size: 0.82rem;
 }
 
 .ts-item:hover, .ph-item:hover {
@@ -698,522 +942,712 @@ html, body {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px;
+    padding: 8px 10px;
     background: #ffffff;
-    border-radius: 8px;
-    margin-bottom: 6px;
     border: 1px solid var(--gm-border);
+    border-radius: var(--gm-radius-sm);
+    margin-bottom: 6px;
+    font-size: 0.82rem;
 }
 
 .cart-row-n {
     flex: 1;
-    font-size: 0.84rem;
     font-weight: 700;
     color: var(--gm-primary);
 }
 
-.cart-row input[type=number] {
+.cart-row input {
     width: 60px;
     padding: 4px 6px;
     border: 1px solid var(--gm-border);
-    border-radius: 6px;
+    border-radius: var(--gm-radius-sm);
     text-align: center;
-    font-size: 0.82rem;
-    color: var(--gm-primary);
     font-weight: 700;
 }
 
-.cart-row .rm-btn {
-    background: none;
-    border: none;
+.rm-btn {
+    background: rgba(220, 38, 38, 0.1);
     color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, 0.25);
+    border-radius: var(--gm-radius-sm);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    padding: 4px;
+    transition: var(--gm-transition);
 }
 
-/* ── 3 Dedicated Diagnostic Views Styling ── */
-.diag-view-nav {
+.rm-btn:hover {
+    background: #dc2626;
+    color: #ffffff;
+}
+
+/* Diagnostic subtabs */
+.treatment-subtabs {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    align-items: center;
 }
-.diag-tab-btn {
+
+.t-tab {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 750;
+    background: var(--gm-bg);
+    color: var(--gm-primary);
+    border: 1.5px solid var(--gm-border);
+    cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 7px 16px;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    cursor: pointer;
+    gap: 5px;
+    transition: var(--gm-transition);
+}
+
+.t-tab:hover, .t-tab.active {
+    background: var(--gm-primary);
+    color: #f3efe6;
+    border-color: var(--gm-primary);
+}
+
+.t-panel {
+    width: 100%;
+}
+
+.t-title {
+    font-size: 0.92rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--gm-primary);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   9. MODALS & TOAST NOTIFICATIONS
+   ══════════════════════════════════════════════════════════════ */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(14, 53, 36, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.modal-content {
+    background: #ffffff;
+    border-radius: var(--gm-radius-lg);
     border: 1.5px solid var(--gm-border);
+    box-shadow: 0 20px 60px rgba(14, 53, 36, 0.3);
+    width: 100%;
+    max-width: 580px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    padding: 22px 24px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1.5px solid var(--gm-border-light);
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--gm-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modal-close {
+    background: var(--gm-primary-light);
+    color: var(--gm-primary);
+    border: 1px solid var(--gm-border);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--gm-transition);
+}
+
+.modal-close:hover {
+    background: var(--gm-primary);
+    color: #f3efe6;
+}
+
+#toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
     background: #ffffff;
     color: var(--gm-primary);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.diag-tab-btn:hover {
-    background: var(--gm-primary-light);
-    border-color: var(--gm-primary);
-}
-.diag-tab-btn.active {
-    background: var(--gm-primary);
-    color: #ffffff !important;
-    border-color: var(--gm-primary);
-    box-shadow: 0 4px 14px rgba(31, 107, 74, 0.25);
-}
-.diag-tab-btn.tab-lab.active {
-    background: #0369a1;
-    border-color: #0369a1;
-    box-shadow: 0 4px 14px rgba(3, 105, 161, 0.25);
-}
-.diag-tab-btn.tab-rad.active {
-    background: #1F6B4A;
-    border-color: #1F6B4A;
-    box-shadow: 0 4px 14px rgba(31, 107, 74, 0.25);
-}
-.diag-tab-btn.tab-oth.active {
-    background: #b45309;
-    border-color: #b45309;
-    box-shadow: 0 4px 14px rgba(180, 83, 9, 0.25);
-}
-.diag-tab-btn .tab-badge {
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 0.7rem;
-    font-weight: 800;
-    background: rgba(0, 0, 0, 0.08);
-    color: inherit;
-}
-.diag-tab-btn.active .tab-badge {
-    background: rgba(255, 255, 255, 0.25);
-    color: #ffffff;
-}
-.diag-panel {
+    border: 2px solid var(--gm-primary);
+    border-radius: var(--gm-radius-md);
+    padding: 14px 20px;
+    box-shadow: var(--gm-shadow-lg);
     display: none;
-    animation: fadeIn 0.22s ease-out;
+    z-index: 2000;
+    max-width: 420px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    animation: toastSlide 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+@keyframes toastSlide {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   10. RESPONSIVE BREAKPOINTS
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+    .main-content {
+        padding: 16px;
+    }
+    .ws-grid-new {
+        grid-template-columns: 1fr;
+    }
+    .pt-banner {
+        top: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .dash-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .search-box-wrap {
+        max-width: 100%;
+    }
+    .pt-banner-ac {
+        margin-left: 0;
+        width: 100%;
+        justify-content: stretch;
+    }
+    .pt-banner-ac .pba {
+        flex: 1;
+    }
+}
+
+/* ── Diagnostic Requisition & History Tabs (Strictly #f3efe6 & #1f6b4a) ── */
+.diag-view-nav {
+    display: inline-flex;
+    align-items: center;
+    background: #f3efe6;
+    border: 1.5px solid #1f6b4a;
+    border-radius: var(--gm-radius-md);
+    padding: 3px;
+    gap: 4px;
+}
+
+.diag-tab-btn {
+    padding: 8px 16px;
+    border-radius: var(--gm-radius-sm);
+    font-size: 0.82rem;
+    font-weight: 750;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    background: transparent;
+    color: #1f6b4a;
+    transition: var(--gm-transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.diag-tab-btn:hover {
+    background: rgba(31, 107, 74, 0.08);
+}
+
+.diag-tab-btn.active {
+    background: #1f6b4a;
+    color: #f3efe6;
+    border-color: #1f6b4a;
+    box-shadow: 0 2px 10px rgba(31, 107, 74, 0.25);
+}
+
+.diag-tab-btn .tab-badge {
+    background: rgba(31, 107, 74, 0.12);
+    color: #1f6b4a;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    transition: var(--gm-transition);
+}
+
+.diag-tab-btn.active .tab-badge {
+    background: #f3efe6;
+    color: #1f6b4a;
+}
+
+.diag-panel {
+    display: none !important;
+    width: 100%;
+}
+
 .diag-panel.active {
-    display: block;
+    display: block !important;
+    animation: diagFade 0.22s ease-in-out;
 }
+
+@keyframes diagFade {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.diag-header-badge {
+    background: #f3efe6;
+    border: 1.5px solid rgba(31, 107, 74, 0.25);
+    border-left: 5px solid #1f6b4a;
+    border-radius: var(--gm-radius-sm);
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 14px;
+}
+
+.diag-badge-title {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #1f6b4a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.diag-badge-desc {
+    font-size: 0.76rem;
+    color: #1f6b4a;
+    opacity: 0.85;
+    font-weight: 600;
+}
+
+.diag-search-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid rgba(31, 107, 74, 0.28);
+    border-radius: var(--gm-radius-sm);
+    font-size: 0.86rem;
+    background: #ffffff;
+    color: #1f6b4a;
+    font-weight: 600;
+    outline: none;
+    font-family: inherit;
+    transition: var(--gm-transition);
+}
+
+.diag-search-input:focus {
+    border-color: #1f6b4a;
+    box-shadow: 0 0 0 3px rgba(31, 107, 74, 0.15);
+}
+
 .diag-results {
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
     right: 0;
     background: #ffffff;
-    border-radius: 10px;
-    border: 1.5px solid var(--gm-border);
-    box-shadow: 0 10px 30px rgba(31, 107, 74, 0.15);
-    max-height: 280px;
+    border: 2px solid #1f6b4a;
+    border-radius: var(--gm-radius-md);
+    z-index: 600;
+    display: none;
+    box-shadow: 0 10px 28px rgba(31, 107, 74, 0.18);
+    max-height: 250px;
     overflow-y: auto;
-    z-index: 200;
-    display: none;
-}
-.diag-header-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    border-radius: 8px;
-    font-size: 0.76rem;
-    font-weight: 700;
-    margin-bottom: 14px;
 }
 
-/* Centered Floating Toast */
-#toast {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #ffffff;
-    color: var(--gm-primary);
-    padding: 22px 30px;
-    border-radius: 16px;
-    font-size: 1rem;
-    font-weight: 800;
-    z-index: 999999;
-    display: none;
-    box-shadow: 0 20px 60px rgba(31, 107, 74, 0.4);
-    min-width: 320px;
-    max-width: 520px;
-    line-height: 1.5;
-    border: 2px solid var(--gm-primary);
-    text-align: center;
-    animation: modalZoomIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes modalZoomIn {
-    from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
-    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-}
-
-/* Sticky Save Bottom Bar */
-.sticky-save-bar {
-    position: sticky;
-    bottom: 15px;
-    z-index: 80;
-    background: #ffffff;
-    border: 2px solid var(--gm-primary);
-    border-radius: 14px;
-    padding: 16px 22px;
+.diag-results .ts-item {
+    padding: 10px 14px;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 10px 35px rgba(31, 107, 74, 0.2);
+    border-bottom: 1px solid rgba(31, 107, 74, 0.12);
+    transition: var(--gm-transition);
+}
+
+.diag-results .ts-item:last-child {
+    border-bottom: none;
+}
+
+.diag-results .ts-item:hover {
+    background: #f3efe6;
+}
+
+.diag-cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.diag-cart-header strong {
+    font-size: 0.84rem;
+    color: #1f6b4a;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.diag-cart-count {
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: #1f6b4a;
+    background: #f3efe6;
+    border: 1.5px solid #1f6b4a;
+    padding: 2px 10px;
+    border-radius: 12px;
+}
+
+#s-diag-orders .cart-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #f3efe6;
+    border: 1.5px solid rgba(31, 107, 74, 0.22);
+    border-radius: var(--gm-radius-sm);
+    margin-bottom: 8px;
+    transition: var(--gm-transition);
+}
+
+#s-diag-orders .cart-row:hover {
+    border-color: #1f6b4a;
+    box-shadow: 0 2px 8px rgba(31, 107, 74, 0.08);
+}
+
+#s-diag-orders .cart-row-n {
+    flex: 1;
+    font-weight: 750;
+    color: #1f6b4a;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+#s-diag-orders .cart-row-n .badge {
+    background: #1f6b4a;
+    color: #f3efe6;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 4px;
+}
+
+#s-diag-orders .rm-btn {
+    background: #ffffff;
+    color: #1f6b4a;
+    border: 1.5px solid #1f6b4a;
+    border-radius: var(--gm-radius-sm);
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--gm-transition);
+}
+
+#s-diag-orders .rm-btn:hover {
+    background: #1f6b4a;
+    color: #f3efe6;
+    border-color: #1f6b4a;
+}
+
+#s-diag-orders .btn-sv-out {
+    background: #1f6b4a;
+    color: #f3efe6;
+    border: 2px solid #1f6b4a;
+    border-radius: var(--gm-radius-sm);
+    padding: 10px 22px;
+    font-weight: 800;
+    font-size: 0.88rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(31, 107, 74, 0.22);
+    transition: var(--gm-transition);
+    font-family: inherit;
+}
+
+#s-diag-orders .btn-sv-out:hover {
+    background: #154c34;
+    border-color: #154c34;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(31, 107, 74, 0.3);
+}
+
+#s-diag-history .ht thead th {
+    background: #1f6b4a;
+    color: #f3efe6;
+    font-weight: 800;
+    font-size: 0.74rem;
+    padding: 10px 14px;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid #154c34;
+}
+
+#s-diag-history .ht tbody td {
+    color: #1f6b4a;
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(31, 107, 74, 0.12);
+    font-size: 0.82rem;
+}
+
+#s-diag-history .ht tbody tr:hover td {
+    background: #f3efe6;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   13. STICKY GLOBAL BATCH SAVE BAR & BUTTON
+   ══════════════════════════════════════════════════════════════ */
+.sticky-save-bar {
+    position: sticky;
+    bottom: 18px;
+    z-index: 90;
+    background: var(--gm-surface);
+    border: 2px solid var(--gm-primary);
+    border-radius: var(--gm-radius-xl);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    box-shadow: 0 10px 30px rgba(31, 107, 74, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
     margin-top: 24px;
     grid-column: 1 / -1;
+    backdrop-filter: blur(8px);
+}
+
+.sticky-save-bar h4 {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--gm-primary);
+    letter-spacing: -0.2px;
+    margin: 0 0 3px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sticky-save-bar p {
+    font-size: 0.82rem;
+    color: var(--gm-text-muted);
+    font-weight: 500;
+    margin: 0;
 }
 
 .btn-sv-main {
-    background: var(--gm-primary);
+    background: linear-gradient(135deg, var(--gm-primary) 0%, var(--gm-primary-dark) 100%);
     color: #f3efe6;
     border: none;
-    padding: 12px 26px;
-    border-radius: 10px;
+    padding: 12px 28px;
+    border-radius: var(--gm-radius-md);
     font-weight: 800;
-    font-size: 0.96rem;
+    font-size: 0.95rem;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    box-shadow: 0 4px 14px rgba(31, 107, 74, 0.3);
-    transition: all 0.2s ease;
-    min-height: 44px;
+    gap: 10px;
+    box-shadow: 0 4px 16px var(--gm-primary-glow);
+    transition: var(--gm-transition);
+    min-height: 46px;
+    font-family: inherit;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
 }
 
 .btn-sv-main:hover {
-    background: var(--gm-primary-dark);
+    background: linear-gradient(135deg, var(--gm-primary-dark) 0%, var(--gm-primary-deep) 100%);
+    color: #ffffff;
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(31, 107, 74, 0.4);
+    box-shadow: 0 8px 24px var(--gm-primary-glow);
+}
+
+.btn-sv-main:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px var(--gm-primary-glow);
 }
 
 .btn-sv-main:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
 }
 
-/* Select2 overrides */
-.select2-container .select2-selection--single {
-    height: 38px;
-    border: 1.5px solid var(--gm-border);
-    border-radius: 8px;
-    background-color: var(--gm-bg);
-    display: flex;
-    align-items: center;
-}
-.select2-container--default .select2-selection--single .select2-selection__rendered {
-    color: var(--gm-primary);
-    font-size: 0.86rem;
-    font-weight: 600;
-    padding-left: 10px;
-}
-.select2-container--default .select2-selection--single .select2-selection__arrow {
-    height: 36px;
-    right: 8px;
-}
-.select2-container--default.select2-container--focus .select2-selection--single {
-    border-color: var(--gm-primary);
-    background-color: #ffffff;
-}
-
-/* Ongoing / Continuous Treatment Toggle */
-.ongoing-check {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--gm-primary);
-    cursor: pointer;
-    background: #f0fdf4;
-    border: 1.5px solid #86efac;
-    padding: 7px 12px;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    user-select: none;
-}
-.ongoing-check:hover {
-    background: #dcfce7;
-    border-color: #4ade80;
-}
-.ongoing-check input[type="checkbox"] {
-    width: 17px;
-    height: 17px;
-    accent-color: var(--gm-primary);
-    cursor: pointer;
-}
-
-/* ── Enhanced Ward & Bed Transfer Styles ── */
-.tr-compare-box {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    background: #fdfbf7;
-    border: 1.5px dashed var(--gm-border);
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 16px;
-}
-.tr-loc-card {
-    padding: 12px 14px;
-    border-radius: 10px;
-    background: #ffffff;
-    border: 1.5px solid var(--gm-border);
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    box-shadow: 0 2px 6px rgba(31, 107, 74, 0.04);
-}
-.tr-loc-card.current {
-    border-left: 4px solid #64748b;
-}
-.tr-loc-card.target {
-    border-left: 4px solid var(--gm-primary);
-    background: #fcfdfc;
-}
-.tr-loc-title {
-    font-size: 0.72rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--gm-text-muted);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.tr-loc-val {
-    font-size: 0.96rem;
-    font-weight: 800;
-    color: var(--gm-primary);
-}
-.tr-loc-meta {
-    font-size: 0.76rem;
-    color: var(--gm-text-body);
-    font-weight: 600;
-}
-.tr-bed-grid-container {
-    margin-top: 12px;
-    margin-bottom: 16px;
-    background: #ffffff;
-    border: 1.5px solid var(--gm-border);
-    border-radius: 12px;
-    padding: 14px;
-}
-.tr-bed-grid-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-.tr-bed-legend {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    align-items: center;
-    font-size: 0.75rem;
-    font-weight: 700;
-}
-.tr-legend-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-.tr-legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-}
-.tr-bed-cards-wrap {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
-    gap: 10px;
-    max-height: 240px;
-    overflow-y: auto;
-    padding: 4px;
-}
-.tr-bed-card {
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1.5px solid var(--gm-border);
-    background: #ffffff;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-}
-.tr-bed-card.available {
-    border-color: #16a34a;
-    background: #f0fdf4;
-}
-.tr-bed-card.available:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(22, 163, 74, 0.25);
-    border-width: 2px;
-}
-.tr-bed-card.available.selected {
-    border-color: var(--gm-primary);
-    background: var(--gm-primary);
-    color: #ffffff !important;
-    box-shadow: 0 6px 18px rgba(31, 107, 74, 0.4);
-}
-.tr-bed-card.available.selected .tr-bed-no,
-.tr-bed-card.available.selected .tr-bed-sub,
-.tr-bed-card.available.selected .tr-bed-price {
-    color: #ffffff !important;
-}
-.tr-bed-card.occupied {
-    border-color: #fca5a5;
-    background: #fef2f2;
-    opacity: 0.75;
-    cursor: not-allowed;
-}
-.tr-bed-card.reserved {
-    border-color: #fde68a;
-    background: #fffbeb;
-    opacity: 0.75;
-    cursor: not-allowed;
-}
-.tr-bed-card.blocked, .tr-bed-card.maintenance {
-    border-color: #cbd5e1;
-    background: #f8fafc;
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-.tr-bed-no {
-    font-size: 0.92rem;
-    font-weight: 800;
-    color: var(--gm-primary);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.tr-bed-sub {
-    font-size: 0.73rem;
-    color: var(--gm-text-muted);
-    font-weight: 600;
-}
-.tr-bed-price {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--gm-primary-dark);
-}
-.emergency-toggle-wrap {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #fff1f2;
-    border: 1.5px solid #fecdd3;
-    padding: 10px 14px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-.emergency-toggle-wrap.active {
-    background: #ffe4e6;
-    border-color: #e11d48;
-    box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.25);
-}
-.tr-hist-filter {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-.tr-hist-filter input {
-    flex: 1;
-    padding: 6px 10px;
-    border: 1px solid var(--gm-border);
-    border-radius: 6px;
-    font-size: 0.78rem;
-    background: var(--gm-bg);
-}
-
-/* ============================================================
-   RESPONSIVE BREAKPOINTS (Desktop, Tablet, Mobile)
-   ============================================================ */
-
-/* 1. Tablet View (768px to 1023px) */
-@media (max-width: 1023px) {
-    .content-wrapper {
-        margin-left: 0 !important;
-        width: 100% !important;
-        padding: 16px 20px;
-    }
-    .ws-grid-new {
-        grid-template-columns: 1fr;
-    }
-    .pt-banner {
-        padding: 12px 16px;
-    }
-}
-
-/* 2. Mobile Screens (< 768px) */
 @media (max-width: 767px) {
-    .content-wrapper {
-        margin-left: 0 !important;
-        width: 100% !important;
-        padding: 12px;
-    }
-    .ws-grid-new {
-        grid-template-columns: 1fr;
-        gap: 14px;
-    }
-    .card-new {
-        padding: 15px 16px;
-        border-radius: 12px;
-    }
-    .fg {
-        grid-template-columns: 1fr !important;
-        gap: 10px;
-    }
-    .fmg input, .fmg select, .fmg textarea {
-        font-size: 0.95rem; /* Prevents auto-zoom in mobile Safari */
-        padding: 10px 12px;
-    }
-    .btn-sv-out {
-        width: 100%;
-        justify-content: center;
-    }
-    .pt-banner {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 14px;
-        position: static; /* Better scrolling experience on small screens */
-    }
-    .pt-banner-ac {
-        width: 100%;
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 8px;
-        margin-top: 6px;
-    }
-    .pba {
-        width: 100%;
-    }
     .sticky-save-bar {
         flex-direction: column;
-        gap: 12px;
         align-items: stretch;
-        text-align: center;
-        padding: 14px 16px;
+        gap: 12px;
+        padding: 14px 18px;
+        bottom: 12px;
     }
     .btn-sv-main {
         width: 100%;
+        justify-content: center;
     }
-    .treatments-grid {
-        grid-template-columns: 1fr;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   14. BLOOD TRANSFUSION SEQUENTIAL STAGE ROWS
+   ══════════════════════════════════════════════════════════════ */
+.transfusion-stages-wrap {
+    margin-top: 14px;
+    margin-bottom: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.transfusion-stages-header {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--gm-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1.5px dashed var(--gm-border-light);
+    margin-bottom: 2px;
+}
+
+.tf-stage-row {
+    display: flex;
+    align-items: stretch;
+    background: #ffffff;
+    border: 1.5px solid var(--gm-border);
+    border-radius: var(--gm-radius-md);
+    overflow: hidden;
+    transition: var(--gm-transition);
+    box-shadow: 0 1px 4px rgba(31, 107, 74, 0.04);
+}
+
+.tf-stage-row:hover {
+    border-color: var(--gm-primary);
+    box-shadow: 0 3px 12px rgba(31, 107, 74, 0.08);
+}
+
+.tf-stage-badge {
+    min-width: 175px;
+    max-width: 185px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--gm-bg);
+    border-right: 1.5px solid var(--gm-border-light);
+    flex-shrink: 0;
+}
+
+.tf-stage-badge i {
+    font-size: 1.05rem;
+    color: var(--gm-primary);
+    margin-bottom: 2px;
+}
+
+.tf-stage-badge span {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: var(--gm-text-muted);
+    letter-spacing: 0.5px;
+}
+
+.tf-stage-badge strong {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--gm-primary);
+    line-height: 1.25;
+}
+
+.tf-stage-field {
+    flex: 1;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    background: #ffffff;
+}
+
+.tf-stage-field label {
+    font-size: 0.72rem;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--gm-primary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+}
+
+.tf-stage-field input {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: var(--gm-radius-sm);
+    border: 1.5px solid var(--gm-border-light);
+    font-size: 0.88rem;
+    outline: none;
+    background: var(--gm-bg);
+    color: var(--gm-text-body);
+    font-weight: 600;
+    font-family: inherit;
+    transition: var(--gm-transition);
+}
+
+.tf-stage-field input:focus {
+    background: #ffffff;
+    border-color: var(--gm-primary);
+    box-shadow: 0 0 0 3px var(--gm-primary-light);
+}
+
+@media (max-width: 767px) {
+    .tf-stage-row {
+        flex-direction: column;
     }
-    #toast {
-        width: 90vw;
-        max-width: 480px;
+    .tf-stage-badge {
+        max-width: 100%;
+        min-width: 100%;
+        border-right: none;
+        border-bottom: 1.5px solid var(--gm-border-light);
+        padding: 8px 12px;
     }
 }
 </style>
@@ -1228,8 +1662,9 @@ html, body {
     <!-- Navbar -->
     <?php $pageTitle = 'Nurse Workspace'; include 'includes/nurse_navbar.php'; ?>
 
-    <!-- 1. Patient Selection Grid Dashboard -->
-    <div class="nopt-dashboard" id="nopt-state">
+    <div class="main-content">
+      <!-- 1. Patient Selection Grid Dashboard -->
+      <div class="nopt-dashboard" id="nopt-state">
       <div class="dash-header">
         <div>
           <h3 style="margin: 0; font-size: 1.3rem; font-weight: 800; color: var(--gm-primary); display: flex; align-items: center; gap: 10px;">
@@ -1329,6 +1764,7 @@ html, body {
                     <option>Discharged</option>
                     <option>LAMA</option>
                     <option>Referred Out</option>
+                    <option>Death</option>
                   </select>
                 </div>
                 <div class="fmg">
@@ -1367,10 +1803,10 @@ html, body {
           </div>
         </div>
 
-        <!-- 2. Vitals (BP Chart) -->
-        <div class="card-new ws-sec cat-vitals" id="s-bp">
+        <!-- 2. BP Chart -->
+        <div class="card-new full-width ws-sec cat-vitals" id="s-bp">
           <div class="card-title-new">
-            <span><i class="fas fa-heartbeat"></i> 2. BP & Vitals Chart</span>
+            <span><i class="fas fa-heartbeat"></i> 2. BP Chart</span>
           </div>
           <div class="split-card card-body" id="f-bp">
             <div class="split-left">
@@ -1382,37 +1818,125 @@ html, body {
                 <div class="fmg"><label>Temp (°F)</label><input type="number" name="bp_temp" step="0.1" placeholder="e.g. 98.6"></div>
                 <div class="fmg"><label>SpO2 (%)</label><input type="number" name="bp_spo2" placeholder="e.g. 98"></div>
                 <div class="fmg"><label>Pain Score (0-10)</label><input type="number" name="pain_score" min="0" max="10" placeholder="e.g. 0-10"></div>
-                <div class="fmg">
-                  <label>GCS / Status</label>
-                  <select name="consciousness_level">
-                    <option value="Alert">Alert (GCS 15)</option>
-                    <option value="Drowsy">Drowsy / Lethargic</option>
-                    <option value="Confused">Confused / Disoriented</option>
-                    <option value="Verbal">Responds to Voice (GCS 12-14)</option>
-                    <option value="Pain">Responds to Pain (GCS 8-11)</option>
-                    <option value="Unresponsive">Unresponsive (GCS < 8)</option>
-                  </select>
-                </div>
-                <div class="fmg"><label>Nurse Signature</label><input type="text" name="bp_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
+                <div class="fmg" style="grid-column: 1 / -1;"><label>Nurse Signature</label><input type="text" name="bp_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
               </div>
-              <button class="btn-sv-out btn-sv" data-ct="bp_chart" data-f="f-bp"><i class="fas fa-plus"></i> Add Vitals</button>
+              <button class="btn-sv-out btn-sv" data-ct="bp_chart" data-f="f-bp"><i class="fas fa-plus"></i> Add BP Record</button>
             </div>
             <div class="split-right">
-              <div class="ht-title"><i class="fas fa-history"></i> Recent Vitals Logs</div>
+              <div class="ht-title"><i class="fas fa-history"></i> Recent BP Logs</div>
               <div class="ht-wrap">
                 <table class="ht">
-                  <thead><tr><th>Date & Time</th><th>BP</th><th>Pulse</th><th>Temp</th><th>SpO2</th><th>Pain</th><th>GCS / Status</th><th>By</th><th>Action</th></tr></thead>
-                  <tbody id="h-bp"><tr class="et"><td colspan="9">No records yet.</td></tr></tbody>
+                  <thead><tr><th>Date &amp; Time</th><th>BP</th><th>Pulse</th><th>Temp</th><th>SpO2</th><th>Pain</th><th>By</th><th>Action</th></tr></thead>
+                  <tbody id="h-bp"><tr class="et"><td colspan="8">No records yet.</td></tr></tbody>
                 </table>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 3. GRBS Chart -->
+                <!-- 3. Vitals Chart (GCS – Glasgow Coma Scale) -->
+        <div class="card-new full-width ws-sec cat-vitals" id="s-gcs">
+          <div class="card-title-new">
+            <span><i class="fas fa-brain"></i> 3. Vitals Chart – Glasgow Coma Scale (GCS)</span>
+          </div>
+          <div class="split-card card-body" id="f-gcs">
+            <div class="split-left">
+              <div class="fg">
+
+                <!-- GCS date/time linked to bp_chart store -->
+                <div class="fmg"><label><i class="far fa-calendar-alt"></i> Date</label><input type="date" name="gcs_date"></div>
+                <div class="fmg"><label><i class="far fa-clock"></i> Time</label><input type="time" name="gcs_time"></div>
+
+                <!-- Glasgow Coma Scale (GCS) Clinical Assessment -->
+                <div class="gcs-streamlined-card">
+                  <div class="gcs-summary-bar">
+                    <div class="gcs-score-badge-wrap">
+                      <div class="gcs-dial-pill gcs-mild" id="gcs-adv-score-dial">
+                        <span class="gcs-dial-num" id="gcs-score-num">15</span>
+                        <span class="gcs-dial-max">/ 15</span>
+                      </div>
+                      <div class="gcs-status-meta">
+                        <div class="gcs-status-badge gcs-mild" id="gcs-severity-label">
+                          <i class="fas fa-check-circle"></i> Mild Impairment / Normal (Alert)
+                        </div>
+                        <div class="gcs-status-desc">Mild: 13–15 • Moderate: 9–12 • Severe: 3–8</div>
+                      </div>
+                    </div>
+                    <div class="gcs-breakdown-tags">
+                      <span class="gcs-tag"><i class="fas fa-eye"></i> Eye: <strong id="pill-eye-val">4/4</strong></span>
+                      <span class="gcs-tag"><i class="fas fa-comment-medical"></i> Verbal: <strong id="pill-verbal-val">5/5</strong></span>
+                      <span class="gcs-tag"><i class="fas fa-walking"></i> Motor: <strong id="pill-motor-val">6/6</strong></span>
+                    </div>
+                  </div>
+
+                  <!-- 3 Standard Select Dropdowns: Eye, Verbal, Motor -->
+                  <div class="gcs-selects-grid">
+                    <div class="fmg">
+                      <label><i class="fas fa-eye"></i> Eye Opening Response (1–4)</label>
+                      <select id="sel_gcs_eye" class="gcs-native-select" onchange="onGcsDropdownChange()">
+                        <option value="D" data-score="4" data-desc="Spontaneously" data-code="E4" selected>4 — Spontaneously (E4)</option>
+                        <option value="C" data-score="3" data-desc="To Speech" data-code="E3">3 — To Speech (E3)</option>
+                        <option value="B" data-score="2" data-desc="To Pain" data-code="E2">2 — To Pain (E2)</option>
+                        <option value="A" data-score="1" data-desc="No Response" data-code="E1">1 — No Response (E1)</option>
+                      </select>
+                    </div>
+
+                    <div class="fmg">
+                      <label><i class="fas fa-comment-medical"></i> Verbal Response (1–5)</label>
+                      <select id="sel_gcs_verbal" class="gcs-native-select" onchange="onGcsDropdownChange()">
+                        <option value="E" data-score="5" data-desc="Oriented" data-code="V5" selected>5 — Oriented (V5)</option>
+                        <option value="D" data-score="4" data-desc="Confused" data-code="V4">4 — Confused (V4)</option>
+                        <option value="C" data-score="3" data-desc="Inappropriate Words" data-code="V3">3 — Inappropriate Words (V3)</option>
+                        <option value="B" data-score="2" data-desc="Incomprehensible Sounds" data-code="V2">2 — Incomprehensible Sounds (V2)</option>
+                        <option value="A" data-score="1" data-desc="No Response" data-code="V1">1 — No Response (V1)</option>
+                      </select>
+                    </div>
+
+                    <div class="fmg">
+                      <label><i class="fas fa-walking"></i> Motor Response (1–6)</label>
+                      <select id="sel_gcs_motor" class="gcs-native-select" onchange="onGcsDropdownChange()">
+                        <option value="G" data-score="6" data-desc="Obeys Commands" data-code="M6" selected>6 — Obeys Commands (M6)</option>
+                        <option value="F" data-score="5" data-desc="Localizes Pain" data-code="M5">5 — Localizes Pain (M5)</option>
+                        <option value="E" data-score="4" data-desc="Withdrawal from Pain" data-code="M4">4 — Normal Flexion / Withdrawal (M4)</option>
+                        <option value="D" data-score="3" data-desc="Abnormal Flexion to Pain" data-code="M3">3 — Abnormal Flexion (Decorticate) (M3)</option>
+                        <option value="C" data-score="2" data-desc="Abnormal Extension to Pain" data-code="M2">2 — Abnormal Extension (Decerebrate) (M2)</option>
+                        <option value="A" data-score="1" data-desc="No Motor Response to Pain" data-code="M1">1 — No Motor Response to Pain (M1)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Hidden Form Inputs for Record Submission (Maintains 100% backend compatibility) -->
+                  <input type="hidden" name="gcs" id="gcs_total_input" value="15/15 (E4 V5 M6)">
+                  <input type="hidden" name="gcs_score" id="gcs_score_input" value="15">
+                  <input type="hidden" name="gcs_eye" id="gcs_eye_input" value="D. Spontaneously (E4)">
+                  <input type="hidden" name="gcs_eye_score" id="gcs_eye_score_input" value="4">
+                  <input type="hidden" name="gcs_verbal" id="gcs_verbal_input" value="E. Oriented (V5)">
+                  <input type="hidden" name="gcs_verbal_score" id="gcs_verbal_score_input" value="5">
+                  <input type="hidden" name="gcs_motor" id="gcs_motor_input" value="G. Obeys Commands (M6)">
+                  <input type="hidden" name="gcs_motor_score" id="gcs_motor_score_input" value="6">
+                  <input type="hidden" name="consciousness_level" id="gcs_consciousness_input" value="15/15 (Alert)">
+                </div>
+
+                <div class="fmg" style="grid-column: 1 / -1;"><label><i class="fas fa-signature"></i> Nurse Signature</label><input type="text" name="gcs_nurse" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
+              </div>
+              <button class="btn-sv-out btn-sv" data-ct="gcs_chart" data-f="f-gcs"><i class="fas fa-brain"></i> Save GCS Assessment</button>
+            </div>
+            <div class="split-right">
+              <div class="ht-title"><i class="fas fa-history"></i> Recent GCS Assessments</div>
+              <div class="ht-wrap">
+                <table class="ht">
+                  <thead><tr><th>Date &amp; Time</th><th>GCS Score</th><th>Eye (E)</th><th>Verbal (V)</th><th>Motor (M)</th><th>Consciousness</th><th>By</th><th>Action</th></tr></thead>
+                  <tbody id="h-gcs"><tr class="et"><td colspan="8">No GCS records yet.</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. GRBS Chart -->
         <div class="card-new ws-sec cat-vitals" id="s-gr">
           <div class="card-title-new">
-            <span><i class="fas fa-vial"></i> 3. GRBS (Blood Sugar) Chart</span>
+            <span><i class="fas fa-vial"></i> 4. GRBS (Blood Sugar) Chart</span>
           </div>
           <div class="split-card card-body" id="f-gr">
             <div class="split-left">
@@ -1436,10 +1960,10 @@ html, body {
           </div>
         </div>
 
-        <!-- 4. Doctor Visits -->
+        <!-- 5. Doctor Visits -->
         <div class="card-new ws-sec cat-doctor" id="s-vi">
           <div class="card-title-new">
-            <span><i class="fas fa-user-md"></i> 4. Consultant Round Visits</span>
+            <span><i class="fas fa-user-md"></i> 5. Consultant Round Visits</span>
           </div>
           <div class="split-card card-body" id="f-vi">
             <div class="split-left">
@@ -1481,10 +2005,10 @@ html, body {
           </div>
         </div>
 
-        <!-- 5. Nursing Notes -->
+        <!-- 6. Nursing Notes -->
         <div class="card-new ws-sec cat-doctor" id="s-nn">
           <div class="card-title-new">
-            <span><i class="fas fa-clipboard-check"></i> 5. Nursing Shift Notes</span>
+            <span><i class="fas fa-clipboard-check"></i> 6. Nursing Shift Notes</span>
           </div>
           <div class="split-card card-body" id="f-nn">
             <div class="split-left">
@@ -1509,100 +2033,103 @@ html, body {
           </div>
         </div>
 
-        <!-- 6. Diagnostic Test Orders Requisition -->
+        <!-- 7. Diagnostic Test Orders Requisition -->
         <div class="card-new ws-sec cat-orders full-width" id="s-diag-orders">
           <div class="card-title-new" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-            <span><i class="fas fa-stethoscope"></i> 6. Diagnostic Orders Requisition</span>
+            <span><i class="fas fa-stethoscope"></i> 7. Diagnostic Orders Requisition</span>
             <div class="diag-view-nav">
-              <button type="button" class="diag-tab-btn tab-lab active" id="btn-tab-order-lab" onclick="switchDiagOrderView('lab')">
-                <i class="fas fa-flask"></i> Diagnostic LAB Order <span class="tab-badge" id="badge-cart-lab">0</span>
+              <button type="button" class="diag-tab-btn active" id="btn-tab-order-lab" onclick="switchDiagOrderView('lab')">
+                <i class="fas fa-flask"></i> Laboratory Tests <span class="tab-badge" id="badge-cart-lab">0</span>
               </button>
-              <button type="button" class="diag-tab-btn tab-rad" id="btn-tab-order-rad" onclick="switchDiagOrderView('radiology')">
-                <i class="fas fa-x-ray"></i> Diagnostic RADIOLOGY Order <span class="tab-badge" id="badge-cart-rad">0</span>
+              <button type="button" class="diag-tab-btn" id="btn-tab-order-rad" onclick="switchDiagOrderView('radiology')">
+                <i class="fas fa-x-ray"></i> Radiology &amp; Imaging <span class="tab-badge" id="badge-cart-rad">0</span>
               </button>
-              <button type="button" class="diag-tab-btn tab-oth" id="btn-tab-order-oth" onclick="switchDiagOrderView('other')">
-                <i class="fas fa-heartbeat"></i> Diagnostic OTHER Order <span class="tab-badge" id="badge-cart-oth">0</span>
+              <button type="button" class="diag-tab-btn" id="btn-tab-order-oth" onclick="switchDiagOrderView('other')">
+                <i class="fas fa-heartbeat"></i> Other Investigations <span class="tab-badge" id="badge-cart-oth">0</span>
               </button>
             </div>
           </div>
 
-          <div class="card-body" id="f-ts" style="padding: 20px 24px;">
+          <div class="card-body" id="f-ts" style="padding: 16px 20px;">
             
             <!-- VIEW 1: Diagnostic LAB Order -->
             <div class="diag-panel active" id="diag-panel-order-lab">
-              <div class="diag-header-badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">
-                <i class="fas fa-flask"></i> Clinical Pathology, Hematology & Biochemistry Requisitions &bull; Target: <code>lab_tests</code> (Column 7)
+              <div class="diag-header-badge">
+                <div class="diag-badge-title"><i class="fas fa-flask"></i> Clinical Pathology, Hematology &amp; Biochemistry</div>
+                <div class="diag-badge-desc">Order inpatient laboratory tests, blood profiles, and biochemistry investigations</div>
               </div>
-              <div class="fg">
+              <div class="fg" style="margin-top: 14px;">
                 <div class="fmg" style="position: relative; grid-column: 1 / -1;">
-                  <label style="color:#0369a1; font-weight:700;"><i class="fas fa-search"></i> Search Laboratory Tests (from lab_services)</label>
-                  <input type="text" id="diag-lab-input" placeholder="Type test name e.g. CBC, Lipid Profile, LFT, Urine Sugar, Serum Electrolytes..." autocomplete="off">
+                  <label><i class="fas fa-search"></i> Search Laboratory Tests</label>
+                  <input type="text" id="diag-lab-input" class="diag-search-input" placeholder="Type test name e.g. CBC, Lipid Profile, LFT, Urine Sugar, Serum Electrolytes..." autocomplete="off">
                   <div id="diag-lab-results" class="diag-results"></div>
                 </div>
               </div>
-              <div style="margin-top: 14px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                  <strong style="font-size:0.84rem; color:#0369a1;"><i class="fas fa-clipboard-list"></i> Selected Lab Order Cart:</strong>
-                  <span id="lab-cart-count" style="font-size:0.75rem; color:var(--gm-text-muted); font-weight:700;">0 tests selected</span>
+              <div style="margin-top: 16px; background: #ffffff; border: 1.5px solid var(--gm-border); border-radius: var(--gm-radius-md); padding: 14px 16px;">
+                <div class="diag-cart-header">
+                  <strong><i class="fas fa-clipboard-list"></i> Selected Lab Order Cart:</strong>
+                  <span id="lab-cart-count" class="diag-cart-count">0 tests selected</span>
                 </div>
                 <div id="diag-lab-cart"></div>
-              </div>
-              <div style="display:flex; justify-content:flex-end; margin-top:14px;">
-                <button class="btn-sv-out btn-sv" id="btn-save-lab" onclick="submitDiagOrder('lab')" style="background:#0369a1; border-color:#0284c7; color:white;">
-                  <i class="fas fa-check-circle"></i> Save & Dispatch Diagnostic LAB Order
-                </button>
+                <div style="display:flex; justify-content:flex-end; margin-top:14px; border-top: 1px solid var(--gm-border-light); padding-top: 12px;">
+                  <button class="btn-sv-out btn-sv" id="btn-save-lab" onclick="submitDiagOrder('lab')">
+                    <i class="fas fa-paper-plane"></i> Save &amp; Dispatch Diagnostic LAB Order
+                  </button>
+                </div>
               </div>
             </div>
 
             <!-- VIEW 2: Diagnostic RADIOLOGY Order -->
             <div class="diag-panel" id="diag-panel-order-rad">
-              <div class="diag-header-badge" style="background:#ecfdf5; color:#1F6B4A; border:1px solid #a7f3d0;">
-                <i class="fas fa-x-ray"></i> Inpatient Imaging, Scans & Bedside Radiographs &bull; Target: <code>radiology_tests</code> (Column 8)
+              <div class="diag-header-badge">
+                <div class="diag-badge-title"><i class="fas fa-x-ray"></i> Inpatient Imaging, Scans &amp; Bedside Radiographs</div>
+                <div class="diag-badge-desc">Order radiographs, ultrasound, CT brain/body, MRI, and Doppler imaging scans</div>
               </div>
-              <div class="fg">
+              <div class="fg" style="margin-top: 14px;">
                 <div class="fmg" style="position: relative; grid-column: 1 / -1;">
-                  <label style="color:#1F6B4A; font-weight:700;"><i class="fas fa-search"></i> Search Radiology Scans & Imaging (from radiology_services)</label>
-                  <input type="text" id="diag-rad-input" placeholder="Type scan name e.g. Chest X-Ray, Cervical Spine, CT Brain, USG Abdomen, Doppler..." autocomplete="off">
+                  <label><i class="fas fa-search"></i> Search Radiology Scans &amp; Imaging</label>
+                  <input type="text" id="diag-rad-input" class="diag-search-input" placeholder="Type scan name e.g. Chest X-Ray, Cervical Spine, CT Brain, USG Abdomen, Doppler..." autocomplete="off">
                   <div id="diag-rad-results" class="diag-results"></div>
                 </div>
               </div>
-              <div style="margin-top: 14px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                  <strong style="font-size:0.84rem; color:#1F6B4A;"><i class="fas fa-clipboard-list"></i> Selected Radiology Order Cart:</strong>
-                  <span id="rad-cart-count" style="font-size:0.75rem; color:var(--gm-text-muted); font-weight:700;">0 scans selected</span>
+              <div style="margin-top: 16px; background: #ffffff; border: 1.5px solid var(--gm-border); border-radius: var(--gm-radius-md); padding: 14px 16px;">
+                <div class="diag-cart-header">
+                  <strong><i class="fas fa-clipboard-list"></i> Selected Radiology Order Cart:</strong>
+                  <span id="rad-cart-count" class="diag-cart-count">0 scans selected</span>
                 </div>
                 <div id="diag-rad-cart"></div>
-              </div>
-              <div style="display:flex; justify-content:flex-end; margin-top:14px;">
-                <button class="btn-sv-out btn-sv" id="btn-save-rad" onclick="submitDiagOrder('radiology')" style="background:#1F6B4A; border-color:#154c34; color:white;">
-                  <i class="fas fa-check-circle"></i> Save & Dispatch Diagnostic RADIOLOGY Order
-                </button>
+                <div style="display:flex; justify-content:flex-end; margin-top:14px; border-top: 1px solid var(--gm-border-light); padding-top: 12px;">
+                  <button class="btn-sv-out btn-sv" id="btn-save-rad" onclick="submitDiagOrder('radiology')">
+                    <i class="fas fa-paper-plane"></i> Save &amp; Dispatch Diagnostic RADIOLOGY Order
+                  </button>
+                </div>
               </div>
             </div>
 
             <!-- VIEW 3: Diagnostic OTHER Order -->
             <div class="diag-panel" id="diag-panel-order-oth">
-              <div class="diag-header-badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a;">
-                <i class="fas fa-heartbeat"></i> Bedside ECG, Echo & Special Investigations &bull; Target: <code>other_tests</code> (Column 9)
+              <div class="diag-header-badge">
+                <div class="diag-badge-title"><i class="fas fa-heartbeat"></i> Bedside ECG, Echo &amp; Special Investigations</div>
+                <div class="diag-badge-desc">Order cardiac diagnostics, endoscopy, bedside procedures and specialized investigations</div>
               </div>
-              <div class="fg">
+              <div class="fg" style="margin-top: 14px;">
                 <div class="fmg" style="position: relative; grid-column: 1 / -1;">
-                  <label style="color:#b45309; font-weight:700;"><i class="fas fa-search"></i> Search Other Investigations (from other_services)</label>
-                  <input type="text" id="diag-oth-input" placeholder="Type investigation name e.g. 12-Lead ECG, 2D Echo, Dialysis..." autocomplete="off">
+                  <label><i class="fas fa-search"></i> Search Other Investigations</label>
+                  <input type="text" id="diag-oth-input" class="diag-search-input" placeholder="Type investigation name e.g. 12-Lead ECG, 2D Echo, Dialysis..." autocomplete="off">
                   <div id="diag-oth-results" class="diag-results"></div>
                 </div>
               </div>
-              <div style="margin-top: 14px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                  <strong style="font-size:0.84rem; color:#b45309;"><i class="fas fa-clipboard-list"></i> Selected Other Investigations Cart:</strong>
-                  <span id="oth-cart-count" style="font-size:0.75rem; color:var(--gm-text-muted); font-weight:700;">0 investigations selected</span>
+              <div style="margin-top: 16px; background: #ffffff; border: 1.5px solid var(--gm-border); border-radius: var(--gm-radius-md); padding: 14px 16px;">
+                <div class="diag-cart-header">
+                  <strong><i class="fas fa-clipboard-list"></i> Selected Other Investigations Cart:</strong>
+                  <span id="oth-cart-count" class="diag-cart-count">0 investigations selected</span>
                 </div>
                 <div id="diag-oth-cart"></div>
-              </div>
-              <div style="display:flex; justify-content:flex-end; margin-top:14px;">
-                <button class="btn-sv-out btn-sv" id="btn-save-oth" onclick="submitDiagOrder('other')" style="background:#b45309; border-color:#92400e; color:white;">
-                  <i class="fas fa-check-circle"></i> Save & Dispatch Diagnostic OTHER Order
-                </button>
+                <div style="display:flex; justify-content:flex-end; margin-top:14px; border-top: 1px solid var(--gm-border-light); padding-top: 12px;">
+                  <button class="btn-sv-out btn-sv" id="btn-save-oth" onclick="submitDiagOrder('other')">
+                    <i class="fas fa-paper-plane"></i> Save &amp; Dispatch Diagnostic OTHER Order
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1614,24 +2141,24 @@ html, body {
           <div class="card-title-new" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
             <span><i class="fas fa-history"></i> 7. Inpatient Diagnostic Investigation History</span>
             <div class="diag-view-nav">
-              <button type="button" class="diag-tab-btn tab-lab active" id="btn-tab-hist-lab" onclick="switchDiagHistView('lab')">
-                <i class="fas fa-flask"></i> Diagnostic LAB History <span class="tab-badge" id="badge-hist-lab">0</span>
+              <button type="button" class="diag-tab-btn active" id="btn-tab-hist-lab" onclick="switchDiagHistView('lab')">
+                <i class="fas fa-flask"></i> Laboratory History <span class="tab-badge" id="badge-hist-lab">0</span>
               </button>
-              <button type="button" class="diag-tab-btn tab-rad" id="btn-tab-hist-rad" onclick="switchDiagHistView('radiology')">
-                <i class="fas fa-x-ray"></i> Diagnostic RADIOLOGY History <span class="tab-badge" id="badge-hist-rad">0</span>
+              <button type="button" class="diag-tab-btn" id="btn-tab-hist-rad" onclick="switchDiagHistView('radiology')">
+                <i class="fas fa-x-ray"></i> Radiology History <span class="tab-badge" id="badge-hist-rad">0</span>
               </button>
-              <button type="button" class="diag-tab-btn tab-oth" id="btn-tab-hist-oth" onclick="switchDiagHistView('other')">
-                <i class="fas fa-heartbeat"></i> Diagnostic OTHER History <span class="tab-badge" id="badge-hist-oth">0</span>
+              <button type="button" class="diag-tab-btn" id="btn-tab-hist-oth" onclick="switchDiagHistView('other')">
+                <i class="fas fa-heartbeat"></i> Other History <span class="tab-badge" id="badge-hist-oth">0</span>
               </button>
             </div>
           </div>
 
-          <div class="card-body" style="padding: 20px 24px;">
+          <div class="card-body" style="padding: 16px 20px;">
             <!-- LAB History Panel -->
             <div class="diag-panel active" id="diag-panel-hist-lab">
-              <div class="ht-wrap">
+              <div class="ht-wrap" style="max-height: 250px;">
                 <table class="ht">
-                  <thead><tr><th>Order Date & Time</th><th>Laboratory Test Name</th><th>Code / ID</th><th>Category</th><th>Qty</th><th>Ordered By</th></tr></thead>
+                  <thead><tr><th>Order Date &amp; Time</th><th>Laboratory Test Name</th><th>Code / ID</th><th>Category</th><th>Qty</th><th>Ordered By</th></tr></thead>
                   <tbody id="h-ts-lab"><tr class="et"><td colspan="6">No Laboratory tests ordered for this patient yet.</td></tr></tbody>
                 </table>
               </div>
@@ -1639,9 +2166,9 @@ html, body {
 
             <!-- RADIOLOGY History Panel -->
             <div class="diag-panel" id="diag-panel-hist-rad">
-              <div class="ht-wrap">
+              <div class="ht-wrap" style="max-height: 250px;">
                 <table class="ht">
-                  <thead><tr><th>Order Date & Time</th><th>Radiology Scan Name</th><th>Scan Code</th><th>Modality</th><th>Qty</th><th>Ordered By</th></tr></thead>
+                  <thead><tr><th>Order Date &amp; Time</th><th>Radiology Scan Name</th><th>Scan Code</th><th>Modality</th><th>Qty</th><th>Ordered By</th></tr></thead>
                   <tbody id="h-ts-rad"><tr class="et"><td colspan="6">No Radiology scans ordered for this patient yet.</td></tr></tbody>
                 </table>
               </div>
@@ -1649,9 +2176,9 @@ html, body {
 
             <!-- OTHER History Panel -->
             <div class="diag-panel" id="diag-panel-hist-oth">
-              <div class="ht-wrap">
+              <div class="ht-wrap" style="max-height: 250px;">
                 <table class="ht">
-                  <thead><tr><th>Order Date & Time</th><th>Investigation Name</th><th>Code / ID</th><th>Category</th><th>Qty</th><th>Ordered By</th></tr></thead>
+                  <thead><tr><th>Order Date &amp; Time</th><th>Investigation Name</th><th>Code / ID</th><th>Category</th><th>Qty</th><th>Ordered By</th></tr></thead>
                   <tbody id="h-ts-oth"><tr class="et"><td colspan="6">No Other diagnostic investigations ordered for this patient yet.</td></tr></tbody>
                 </table>
               </div>
@@ -1817,7 +2344,7 @@ html, body {
         </div>
 
         <!-- 8D. Ventilator Support -->
-        <div class="card-new ws-sec cat-treatments" id="s-ve">
+        <div class="card-new full-width ws-sec cat-treatments" id="s-ve">
           <div class="card-title-new">
             <span><i class="fas fa-procedures"></i> 8D. Ventilator Support</span>
           </div>
@@ -1826,14 +2353,17 @@ html, body {
               <input type="hidden" name="vent_date" id="vent-date-hidden">
               <div class="fg">
                 <div class="fmg">
+                  <label><i class="fas fa-lungs"></i> Ventilation Type</label>
+                  <select name="vent_type" id="vent_type_select" onchange="onVentTypeChange(this.value)">
+                    <option value="">-- Select Ventilation Type --</option>
+                    <option value="Invasive Ventilation">1. Invasive Ventilation</option>
+                    <option value="Non-Invasive Ventilation (NIV)">2. Non-Invasive Ventilation (NIV)</option>
+                  </select>
+                </div>
+                <div class="fmg">
                   <label><i class="fas fa-sliders-h"></i> Vent Mode</label>
-                  <select name="vent_mode">
-                    <option value="CMV">CMV (Continuous Mandatory)</option>
-                    <option value="SIMV">SIMV (Synchronized Intermittent)</option>
-                    <option value="CPAP">CPAP (Continuous Positive Airway)</option>
-                    <option value="BiPAP">BiPAP (Bilevel Positive Airway)</option>
-                    <option value="PRVC">PRVC (Pressure Regulated Volume)</option>
-                    <option value="PSV">PSV (Pressure Support Ventilation)</option>
+                  <select name="vent_mode" id="vent_mode_select">
+                    <option value="">-- Select Ventilation Type First --</option>
                   </select>
                 </div>
                 <div class="fmg">
@@ -1881,21 +2411,103 @@ html, body {
           <div class="split-card card-body" id="f-bl">
             <div class="split-left">
               <div class="fg">
-                <div class="fmg"><label>Date</label><input type="date" name="trans_date"></div>
-                <div class="fmg"><label>Blood Group</label><input type="text" name="blood_group" placeholder="e.g. O+ / AB+"></div>
-                <div class="fmg"><label>Bag Number</label><input type="text" name="bag_number" placeholder="e.g. 2563"></div>
-                <div class="fmg"><label>Qty (ml)</label><input type="number" name="quantity" placeholder="350"></div>
-                <div class="fmg"><label>Vitals During Transfusion</label><input type="text" name="vitals_during" placeholder="BP, Pulse..."></div>
-                <div class="fmg"><label>Nurse Signature</label><input type="text" name="nurse_sign" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
+                <div class="fmg"><label><i class="fas fa-calendar-day"></i> Date</label><input type="date" name="trans_date"></div>
+                <div class="fmg"><label><i class="fas fa-tint"></i> Blood Group</label><input type="text" name="blood_group" placeholder="e.g. O+ / AB+"></div>
+                <div class="fmg">
+                  <label><i class="fas fa-vial"></i> Blood Type</label>
+                  <select name="blood_type" id="bt_type_select" onchange="onBloodTypeChange(this.value)">
+                    <option value="">-- Select Blood Type --</option>
+                    <option value="PRBC (Packed Red Blood Cells)">1. PRBC (Packed Red Blood Cells)</option>
+                    <option value="Whole Blood">2. Whole Blood</option>
+                    <option value="Platelets">3. Platelets</option>
+                    <option value="Plasma Products">4. Plasma Products</option>
+                    <option value="Other">5. Other</option>
+                  </select>
+                </div>
+                <div class="fmg" id="fmg_blood_subtype" style="display: none;">
+                  <label id="lbl_blood_subtype"><i class="fas fa-layer-group"></i> Component Sub-Type</label>
+                  <select name="blood_subtype" id="bt_subtype_select" onchange="onBloodSubtypeChange(this.value)">
+                    <option value="">-- Select Sub-Type --</option>
+                  </select>
+                </div>
+                <div class="fmg" id="fmg_blood_details" style="display: none;">
+                  <label id="lbl_blood_details"><i class="fas fa-edit"></i> Product Details / Specifications</label>
+                  <input type="text" name="blood_type_details" id="bt_type_details_input" placeholder="Enter details...">
+                </div>
+                <div class="fmg"><label><i class="fas fa-hashtag"></i> Bag Number</label><input type="text" name="bag_number" placeholder="e.g. 2563"></div>
+                <div class="fmg"><label><i class="fas fa-calendar-plus"></i> Date of Collection</label><input type="date" name="collection_date"></div>
+                <div class="fmg"><label><i class="fas fa-calendar-times"></i> Date of Expiry</label><input type="date" name="expiry_date"></div>
+                <div class="fmg"><label><i class="fas fa-flask"></i> Qty (ml)</label><input type="number" name="quantity" placeholder="350"></div>
+                <div class="fmg"><label><i class="fas fa-user-nurse"></i> Nurse Signature</label><input type="text" name="nurse_sign" value="<?php echo htmlspecialchars($nurseName); ?>" readonly></div>
               </div>
+
+              <!-- 4 Sequential Rows (Full-width for each stage) -->
+              <div class="transfusion-stages-wrap">
+                <div class="transfusion-stages-header">
+                  <i class="fas fa-notes-medical"></i> Transfusion Vitals & Clinical Protocol (Sequential Stages)
+                </div>
+
+                <!-- Stage 1: Pre-Medication Before Transfusion -->
+                <div class="tf-stage-row">
+                  <div class="tf-stage-badge">
+                    <i class="fas fa-pills"></i>
+                    <span>Stage 1</span>
+                    <strong>Pre-Medication</strong>
+                  </div>
+                  <div class="fmg tf-stage-field">
+                    <label><i class="fas fa-capsules"></i> PRE-Medication Before Transfusion</label>
+                    <input type="text" name="pre_medication" placeholder="e.g. Inj Avil 1 amp IV, Inj Hydrocortisone 100mg IV, Tab Paracetamol 650mg">
+                  </div>
+                </div>
+
+                <!-- Stage 2: Vitals Before Transfusion -->
+                <div class="tf-stage-row">
+                  <div class="tf-stage-badge">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>Stage 2</span>
+                    <strong>Baseline Vitals</strong>
+                  </div>
+                  <div class="fmg tf-stage-field">
+                    <label><i class="fas fa-heartbeat"></i> Vitals Before Transfusion (Baseline)</label>
+                    <input type="text" name="vitals_before" placeholder="e.g. BP: 120/80 mmHg | Pulse: 76 bpm | Temp: 98.4°F | SpO2: 98% | RR: 18/min">
+                  </div>
+                </div>
+
+                <!-- Stage 3: Vitals During Transfusion -->
+                <div class="tf-stage-row">
+                  <div class="tf-stage-badge">
+                    <i class="fas fa-stethoscope"></i>
+                    <span>Stage 3</span>
+                    <strong>Intra-Transfusion</strong>
+                  </div>
+                  <div class="fmg tf-stage-field">
+                    <label><i class="fas fa-stethoscope"></i> Vitals During Transfusion (15 min / Hourly)</label>
+                    <input type="text" name="vitals_during" placeholder="e.g. 15 min: BP 122/82, P 78, T 98.6°F, SpO2 98% | 1 hr: BP 120/80, P 76, T 98.6°F">
+                  </div>
+                </div>
+
+                <!-- Stage 4: Vitals After Transfusion -->
+                <div class="tf-stage-row">
+                  <div class="tf-stage-badge">
+                    <i class="fas fa-heart-pulse"></i>
+                    <span>Stage 4</span>
+                    <strong>Post-Transfusion</strong>
+                  </div>
+                  <div class="fmg tf-stage-field">
+                    <label><i class="fas fa-heart-pulse"></i> Vitals After Transfusion (Post-Completion)</label>
+                    <input type="text" name="vitals_after" placeholder="e.g. BP: 120/80 mmHg | Pulse: 74 bpm | Temp: 98.4°F | SpO2: 99% | No adverse reactions">
+                  </div>
+                </div>
+              </div>
+
               <button class="btn-sv-out btn-sv" data-ct="blood_transfusion" data-f="f-bl"><i class="fas fa-plus"></i> Add Transfusion</button>
             </div>
             <div class="split-right">
               <div class="ht-title"><i class="fas fa-history"></i> Recent Transfusion History</div>
               <div class="ht-wrap">
                 <table class="ht">
-                  <thead><tr><th>Date</th><th>Group & Bag #</th><th>Quantity</th><th>Vitals</th><th>Nurse</th><th>Action</th></tr></thead>
-                  <tbody id="h-bl"><tr class="et"><td colspan="6">No records yet.</td></tr></tbody>
+                  <thead><tr><th>Date</th><th>Group, Type & Bag #</th><th>Quantity</th><th>Dates (Coll/Exp)</th><th>Pre-Med & Vitals</th><th>Nurse</th><th>Action</th></tr></thead>
+                  <tbody id="h-bl"><tr class="et"><td colspan="7">No records yet.</td></tr></tbody>
                 </table>
               </div>
             </div>
@@ -1915,6 +2527,7 @@ html, body {
 
       </div><!-- /ws-grid-new -->
     </div><!-- /ws-layout -->
+    </div><!-- /main-content -->
 
   </div><!-- /content-wrapper -->
 </div><!-- /main-layout -->
@@ -2233,6 +2846,7 @@ function selectPatient(p){
     wi.value = `${p.room_type || ''}/${p.room_number || ''}`;
   }
   
+  resetGcsToDefault();
   autoFill();
   loadAllRecords();
 }
@@ -2242,7 +2856,7 @@ function autoFill(ctx=document){
   const now=new Date();
   const ym=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const hm=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  ctx.querySelectorAll('input[type=date]').forEach(i=>{if(!i.value)i.value=ym;});
+  ctx.querySelectorAll('input[type=date]:not([name*="expiry"]):not([name*="exp"])').forEach(i=>{if(!i.value)i.value=ym;});
   ctx.querySelectorAll('input[type=time]').forEach(i=>{if(!i.value)i.value=hm;});
   ctx.querySelectorAll('input[type=datetime-local]:not(.tce-dt)').forEach(i=>{if(!i.value)i.value=ym+'T'+hm;});
   if(NN) {
@@ -2254,10 +2868,225 @@ function autoFill(ctx=document){
   }
 }
 
+/* ══════════════════════════════════════════════════════════════
+   GLASGOW COMA SCALE (GCS) CONTROLLER
+   Eye Opening: E1 - E4 (1 to 4)
+   Verbal Response: V1 - V5 (1 to 5)
+   Motor Response: M1 - M6 (1 to 6)
+   Total GCS = Eye + Verbal + Motor (3 to 15)
+   Severity:
+     13 - 15: Green (Mild impairment / Normal)
+     9 - 12:  Yellow / Orange (Moderate impairment)
+     3 - 8:   Red (Severe impairment / Critical)
+   ══════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   GLASGOW COMA SCALE (GCS) CONTROLLER (Fast & Standard)
+   Eye: 1 to 4 | Verbal: 1 to 5 | Motor: 1 to 6 (Total: 3 to 15)
+   ══════════════════════════════════════════════════════════════ */
+const GCS_CONFIG = {
+    eye: {
+        'A': { score: 1, desc: 'No Response', code: 'E1' },
+        'B': { score: 2, desc: 'To Pain', code: 'E2' },
+        'C': { score: 3, desc: 'To Speech', code: 'E3' },
+        'D': { score: 4, desc: 'Spontaneously', code: 'E4' }
+    },
+    verbal: {
+        'A': { score: 1, desc: 'No Response', code: 'V1' },
+        'B': { score: 2, desc: 'Incomprehensible Sounds', code: 'V2' },
+        'C': { score: 3, desc: 'Inappropriate Words', code: 'V3' },
+        'D': { score: 4, desc: 'Confused', code: 'V4' },
+        'E': { score: 5, desc: 'Oriented', code: 'V5' }
+    },
+    motor: {
+        'A': { score: 1, desc: 'No Motor Response to Pain', code: 'M1' },
+        'C': { score: 2, desc: 'Abnormal Extension to Pain', code: 'M2' },
+        'D': { score: 3, desc: 'Abnormal Flexion to Pain', code: 'M3' },
+        'E': { score: 4, desc: 'Withdrawal from Pain', code: 'M4' },
+        'F': { score: 5, desc: 'Localizes Pain', code: 'M5' },
+        'G': { score: 6, desc: 'Obeys Commands', code: 'M6' }
+    }
+};
+
+function onGcsDropdownChange() {
+    const eyeVal = document.getElementById('sel_gcs_eye')?.value || 'D';
+    const verbalVal = document.getElementById('sel_gcs_verbal')?.value || 'E';
+    const motorVal = document.getElementById('sel_gcs_motor')?.value || 'G';
+
+    applyGcsSelection('eye', eyeVal);
+    applyGcsSelection('verbal', verbalVal);
+    applyGcsSelection('motor', motorVal);
+
+    calculateTotalGcs();
+
+    const f = document.getElementById('f-gcs') || document.getElementById('f-bp');
+    if (f) f.classList.add('is-dirty');
+}
+
+function applyGcsSelection(cat, opt) {
+    const cfg = GCS_CONFIG[cat]?.[opt];
+    if (!cfg) return;
+
+    // Set select value if not already
+    const sel = document.getElementById(`sel_gcs_${cat}`);
+    if (sel && sel.value !== opt) {
+        sel.value = opt;
+    }
+
+    // Subscore pill in summary
+    const pill = document.getElementById(`pill-${cat}-val`);
+    const maxScore = (cat === 'eye') ? 4 : (cat === 'verbal') ? 5 : 6;
+    if (pill) pill.textContent = `${cfg.score}/${maxScore}`;
+
+    // Hidden inputs for backend save
+    const inpText = document.getElementById(`gcs_${cat}_input`);
+    if (inpText) inpText.value = `${opt}. ${cfg.desc} (${cfg.code})`;
+
+    const inpScore = document.getElementById(`gcs_${cat}_score_input`);
+    if (inpScore) inpScore.value = cfg.score;
+}
+
+function calculateTotalGcs() {
+    const eyeScore = parseInt(document.getElementById('gcs_eye_score_input')?.value) || 4;
+    const verbalScore = parseInt(document.getElementById('gcs_verbal_score_input')?.value) || 5;
+    const motorScore = parseInt(document.getElementById('gcs_motor_score_input')?.value) || 6;
+
+    const total = eyeScore + verbalScore + motorScore;
+
+    let severity = 'Mild Impairment / Normal (Alert)';
+    let colorClass = 'gcs-mild';
+    let shortStatus = 'Alert';
+    let iconClass = 'fa-check-circle';
+
+    if (total >= 13) {
+        shortStatus = (total === 15) ? 'Alert' : 'Mild Impairment';
+        severity = `Mild Impairment / Normal (${shortStatus})`;
+        colorClass = 'gcs-mild';
+        iconClass = 'fa-check-circle';
+    } else if (total >= 9) {
+        shortStatus = 'Moderate Impairment';
+        severity = 'Moderate Impairment (Drowsy / Stupor)';
+        colorClass = 'gcs-moderate';
+        iconClass = 'fa-exclamation-circle';
+    } else {
+        shortStatus = 'Severe Impairment';
+        severity = 'Severe Impairment (Critical Coma / Unresponsive)';
+        colorClass = 'gcs-severe';
+        iconClass = 'fa-exclamation-triangle';
+    }
+
+    // Dial score
+    const dial = document.getElementById('gcs-adv-score-dial');
+    if (dial) dial.className = `gcs-dial-pill ${colorClass}`;
+    const scoreNum = document.getElementById('gcs-score-num');
+    if (scoreNum) scoreNum.textContent = total;
+
+    // Severity badge
+    const sevLabel = document.getElementById('gcs-severity-label');
+    if (sevLabel) {
+        sevLabel.className = `gcs-status-badge ${colorClass}`;
+        sevLabel.innerHTML = `<i class="fas ${iconClass}"></i> ${severity}`;
+    }
+
+    // Hidden form inputs
+    const inpScore = document.getElementById('gcs_score_input');
+    if (inpScore) inpScore.value = total;
+
+    const inpTotal = document.getElementById('gcs_total_input');
+    if (inpTotal) inpTotal.value = `${total}/15 (E${eyeScore} V${verbalScore} M${motorScore})`;
+
+    const inpConscious = document.getElementById('gcs_consciousness_input');
+    if (inpConscious) inpConscious.value = `${total}/15 (${shortStatus})`;
+}
+
+function resetGcsToDefault() {
+    applyGcsSelection('eye', 'D');
+    applyGcsSelection('verbal', 'E');
+    applyGcsSelection('motor', 'G');
+    calculateTotalGcs();
+}
+
+function setGcsValuesFromRecord(r) {
+    if (!r) return;
+
+    let eOpt = null, vOpt = null, mOpt = null;
+
+    if (r.gcs_eye && typeof r.gcs_eye === 'string') {
+        const m = r.gcs_eye.match(/^([A-D])\./);
+        if (m) eOpt = m[1];
+    }
+    if (r.gcs_verbal && typeof r.gcs_verbal === 'string') {
+        const m = r.gcs_verbal.match(/^([A-E])\./);
+        if (m) vOpt = m[1];
+    }
+    if (r.gcs_motor && typeof r.gcs_motor === 'string') {
+        const m = r.gcs_motor.match(/^([A-G])\./);
+        if (m) mOpt = m[1];
+    }
+
+    if (!eOpt && r.gcs_eye_score) {
+        const s = parseInt(r.gcs_eye_score);
+        for (const [k, v] of Object.entries(GCS_CONFIG.eye)) {
+            if (v.score === s) { eOpt = k; break; }
+        }
+    }
+    if (!vOpt && r.gcs_verbal_score) {
+        const s = parseInt(r.gcs_verbal_score);
+        for (const [k, v] of Object.entries(GCS_CONFIG.verbal)) {
+            if (v.score === s) { vOpt = k; break; }
+        }
+    }
+    if (!mOpt && r.gcs_motor_score) {
+        const s = parseInt(r.gcs_motor_score);
+        for (const [k, v] of Object.entries(GCS_CONFIG.motor)) {
+            if (v.score === s) { mOpt = k; break; }
+        }
+    }
+
+    if (!eOpt || !vOpt || !mOpt) {
+        const raw = (r.consciousness_level || r.gcs || '').toLowerCase();
+        if (raw.includes('unresponsive') || raw.includes('< 8') || raw.includes('severe')) {
+            if (!eOpt) eOpt = 'A';
+            if (!vOpt) vOpt = 'A';
+            if (!mOpt) mOpt = 'A';
+        } else if (raw.includes('pain') || raw.includes('8-11')) {
+            if (!eOpt) eOpt = 'B';
+            if (!vOpt) vOpt = 'B';
+            if (!mOpt) mOpt = 'E';
+        } else if (raw.includes('verbal') || raw.includes('voice') || raw.includes('12-14')) {
+            if (!eOpt) eOpt = 'C';
+            if (!vOpt) vOpt = 'C';
+            if (!mOpt) mOpt = 'F';
+        } else if (raw.includes('confused') || raw.includes('drowsy')) {
+            if (!eOpt) eOpt = 'D';
+            if (!vOpt) vOpt = 'D';
+            if (!mOpt) mOpt = 'G';
+        } else {
+            if (!eOpt) eOpt = 'D';
+            if (!vOpt) vOpt = 'E';
+            if (!mOpt) mOpt = 'G';
+        }
+    }
+
+    if (eOpt) applyGcsSelection('eye', eOpt);
+    if (vOpt) applyGcsSelection('verbal', vOpt);
+    if (mOpt) applyGcsSelection('motor', mOpt);
+
+    calculateTotalGcs();
+}
+
 function clrF(id){
   const c=document.getElementById(id); if(!c)return;
   c.querySelectorAll('input:not([type=hidden]):not([readonly]),select,textarea').forEach(e=>e.value='');
   c.querySelectorAll('.chk-ongoing').forEach(cb=>{ cb.checked = false; toggleOngoingTreatment(cb); });
+  if (id === 'f-bp' || id === 'f-gcs') {
+    resetGcsToDefault();
+  }
+  if (id === 'f-ve') {
+    onVentTypeChange('');
+  }
+  if (id === 'f-bl') {
+    onBloodTypeChange('');
+  }
   autoFill(c);
 }
 
@@ -2352,6 +3181,197 @@ function toggleOngoingTreatment(cb){
     }
   }
   calcDur(cb);
+}
+
+/* ── Ventilator Support Dynamic Modes (Invasive & NIV) ── */
+const VENT_MODES_CONFIG = {
+  'Invasive Ventilation': [
+    { value: 'Volume-Controlled Ventilation (VCV)', label: 'Volume-Controlled Ventilation (VCV)', group: 'Invasive Ventilation' },
+    { value: 'Pressure-Controlled Ventilation (PCV)', label: 'Pressure-Controlled Ventilation (PCV)', group: 'Invasive Ventilation' },
+    { value: 'Synchronized Intermittent Mandatory Ventilation (SIMV)', label: 'Synchronized Intermittent Mandatory Ventilation (SIMV)', group: 'Invasive Ventilation' },
+    { value: 'Assist-Control (A/C)', label: 'Assist-Control (A/C)', group: 'Invasive Ventilation' },
+    { value: 'Pressure Support Ventilation (PSV)', label: 'Pressure Support Ventilation (PSV)', group: 'Invasive Ventilation' },
+    { value: 'Positive End-Expiratory Pressure (PEEP)', label: 'Positive End-Expiratory Pressure (PEEP)', group: 'Invasive Ventilation' }
+  ],
+  'Non-Invasive Ventilation (NIV)': [
+    { value: 'BiPAP (Bilevel Positive Airway Pressure)', label: 'BiPAP (Bilevel Positive Airway Pressure)', group: 'BiPAP' },
+    { value: 'BiPAP - IPAP (Inspiratory Positive Airway Pressure)', label: 'BiPAP - IPAP (Inspiratory Positive Airway Pressure)', group: 'BiPAP' },
+    { value: 'BiPAP - EPAP (Expiratory Positive Airway Pressure)', label: 'BiPAP - EPAP (Expiratory Positive Airway Pressure)', group: 'BiPAP' },
+    { value: 'CPAP (Continuous Positive Airway Pressure)', label: 'CPAP (Continuous Positive Airway Pressure)', group: 'CPAP' },
+    { value: 'CPAP - CPAP Pressure', label: 'CPAP - CPAP Pressure', group: 'CPAP' },
+    { value: 'VPAP (Variable Positive Airway Pressure)', label: 'VPAP (Variable Positive Airway Pressure)', group: 'VPAP' },
+    { value: 'VPAP - IPAP / EPAP (Device-Specific Pressure Settings)', label: 'VPAP - IPAP / EPAP (Device-Specific Pressure Settings)', group: 'VPAP' }
+  ]
+};
+
+function onVentTypeChange(type, selectedMode = '') {
+  const modeSelect = document.getElementById('vent_mode_select');
+  if (!modeSelect) return;
+
+  modeSelect.innerHTML = '';
+
+  if (!type || !VENT_MODES_CONFIG[type]) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = '-- Select Ventilation Type First --';
+    modeSelect.appendChild(opt);
+    return;
+  }
+
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = '';
+  defaultOpt.textContent = `-- Select Mode (${type}) --`;
+  modeSelect.appendChild(defaultOpt);
+
+  const list = VENT_MODES_CONFIG[type];
+  const groups = {};
+  list.forEach(item => {
+    const grp = item.group || type;
+    if (!groups[grp]) groups[grp] = [];
+    groups[grp].push(item);
+  });
+
+  const groupKeys = Object.keys(groups);
+  if (groupKeys.length > 1) {
+    groupKeys.forEach(grp => {
+      const optGroup = document.createElement('optgroup');
+      optGroup.label = grp;
+      groups[grp].forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.value;
+        opt.textContent = item.label;
+        if (selectedMode && (item.value === selectedMode || item.label === selectedMode)) {
+          opt.selected = true;
+        }
+        optGroup.appendChild(opt);
+      });
+      modeSelect.appendChild(optGroup);
+    });
+  } else {
+    list.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.value;
+      opt.textContent = item.label;
+      if (selectedMode && (item.value === selectedMode || item.label === selectedMode)) {
+        opt.selected = true;
+      }
+      modeSelect.appendChild(opt);
+    });
+  }
+
+  // If a legacy or custom selectedMode was provided and is not in list, append it
+  if (selectedMode && !Array.from(modeSelect.options).some(o => o.value === selectedMode)) {
+    const customOpt = document.createElement('option');
+    customOpt.value = selectedMode;
+    customOpt.textContent = selectedMode;
+    customOpt.selected = true;
+    modeSelect.appendChild(customOpt);
+  }
+}
+
+/* ── Blood Transfusion Dynamic Product Types & Subtypes ── */
+const BLOOD_SUBTYPES_CONFIG = {
+  'Platelets': [
+    { value: 'RDP (Random Donor Platelets)', label: 'RDP (Random Donor Platelets)' },
+    { value: 'SDP (Single Donor Platelets)', label: 'SDP (Single Donor Platelets)' },
+    { value: 'Other', label: 'Other' }
+  ],
+  'Plasma Products': [
+    { value: 'FFP (Fresh Frozen Plasma)', label: 'FFP (Fresh Frozen Plasma)' },
+    { value: 'Cryoprecipitate (CRYO)', label: 'Cryoprecipitate (CRYO)' },
+    { value: 'Other', label: 'Other' }
+  ]
+};
+
+function onBloodTypeChange(type, selectedSubtype = '', customDetails = '') {
+  const fmgSubtype = document.getElementById('fmg_blood_subtype');
+  const subtypeSelect = document.getElementById('bt_subtype_select');
+  const fmgDetails = document.getElementById('fmg_blood_details');
+  const detailsInput = document.getElementById('bt_type_details_input');
+  const lblSubtype = document.getElementById('lbl_blood_subtype');
+  const lblDetails = document.getElementById('lbl_blood_details');
+
+  if (!fmgSubtype || !subtypeSelect || !fmgDetails || !detailsInput) return;
+
+  // Reset subtype dropdown
+  subtypeSelect.innerHTML = '<option value="">-- Select Sub-Type --</option>';
+
+  if (type === 'Platelets') {
+    fmgSubtype.style.display = 'flex';
+    if (lblSubtype) lblSubtype.innerHTML = '<i class="fas fa-layer-group"></i> Platelet Sub-Type';
+    BLOOD_SUBTYPES_CONFIG['Platelets'].forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.value;
+      opt.textContent = item.label;
+      if (selectedSubtype && (item.value === selectedSubtype || item.label === selectedSubtype)) {
+        opt.selected = true;
+      }
+      subtypeSelect.appendChild(opt);
+    });
+    onBloodSubtypeChange(selectedSubtype || subtypeSelect.value, customDetails);
+  } else if (type === 'Plasma Products') {
+    fmgSubtype.style.display = 'flex';
+    if (lblSubtype) lblSubtype.innerHTML = '<i class="fas fa-layer-group"></i> Plasma Product Sub-Type';
+    BLOOD_SUBTYPES_CONFIG['Plasma Products'].forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.value;
+      opt.textContent = item.label;
+      if (selectedSubtype && (item.value === selectedSubtype || item.label === selectedSubtype)) {
+        opt.selected = true;
+      }
+      subtypeSelect.appendChild(opt);
+    });
+    onBloodSubtypeChange(selectedSubtype || subtypeSelect.value, customDetails);
+  } else if (type === 'PRBC (Packed Red Blood Cells)' || type === 'Whole Blood') {
+    fmgSubtype.style.display = 'none';
+    subtypeSelect.value = '';
+    // Show additional details for PRBC and Whole Blood
+    fmgDetails.style.display = 'flex';
+    const prodName = type.includes('PRBC') ? 'PRBC' : 'Whole Blood';
+    if (lblDetails) lblDetails.innerHTML = `<i class="fas fa-info-circle"></i> ${prodName} Additional Details / Specs`;
+    detailsInput.placeholder = type.includes('PRBC') 
+      ? 'e.g. Leukoreduced, Irradiated, Saline-washed...' 
+      : 'e.g. Fresh whole blood, specific donor notes...';
+    if (customDetails !== undefined) detailsInput.value = customDetails;
+  } else if (type === 'Other') {
+    fmgSubtype.style.display = 'none';
+    subtypeSelect.value = '';
+    fmgDetails.style.display = 'flex';
+    if (lblDetails) lblDetails.innerHTML = '<i class="fas fa-edit"></i> Specify Blood Product Details <span style="color:#dc2626;">*</span>';
+    detailsInput.placeholder = 'Specify blood product type (e.g. Granulocytes, Stem Cells)...';
+    if (customDetails !== undefined) detailsInput.value = customDetails;
+  } else {
+    // None selected
+    fmgSubtype.style.display = 'none';
+    subtypeSelect.value = '';
+    fmgDetails.style.display = 'none';
+    if (detailsInput) detailsInput.value = '';
+  }
+}
+
+function onBloodSubtypeChange(subtype, customDetails = '') {
+  const fmgDetails = document.getElementById('fmg_blood_details');
+  const detailsInput = document.getElementById('bt_type_details_input');
+  const lblDetails = document.getElementById('lbl_blood_details');
+  const mainType = document.getElementById('bt_type_select')?.value || '';
+
+  if (!fmgDetails || !detailsInput) return;
+
+  if (subtype === 'Other' || subtype.includes('Other')) {
+    fmgDetails.style.display = 'flex';
+    if (lblDetails) lblDetails.innerHTML = `<i class="fas fa-edit"></i> Specify Other ${mainType} Details <span style="color:#dc2626;">*</span>`;
+    detailsInput.placeholder = `Enter specific details for this ${mainType.toLowerCase()}...`;
+    if (customDetails !== undefined && customDetails !== '') detailsInput.value = customDetails;
+    detailsInput.focus();
+  } else if (customDetails) {
+    fmgDetails.style.display = 'flex';
+    if (lblDetails) lblDetails.innerHTML = '<i class="fas fa-edit"></i> Additional Notes / Details';
+    detailsInput.value = customDetails;
+  } else {
+    if (!detailsInput.value) {
+      fmgDetails.style.display = 'none';
+    }
+  }
 }
 
 /* ── Universal Save & Individual Section Saves ── */
@@ -2562,18 +3582,60 @@ async function loadAllRecords(){
       <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-nb", ${JSON.stringify(r)})' title="Edit nebulization"><i class="fas fa-edit"></i> Edit</button></td>
     `, 4);
 
-    // 5. BP & Vitals
+    // 5a. BP Chart (Blood Pressure only, no GCS)
     rH('h-bp', d.bp_chart || d.vitals || [], r => `
-      <td>${r.bp_date || r.date || r.created_date || ''} ${r.bp_time || r.time || ''}</td>
-      <td><strong>${r.bp_value || ((r.bp_systolic || '') + '/' + (r.bp_diastolic || ''))}</strong></td>
-      <td>${r.bp_pulse || r.pulse || ''} bpm</td>
-      <td>${r.bp_temp || r.temp || ''}</td>
-      <td>${r.bp_spo2 || r.spo2 ? (r.bp_spo2 || r.spo2) + '%' : '-'}</td>
-      <td><span class="badge" style="font-weight:800;">${r.pain_score !== undefined && r.pain_score !== null && r.pain_score !== '' ? r.pain_score + '/10' : (r.bp_pain || r.bp_pain_score || '-')}</span></td>
-      <td><span class="badge" style="background:rgba(31,107,74,0.1);color:var(--gm-primary);font-weight:700;">${r.gcs || r.consciousness_level || 'Alert'}</span></td>
-      <td>${r.bp_nurse || r.nurse_sign || r.created_by_name || ''}</td>
-      <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-bp", ${JSON.stringify(r)})' title="Edit vitals"><i class="fas fa-edit"></i> Edit</button></td>
-    `, 9);
+        <td>${r.bp_date || r.date || r.created_date || ''} ${r.bp_time || r.time || ''}</td>
+        <td><strong>${r.bp_value || ((r.bp_systolic || '') + '/' + (r.bp_diastolic || ''))}</strong></td>
+        <td>${r.bp_pulse || r.pulse || ''} bpm</td>
+        <td>${r.bp_temp || r.temp || ''}</td>
+        <td>${r.bp_spo2 || r.spo2 ? (r.bp_spo2 || r.spo2) + '%' : '-'}</td>
+        <td><span class="badge" style="font-weight:800;">${r.pain_score !== undefined && r.pain_score !== null && r.pain_score !== '' ? r.pain_score + '/10' : (r.bp_pain || r.bp_pain_score || '-')}</span></td>
+        <td>${r.bp_nurse || r.nurse_sign || r.created_by_name || ''}</td>
+        <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-bp", ${JSON.stringify(r)})' title="Edit BP record"><i class="fas fa-edit"></i> Edit</button></td>
+    `, 8);
+
+    // 5b. Vitals Chart – GCS Assessments
+    rH('h-gcs', d.gcs_chart || d.bp_chart || d.vitals || [], r => {
+      // Only render rows that have GCS data
+      if (!r.gcs_score && !r.gcs && !r.consciousness_level) return null;
+
+      let gcsScore = parseInt(r.gcs_score) || 0;
+      let gcsText  = r.gcs || r.consciousness_level || '-';
+
+      if (!gcsScore && typeof gcsText === 'string') {
+        const m = gcsText.match(/(\d+)\s*\/\s*15/);
+        if (m) gcsScore = parseInt(m[1]);
+        else if (gcsText.toLowerCase().includes('alert')) gcsScore = 15;
+        else if (gcsText.toLowerCase().includes('confused')) gcsScore = 14;
+        else if (gcsText.toLowerCase().includes('drowsy')) gcsScore = 13;
+        else if (gcsText.toLowerCase().includes('pain')) gcsScore = 8;
+        else if (gcsText.toLowerCase().includes('unresponsive')) gcsScore = 3;
+      }
+
+      let gcsBg = '#f0fdf4', gcsFg = '#15803d', gcsBdr = '#86efac';
+      if (gcsScore >= 13)      { gcsBg = '#f0fdf4'; gcsFg = '#15803d'; gcsBdr = '#86efac'; }
+      else if (gcsScore >= 9)  { gcsBg = '#fffbeb'; gcsFg = '#b45309'; gcsBdr = '#fde68a'; }
+      else if (gcsScore > 0)   { gcsBg = '#fef2f2'; gcsFg = '#dc2626'; gcsBdr = '#fca5a5'; }
+
+      const eyeVal    = r.gcs_eye    || '-';
+      const verbalVal = r.gcs_verbal || '-';
+      const motorVal  = r.gcs_motor  || '-';
+      const conscious = r.consciousness_level || gcsText;
+      const dateStr   = r.gcs_date   || r.bp_date || r.date || r.created_date || '';
+      const timeStr   = r.gcs_time   || r.bp_time || r.time || '';
+      const nurseStr  = r.gcs_nurse  || r.bp_nurse || r.nurse_sign || r.created_by_name || '';
+
+      return `
+        <td>${dateStr} ${timeStr}</td>
+        <td><span class="badge" style="background:${gcsBg};color:${gcsFg};border:1.5px solid ${gcsBdr};font-weight:900;font-size:0.9rem;" title="GCS Score">${gcsScore}/15</span></td>
+        <td style="font-size:0.77rem;">${eyeVal}</td>
+        <td style="font-size:0.77rem;">${verbalVal}</td>
+        <td style="font-size:0.77rem;">${motorVal}</td>
+        <td><span class="badge" style="background:${gcsBg};color:${gcsFg};font-weight:700;font-size:0.75rem;">${conscious}</span></td>
+        <td>${nurseStr}</td>
+        <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-gcs", ${JSON.stringify(r)})' title="Edit GCS"><i class="fas fa-edit"></i> Edit</button></td>
+      `;
+    }, 8);
 
     // 6. Dialysis Record
     rH('h-di', d.dialysis_chart || [], r => {
@@ -2635,9 +3697,13 @@ async function loadAllRecords(){
       const endTxt = r.vent_end_dt ? r.vent_end_dt.replace('T', ' ') : (r.vent_end ? r.vent_end : (isOngoing ? 'Still Active' : ''));
       const timeRange = (startTxt && endTxt) ? `${startTxt} → ${endTxt}` : (startTxt || '-');
 
+      const typeBadge = r.vent_type ? `<div style="font-size:0.7rem; color:var(--gm-text-muted); font-weight:800; text-transform:uppercase; letter-spacing:0.3px; margin-bottom:2px;">${r.vent_type}</div>` : '';
       return `
         <td><strong>${r.vent_date || (r.vent_start_dt ? r.vent_start_dt.split('T')[0] : '') || r.date || ''}</strong></td>
-        <td><span class="badge">${r.vent_mode || r.mode || '-'}</span></td>
+        <td>
+          ${typeBadge}
+          <span class="badge" style="font-weight:700;">${r.vent_mode || r.mode || '-'}</span>
+        </td>
         <td>
           ${durBadge}
           <br><small style="color:var(--gm-text-muted); font-size:0.75rem;"><i class="far fa-clock"></i> ${timeRange}</small>
@@ -2648,14 +3714,48 @@ async function loadAllRecords(){
     }, 5);
 
     // 9. Blood Transfusion
-    rH('h-bl', d.blood_transfusion_chart || [], r => `
-      <td>${r.trans_date || r.date || ''}</td>
-      <td><strong style="color:var(--gm-primary)">${r.blood_group || ''}</strong> #${r.bag_number || r.bag_no || '-'}</td>
-      <td>${r.quantity ? r.quantity + ' ml' : '-'}</td>
-      <td><small>${r.vitals_during || r.vitals || '-'}</small></td>
-      <td>${r.nurse_sign || r.nurse || r.created_by_name || '-'}</td>
-      <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-bl", ${JSON.stringify(r)})' title="Edit transfusion"><i class="fas fa-edit"></i> Edit</button></td>
-    `, 6);
+    rH('h-bl', d.blood_transfusion_chart || [], r => {
+      const collDate = r.collection_date || r.date_of_collection || '';
+      const expDate = r.expiry_date || r.date_of_expiry || '';
+      const datesHtml = (collDate || expDate) 
+        ? `<div style="font-size:0.72rem; color:var(--gm-text-muted); line-height:1.35;"><i class="fas fa-calendar-alt"></i> Coll: ${collDate || '-'}<br><i class="fas fa-calendar-times"></i> Exp: ${expDate || '-'}</div>` 
+        : '-';
+
+      const vitalsHtml = `
+        <div style="font-size:0.75rem; line-height:1.4;">
+          ${r.pre_medication ? `<div><strong style="color:var(--gm-primary);">Pre-Med:</strong> ${r.pre_medication}</div>` : ''}
+          ${r.vitals_before ? `<div><strong style="color:#0369a1;">Before:</strong> ${r.vitals_before}</div>` : ''}
+          ${(r.vitals_during || r.vitals) ? `<div><strong style="color:#1F6B4A;">During:</strong> ${r.vitals_during || r.vitals}</div>` : ''}
+          ${r.vitals_after ? `<div><strong style="color:#b45309;">After:</strong> ${r.vitals_after}</div>` : ''}
+          ${(!r.pre_medication && !r.vitals_before && !r.vitals_during && !r.vitals && !r.vitals_after) ? '-' : ''}
+        </div>
+      `;
+
+      // Format Blood Type & Subtype badge
+      let bTypeDesc = '';
+      if (r.blood_type) {
+        bTypeDesc = `<div style="margin-top:3px;"><span class="badge" style="background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; font-size:0.71rem; font-weight:800;">${r.blood_type}</span></div>`;
+        if (r.blood_subtype) {
+          bTypeDesc += `<div style="font-size:0.72rem; color:var(--gm-primary); font-weight:700; margin-top:1px;">&bull; ${r.blood_subtype}</div>`;
+        }
+        if (r.blood_type_details) {
+          bTypeDesc += `<small style="font-size:0.7rem; color:#64748b; display:block;">(${r.blood_type_details})</small>`;
+        }
+      }
+
+      return `
+        <td><strong>${r.trans_date || r.date || ''}</strong></td>
+        <td>
+          <strong style="color:var(--gm-primary); font-size:0.88rem;">${r.blood_group || ''}</strong> #${r.bag_number || r.bag_no || '-'}
+          ${bTypeDesc}
+        </td>
+        <td>${r.quantity ? r.quantity + ' ml' : '-'}</td>
+        <td>${datesHtml}</td>
+        <td>${vitalsHtml}</td>
+        <td>${r.nurse_sign || r.nurse || r.created_by_name || '-'}</td>
+        <td style="text-align:center;"><button type="button" class="btn-edit-log" onclick='editLog("f-bl", ${JSON.stringify(r)})' title="Edit transfusion"><i class="fas fa-edit"></i> Edit</button></td>
+      `;
+    }, 7);
 
     // 10. Nursing Notes
     rH('h-nn', d.nurses_record || [], r => `
@@ -2689,11 +3789,11 @@ async function loadAllRecords(){
         const qty = i.qty || i.quantity || t.qty || t.quantity || 1;
         return `<tr>
           <td><strong>${dt}</strong></td>
-          <td><strong style="color:#0369a1;">${name}</strong></td>
-          <td><span class="badge" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">${code}</span></td>
-          <td><span class="badge" style="background:#f0f9ff; color:#0284c7;">${cat}</span></td>
-          <td><strong>${qty}</strong></td>
-          <td><span style="color:var(--gm-text-muted); font-weight:700;">${by}</span></td>
+          <td><strong style="color:#1f6b4a; font-size:0.88rem;">${name}</strong></td>
+          <td><span class="badge" style="background:#f3efe6; color:#1f6b4a; border:1.5px solid #1f6b4a; font-weight:800; padding:2px 8px; border-radius:4px;">${code}</span></td>
+          <td><span class="badge" style="background:#1f6b4a; color:#f3efe6; font-weight:750; padding:2px 8px; border-radius:4px;">${cat}</span></td>
+          <td><strong style="color:#1f6b4a; font-weight:800;">${qty}</strong></td>
+          <td><span style="color:#1f6b4a; font-weight:700;">${by}</span></td>
         </tr>`;
       }).join('') : '<tr class="et"><td colspan="6">No Laboratory tests ordered for this patient yet.</td></tr>';
     }
@@ -2713,11 +3813,11 @@ async function loadAllRecords(){
         const qty = i.qty || i.quantity || t.qty || t.quantity || 1;
         return `<tr>
           <td><strong>${dt}</strong></td>
-          <td><strong style="color:#1F6B4A;">${name}</strong></td>
-          <td><span class="badge" style="background:#ecfdf5; color:#1F6B4A; border:1px solid #a7f3d0;">${code}</span></td>
-          <td><span class="badge" style="background:#f0fdf4; color:#15803d;">${cat}</span></td>
-          <td><strong>${qty}</strong></td>
-          <td><span style="color:var(--gm-text-muted); font-weight:700;">${by}</span></td>
+          <td><strong style="color:#1f6b4a; font-size:0.88rem;">${name}</strong></td>
+          <td><span class="badge" style="background:#f3efe6; color:#1f6b4a; border:1.5px solid #1f6b4a; font-weight:800; padding:2px 8px; border-radius:4px;">${code}</span></td>
+          <td><span class="badge" style="background:#1f6b4a; color:#f3efe6; font-weight:750; padding:2px 8px; border-radius:4px;">${cat}</span></td>
+          <td><strong style="color:#1f6b4a; font-weight:800;">${qty}</strong></td>
+          <td><span style="color:#1f6b4a; font-weight:700;">${by}</span></td>
         </tr>`;
       }).join('') : '<tr class="et"><td colspan="6">No Radiology scans ordered for this patient yet.</td></tr>';
     }
@@ -2737,11 +3837,11 @@ async function loadAllRecords(){
         const qty = i.qty || i.quantity || t.qty || t.quantity || 1;
         return `<tr>
           <td><strong>${dt}</strong></td>
-          <td><strong style="color:#b45309;">${name}</strong></td>
-          <td><span class="badge" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a;">${code}</span></td>
-          <td><span class="badge" style="background:#fffbeb; color:#d97706;">${cat}</span></td>
-          <td><strong>${qty}</strong></td>
-          <td><span style="color:var(--gm-text-muted); font-weight:700;">${by}</span></td>
+          <td><strong style="color:#1f6b4a; font-size:0.88rem;">${name}</strong></td>
+          <td><span class="badge" style="background:#f3efe6; color:#1f6b4a; border:1.5px solid #1f6b4a; font-weight:800; padding:2px 8px; border-radius:4px;">${code}</span></td>
+          <td><span class="badge" style="background:#1f6b4a; color:#f3efe6; font-weight:750; padding:2px 8px; border-radius:4px;">${cat}</span></td>
+          <td><strong style="color:#1f6b4a; font-weight:800;">${qty}</strong></td>
+          <td><span style="color:#1f6b4a; font-weight:700;">${by}</span></td>
         </tr>`;
       }).join('') : '<tr class="et"><td colspan="6">No Other diagnostic investigations ordered for this patient yet.</td></tr>';
     }
@@ -2762,7 +3862,12 @@ async function loadAllRecords(){
 
 function rH(tid,rows,fn,cols){
   const tb=document.getElementById(tid); if(!tb)return;
-  tb.innerHTML=rows&&rows.length?[...rows].reverse().map(r=>`<tr>${fn(r)}</tr>`).join(''):`<tr class="et"><td colspan="${cols}">No records yet.</td></tr>`;
+  if(rows&&rows.length){
+    const html=[...rows].reverse().map(r=>{ const s=fn(r); return s?`<tr>${s}</tr>`:''; }).join('');
+    tb.innerHTML=html||`<tr class="et"><td colspan="${cols}">No records yet.</td></tr>`;
+  } else {
+    tb.innerHTML=`<tr class="et"><td colspan="${cols}">No records yet.</td></tr>`;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -2821,18 +3926,17 @@ function switchDiagHistView(type) {
               d.data.forEach(item => {
                 const el = document.createElement('div');
                 el.className = 'ts-item';
-                const color = type === 'lab' ? '#0369a1' : (type === 'radiology' ? '#1F6B4A' : '#b45309');
-                el.innerHTML = `<div><strong style="color:${color}; font-size:0.86rem;">${item.name}</strong><br><small style="color:var(--gm-text-muted)">ID: ${item.id} &bull; Category: ${item.category || type}</small></div><span class="badge" style="background:${color}; color:white;"><i class="fas fa-plus"></i> Add</span>`;
+                el.innerHTML = `<div><strong style="color:#1f6b4a; font-size:0.88rem;">${item.name}</strong><br><small style="color:#1f6b4a; opacity:0.82; font-weight:600;">Code: ${item.id} &bull; Category: ${item.category || type}</small></div><span class="badge" style="background:#1f6b4a; color:#f3efe6; font-weight:800; padding:4px 12px; border-radius:6px; font-size:0.75rem;"><i class="fas fa-plus"></i> Add</span>`;
                 el.onclick = () => addDiagToCart(type, item);
                 resultsBox.appendChild(el);
               });
             } else {
-              resultsBox.innerHTML = '<div style="padding:12px;text-align:center;color:var(--gm-text-muted);font-size:.82rem">No tests found in this category.</div>';
+              resultsBox.innerHTML = '<div style="padding:12px;text-align:center;color:#1f6b4a;font-weight:600;font-size:.82rem">No tests found matching your query.</div>';
             }
             resultsBox.style.display = 'block';
           })
           .catch(() => {
-            resultsBox.innerHTML = '<div style="padding:12px;text-align:center;color:#dc2626;font-size:.82rem">Error searching tests.</div>';
+            resultsBox.innerHTML = '<div style="padding:12px;text-align:center;color:#1f6b4a;font-weight:700;font-size:.82rem">Unable to search tests right now. Please retry.</div>';
             resultsBox.style.display = 'block';
           });
       }, 250);
@@ -2880,17 +3984,21 @@ function renderDiagCart(type) {
 
   if (!container) return;
   if (!cart.length) {
-    container.innerHTML = '<div style="padding:12px 14px; background:#f8fafc; border:1px dashed var(--gm-border); border-radius:8px; font-size:0.8rem; color:var(--gm-text-muted); text-align:center;"><i class="fas fa-shopping-basket"></i> Cart is empty. Search above to add tests.</div>';
+    container.innerHTML = '<div style="padding:18px; background:#f3efe6; border:1.5px dashed rgba(31,107,74,0.35); border-radius:8px; font-size:0.82rem; color:#1f6b4a; text-align:center; font-weight:700;"><i class="fas fa-clipboard-list" style="font-size:1.5rem; color:#1f6b4a; margin-bottom:6px; display:block;"></i> No tests selected yet. Search above to add tests to this requisition cart.</div>';
     return;
   }
 
   container.innerHTML = cart.map(t => `
     <div class="cart-row">
       <div class="cart-row-n">
-        ${t.name} <span class="badge" style="font-size:0.68rem;">${t.id}</span>
+        <strong style="color:#1f6b4a; font-size:0.88rem;">${t.name}</strong>
+        <span class="badge" style="background:#1f6b4a; color:#f3efe6; font-weight:800; font-size:0.72rem; padding:2px 7px; border-radius:4px;">${t.id}</span>
       </div>
-      <input type="number" value="${t.qty}" min="1" onchange="updateDiagQty('${type}', '${t.id}', this.value)">
-      <button class="rm-btn" onclick="removeDiagFromCart('${type}', '${t.id}')" title="Remove test"><i class="fas fa-trash-alt"></i></button>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label style="font-size:0.72rem; font-weight:800; color:#1f6b4a;">QTY:</label>
+        <input type="number" value="${t.qty}" min="1" onchange="updateDiagQty('${type}', '${t.id}', this.value)" style="width:65px; padding:5px 8px; border:1.5px solid rgba(31,107,74,0.3); border-radius:6px; text-align:center; font-weight:800; color:#1f6b4a; background:#ffffff;">
+        <button type="button" class="rm-btn" onclick="removeDiagFromCart('${type}', '${t.id}')" title="Remove test"><i class="fas fa-trash-alt"></i></button>
+      </div>
     </div>
   `).join('');
 }
@@ -3246,10 +4354,16 @@ function editLog(formId, data){
     if ((data.pain_score !== undefined || data.bp_pain !== undefined || data.bp_pain_score !== undefined) && !f.querySelector('input[name="pain_score"]')?.value) {
       const el = f.querySelector('input[name="pain_score"]'); if(el) el.value = data.pain_score ?? data.bp_pain ?? data.bp_pain_score ?? '';
     }
-    if (data.consciousness_level || data.gcs) {
-      const el = f.querySelector('select[name="consciousness_level"], input[name="consciousness_level"]');
-      if (el) el.value = data.consciousness_level || data.gcs;
+  }
+  if (formId === 'f-gcs') {
+    if ((data.date || data.bp_date || data.gcs_date) && !f.querySelector('input[name="gcs_date"]')?.value) {
+      const el = f.querySelector('input[name="gcs_date"]'); if(el) el.value = data.gcs_date || data.bp_date || data.date || '';
     }
+    if ((data.time || data.bp_time || data.gcs_time) && !f.querySelector('input[name="gcs_time"]')?.value) {
+      const el = f.querySelector('input[name="gcs_time"]'); if(el) el.value = data.gcs_time || data.bp_time || data.time || '';
+    }
+    // Restore GCS assessment options, calculate score and update color indicator
+    setGcsValuesFromRecord(data);
   }
   if (formId === 'f-gr') {
     if (data.date && !data.grbs_date) { const el = f.querySelector('input[name="grbs_date"]'); if(el) el.value = data.date; }
@@ -3314,13 +4428,47 @@ function editLog(formId, data){
       chk.checked = isOngoing;
       toggleOngoingTreatment(chk);
     }
-    if (data.mode && !data.vent_mode) { const el = f.querySelector('select[name="vent_mode"]'); if(el) el.value = data.mode; }
+    // Set vent_type and vent_mode
+    let vType = data.vent_type || '';
+    const vMode = data.vent_mode || data.mode || '';
+
+    // If vent_type was not explicitly saved (older records), infer it from mode
+    if (!vType && vMode) {
+      const modeLower = vMode.toLowerCase();
+      if (modeLower.includes('bipap') || modeLower.includes('cpap') || modeLower.includes('vpap') || modeLower.includes('niv') || modeLower.includes('non-invasive')) {
+        vType = 'Non-Invasive Ventilation (NIV)';
+      } else {
+        vType = 'Invasive Ventilation';
+      }
+    }
+
+    const typeSelect = document.getElementById('vent_type_select');
+    if (typeSelect && vType) {
+      typeSelect.value = vType;
+    }
+    onVentTypeChange(vType, vMode);
+
     if (data.duration && !data.vent_dur) { const el = f.querySelector('input[name="vent_dur"]'); if(el) el.value = data.duration; }
   }
   if (formId === 'f-bl') {
     if (data.date && !data.trans_date) { const el = f.querySelector('input[name="trans_date"]'); if(el) el.value = data.date; }
     if (data.bag_no && !data.bag_number) { const el = f.querySelector('input[name="bag_number"]'); if(el) el.value = data.bag_no; }
     if (data.vitals && !data.vitals_during) { const el = f.querySelector('input[name="vitals_during"]'); if(el) el.value = data.vitals; }
+    if (data.date_of_collection && !data.collection_date) { const el = f.querySelector('input[name="collection_date"]'); if(el) el.value = data.date_of_collection; }
+    if (data.date_of_expiry && !data.expiry_date) { const el = f.querySelector('input[name="expiry_date"]'); if(el) el.value = data.date_of_expiry; }
+    if (data.before_vitals && !data.vitals_before) { const el = f.querySelector('input[name="vitals_before"]'); if(el) el.value = data.before_vitals; }
+    if (data.after_vitals && !data.vitals_after) { const el = f.querySelector('input[name="vitals_after"]'); if(el) el.value = data.after_vitals; }
+    if (data.pre_med && !data.pre_medication) { const el = f.querySelector('input[name="pre_medication"]'); if(el) el.value = data.pre_med; }
+
+    // Restore Blood Type, Subtype, and Details
+    const bType = data.blood_type || '';
+    const bSubtype = data.blood_subtype || '';
+    const bDetails = data.blood_type_details || data.details || '';
+    const typeSelect = document.getElementById('bt_type_select');
+    if (typeSelect && bType) {
+      typeSelect.value = bType;
+    }
+    onBloodTypeChange(bType, bSubtype, bDetails);
   }
 
   // Update Select2 dropdowns if present
@@ -3540,6 +4688,9 @@ function showToast(msg, err=false){
 
 /* ── Initialize ── */
 $(document).ready(function() {
+    resetGcsToDefault();
+    onVentTypeChange('');
+    onBloodTypeChange('');
     $('select[name="consultant"], select[name="ref_doctor"]').select2({
         placeholder: "-- Search Doctor --",
         allowClear: true,

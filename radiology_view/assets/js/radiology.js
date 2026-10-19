@@ -253,10 +253,12 @@ function escHtml(s) {
 
 function radStatusBadge(status) {
     const map = {
-        'Ordered':     '<span class="lis-badge lis-badge-ordered"><i class="fas fa-clock"></i> Ordered</span>',
-        'In Progress': '<span class="lis-badge lis-badge-progress"><i class="fas fa-spinner fa-spin"></i> In Progress</span>',
-        'Completed':   '<span class="lis-badge lis-badge-completed"><i class="fas fa-check"></i> Completed</span>',
-        'Reported':    '<span class="lis-badge lis-badge-reported"><i class="fas fa-file-medical"></i> Reported</span>'
+        'Ordered':      '<span class="lis-badge lis-badge-ordered"><i class="fas fa-clock"></i> Ordered</span>',
+        'RIS Accepted': '<span class="lis-badge" style="background:#dcfce7;color:#15803d;border:1px solid #86efac;font-weight:700;"><i class="fas fa-check-circle"></i> RIS Accepted</span>',
+        'RIS Failed':   '<span class="lis-badge" style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;font-weight:700;"><i class="fas fa-exclamation-circle"></i> RIS Failed</span>',
+        'In Progress':  '<span class="lis-badge lis-badge-progress"><i class="fas fa-spinner fa-spin"></i> In Progress</span>',
+        'Completed':    '<span class="lis-badge lis-badge-completed"><i class="fas fa-check"></i> Completed</span>',
+        'Reported':     '<span class="lis-badge lis-badge-reported"><i class="fas fa-file-medical"></i> Reported</span>'
     };
     return map[status] || `<span class="lis-badge lis-badge-ordered">${escHtml(status || 'Ordered')}</span>`;
 }

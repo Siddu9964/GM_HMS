@@ -130,6 +130,71 @@ class RadiologyService
         return ['success' => true];
     }
 
+    /**
+     * Send an existing radiology order to Somatiq RIS via HL7 ORM^O01
+     */
+    public function sendOrderToSomatiq($orderId)
+    {
+        $isIpd = (strpos($orderId, 'IPD-') === 0 || strpos($orderId, 'IPB-') === 0);
+        $fullOrder = null;
+
+        if ($isIpd) {
+            $fullOrder = $this->repo->getIpdOrderById($orderId);
+        } else {
+            $fullOrder = $this->repo->getOrderById($orderId);
+            if (!$fullOrder) {
+                $fullOrder = $this->repo->getIpdOrderById($orderId);
+                if ($fullOrder) $isIpd = true;
+            }
+        }
+
+        if (!$fullOrder) {
+            throw new Exception("Radiology order not found: {$orderId}");
+        }
+
+        $patientId = $fullOrder['patient_id'] ?? '';
+        if (empty($patientId)) {
+            throw new Exception("Order {$orderId} has no patient ID associated.");
+        }
+
+        $db = \GM_HMS\Database\SecureDatabase::getInstance();
+        $patient = $db->fetchOne(
+            "SELECT * FROM patient WHERE patient_id = ?",
+            [$patientId]
+        );
+
+        if (!$patient) {
+            $patient = [
+                'patient_id' => $patientId,
+                'first_name' => $fullOrder['patient_name'] ?? 'Patient',
+                'last_name'  => '',
+                'sex'        => $fullOrder['sex'] ?? 'U',
+                'birth_date' => $fullOrder['birth_date'] ?? '',
+                'age'        => $fullOrder['age'] ?? null,
+                'phone'      => $fullOrder['phone'] ?? '',
+            ];
+        }
+
+        $somatiq   = new \GM_HMS\Modules\Radiology\Services\SomatiqHL7Service();
+        $hl7Result = $somatiq->sendOrder($fullOrder, $patient);
+
+        if ($hl7Result['success']) {
+            if ($isIpd) {
+                $this->updateIpdOrderStatus($orderId, 'RIS Accepted');
+            } else {
+                $this->updateOrderStatus($orderId, 'RIS Accepted');
+            }
+        } else {
+            if ($isIpd) {
+                $this->updateIpdOrderStatus($orderId, 'RIS Failed');
+            } else {
+                $this->updateOrderStatus($orderId, 'RIS Failed');
+            }
+        }
+
+        return $hl7Result;
+    }
+
     public function getIpdOrders($all, $date, $statusFilter = 'all', $search = '', $modality = '')
     {
         return $this->repo->getIpdOrders($all, $date, $statusFilter, $search, $modality);

@@ -48,7 +48,8 @@ try {
         'blood_transfusion' => 'blood_transfusion_chart',
         'nurse_record' => 'nurses_record',
         'support_charges' => 'billing_items',
-        'bp_chart' => 'bp_chart'
+        'bp_chart' => 'bp_chart',
+        'gcs_chart' => 'bp_chart'
     ];
     
     $column = $mapping[$chartType] ?? $chartType;

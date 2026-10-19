@@ -352,7 +352,7 @@ try {
                                     <th>Temperature (°F)</th>
                                     <th>SpO2 (%)</th>
                                     <th>Pain Score</th>
-                                    <th>GCS / Status</th>
+                                    <th>GCS</th>
                                     <th>Recorded By</th>
                                 </tr>
                             </thead>
@@ -371,6 +371,24 @@ try {
                                         $bpVal = $v['bp_systolic'] . '/' . ($v['bp_diastolic'] ?? '');
                                     }
                                     $painVal = $v['pain_score'] ?? $v['bp_pain'] ?? $v['bp_pain_score'] ?? '';
+                                    
+                                    $gcsText = $v['gcs'] ?? $v['consciousness_level'] ?? '-';
+                                    $gcsScore = isset($v['gcs_score']) ? intval($v['gcs_score']) : 0;
+                                    if (!$gcsScore && is_string($gcsText)) {
+                                        if (preg_match('/(\d+)\s*\/\s*15/', $gcsText, $m)) {
+                                            $gcsScore = intval($m[1]);
+                                        } elseif (stripos($gcsText, 'alert') !== false) {
+                                            $gcsScore = 15;
+                                        }
+                                    }
+                                    $badgeBg = '#f0fdf4'; $badgeColor = '#15803d';
+                                    if ($gcsScore >= 13) {
+                                        $badgeBg = '#f0fdf4'; $badgeColor = '#15803d';
+                                    } elseif ($gcsScore >= 9) {
+                                        $badgeBg = '#fffbeb'; $badgeColor = '#b45309';
+                                    } elseif ($gcsScore > 0) {
+                                        $badgeBg = '#fef2f2'; $badgeColor = '#dc2626';
+                                    }
                                 ?>
                                 <tr>
                                     <td><strong><?php echo htmlspecialchars($v['bp_date'] ?? $v['vitals_date'] ?? $v['date'] ?? $v['created_date'] ?? '-'); ?></strong></td>
@@ -380,7 +398,7 @@ try {
                                     <td><?php echo htmlspecialchars($v['bp_temp'] ?? $v['temp'] ?? $v['temperature'] ?? '-'); ?></td>
                                     <td><?php echo htmlspecialchars(($v['bp_spo2'] ?? $v['spo2'] ?? '-') . '%'); ?></td>
                                     <td><span class="badge" style="font-weight:800;"><?php echo htmlspecialchars($painVal !== '' ? ($painVal . '/10') : '-'); ?></span></td>
-                                    <td><?php echo htmlspecialchars($v['gcs'] ?? $v['consciousness_level'] ?? '-'); ?></td>
+                                    <td><span class="badge" style="background:<?php echo $badgeBg; ?>;color:<?php echo $badgeColor; ?>;font-weight:800;"><?php echo htmlspecialchars($gcsText); ?></span></td>
                                     <td><?php echo htmlspecialchars($v['bp_nurse'] ?? $v['nurse_sign'] ?? $v['created_by_name'] ?? $v['recorded_by_name'] ?? '-'); ?></td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -782,7 +800,12 @@ try {
                                 ?>
                                 <tr>
                                     <td><strong><?php echo htmlspecialchars($v['vent_date'] ?? (!empty($v['vent_start_dt']) ? explode('T', $v['vent_start_dt'])[0] : ($v['date'] ?? '-'))); ?></strong></td>
-                                    <td><span class="badge-chip"><?php echo htmlspecialchars($v['vent_mode'] ?? $v['vent_remarks'] ?? $v['mode'] ?? '-'); ?></span></td>
+                                    <td>
+                                        <?php if (!empty($v['vent_type'])): ?>
+                                            <small style="display:block; color:#64748b; font-weight:700; font-size:0.72rem; text-transform:uppercase; margin-bottom:2px;"><?php echo htmlspecialchars($v['vent_type']); ?></small>
+                                        <?php endif; ?>
+                                        <span class="badge-chip"><?php echo htmlspecialchars($v['vent_mode'] ?? $v['vent_remarks'] ?? $v['mode'] ?? '-'); ?></span>
+                                    </td>
                                     <td>
                                         <?php if ($isOngoing): ?>
                                             <span style="background:#dcfce7; color:#15803d; font-weight:800; padding:2px 8px; border-radius:6px; font-size:0.78rem;"><i class="fas fa-procedures"></i> <?php echo htmlspecialchars($v['vent_dur'] ?? 'Active on Vent'); ?></span>
@@ -809,16 +832,63 @@ try {
                     <div class="modern-table-wrapper">
                         <table class="modern-table">
                             <thead>
-                                <tr><th>Date</th><th>Blood Group</th><th>Bag / Unit #</th><th>Quantity (ml)</th><th>Vitals During</th><th>Nurse Signature</th></tr>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Blood Group & Product</th>
+                                    <th>Bag / Unit #</th>
+                                    <th>Dates (Coll / Exp)</th>
+                                    <th>Quantity</th>
+                                    <th>Pre-Medication</th>
+                                    <th>Vitals (Before / During / After)</th>
+                                    <th>Nurse Signature</th>
+                                </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($records['blood_transfusion_chart'] as $v): ?>
+                                <?php foreach ($records['blood_transfusion_chart'] as $v): 
+                                    $collD = $v['collection_date'] ?? $v['date_of_collection'] ?? '';
+                                    $expD  = $v['expiry_date'] ?? $v['date_of_expiry'] ?? '';
+                                ?>
                                 <tr>
                                     <td><strong><?php echo htmlspecialchars($v['trans_date'] ?? $v['date'] ?? $v['created_date'] ?? '-'); ?></strong></td>
-                                    <td><span class="badge-chip"><?php echo htmlspecialchars($v['blood_group'] ?? '-'); ?></span></td>
+                                    <td>
+                                        <span class="badge-chip"><?php echo htmlspecialchars($v['blood_group'] ?? '-'); ?></span>
+                                        <?php if (!empty($v['blood_type'])): ?>
+                                            <div style="font-size:0.75rem; font-weight:800; color:#1F6B4A; margin-top:3px;">
+                                                <?php echo htmlspecialchars($v['blood_type']); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($v['blood_subtype'])): ?>
+                                            <div style="font-size:0.72rem; color:#64748b; font-weight:700;">
+                                                &bull; <?php echo htmlspecialchars($v['blood_subtype']); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($v['blood_type_details'])): ?>
+                                            <small style="font-size:0.7rem; color:#64748b; display:block;">
+                                                (<?php echo htmlspecialchars($v['blood_type_details']); ?>)
+                                            </small>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><strong>#<?php echo htmlspecialchars($v['bag_number'] ?? $v['bag_no'] ?? '-'); ?></strong></td>
+                                    <td>
+                                        <?php if ($collD || $expD): ?>
+                                            <small style="display:block; color:#64748b; font-size:0.75rem; line-height:1.35;">
+                                                <?php if ($collD): ?>Coll: <?php echo htmlspecialchars($collD); ?><br><?php endif; ?>
+                                                <?php if ($expD): ?>Exp: <?php echo htmlspecialchars($expD); ?><?php endif; ?>
+                                            </small>
+                                        <?php else: ?>
+                                            -
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?php echo htmlspecialchars($v['quantity'] ?? '-'); ?> ml</td>
-                                    <td><?php echo htmlspecialchars($v['vitals_during'] ?? $v['vitals'] ?? '-'); ?></td>
+                                    <td><?php echo htmlspecialchars($v['pre_medication'] ?? $v['pre_med'] ?? '-'); ?></td>
+                                    <td>
+                                        <div style="font-size:0.78rem; line-height:1.4;">
+                                            <?php if (!empty($v['vitals_before'])): ?><div><strong style="color:#0369a1;">Before:</strong> <?php echo htmlspecialchars($v['vitals_before']); ?></div><?php endif; ?>
+                                            <?php if (!empty($v['vitals_during']) || !empty($v['vitals'])): ?><div><strong style="color:#1F6B4A;">During:</strong> <?php echo htmlspecialchars($v['vitals_during'] ?? $v['vitals']); ?></div><?php endif; ?>
+                                            <?php if (!empty($v['vitals_after'])): ?><div><strong style="color:#b45309;">After:</strong> <?php echo htmlspecialchars($v['vitals_after']); ?></div><?php endif; ?>
+                                            <?php if (empty($v['vitals_before']) && empty($v['vitals_during']) && empty($v['vitals']) && empty($v['vitals_after'])): ?>-<?php endif; ?>
+                                        </div>
+                                    </td>
                                     <td><?php echo htmlspecialchars($v['nurse_sign'] ?? $v['nurse'] ?? $v['created_by_name'] ?? '-'); ?></td>
                                 </tr>
                                 <?php endforeach; ?>

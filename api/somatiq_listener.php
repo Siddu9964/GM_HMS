@@ -76,8 +76,8 @@ if (!empty($base64_pdf)) {
 $date_time = date('YmdHis');
 
 // Replace YOUR_VENDOR_CODE and YOUR_CENTRE_CODE with the values provided by Somatiq
-$vendor_code = "YOUR_VENDOR_CODE"; 
-$centre_code = "YOUR_CENTRE_CODE";
+$vendor_code = "GM"; 
+$centre_code = "DEMO";
 
 $ack_message = "MSH|^~\\&|SOMATIQ_RIS||$vendor_code|$centre_code|$date_time||ACK^R01^ACK|$message_control_id|P|2.3\r" .
                "MSA|AA|$message_control_id\r";

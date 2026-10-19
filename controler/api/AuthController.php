@@ -53,24 +53,6 @@ class AuthController extends BaseController {
         error_log("[DEBUG] AuthController::login hit");
         $this->restrictMethod('POST');
         
-        // Apply strict rate limiting (5 attempts per 5 minutes per IP) for login
-        $limiter = \GM_HMS\Middleware\RateLimiter::getInstance();
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-        $limitResult = $limiter->checkLimit($ip, 'ip', '/api/auth/login', 5, 300);
-        
-        if (!$limitResult['allowed']) {
-            http_response_code(429);
-            
-            // Check if they are permanently blocked or just hit the limit this exact second
-            $message = 'Account blocked. Please contact Admin.';
-            
-            echo json_encode([
-                'status' => 'error',
-                'message' => $message
-            ]);
-            exit;
-        }
-        
         // Get and validate JSON input
         $schema = [
             'required' => ['username', 'password'],
@@ -89,6 +71,7 @@ class AuthController extends BaseController {
             $identifier = $this->sanitizer->sanitizeString($data['username']);
             $password = $data['password'];
             
+
             // Attempt login using unified logic
             $result = $this->auth->login($identifier, $password);
             

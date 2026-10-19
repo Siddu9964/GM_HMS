@@ -175,6 +175,26 @@ class RadiologyController extends BaseController
     }
 
     /**
+     * POST /api/radiology/orders/:id/send
+     * Sends existing radiology scan order to Somatiq RIS via HL7 ORM^O01
+     */
+    public function sendOrderToSomatiq($id)
+    {
+        $this->restrictMethod('POST');
+        $this->requireAuth();
+        try {
+            $result = $this->service->sendOrderToSomatiq($id);
+            if (!empty($result['success'])) {
+                $this->respondSuccess($result, $result['message'] ?? 'Radiology scan order sent to Somatiq RIS successfully');
+            } else {
+                $this->respondError($result['message'] ?? 'Failed to send radiology scan order to Somatiq RIS', 400);
+            }
+        } catch (Exception $e) {
+            $this->handleException($e);
+        }
+    }
+
+    /**
      * PUT /api/radiology/orders/:id/status
      */
     public function updateOrderStatus($orderId)

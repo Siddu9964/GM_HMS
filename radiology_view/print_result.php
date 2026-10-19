@@ -34,28 +34,75 @@ if ($from === 'kanban' || $from === 'results' || $from === 'all_results') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; color: #111; font-size: 11px; line-height: 1.35; }
         
         @media screen {
             body { background: #e2e8f0; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; }
-            .invoice-wrapper { width: 100%; max-width: 850px; background: #fff; padding: 0 45px 45px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-            .action-bar { display: flex; justify-content: flex-end; margin-bottom: 20px; gap: 12px; width: 100%; max-width: 850px; }
-            .btn { padding: 8px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
-            .btn-print { background: #0284c7; color: #fff; }
+            .invoice-wrapper { width: 100%; max-width: 850px; background: #fff; padding: 25px 45px 45px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-radius: 4px; }
+            .action-bar { display: flex; justify-content: flex-end; margin-bottom: 20px; gap: 10px; width: 100%; max-width: 850px; flex-wrap: wrap; }
+            .btn { padding: 8px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; transition: all 0.15s ease; }
+            .btn:hover { transform: translateY(-1px); }
+            .btn-print { background: #1f6b4a; color: #fff; }
+            .btn-print:hover { background: #18553a; }
+            .btn-pdf { background: #e11d48; color: #fff; }
+            .btn-pdf:hover { background: #be123c; }
             .btn-close { background: #fff; color: #64748b; border: 1px solid #cbd5e1; }
+            .btn-close:hover { background: #f8fafc; color: #334155; }
         }
         
         @media print {
             body { background: #fff; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; line-height: 1.3; }
             .action-bar { display: none !important; }
-            .invoice-wrapper { padding: 0 20px; box-shadow: none; max-width: 100%; }
+            .invoice-wrapper { padding: 0 20px; box-shadow: none; max-width: 100%; width: 100%; }
+            .hospital-brand { color: #1793a5 !important; }
             @page { margin: 10mm; size: A4 portrait; }
         }
 
-        /* Top spacing for pre-printed hospital letterhead */
-        .letterhead-space { height: 120px; position: relative; }
+        /* Hospital Letterhead Header */
+        .hospital-header {
+            text-align: center;
+            margin-bottom: 12px;
+            padding-top: 6px;
+            padding-bottom: 4px;
+        }
+        .hospital-brand {
+            font-size: 26px;
+            font-weight: 800;
+            color: #1793a5;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.15;
+        }
+        .hospital-branches {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 12.5px;
+            color: #334155;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .hospital-branches::before,
+        .hospital-branches::after {
+            content: '';
+            display: inline-block;
+            width: 55px;
+            height: 1.5px;
+            background: #475569;
+        }
+        .hospital-subtext {
+            font-size: 11px;
+            line-height: 1.45;
+            color: #1e293b;
+            font-weight: 500;
+            margin: 0;
+        }
 
         .report-header-banner {
             text-align: center;
@@ -63,10 +110,12 @@ if ($from === 'kanban' || $from === 'results' || $from === 'all_results') {
             border-bottom: 2px solid #0f172a;
             padding: 6px 0;
             margin-bottom: 12px;
-            font-size: 14px;
+            margin-top: 6px;
+            font-size: 13.5px;
             font-weight: 800;
             letter-spacing: 0.08em;
             text-transform: uppercase;
+            color: #0f172a;
         }
 
         /* Patient Grid */
@@ -127,7 +176,9 @@ if ($from === 'kanban' || $from === 'results' || $from === 'all_results') {
 
 <div class="action-bar">
     <button type="button" class="btn btn-close" onclick="handlePrintBack()"><i class="fas fa-arrow-left" style="margin-right:6px;"></i> Back</button>
-    <a id="btn-view-scan" href="#" target="_blank" class="btn btn-close" style="display:none;"><i class="fas fa-file-image" style="margin-right:6px;"></i> View Scan File</a>
+    <a id="btn-view-scan" href="#" target="_blank" class="btn btn-close" style="display:none;"><i class="fas fa-file-image" style="margin-right:6px;"></i> View Attached Scan</a>
+    <button type="button" class="btn btn-close" id="btn-toggle-header" onclick="toggleLetterhead()" title="Toggle printed hospital header"><i class="fas fa-heading" style="margin-right:6px;"></i> Header: ON</button>
+    <button type="button" class="btn btn-pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf" style="margin-right:6px;"></i> Download PDF</button>
     <button type="button" class="btn btn-print" onclick="window.print()"><i class="fas fa-print" style="margin-right:6px;"></i> Print Report</button>
 </div>
 
@@ -135,7 +186,18 @@ if ($from === 'kanban' || $from === 'results' || $from === 'all_results') {
 
 <div class="invoice-wrapper" id="slip-content" style="display:none;">
     
-    <div class="letterhead-space"></div>
+    <!-- Hospital Letterhead Header -->
+    <div class="hospital-header" id="hospitalHeader">
+        <div class="hospital-brand">GM HOSPITALS</div>
+        <div class="hospital-branches">Nagarabhavi | Basaveshwaranagar</div>
+        <div class="hospital-subtext">
+            (A Unit of PANNAGARABHAVI HOSPITALS PVT LTD)<br>
+            No. 335, 3rd Stage, 4th Block, Siddaiah Puranik Road,<br>
+            Basaveshwara nagar, Bengaluru - 560079<br>
+            Tel. No - 0802221160 Mob. No - 9900003527<br>
+            GST NO: 29AAFCP8756N3ZE
+        </div>
+    </div>
     
     <div class="report-header-banner">
         Department of Radiodiagnosis & Imaging
@@ -360,8 +422,10 @@ async function loadRadReport() {
 
             if (result.report_file) {
                 const btnScan = document.getElementById('btn-view-scan');
-                btnScan.href = '/GM_HMS/' + result.report_file;
+                const isExternal = result.report_file.startsWith('http://') || result.report_file.startsWith('https://');
+                btnScan.href = isExternal ? result.report_file : ('/GM_HMS/' + result.report_file.replace(/^\/+/, ''));
                 btnScan.style.display = 'inline-flex';
+                btnScan.target = '_blank';
             }
         } else {
             document.getElementById('b-date').textContent = 'Pending';
@@ -372,12 +436,64 @@ async function loadRadReport() {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('slip-content').style.display = 'block';
 
+        // Auto trigger PDF download if requested via ?pdf=1 or ?download=pdf
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('pdf') === '1' || urlParams.get('download') === 'pdf') {
+            setTimeout(downloadPDF, 800);
+        }
+
     } catch(err) {
         document.getElementById('loading').innerHTML = '<div style="color:red;">Error fetching report details.</div>';
     }
 }
 
 document.addEventListener('DOMContentLoaded', loadRadReport);
+
+function toggleLetterhead() {
+    const hdr = document.getElementById('hospitalHeader');
+    const btn = document.getElementById('btn-toggle-header');
+    if (!hdr || !btn) return;
+    if (hdr.style.display === 'none') {
+        hdr.style.display = 'block';
+        btn.innerHTML = '<i class="fas fa-heading" style="margin-right:6px;"></i> Header: ON';
+        btn.style.color = '#1f6b4a';
+    } else {
+        hdr.style.display = 'none';
+        btn.innerHTML = '<i class="fas fa-heading" style="margin-right:6px;"></i> Header: OFF';
+        btn.style.color = '#94a3b8';
+    }
+}
+
+function downloadPDF() {
+    const element = document.getElementById('slip-content');
+    const oid = <?= json_encode($orderId) ?>;
+    const btnPdf = document.querySelector('.btn-pdf');
+    const origHtml = btnPdf ? btnPdf.innerHTML : '';
+    if (btnPdf) {
+        btnPdf.disabled = true;
+        btnPdf.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Generating PDF...';
+    }
+
+    const opt = {
+        margin:       [8, 10, 8, 10], // mm
+        filename:     `Radiology_Report_${oid}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(element).save().then(() => {
+        if (btnPdf) {
+            btnPdf.disabled = false;
+            btnPdf.innerHTML = origHtml;
+        }
+    }).catch(() => {
+        if (btnPdf) {
+            btnPdf.disabled = false;
+            btnPdf.innerHTML = origHtml;
+        }
+    });
+}
 
 function handlePrintBack() {
     const fallbackUrl = <?= json_encode($fallbackBackUrl) ?>;

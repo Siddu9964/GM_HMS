@@ -254,6 +254,16 @@ function renderIpdOrders(orders) {
     const modalitiesBadge = (o.modalities || []).map(m => `<span class="badge bg-secondary" style="font-size:0.65rem;margin-right:2px;">${escHtml(m)}</span>`).join('');
     const bedInfo = [o.ward_name, o.room_no ? `Room ${o.room_no}` : '', o.bed_id ? `Bed ${o.bed_id}` : ''].filter(Boolean).join(' • ');
 
+    let somatiqImgUrl = '';
+    let somatiqRepUrl = o.report_file || '';
+    if (o.result_data) {
+      try {
+        const rd = typeof o.result_data === 'string' ? JSON.parse(o.result_data) : o.result_data;
+        if (rd && rd.image_url) somatiqImgUrl = rd.image_url;
+        if (rd && rd.report_url && !somatiqRepUrl) somatiqRepUrl = rd.report_url;
+      } catch(e) {}
+    }
+
     return `
       <tr>
         <td><strong style="color:#0284c7;font-family:monospace;">${escHtml(o.order_id)}</strong></td>
@@ -268,16 +278,43 @@ function renderIpdOrders(orders) {
         <td style="font-size:.75rem;color:#64748b;">${escHtml(o.order_date ? o.order_date.slice(0,10) : '')}</td>
         <td style="text-align:center;">${radStatusBadge(o.status)}</td>
         <td style="text-align:center;white-space:nowrap;">
-          <button class="lb lb-primary" style="padding:4px 10px;font-size:0.75rem;" onclick="openIpdResultModal('${escHtml(o.order_id)}', '${escHtml(o.patient_id)}', '${escHtml(o.resolved_test_names||o.test_name)}', '${escHtml(bedInfo)}')">
-            <i class="fas fa-file-medical"></i> Report
+          <button type="button" class="lb lb-primary" style="padding:6px 18px;font-size:0.78rem;font-weight:700;display:inline-flex;align-items:center;gap:6px;border-radius:20px;box-shadow:0 3px 8px rgba(31,107,74,0.25);" onclick="sendOrderToSomatiq('${escHtml(o.order_id)}', this)" title="Send Scan Order to Somatiq RIS">
+            <i class="fas fa-paper-plane"></i> Send
           </button>
-          <a href="print_result.php?order_id=${encodeURIComponent(o.order_id)}&source=IPD&from=ipd_orders" target="_blank" onclick="window.open(this.href, '_blank'); return false;" class="lb lb-outline" style="padding:4px 10px;font-size:0.75rem;" title="Print Inpatient Report">
-            <i class="fas fa-print"></i>
-          </a>
         </td>
       </tr>
     `;
   }).join('');
+}
+
+async function sendOrderToSomatiq(orderId, btn) {
+  if (!orderId) return;
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending...';
+  }
+
+  try {
+    const res = await radApi('POST', `/api/radiology/orders/${encodeURIComponent(orderId)}/send`);
+    if (res && res.success) {
+      radToast(`Inpatient scan order #${orderId} sent to Somatiq RIS successfully!`, 'success');
+      loadIpdOrders();
+    } else {
+      radToast(res?.message || 'Error sending inpatient order to Somatiq RIS', 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    }
+  } catch(e) {
+    console.error('Error sending scan order to Somatiq RIS:', e);
+    radToast(e.message || 'Error sending scan order to Somatiq RIS', 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
 }
 
 async function openIpdResultModal(orderId, patientId, testName, bedInfo) {
@@ -472,4 +509,40 @@ document.addEventListener('keydown', function(e) {
 });
 
 loadIpdOrders();
+
+function openSomatiqViewer(orderId, patientId, directUrl) {
+  if (directUrl && directUrl.startsWith('http')) {
+    window.open(directUrl, '_blank');
+    return;
+  }
+  const viewerUrl = `https://ris.somatiq.ai/worklist?patient_id=${patientId}&order_id=${orderId}`;
+  window.open(viewerUrl, '_blank');
+}
+
+function shareSomatiqReport(patientPhone, patientName, reportUrl, imageUrl) {
+  let text = `Hello ${patientName || 'Inpatient'},\nYour radiology examination report is ready.\n\n`;
+  if (reportUrl) text += `📄 View Report PDF: ${reportUrl}\n`;
+  if (imageUrl) text += `🖼️ View DICOM Images: ${imageUrl}\n\n`;
+  text += `GM Hospital & Diagnostic Centre`;
+  
+  const cleanPhone = (patientPhone || '').replace(/[^0-9]/g, '');
+  const targetPhone = cleanPhone.length === 10 ? ('91' + cleanPhone) : cleanPhone;
+  const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`;
+  window.open(waUrl, '_blank');
+}
+
+function copySomatiqLink(url) {
+  if (!url) {
+    if (typeof Swal !== 'undefined') Swal.fire({ icon: 'info', title: 'No link', text: 'Report link not available.' });
+    else alert('Report link not available.');
+    return;
+  }
+  navigator.clipboard.writeText(url).then(() => {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({ icon: 'success', title: 'Copied!', text: 'Share link copied to clipboard.', timer: 1500, showConfirmButton: false });
+    } else {
+      alert('Share link copied to clipboard!');
+    }
+  });
+}
 </script>

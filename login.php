@@ -15,38 +15,35 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         header("Location: login.php?error=" . urlencode("Your account is inactive. Please contact the administrator."));
         exit();
     }
-    switch ($_SESSION['role']) {
-        case 'admin':
-            header("Location: view/admin_dashboard.php");
-            break;
-        case 'Doctor':
-            header("Location: doctors_view/dashboard.php");
-            break;
-        case 'Receptionist':
-            header("Location: reception_view/index.php");
-            break;
-        case 'Nurse':
-        case 'Superintendent_Nurse':
-        case 'Nursing_Superintendent':
-            header("Location: nurse_view/dashboard.php");
-            break;
-        case 'Scrub_Nurse':
-            header("Location: ot_view/dashboard.php");
-            break;
-        case 'Pharmacist':
-            header("Location: pharmacy_view/dashboard.php");
-            break;
-        case 'LabTechnician':
-        case 'laboratory':
-            header("Location: laboratory_view/dashboard.php");
-            break;
-        case 'Radiologist':
-        case 'radiology':
-        case 'radiologist':
-            header("Location: radiology_view/dashboard.php");
-            break;
+
+    $roleLower = strtolower(trim((string)$_SESSION['role']));
+    $redirectTarget = '';
+
+    if ($roleLower === 'admin') {
+        $redirectTarget = "view/admin_dashboard.php";
+    } elseif ($roleLower === 'doctor') {
+        $redirectTarget = "doctors_view/dashboard.php";
+    } elseif (strpos($roleLower, 'reception') !== false) {
+        $redirectTarget = "reception_view/index.php";
+    } elseif (strpos($roleLower, 'scrub') !== false) {
+        $redirectTarget = "ot_view/dashboard.php";
+    } elseif (strpos($roleLower, 'nurse') !== false) {
+        $redirectTarget = "nurse_view/dashboard.php";
+    } elseif (strpos($roleLower, 'pharm') !== false) {
+        $redirectTarget = "pharmacy_view/dashboard.php";
+    } elseif (strpos($roleLower, 'lab') !== false) {
+        $redirectTarget = "laboratory_view/dashboard.php";
+    } elseif (strpos($roleLower, 'radio') !== false) {
+        $redirectTarget = "radiology_view/dashboard.php";
+    } else {
+        // Stale or unrecognized session role — clear it so user sees the login form instead of blank screen
+        unset($_SESSION['user_id'], $_SESSION['role']);
     }
-    exit();
+
+    if (!empty($redirectTarget)) {
+        header("Location: " . $redirectTarget);
+        exit();
+    }
 }
 ?>
 <!DOCTYPE html>

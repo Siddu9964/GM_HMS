@@ -125,7 +125,6 @@ try {
     --gm-text: #1f6b4a;
     --gm-text-body: #2c3e35;
     --gm-text-muted: #527967;
-    --gm-sidebar-w: 185px;
 }
 
 html, body {
@@ -153,13 +152,16 @@ html, body {
 
 .content-wrapper {
     flex: 1;
+    display: flex;
+    flex-direction: column;
     min-width: 0;
-    padding: 20px 24px;
     background-color: var(--gm-bg);
-    margin-left: var(--gm-sidebar-w, 185px);
-    width: calc(100% - var(--gm-sidebar-w, 185px));
+}
+
+.main-content {
+    flex: 1;
+    padding: 20px 24px;
     box-sizing: border-box;
-    transition: margin-left 0.25s ease, width 0.25s ease, padding 0.2s ease;
 }
 
 /* Patient Dashboard & Selection View */
@@ -836,7 +838,8 @@ html, body {
     <!-- Navbar -->
     <?php $pageTitle = 'Bed Transfer'; include 'includes/nurse_navbar.php'; ?>
 
-    <!-- 1. Patient Selection Grid Dashboard -->
+    <div class="main-content">
+      <!-- 1. Patient Selection Grid Dashboard -->
     <div class="nopt-dashboard" id="nopt-state">
       <div class="dash-header">
         <div>
@@ -1062,6 +1065,7 @@ html, body {
         </div>
       </div>
     </div>
+    </div><!-- /main-content -->
 
   </div><!-- /content-wrapper -->
 </div><!-- /main-layout -->

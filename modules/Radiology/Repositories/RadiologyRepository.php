@@ -316,8 +316,12 @@ class RadiologyRepository
 
             // Check results table
             $radResult = $this->getRadiologyResultByOrderId($row['order_id']);
-            if ($radResult && !empty($radResult['status'])) {
-                $row['status'] = $radResult['status'] === 'Reviewed' ? 'Reported' : $radResult['status'];
+            if ($radResult) {
+                if (!empty($radResult['status'])) {
+                    $row['status'] = $radResult['status'] === 'Reviewed' ? 'Reported' : $radResult['status'];
+                }
+                $row['report_file'] = $radResult['report_file'] ?? null;
+                $row['result_data'] = $radResult['result_data'] ?? null;
             }
 
             // Resolve test names from radiology_services
@@ -365,6 +369,16 @@ class RadiologyRepository
         $orders = $this->getOrders('1', date('Y-m-d'), '', '', $orderId);
         foreach ($orders as $o) {
             if ($o['order_id'] === $orderId) return $o;
+        }
+        return null;
+    }
+
+    public function getIpdOrderById($orderId)
+    {
+        $cleanId = preg_replace('/^IPD-RAD-/i', '', trim($orderId));
+        $orders = $this->getIpdOrders('1', date('Y-m-d'), 'all', $cleanId, '');
+        foreach ($orders as $o) {
+            if ($o['order_id'] === $orderId || $o['order_id'] === 'IPD-RAD-' . $cleanId) return $o;
         }
         return null;
     }
@@ -642,9 +656,10 @@ class RadiologyRepository
         }
 
         if ($search) {
-            $sql .= " AND (cr.id LIKE ? OR cr.patient_id LIKE ? OR p.first_name LIKE ? OR p.last_name LIKE ? OR a.admission_id LIKE ?)";
+            $cleanSearch = preg_replace('/^IPD-RAD-/i', '', trim($search));
+            $sql .= " AND (cr.id LIKE ? OR cr.id = ? OR cr.patient_id LIKE ? OR p.first_name LIKE ? OR p.last_name LIKE ? OR a.admission_id LIKE ?)";
             $searchParam = "%$search%";
-            $params = array_merge($params, [$searchParam, $searchParam, $searchParam, $searchParam, $searchParam]);
+            $params = array_merge($params, [$searchParam, $cleanSearch, $searchParam, $searchParam, $searchParam, $searchParam]);
         }
 
         $sql .= " ORDER BY cr.created_at DESC LIMIT 500";
@@ -698,8 +713,12 @@ class RadiologyRepository
             $row['modalities'] = array_unique($modalityTags);
 
             $radResult = $this->getIpdRadiologyResultByOrderId($row['order_id']);
-            if ($radResult && !empty($radResult['status'])) {
-                $row['status'] = $radResult['status'] === 'Reviewed' ? 'Reported' : $radResult['status'];
+            if ($radResult) {
+                if (!empty($radResult['status'])) {
+                    $row['status'] = $radResult['status'] === 'Reviewed' ? 'Reported' : $radResult['status'];
+                }
+                $row['report_file'] = $radResult['report_file'] ?? null;
+                $row['result_data'] = $radResult['result_data'] ?? null;
             }
 
             if ($statusFilter !== 'all') {

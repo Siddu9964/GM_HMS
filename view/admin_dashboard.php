@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+if (!isset($_SESSION['user_id']) || strcasecmp($_SESSION['role'] ?? '', 'admin') !== 0) {
     header("Location: /GM_HMS/login.php");
     exit();
 }

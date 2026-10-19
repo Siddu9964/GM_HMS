@@ -36,6 +36,17 @@ class RateLimiter {
      * @return array Result with allowed status and headers
      */
     public function checkLimit($identifier, $type, $endpoint, $limit = null, $windowSeconds = 60) {
+        // Login endpoints are completely exempt from rate limiting
+        if (strpos($endpoint, 'login') !== false) {
+            return [
+                'allowed' => true,
+                'limit' => 999999,
+                'remaining' => 999999,
+                'reset' => time() + 3600,
+                'headers' => []
+            ];
+        }
+
         $rateLimits = $this->config->getRateLimits();
         
         // Use default limits if not specified

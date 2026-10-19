@@ -399,11 +399,13 @@ $router->add('PUT',  '#^/api/radiology/services/([^/]+)/?$#',                  '
 $router->add('DELETE','#^/api/radiology/services/([^/]+)/?$#',                 'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'deleteService');
 $router->add('GET',  '#^/api/radiology/orders/?$#',                            'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getOrders');
 $router->add('POST', '#^/api/radiology/orders/?$#',                            'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'createOrder');
+$router->add('POST', '#^/api/radiology/orders/([^/]+)/send/?$#',               'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'sendOrderToSomatiq');
 $router->add('GET',  '#^/api/radiology/orders/([^/]+)/?$#',                    'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getOrder');
 $router->add('PUT',  '#^/api/radiology/orders/([^/]+)/status/?$#',             'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'updateOrderStatus');
 $router->add('GET',  '#^/api/radiology/orders/([^/]+)/result/?$#',             'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getResult');
 $router->add('POST', '#^/api/radiology/orders/([^/]+)/result/?$#',             'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'saveResult');
 $router->add('GET',  '#^/api/radiology/ipd-orders/?$#',                        'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getIpdOrders');
+$router->add('POST', '#^/api/radiology/ipd-orders/([^/]+)/send/?$#',           'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'sendOrderToSomatiq');
 $router->add('PUT',  '#^/api/radiology/ipd-orders/([^/]+)/status/?$#',         'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'updateIpdOrderStatus');
 $router->add('GET',  '#^/api/radiology/ipd-orders/([^/]+)/result/?$#',         'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'getResult');
 $router->add('POST', '#^/api/radiology/ipd-orders/([^/]+)/result/?$#',         'GM_HMS\Modules\Radiology\Controllers\RadiologyController', 'saveResult');

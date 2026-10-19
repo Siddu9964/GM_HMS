@@ -407,6 +407,16 @@ function renderOrders(orders) {
     const priColor = (o.priority === 'Urgent' || o.priority === 'Stat') ? 'color:#dc2626;font-weight:800;' : '';
     const modalitiesBadge = (o.modalities || []).map(m => `<span class="badge bg-secondary" style="font-size:0.65rem;margin-right:2px;">${escHtml(m)}</span>`).join('');
     
+    let somatiqImgUrl = '';
+    let somatiqRepUrl = o.report_file || '';
+    if (o.result_data) {
+      try {
+        const rd = typeof o.result_data === 'string' ? JSON.parse(o.result_data) : o.result_data;
+        if (rd && rd.image_url) somatiqImgUrl = rd.image_url;
+        if (rd && rd.report_url && !somatiqRepUrl) somatiqRepUrl = rd.report_url;
+      } catch(e) {}
+    }
+
     return `
       <tr>
         <td><strong style="color:#0284c7;font-family:monospace;">${escHtml(o.order_id)}</strong></td>
@@ -420,19 +430,127 @@ function renderOrders(orders) {
         <td style="font-size:.75rem;color:#64748b;">${escHtml(o.order_date)} ${escHtml(o.order_time ? o.order_time.slice(0,5) : '')}</td>
         <td style="text-align:center;">${radStatusBadge(o.status)}</td>
         <td style="text-align:center;white-space:nowrap;">
-          <button class="lb lb-primary" style="padding:4px 10px;font-size:0.75rem;" onclick="openResultModal('${escHtml(o.order_id)}', '${escHtml(o.patient_id)}', '${escHtml(o.resolved_test_names||o.test_name)}')">
-            <i class="fas fa-file-medical"></i> Report
+          <button type="button" class="lb lb-primary" style="padding:6px 18px;font-size:0.78rem;font-weight:700;display:inline-flex;align-items:center;gap:6px;border-radius:20px;box-shadow:0 3px 8px rgba(31,107,74,0.25);" onclick="sendOrderToSomatiq('${escHtml(o.order_id)}', this)" title="Send Scan Order to Somatiq RIS">
+            <i class="fas fa-paper-plane"></i> Send
           </button>
-          <a href="#" onclick="openSomatiqViewer('${escHtml(o.order_id)}', '${escHtml(o.patient_id)}'); return false;" class="lb lb-primary" style="padding:4px 10px;font-size:0.75rem; background-color: #0ea5e9; border-color: #0ea5e9;" title="View DICOM Images">
-            <i class="fas fa-images"></i> Images
-          </a>
-          <a href="print_result.php?order_id=${encodeURIComponent(o.order_id)}&source=OPD&from=orders" target="_blank" onclick="window.open(this.href, '_blank'); return false;" class="lb lb-outline" style="padding:4px 10px;font-size:0.75rem;" title="Print Report">
-            <i class="fas fa-print"></i>
-          </a>
         </td>
       </tr>
     `;
   }).join('');
+}
+
+async function sendOrderToSomatiq(orderId, btn) {
+  if (!orderId) return;
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Sending...';
+  }
+
+  try {
+    const res = await radApi('POST', `/api/radiology/orders/${encodeURIComponent(orderId)}/send`);
+    if (res && res.success) {
+      radToast(`Scan order #${orderId} sent to Somatiq RIS successfully!`, 'success');
+      loadOrders();
+    } else {
+      radToast(res?.message || 'Error sending order to Somatiq RIS', 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    }
+  } catch(e) {
+    console.error('Error sending scan order to Somatiq RIS:', e);
+    radToast(e.message || 'Error sending scan order to Somatiq RIS', 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+  }
+}
+
+function printOrderReport(orderId, repUrl) {
+  window.open(`/GM_HMS/radiology_view/print_result.php?order_id=${encodeURIComponent(orderId)}&source=OPD&from=orders`, '_blank');
+}
+
+function shareOrderWhatsApp(orderId, patientPhone, patientName, reportUrl, imageUrl) {
+  const effectiveReportUrl = (reportUrl && reportUrl.startsWith('http')) 
+    ? reportUrl 
+    : `${window.location.origin}/GM_HMS/radiology_view/print_result.php?order_id=${encodeURIComponent(orderId)}&source=OPD&from=orders`;
+
+  const triggerShare = (phone) => {
+    let text = `Hello ${patientName || 'Patient'},\nYour radiology examination report for Order #${orderId} is ready.\n\n`;
+    text += `📄 View Scan Report: ${effectiveReportUrl}\n`;
+    if (imageUrl && imageUrl.startsWith('http')) {
+      text += `🖼️ View DICOM Images: ${imageUrl}\n`;
+    }
+    text += `\nGM Hospital & Diagnostic Centre\nPhone: +91 99640 00000`;
+
+    const cleanPhone = (phone || '').replace(/[^0-9]/g, '');
+    const targetPhone = cleanPhone.length === 10 ? ('91' + cleanPhone) : cleanPhone;
+    const waUrl = targetPhone 
+      ? `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`
+      : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(waUrl, '_blank');
+  };
+
+  const cleanDigits = (patientPhone || '').replace(/[^0-9]/g, '');
+  if (cleanDigits.length >= 10) {
+    triggerShare(cleanDigits);
+  } else if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      title: 'Share via WhatsApp',
+      text: `Enter mobile number for ${patientName || 'patient'}:`,
+      input: 'tel',
+      inputValue: cleanDigits,
+      inputPlaceholder: '10-digit mobile number',
+      showCancelButton: true,
+      confirmButtonText: '<i class="fab fa-whatsapp"></i> Send WhatsApp',
+      confirmButtonColor: '#25d366',
+      inputValidator: (val) => {
+        if (!val || val.replace(/[^0-9]/g, '').length < 10) {
+          return 'Please enter a valid 10-digit mobile number';
+        }
+      }
+    }).then((res) => {
+      if (res.isConfirmed && res.value) {
+        triggerShare(res.value);
+      }
+    });
+  } else {
+    const entered = prompt(`Enter mobile number for ${patientName || 'patient'}:`, cleanDigits);
+    if (entered) triggerShare(entered);
+  }
+}
+
+function copyOrderLink(orderId, reportUrl) {
+  const effectiveUrl = (reportUrl && reportUrl.startsWith('http'))
+    ? reportUrl
+    : `${window.location.origin}/GM_HMS/radiology_view/print_result.php?order_id=${encodeURIComponent(orderId)}&source=OPD&from=orders`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(effectiveUrl).then(() => {
+      radToast('Report link copied to clipboard!', 'success');
+    }).catch(() => {
+      fallbackCopy(effectiveUrl);
+    });
+  } else {
+    fallbackCopy(effectiveUrl);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    radToast('Report link copied to clipboard!', 'success');
+  } catch(e) {
+    prompt('Copy this link:', text);
+  }
+  document.body.removeChild(ta);
 }
 
 
@@ -1004,12 +1122,20 @@ loadOrders();
  * Placeholder function for opening the Somatiq RIS DICOM Viewer.
  * Once Somatiq provides the exact URL format, we update this link.
  */
-function openSomatiqViewer(orderId, patientId) {
-  // Replace this URL with the actual Somatiq viewer URL format
-  // For example: `https://ris.somatiq.ai/viewer?studyUID=...`
+function openSomatiqViewer(orderId, patientId, directUrl) {
+  if (directUrl && directUrl.startsWith('http')) {
+    window.open(directUrl, '_blank');
+    return;
+  }
   const viewerUrl = `https://ris.somatiq.ai/worklist?patient_id=${patientId}&order_id=${orderId}`;
-  
-  // Open the viewer in a new browser tab
   window.open(viewerUrl, '_blank');
+}
+
+function shareSomatiqReport(patientPhone, patientName, reportUrl, imageUrl) {
+  shareOrderWhatsApp('', patientPhone, patientName, reportUrl, imageUrl);
+}
+
+function copySomatiqLink(url) {
+  copyOrderLink('', url);
 }
 </script>

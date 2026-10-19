@@ -138,9 +138,33 @@ class SomatiqHL7Service
                 : (($p['first_name'] ?? '') . ' ' . ($p['last_name'] ?? ''))
         );
 
-        // DOB: try multiple column names
-        $dob = $p['date_of_birth'] ?? $p['dob'] ?? '1900-01-01';
-        if (empty(trim($dob))) $dob = '1900-01-01';
+        // 1. Check actual birth_date column from patient table
+        $dob = '';
+        $rawBirthDate = trim((string)($p['birth_date'] ?? $p['date_of_birth'] ?? $p['dob'] ?? ''));
+        if (!empty($rawBirthDate) && $rawBirthDate !== '0000-00-00' && $rawBirthDate !== '1900-01-01') {
+            $ts = strtotime($rawBirthDate);
+            if ($ts !== false && $ts > 0) {
+                $dob = date('Y-m-d', $ts);
+            }
+        }
+
+        // 2. If birth_date is missing or empty, calculate exact birth year from actual age column
+        if (empty($dob)) {
+            $rawAge = (string)($p['age'] ?? '');
+            if (preg_match('/(\d+)/', $rawAge, $m)) {
+                $age = (int)$m[1];
+                if ($age > 0 && $age < 130) {
+                    $currentYear = (int)date('Y');
+                    $birthYear   = $currentYear - $age;
+                    $dob         = sprintf('%04d-01-01', $birthYear);
+                }
+            }
+        }
+
+        // 3. Fallback only if both birth_date and age are completely missing in the database
+        if (empty($dob)) {
+            $dob = '1990-01-01';
+        }
 
         // Sex: must be M or F for HL7
         $sex = strtoupper(substr($p['sex'] ?? $p['gender'] ?? 'U', 0, 1));

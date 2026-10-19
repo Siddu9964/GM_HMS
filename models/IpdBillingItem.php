@@ -765,17 +765,17 @@ class IpdBillingItem extends IpdBaseModel {
 
         if ($isInsurance) {
             $processCumulativeCharge('ROOM_RENT', "%ROOM RENT CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( ROOM RENT CHARGES-{$roomTypeLabel} )", $baseBedRent);
-            $processCumulativeCharge('NURSING_CHARGE', "%NURSING CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( NURSING CHARGES-{$roomTypeLabel} )", $baseNursing);
-            $processCumulativeCharge('DUTY_DOCTOR', "%DUTY DOCTOR CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( DUTY DOCTOR CHARGES-{$roomTypeLabel} )", $baseDoctor);
-            $processCumulativeCharge('SERVICE_CHARGE', "%SERVICE CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( SERVICE CHARGES-{$roomTypeLabel} )", $baseService);
+            $processCumulativeCharge('PROCEDURE', "%NURSING CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( NURSING CHARGES-{$roomTypeLabel} )", $baseNursing);
+            $processCumulativeCharge('DOCTOR_VISIT', "%DUTY DOCTOR CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( DUTY DOCTOR CHARGES-{$roomTypeLabel} )", $baseDoctor);
+            $processCumulativeCharge('MISC', "%SERVICE CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( SERVICE CHARGES-{$roomTypeLabel} )", $baseService);
         } else {
             // For non-insurance, the previous logic combined everything into ROOM_RENT.
             // But now we should follow the same cumulative logic for non-insurance too, 
             // since the user wants NURSING, DUTY DOCTOR, SERVICE separate for everyone.
             $processCumulativeCharge('ROOM_RENT', "%ROOM RENT CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( ROOM RENT CHARGES-{$roomTypeLabel} )", $baseBedRent);
-            $processCumulativeCharge('NURSING_CHARGE', "%NURSING CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( NURSING CHARGES-{$roomTypeLabel} )", $baseNursing);
-            $processCumulativeCharge('DUTY_DOCTOR', "%DUTY DOCTOR CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( DUTY DOCTOR CHARGES-{$roomTypeLabel} )", $baseDoctor);
-            $processCumulativeCharge('SERVICE_CHARGE', "%SERVICE CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( SERVICE CHARGES-{$roomTypeLabel} )", $baseService);
+            $processCumulativeCharge('PROCEDURE', "%NURSING CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( NURSING CHARGES-{$roomTypeLabel} )", $baseNursing);
+            $processCumulativeCharge('DOCTOR_VISIT', "%DUTY DOCTOR CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( DUTY DOCTOR CHARGES-{$roomTypeLabel} )", $baseDoctor);
+            $processCumulativeCharge('MISC', "%SERVICE CHARGES-{$roomTypeLabel} )", "FROM {first} TO {end} ( SERVICE CHARGES-{$roomTypeLabel} )", $baseService);
         }
         // Also add food charge under MISC if not already present
         for ($i = 0; $i < $days; $i++) {

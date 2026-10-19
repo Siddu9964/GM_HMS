@@ -37,6 +37,7 @@ $sql = "
                r.result_date, r.result_time, r.report_file, r.reviewed_by, r.reviewed_at, r.status, 
                r.created_at, r.patient_type,
                CONCAT(p.first_name, ' ', IFNULL(p.last_name, '')) AS patient_name,
+               p.phone AS patient_phone,
                'OPD' AS order_source
         FROM {$opdTable} r
         LEFT JOIN patient p ON r.patient_id COLLATE utf8mb4_unicode_ci = p.patient_id COLLATE utf8mb4_unicode_ci
@@ -50,6 +51,7 @@ $sql = "
                ir.result_date, ir.result_time, ir.report_file, ir.reviewed_by, ir.reviewed_at, ir.status, 
                ir.created_at, ir.patient_type,
                CONCAT(p.first_name, ' ', IFNULL(p.last_name, '')) AS patient_name,
+               p.phone AS patient_phone,
                'IPD' AS order_source
         FROM {$ipdTable} ir
         LEFT JOIN patient p ON ir.patient_id COLLATE utf8mb4_unicode_ci = p.patient_id COLLATE utf8mb4_unicode_ci
@@ -266,16 +268,106 @@ try {
 
   <!-- Results Table -->
   <div class="lis-card lis-fade-up-1" style="border-radius: 14px; border: 1.5px solid #1f6b4a; box-shadow: 0 6px 20px rgba(31, 107, 74, 0.08); background: #f3efe6; overflow: hidden;">
+    <style>
+      #resultsTable thead,
+      #resultsTable thead tr,
+      #resultsTable thead th {
+        background-color: #1f6b4a !important;
+        background: #1f6b4a !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        border-bottom: 2px solid #144d34 !important;
+      }
+      #resultsTable thead th {
+        font-size: 0.76rem !important;
+        letter-spacing: 0.05em !important;
+        text-transform: uppercase !important;
+      }
+      .rad-act-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        padding: 5px 11px;
+        border-radius: 8px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+        white-space: nowrap;
+        border: 1.5px solid transparent;
+        line-height: 1.25;
+      }
+      .rad-act-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+        text-decoration: none;
+      }
+      .rad-act-btn:active {
+        transform: translateY(0);
+      }
+      .rad-act-print {
+        background: #1f6b4a;
+        color: #ffffff !important;
+        border-color: #144d34;
+        box-shadow: 0 2px 6px rgba(31,107,74,0.25);
+      }
+      .rad-act-print:hover {
+        background: #18553a;
+        color: #ffffff !important;
+      }
+      .rad-act-pdf {
+        background: #fef2f2;
+        color: #e11d48 !important;
+        border-color: #fecdd3;
+        box-shadow: 0 1px 4px rgba(225,29,72,0.1);
+      }
+      .rad-act-pdf:hover {
+        background: #ffe4e6;
+        color: #be123c !important;
+      }
+      .rad-act-img {
+        background: #f0f9ff;
+        color: #0284c7 !important;
+        border-color: #bae6fd;
+        box-shadow: 0 1px 4px rgba(2,132,199,0.1);
+      }
+      .rad-act-img:hover {
+        background: #e0f2fe;
+        color: #0369a1 !important;
+      }
+      .rad-act-wa {
+        background: #25d366;
+        color: #ffffff !important;
+        border-color: #16a34a;
+        box-shadow: 0 2px 6px rgba(37,211,102,0.3);
+      }
+      .rad-act-wa:hover {
+        background: #20ba5a;
+        color: #ffffff !important;
+      }
+      .rad-act-copy {
+        background: #ffffff;
+        color: #334155 !important;
+        border-color: #cbd5e1;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      }
+      .rad-act-copy:hover {
+        background: #f8fafc;
+        color: #0f172a !important;
+        border-color: #94a3b8;
+      }
+    </style>
     <div class="lis-card-body" style="padding: 0; overflow-x: auto;">
         <table class="lis-table" id="resultsTable" style="margin: 0; width: 100%; border-collapse: collapse;">
             <thead>
-                <tr style="background: #1f6b4a; color: #f3efe6;">
-                    <th style="padding: 14px 16px; color: #f3efe6; font-weight: 700; border-bottom: 1.5px solid #1f6b4a;">Scan Date & Time</th>
-                    <th style="padding: 14px 16px; color: #f3efe6; font-weight: 700; border-bottom: 1.5px solid #1f6b4a;">Order & Modality</th>
-                    <th style="padding: 14px 16px; color: #f3efe6; font-weight: 700; border-bottom: 1.5px solid #1f6b4a;">Patient Details</th>
-                    <th style="padding: 14px 16px; color: #f3efe6; font-weight: 700; border-bottom: 1.5px solid #1f6b4a;">Procedure / Examination</th>
-                    <th style="padding: 14px 16px; color: #f3efe6; font-weight: 700; border-bottom: 1.5px solid #1f6b4a;">Status & Impressions</th>
-                    <th style="text-align: right; padding: 14px 16px; color: #f3efe6; font-weight: 700; border-bottom: 1.5px solid #1f6b4a;">Actions</th>
+                <tr style="background-color: #1f6b4a !important; color: #ffffff !important;">
+                    <th style="padding: 14px 16px; background-color: #1f6b4a !important; color: #ffffff !important; font-weight: 700; border-bottom: 2px solid #144d34;">Scan Date & Time</th>
+                    <th style="padding: 14px 16px; background-color: #1f6b4a !important; color: #ffffff !important; font-weight: 700; border-bottom: 2px solid #144d34;">Order & Modality</th>
+                    <th style="padding: 14px 16px; background-color: #1f6b4a !important; color: #ffffff !important; font-weight: 700; border-bottom: 2px solid #144d34;">Patient Details</th>
+                    <th style="padding: 14px 16px; background-color: #1f6b4a !important; color: #ffffff !important; font-weight: 700; border-bottom: 2px solid #144d34;">Procedure / Examination</th>
+                    <th style="padding: 14px 16px; background-color: #1f6b4a !important; color: #ffffff !important; font-weight: 700; border-bottom: 2px solid #144d34;">Status & Impressions</th>
+                    <th style="text-align: right; padding: 14px 16px; background-color: #1f6b4a !important; color: #ffffff !important; font-weight: 700; border-bottom: 2px solid #144d34;">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -386,18 +478,60 @@ try {
                                 </div>
                             <?php endif; ?>
                         </td>
-                        <td style="text-align: right; padding: 14px 16px; vertical-align: top; white-space: nowrap;">
-                            <button type="button" onclick="editRadResult('<?= htmlspecialchars($row['order_id']) ?>', '<?= htmlspecialchars($row['order_source'] ?? 'OPD') ?>', <?= htmlspecialchars(json_encode($tests), ENT_QUOTES) ?>)" class="lis-btn" style="padding: 5px 12px; font-size: 0.75rem; border: 1.5px solid #1f6b4a; color: #1f6b4a; margin-right: 4px; background:#f3efe6; font-weight:700; border-radius:6px; cursor:pointer;">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <a href="print_result.php?order_id=<?= urlencode($row['order_id']) ?>&source=<?= urlencode($row['order_source'] ?? 'OPD') ?>&from=kanban" target="_blank" onclick="window.open(this.href, '_blank'); return false;" class="lis-btn" style="padding: 5px 12px; font-size: 0.75rem; border: 1.5px solid #1f6b4a; color: #f3efe6; background:#1f6b4a; font-weight:700; border-radius:6px; text-decoration:none; display:inline-block;">
-                                <i class="fas fa-print"></i> Report
-                            </a>
-                            <?php if (!empty($row['report_file'])): ?>
-                                <a href="/GM_HMS/<?= htmlspecialchars($row['report_file']) ?>" target="_blank" class="lis-btn" style="padding: 5px 8px; font-size: 0.75rem; border: 1.5px solid #1f6b4a; color: #1f6b4a; background:#f3efe6; border-radius:6px; text-decoration:none; margin-left:4px; display:inline-block;" title="View Scan File">
-                                    <i class="fas fa-file-image"></i>
+                        <td style="text-align: right; padding: 14px 16px; vertical-align: middle; white-space: nowrap;">
+                            <?php
+                            $patientPhone = $row['patient_phone'] ?? '';
+                            if (empty($patientPhone) && !empty($row['patient_type']) && strpos($row['patient_type'], 'Walkin:') === 0) {
+                                $parts = explode('|', substr($row['patient_type'], 7));
+                                if (!empty($parts[2])) {
+                                    $patientPhone = trim($parts[2]);
+                                }
+                            }
+                            
+                            $patientName = $row['patient_name'] ?? 'Patient';
+                            if ((empty($patientName) || trim($patientName) === '') && !empty($row['patient_type']) && strpos($row['patient_type'], 'Walkin:') === 0) {
+                                $parts = explode('|', substr($row['patient_type'], 7));
+                                if (!empty($parts[0])) {
+                                    $patientName = trim($parts[0]);
+                                }
+                            }
+
+                            $fileUrl = $row['report_file'] ?? '';
+                            $isExtFile = (strpos($fileUrl, 'http://') === 0 || strpos($fileUrl, 'https://') === 0);
+                            $fileHref = $isExtFile ? $fileUrl : ('/GM_HMS/' . ltrim($fileUrl, '/'));
+
+                            $imageUrl = '';
+                            if (!empty($row['result_data'])) {
+                                $rd = is_array($row['result_data']) ? $row['result_data'] : @json_decode($row['result_data'], true);
+                                if (!empty($rd['image_url'])) $imageUrl = $rd['image_url'];
+                            }
+
+                            $scanUrl  = '/GM_HMS/radiology_view/view_scan.php?order_id=' . urlencode($row['order_id']) . '&source=' . urlencode($row['order_source'] ?? 'OPD') . '&from=kanban';
+                            $shareUrl = $scanUrl;
+                            ?>
+                            <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap;">
+                                <!-- Unified Scan File / PDF Report with GM Hospitals Letterhead -->
+                                <a href="<?= htmlspecialchars($scanUrl) ?>" target="_blank" onclick="window.open(this.href, '_blank'); return false;" class="rad-act-btn rad-act-print" style="background:#1f6b4a;color:#ffffff !important;border-color:#144d34;" title="Open Scan Report with Hospital Letterhead (Print & PDF Download inside)">
+                                    <i class="fas fa-file-medical"></i> <span>Scan File / PDF</span>
                                 </a>
-                            <?php endif; ?>
+
+                                <!-- DICOM Images -->
+                                <?php if (!empty($imageUrl)): ?>
+                                    <a href="<?= htmlspecialchars($imageUrl) ?>" target="_blank" class="rad-act-btn rad-act-img" title="View DICOM Study Images">
+                                        <i class="fas fa-images"></i> <span>Images</span>
+                                    </a>
+                                <?php endif; ?>
+
+                                <!-- WhatsApp Share -->
+                                <button type="button" class="rad-act-btn rad-act-wa" onclick="shareKanbanWhatsApp('<?= htmlspecialchars(addslashes($row['order_id'])) ?>', '<?= htmlspecialchars(addslashes($patientPhone)) ?>', '<?= htmlspecialchars(addslashes($patientName)) ?>', '<?= htmlspecialchars(addslashes($shareUrl)) ?>', '<?= htmlspecialchars(addslashes($imageUrl)) ?>', '<?= htmlspecialchars(addslashes($testName)) ?>')" title="Share Radiology Report on WhatsApp">
+                                    <i class="fab fa-whatsapp"></i> <span>WhatsApp</span>
+                                </button>
+
+                                <!-- Copy Link -->
+                                <button type="button" class="rad-act-btn rad-act-copy" onclick="copyKanbanLink('<?= htmlspecialchars(addslashes($shareUrl)) ?>', '<?= htmlspecialchars(addslashes($row['order_id'])) ?>')" title="Copy Report Link to Clipboard">
+                                    <i class="fas fa-copy"></i> <span>Copy</span>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>
@@ -728,6 +862,95 @@ async function saveRadReport(e) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
     }
+}
+
+function shareKanbanWhatsApp(orderId, patientPhone, patientName, shareUrl, imageUrl, testName) {
+    const fullUrl = (shareUrl && shareUrl.startsWith('http')) 
+        ? shareUrl 
+        : (window.location.origin + (shareUrl.startsWith('/') ? '' : '/') + shareUrl);
+
+    const fullImageUrl = (imageUrl && imageUrl.startsWith('http'))
+        ? imageUrl
+        : (imageUrl ? (window.location.origin + (imageUrl.startsWith('/') ? '' : '/') + imageUrl) : '');
+
+    const triggerShare = (phone) => {
+        let text = `Hello ${patientName || 'Patient'},\nYour radiology examination report for Order #${orderId}`;
+        if (testName) text += ` (${testName})`;
+        text += ` is ready.\n\n`;
+        text += `📄 View Report: ${fullUrl}\n`;
+        if (fullImageUrl) {
+            text += `🖼️ View DICOM Images: ${fullImageUrl}\n`;
+        }
+        text += `\nGM Hospital & Diagnostic Centre\nPhone: +91 99640 00000`;
+
+        const cleanPhone = (phone || '').replace(/[^0-9]/g, '');
+        const targetPhone = cleanPhone.length === 10 ? ('91' + cleanPhone) : cleanPhone;
+        const waUrl = targetPhone 
+            ? `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`
+            : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+        window.open(waUrl, '_blank');
+    };
+
+    const cleanDigits = (patientPhone || '').replace(/[^0-9]/g, '');
+    if (cleanDigits.length >= 10) {
+        triggerShare(cleanDigits);
+    } else if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Share via WhatsApp',
+            html: `Enter 10-digit mobile number for <strong>${(patientName || 'patient')}</strong>:`,
+            input: 'tel',
+            inputValue: cleanDigits,
+            inputPlaceholder: 'e.g. 9876543210',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fab fa-whatsapp"></i> Send WhatsApp',
+            confirmButtonColor: '#25d366',
+            cancelButtonColor: '#64748b',
+            inputValidator: (val) => {
+                if (!val || val.replace(/[^0-9]/g, '').length < 10) {
+                    return 'Please enter a valid 10-digit mobile number';
+                }
+            }
+        }).then((res) => {
+            if (res.isConfirmed && res.value) {
+                triggerShare(res.value);
+            }
+        });
+    } else {
+        const entered = prompt(`Enter mobile number for ${(patientName || 'patient')}:`, cleanDigits);
+        if (entered) triggerShare(entered);
+    }
+}
+
+function copyKanbanLink(shareUrl, orderId) {
+    const fullUrl = (shareUrl && shareUrl.startsWith('http')) 
+        ? shareUrl 
+        : (window.location.origin + (shareUrl.startsWith('/') ? '' : '/') + shareUrl);
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullUrl).then(() => {
+            radToast(`Report link for #${orderId} copied to clipboard!`, 'success');
+        }).catch(() => {
+            fallbackKanbanCopy(fullUrl, orderId);
+        });
+    } else {
+        fallbackKanbanCopy(fullUrl, orderId);
+    }
+}
+
+function fallbackKanbanCopy(text, orderId) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+        document.execCommand('copy');
+        radToast(`Report link for #${orderId} copied to clipboard!`, 'success');
+    } catch(e) {
+        prompt('Copy report link:', text);
+    }
+    document.body.removeChild(ta);
 }
 </script>
 
